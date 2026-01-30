@@ -496,28 +496,35 @@ Down Y uses a third damage type that bypasses all defensive passives.
 Note: Bankai has flag 0x20 on slot 1, base does not. Bankai is more offense-
 focused (50 attack vs 40), less defense (35 vs 40), less utility (15 vs 20).
 
+### SOLVED (2026-01-30 Session)
+
+4. ~~**Walk speed storage**~~ → **PARTIALLY SOLVED:** chr_b.bin `statC` field
+   - Walk speed uses a **threshold system**, not linear scaling
+   - statC < ~100 = SLOW tier (Franky=67, Zoro=33)
+   - statC >= ~100 = Normal/Fast tier (Ichigo=225, Killua=300, Lenalee=153)
+   - Lenalee (153) and Killua (300) have SAME walk speed despite different statC!
+
+5. ~~**Displacement velocity storage**~~ → **PARTIALLY SOLVED:** Multiple factors!
+   - HP affects displacement (lower HP = more knockback)
+   - Some characters have "hard to knock back" passive (e.g., Edajima)
+   - statC may still be a factor but is NOT the only one
+   - Ichigo/Bankai similar displacement likely due to similar HP + no special passives
+
 ### Still Unknown
 
 1. **komaSize meaning** - Values 2-6 don't match deck komas (4-8)
 
 2. **battleParams slot meanings** - What do slots 0-3 actually control? (Not
-   weight/speed - proven by Nami/Franky having identical values)
+   weight/speed - proven by op_b_04/op_b_08 having identical values)
 
 3. **Special damage scaling formula** - Koma 4→5→6→7→8 gives +8/+7/+5/+5. Not
    linear, might be lookup table or diminishing formula.
 
-4. **Walk speed storage** - Ichigo feels different from Franky, but not in
-   chr_b.bin or collision files. Candidates:
-   - ARM9.bin hardcoded tables
-   - Overlay files
-   - Effect files
-
-5. **Displacement velocity storage** - Ichigo and Bankai identical, Franky much
-   lower. Location unknown.
-
-6. **Combo Bonus** - Is this a flat damage boost? We only saw the increase in
+4. **Combo Bonus** - Is this a flat damage boost? We only saw the increase in
    damage for Bankai Ichigo's B -> fwd B string against a character that had a
    damage reduction passive
+
+5. **Dash type determination** - What makes Ichigo a "flash dasher" vs normal?
 
 ---
 

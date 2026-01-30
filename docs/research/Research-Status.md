@@ -7,17 +7,16 @@ structures.
 
 ## ✓ CONFIRMED (High Confidence)
 
-### Damage System
+### Damage Calculation Formula
 
-**Damage Formula (SOLVED 2026-01-30):**
+**Formula (confirmed 2026-01-30):**
 
 ```
-base_damage = jpower.damage1 ÷ 5
-tier_modifier = tier - 2
-actual_damage = floor((base_damage + tier_modifier) × nature_multiplier)
+damage = (jpower.damage1 ÷ 5) + (tier - 2)
+actual_damage = floor(damage × nature_multiplier)
 ```
 
-**CRITICAL:** The formula uses `damage1` (first component), NOT `totalDamage`!
+**Key insight:** The formula uses `damage1` (first component), NOT `totalDamage`!
 
 **Tier Modifiers:**
 - tier=1: -1 damage (e.g., Bankai Ichigo)
@@ -25,29 +24,32 @@ actual_damage = floor((base_damage + tier_modifier) × nature_multiplier)
 - tier=3: +1 damage (e.g., Caramelman)
 
 **Nature Multipliers:**
-
 - Neutral: 1.0x
 - Advantage: 1.5x
 - Disadvantage: 1.0x (no penalty - bonus-only system)
 
-**Verified across 15+ characters (2026-01-30):**
+**Verified B move damages (2026-01-30):**
 
-| Character | tier | d1 | Calculation | B Damage |
-|-----------|------|-----|-------------|----------|
-| Nami | 2 | 30 | 30/5 + 0 | 6 ✓ |
-| Train | 2 | 35 | 35/5 + 0 | 7 ✓ |
-| Goku | 2 | 40 | 40/5 + 0 | 8 ✓ |
-| Luffy | 2 | 40 | 40/5 + 0 | 8 ✓ |
-| Robin | 2 | 40 | 40/5 + 0 | 8 ✓ |
-| Franky | 2 | 40 | 40/5 + 0 | 8 ✓ |
-| Naruto | 2 | 40 | 40/5 + 0 | 8 ✓ |
-| Buu | 2 | 45 | 45/5 + 0 | 9 ✓ |
-| Bankai | 1 | 50 | 50/5 - 1 | 9 ✓ |
-| Ichigo | 2 | 50 | 50/5 + 0 | 10 ✓ |
-| Caramelman | 3 | 60 | 60/5 + 1 | 13 ✓ |
-| Kyuubi* | 1 | 45 | 45/5 - 1 | 8 ✓ |
+| Character | tier | B Damage | Required d1 | d1 exists? |
+|-----------|------|----------|-------------|------------|
+| Nami | 2 | 6 | 30 | ✓ 27 entries |
+| Train | 2 | 7 | 35 | ✓ 4 entries |
+| Goku | 2 | 8 | 40 | ✓ 16 entries |
+| Luffy | 2 | 8 | 40 | ✓ |
+| Robin | 2 | 8 | 40 | ✓ |
+| Franky | 2 | 8 | 40 | ✓ |
+| Naruto | 2 | 8 | 40 | ✓ |
+| Buu | 2 | 9 | 45 | ✓ 3 entries |
+| Bankai | 1 | 9 | 50 | ✓ 5 entries |
+| Ichigo | 2 | 10 | 50 | ✓ |
+| Caramelman | 3 | 13 | 60 | ✓ 1 entry |
+| Kyuubi Naruto | 1 | 8 | 45* | ✓ |
 
-*Kyuubi Naruto uses d1=45 entry (not same as base Naruto's d1=40)
+*Kyuubi has tier=1 but B=8, implying he uses d1=45 entry (45/5-1=8), not d1=40 like base Naruto
+
+**What's confirmed:** The calculation formula works - all tested damages match jpower entries with the correct d1 value.
+
+**What's NOT confirmed:** How collision files SELECT which jpower entry to use. See "jpower Entry Selection" in UNKNOWN section below.
 
 ---
 

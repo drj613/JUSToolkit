@@ -1,27 +1,13 @@
-# Combat System Design Document
+# JUS Combat Mechanics Reference
 
-A living design document for the JUS-inspired fighting game combat system. This captures
-mechanics as we understand them, with clear markers for unknowns and assumptions.
+Documentation of Jump Ultimate Stars combat mechanics as implemented in the original game.
+Research-driven, with clear markers for unknowns and assumptions.
 
 **Status:** Draft - actively being refined through research
 
 ---
 
-## 1. Design Goals
-
-### Core Feel
-- Fast, fluid 2D platform fighter with anime flair
-- Emphasis on combos, juggles, and team synergy
-- Accessible execution with depth in team composition and reads
-
-### Non-Goals (for MVP)
-- 1:1 binary compatibility with JUS
-- Point/Star game modes (Survival only for now)
-- Online multiplayer (local first)
-
----
-
-## 2. Character States
+## 1. Character States
 
 ### Grounded States
 
@@ -62,7 +48,7 @@ mechanics as we understand them, with clear markers for unknowns and assumptions
 
 ---
 
-## 3. Movement System
+## 2. Movement System
 
 ### Ground Movement
 
@@ -108,7 +94,7 @@ Based on chr_b.bin `statC` field:
 
 ---
 
-## 4. Attack System
+## 3. Attack System
 
 ### Input Layout
 
@@ -141,7 +127,7 @@ Attacks and projectiles have implicit priority tiers:
 
 ---
 
-## 5. Damage Calculation
+## 4. Damage Calculation
 
 ### Core Formula (Confirmed)
 
@@ -175,34 +161,21 @@ Hidden "damage since last knockdown" gauge:
 
 ---
 
-## 6. Guard System
+## 5. Guard System
 
 ### Basic Guard
 
-- **Input:** Hold down
+- **Input:** Hold down on D-pad
 - **Effect:** Block incoming attacks, no chip damage
 - **Guard Health:** Separate pool that depletes when blocking
-- **SP Cost:** Initiating guard costs SP (see below)
 
 ### Guard Health
 
 - Depletes when blocking attacks
-- **Visible indicator:** Players can see exactly how much guard health remains
+- Visual indicator flashes red when low
 - Regenerates when not blocking (rate TBD)
 
-### SP Cost on Guard
-
-**Design Decision:** Guard initiation costs SP.
-
-- Each time you START blocking, a small SP cost is deducted
-- Continuing to hold block is free once initiated
-- **At 0 SP:** Guard is FREE - you're never completely defenseless
-- This nerfs tap-spam guard behavior while preserving strategic blocking
-
-This creates interesting decisions:
-- Tap-blocking drains SP rapidly (still possible, but costly)
-- Holding block is SP-efficient but predictable
-- Low SP = guard is free but you can't use specials
+> **UNKNOWN:** Exact guard health values, regen rate.
 
 ### Guard Break
 
@@ -210,24 +183,28 @@ Two ways to break guard:
 1. **Deplete guard health:** Any attack that reduces it to 0
 2. **Guard break attack:** Down + Y (universal), some specials
 
-**Result:** Extended light hitstun animation (very punishable)
+**Result:** Extended vulnerable animation (very punishable)
 
-### No Auto-Guard
+### Tap-Block Behavior
 
-**Design Decision:** No helper abilities that auto-block for you.
+Rapidly tapping guard reportedly refreshes guard health, creating an exploitable defensive technique.
 
-JUS had helpers that would auto-guard at SP cost. We're removing this:
-- Removes passive/reactive playstyle
-- Guard decisions should be active player choices
-- Simplifies the defensive system
+> **UNKNOWN:** Exact mechanics of tap-block refresh.
+
+### Auto-Guard (Helper Passive)
+
+Some helper komas provide auto-guard ability:
+- Automatically blocks incoming attacks
+- Costs SP per block
+- See `docs/research/Passives-Reference.md` for which helpers provide this
 
 ---
 
-## 7. Support System
+## 6. Support System
 
 ### Support Calls
 
-- Tap support character on touch screen (or button?)
+- Tap support character on touch screen
 - Support appears, does their action, leaves
 - Has cooldown between uses
 
@@ -241,13 +218,13 @@ JUS had helpers that would auto-guard at SP cost. We're removing this:
 
 ---
 
-## 8. SP Gauge System
+## 7. SP Gauge System
 
 ### SP Basics
 
 - Shared across deck (not per-character)
 - Maximum bars: 3 base + helper bonuses (up to ~5?)
-- Used for: Special moves (1 bar), Dream Combos
+- Used for: Special moves (1 bar), Dream Combos, auto-guard
 
 ### SP Gain
 
@@ -271,9 +248,16 @@ Multiple ways to gain SP:
 
 ---
 
-## 9. Win Conditions
+## 8. Win Conditions
 
-### Survival Mode (Primary)
+### Game Modes
+
+JUS has three game modes:
+- **Survival:** Last player with living characters wins
+- **Point:** Score-based (TBD)
+- **Star:** Objective-based (TBD)
+
+### Survival Mode
 
 - Each player has a deck of battle characters
 - KO = that character is eliminated from deck
@@ -288,7 +272,7 @@ Multiple ways to gain SP:
 
 ---
 
-## 10. Passives System
+## 9. Passives System
 
 ### Battle Character Passives (Innate)
 
@@ -313,16 +297,14 @@ Multiple ways to gain SP:
 **Categories:** Similar to battle passives plus:
 - Increase max HP
 - Increase guard strength
+- Auto-guard (uses SP)
 - Solid stance on platforms
-
-**Removed from JUS:**
-- ~~Auto-guard (uses SP)~~ - See Guard System design decision
 
 See `docs/research/Passives-Reference.md` for complete list.
 
 ---
 
-## 11. Open Questions
+## 10. Open Questions
 
 ### High Priority
 
@@ -337,51 +319,14 @@ See `docs/research/Passives-Reference.md` for complete list.
 6. **Damage cap threshold:** Exact value for combo breaker
 7. **Priority system:** How many tiers? Values per move?
 8. **Surprise hitstun:** Which moves trigger it?
+9. **Guard health values:** Base values, regen rate, tap-block mechanics
 
 ### Low Priority (Nice to Have)
 
-9. **Exact passive ARM9 table:** Binary mapping of PassiveIndex
-10. **Frame data:** Startup/active/recovery for all moves
-11. **Hitbox data:** Exact collision boxes per move
-
----
-
-## 12. Implementation Notes
-
-### Data-Driven Design
-
-Character data should be defined in config files:
-- Stats (walk speed tier, weight class, dash type)
-- Move list with properties
-- Passive abilities
-- Sprite/animation references
-
-### State Machine
-
-Combat should use a hierarchical state machine:
-```
-Character
-├── Grounded
-│   ├── Idle
-│   ├── Walking
-│   ├── Attacking
-│   └── Blocking
-├── Airborne
-│   ├── Rising
-│   ├── Falling
-│   └── Air Attacking
-└── Hit
-    ├── Hitstun
-    ├── Knockdown
-    └── Wakeup
-```
-
-### Physics
-
-- Gravity constant (may vary per character?)
-- Knockback decay
-- Ground friction
-- Air control coefficient
+10. **Exact passive ARM9 table:** Binary mapping of PassiveIndex
+11. **Frame data:** Startup/active/recovery for all moves
+12. **Hitbox data:** Exact collision boxes per move
+13. **Point/Star mode rules:** Complete documentation
 
 ---
 
@@ -390,4 +335,4 @@ Character
 | Date | Changes |
 |------|---------|
 | 2026-01-30 | Initial draft with all known mechanics |
-| 2026-01-30 | Guard system design decisions: visible guard health, SP cost on initiation (free at 0 SP), removed auto-guard passive |
+| 2026-01-30 | Refocused as JUS reference doc (removed design decisions) |

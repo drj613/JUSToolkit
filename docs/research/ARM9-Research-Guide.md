@@ -515,21 +515,150 @@ dotnet run --project src/JUS.CLI -- jus containers export \
 
 ---
 
+## Walk Speed (PARTIALLY SOLVED - 2026-01-30)
+
+### Discovery: statC Controls Walk Speed via Threshold System
+
+The `statC` field in chr_b.bin (offset 12, 2 bytes) determines walk speed,
+but NOT linearly. It appears to be a **threshold-based system**:
+
+- **statC < ~100**: SLOW walk speed tier
+- **statC >= ~100**: Normal/Fast walk speed tier (same speed regardless of exact value)
+
+### Verified Examples
+
+| Character          | statC | Walk Speed | Notes                        |
+| ------------------ | ----- | ---------- | ---------------------------- |
+| Zoro (op_b_03)     | 33    | SLOW       | Confirmed very slow          |
+| Kyuubi Naruto      | 48    | SLOW       | Confirmed slow               |
+| Franky (op_b_08)   | 67    | SLOW       | Confirmed slow               |
+| Lenalee (dg_b_02)  | 153   | FAST       | Same speed as Killua!        |
+| Goku (db_b_01)     | 161   | Normal     |                              |
+| Ichigo (bl_b_01)   | 225   | Normal     |                              |
+| Killua (hh_b_02)   | 300   | FAST       | Confirmed fast               |
+
+**Key finding:** Lenalee (statC=153) and Killua (statC=300) have the SAME walk
+speed despite very different statC values. This proves statC is NOT linear.
+
+### Slow Characters (statC < 100)
+
+16 battle characters fall into the "slow" tier, including:
+- Zoro, Franky (One Piece)
+- Kyuubi Naruto (Naruto)
+- Kinnikuman
+- Kenshiro (Fist of the North Star)
+
+### Important Notes
+
+1. **Support characters** (flags=0, e.g., Death Note) have high statC values
+   but don't move in battle - statC is only meaningful for battle characters.
+
+2. **statA and statB are NOT gameplay stats** - they are series-grouped values
+   (likely sprite/text offsets), not per-character physics parameters.
+
+3. **battleParams bytes 0-7 are NOT weight** - characters with identical
+   battleParams (e.g., op_b_04 and op_b_08) have different walk speeds.
+
+---
+
+## Knockback/Displacement (PARTIALLY UNDERSTOOD)
+
+### Multiple Factors Affect Displacement
+
+Displacement (how far a character is knocked back) is NOT simply statC. It's
+affected by multiple factors:
+
+1. **HP**: Lower HP = more displacement
+2. **Character passives**: Some characters (e.g., Edajima) have a "hard to
+   knock back" passive ability that reduces displacement
+3. **Possibly statC**: May still affect base displacement, but not the only factor
+
+### Edajima Example
+
+Edajima (Sakigake!! Otokojuku) has:
+- High health pool
+- "Hard to knock back" passive ability
+- This passive, not base stats, explains his displacement resistance
+
+### What Remains Unknown
+
+- Exact threshold value for walk speed tiers (somewhere around 95-100)
+- Whether there are more than 2 speed tiers
+- How passives like "hard to knock back" are stored/implemented
+- The complete displacement formula
+
+---
+
+## koma.bin Structure (DISCOVERED 2026-01-30)
+
+### Overview
+
+koma.bin contains 890 entries × 12 bytes = 10,680 bytes total. Each entry
+represents a "koma" (panel) that can be placed in a deck.
+
+### Structure per Entry
+
+```c
+struct Koma {
+    uint16_t ImageId;       // 0-1: Sprite/image reference
+    uint16_t Unknown2;      // 2-3: Character/series ID (groups komas by character)
+    uint8_t  nameIdx;       // 4: Text table index for series name
+    uint8_t  nameNum;       // 5: Entry number within series
+    uint8_t  KomaType;      // 6: 0=Help, 1=Support, 2=Battle (was Unknown6)
+    uint8_t  PassiveIndex;  // 7: Passive ability index (was Unknown7)
+    uint8_t  KShapeGroupId; // 8: Koma shape group
+    uint8_t  KShapeElementId; // 9: Koma shape element
+    uint8_t  UnknownA;      // 10: Unknown
+    uint8_t  UnknownB;      // 11: Always 48 or 49 (flags?)
+};
+```
+
+### Key Discoveries
+
+**KomaType (byte 6):**
+- 0 = Help koma (stat booster)
+- 1 = Support koma (activatable assist)
+- 2 = Battle koma (playable fighter)
+
+**PassiveIndex (byte 7) - IMPORTANT:**
+This field indexes into a passive ability table:
+- Battle komas (type=2): Values 0-55 (47 unique values)
+- Support komas (type=1): Values 92-192 (different ability set)
+
+### Passive Abilities (Known Types)
+
+From web research, battle passives include:
+- Knockback resistance ("Principal" - Edajima)
+- SP gain boost on KO (Edajima)
+- 3-step jump (triple jump)
+- Iron wall (reduced damage?)
+- Status abnormality resistance
+- Slash/Impact defense
+- Auto guard
+
+### Next Steps for Passive Research
+
+1. Map PassiveIndex values to specific passive effects
+2. Find the passive definition table in ARM9 (~50 entries for battle, ~100 for support)
+3. Verify by testing characters with known passives (Edajima = knockback resist)
+
+---
+
 ## What Remains Unknown
 
 ### High Priority
 
-1. **Walk speed location** - Not in chr_b, collision, or ARM9 near known tables
-2. **Weight/displacement** - Different characters have different "weight feel"
-3. **jpower entry selection** - How does a move choose which jpower entry to
+1. **jpower entry selection** - How does a move choose which jpower entry to
    use?
-4. **Goku B=8 mystery** - No jpower total matches with any known formula
+2. **Goku B=8 mystery** - No jpower total matches with any known formula
+3. **Exact statC formula** - Linear scaling or lookup table for walk speed?
 
 ### Medium Priority
 
 1. **komaSize field meaning** - Values 2-6 don't match deck koma sizes 4-8
 2. **battleParams slots 0-3** - Low byte values (3-50 range) purpose unknown
 3. **Collision subType → jpower mapping** - Does subType select jpower entries?
+4. **Dash type determination** - What determines flash dash vs normal dash?
 
 ### Where to Look Next
 
@@ -553,6 +682,17 @@ dotnet run --project src/JUS.CLI -- jus containers export \
 | Koma definitions | bin/koma.bin              | 12 bytes/entry          |
 | Character names  | bin/chr_b_t.bin           | Text file               |
 
+### chr_b.bin Key Fields
+
+| Offset | Size | Field    | Purpose                                    |
+| ------ | ---- | -------- | ------------------------------------------ |
+| 0      | 1    | formType | 0=base, 1=powered, 2=special               |
+| 1      | 1    | tier     | Damage modifier: tier-2 added to base dmg  |
+| 4      | 4    | flags    | 0=support char, >0=battle char             |
+| 12     | 2    | statC    | **Walk speed + knockback resistance**      |
+| 14     | 2    | classId  | Low byte = jpower block index              |
+| 36     | 12   | battleParams | Character build profile (NOT physics)  |
+
 ### Key Formulas
 
 ```
@@ -560,6 +700,16 @@ jpower_block = chr_b.classId & 0xFF
 damage = floor(jpower_total / 5) + (chr_b.tier - 2)  // For Ichigo
 damage = floor(jpower_total / 7)                     // For Goku (unconfirmed)
 attack_boost = 1.2×  // Universal multiplier
+nature_advantage = 1.5×  // Type advantage multiplier
+
+// Walk speed (statC field - threshold based, NOT linear)
+if statC < ~100: walk_speed = SLOW
+if statC >= ~100: walk_speed = NORMAL/FAST  // Same speed tier
+
+// Knockback displacement (multiple factors)
+displacement = f(attack_knockback, defender_HP, defender_passives, ...)
+// Lower HP = more displacement
+// "Hard to knock back" passive reduces displacement
 ```
 
 ### ARM9 Quick Reference
@@ -573,3 +723,4 @@ attack_boost = 1.2×  // Universal multiplier
 ---
 
 _Document created from Ichigo character mapping research session, 2026-01-29_
+_Updated with walk speed/weight discovery, 2026-01-30_

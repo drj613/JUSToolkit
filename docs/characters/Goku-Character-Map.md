@@ -6,6 +6,38 @@ Deep dive analysis mapping Goku through all data files to understand linkages.
 
 ## ✓ CONFIRMED - In-Game Verified Data (2026-01-29)
 
+### Movement & Physics
+
+| Property      | Value    | Notes                              |
+| ------------- | -------- | ---------------------------------- |
+| Walk Speed    | Normal   | statC=161 (above slow threshold)   |
+| Dash Type     | Standard | Visible dash forward               |
+| Dash Distance | TBD      | Short / Medium / Long              |
+| Weight Class  | Normal   | Standard knockback received        |
+
+**Dash Types:**
+- **Standard** - Character dashes forward visibly (Goku, Gon, Nami)
+- **Flash** - Character vanishes and reappears ahead (Ichigo, Dio, Gear 2 Luffy)
+
+### Innate Passive
+
+| Koma Size | Passive Name | Effect                     |
+| --------- | ------------ | -------------------------- |
+| 4-koma    | TBD          | Needs in-game verification |
+| 5-koma    | TBD          | Needs in-game verification |
+
+**Note:** Passives are stored in koma.bin `unk7` field. Each koma size may have a different passive. Goku's passive index needs verification.
+
+### Helper Boosts (Ally Boosts)
+
+Characters that give Goku an HP boost when placed adjacent in deck:
+
+| Helper      | Boost | Series Connection              |
+| ----------- | ----- | ------------------------------ |
+| TBD         | TBD   | Needs in-game verification     |
+
+**Note:** Ally boosts are typically same-series characters or characters with story connections.
+
 ### Damage Values (Tested vs Nature)
 
 **Neutral damage (no nature advantage):** | Move | Damage | Type | Notes |
@@ -168,23 +200,35 @@ unknown).
 3. **Collision file damage:** Some moves may store damage in collision files
    rather than jpower (needs investigation)
 
-### Character Weight
+### Walk Speed (PARTIALLY SOLVED 2026-01-30)
 
-**Observed:** Goku feels "standard" weight in-game.
+**Location:** chr_b.bin `statC` field (offset 12, 2 bytes)
 
-**NOT stored in:**
+**Goku's statC:** 161 (above threshold = normal/fast tier)
 
-- chr_b.bin battleParams
-- Collision files
-- jpower.bin
+Walk speed uses a **threshold system**, not linear scaling:
 
-**Location:** Unknown
+| Character | statC | Walk Speed |
+|-----------|-------|------------|
+| Zoro      | 33    | SLOW       |
+| Franky    | 67    | SLOW       |
+| Lenalee   | 153   | FAST       |
+| Goku      | 161   | Normal     |
+| Ichigo    | 225   | Normal     |
+| Killua    | 300   | FAST       |
 
-### Walk Speed
+**Key finding:** Lenalee (153) and Killua (300) have the SAME walk speed!
+- statC < ~100 = SLOW tier
+- statC >= ~100 = Normal/Fast tier
 
-**Observed:** Goku appears average/standard walk speed.
+### Knockback/Displacement
 
-**Location:** Unknown (same as weight)
+Displacement is affected by **multiple factors**:
+- HP (lower HP = more knockback)
+- Character passives (e.g., Edajima's "hard to knock back")
+- Possibly statC as a base factor
+
+Goku's statC=161 is above the slow threshold, giving normal walk speed.
 
 ### Collision-to-jpower Entry Mapping (Updated 2026-01-30)
 
@@ -337,4 +381,4 @@ weights (bytes 8-10) likely affect AI or battle calculations.
 
 4. **Binary search ARM9 for values 146, 379, 40:** Might find the lookup mechanism
 
-5. **Find weight/speed data:** Not in battleParams or collision - search ARM9 overlays
+~~5. **Find weight/speed data:**~~ **SOLVED** - statC field in chr_b.bin controls both

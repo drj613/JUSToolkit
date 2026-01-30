@@ -182,12 +182,27 @@ Hidden "damage since last knockdown" gauge:
 - **Input:** Hold down
 - **Effect:** Block incoming attacks, no chip damage
 - **Guard Health:** Separate pool that depletes when blocking
+- **SP Cost:** Initiating guard costs SP (see below)
 
 ### Guard Health
 
 - Depletes when blocking attacks
-- Visual indicator: Character flashes red when low
-- Regenerates when not blocking (or fully refreshes on new block?)
+- **Visible indicator:** Players can see exactly how much guard health remains
+- Regenerates when not blocking (rate TBD)
+
+### SP Cost on Guard
+
+**Design Decision:** Guard initiation costs SP.
+
+- Each time you START blocking, a small SP cost is deducted
+- Continuing to hold block is free once initiated
+- **At 0 SP:** Guard is FREE - you're never completely defenseless
+- This nerfs tap-spam guard behavior while preserving strategic blocking
+
+This creates interesting decisions:
+- Tap-blocking drains SP rapidly (still possible, but costly)
+- Holding block is SP-efficient but predictable
+- Low SP = guard is free but you can't use specials
 
 ### Guard Break
 
@@ -197,12 +212,14 @@ Two ways to break guard:
 
 **Result:** Extended light hitstun animation (very punishable)
 
-### Tap-Block Exploit
+### No Auto-Guard
 
-Rapidly tapping block refreshes guard health, providing near-infinite blocking.
-Only countered by very fast burst damage.
+**Design Decision:** No helper abilities that auto-block for you.
 
-> **DECISION:** Keep this as emergent tech or patch it out?
+JUS had helpers that would auto-guard at SP cost. We're removing this:
+- Removes passive/reactive playstyle
+- Guard decisions should be active player choices
+- Simplifies the defensive system
 
 ---
 
@@ -296,8 +313,10 @@ Multiple ways to gain SP:
 **Categories:** Similar to battle passives plus:
 - Increase max HP
 - Increase guard strength
-- Auto-guard (uses SP)
 - Solid stance on platforms
+
+**Removed from JUS:**
+- ~~Auto-guard (uses SP)~~ - See Guard System design decision
 
 See `docs/research/Passives-Reference.md` for complete list.
 
@@ -371,3 +390,4 @@ Character
 | Date | Changes |
 |------|---------|
 | 2026-01-30 | Initial draft with all known mechanics |
+| 2026-01-30 | Guard system design decisions: visible guard health, SP cost on initiation (free at 0 SP), removed auto-guard passive |

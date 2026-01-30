@@ -1,0 +1,88 @@
+JUS Frame Data & Hitbox Visualization Research Notes
+====================================================
+
+FRAME DATA FINDINGS
+-------------------
+
+User-provided in-game measurements (manual, from video recording):
+
+Universal timings:
+- Landing Lag: 16 frames
+- Dash: 15 frames
+- Jump: 19 frames
+
+Character startup frames (B = light attack, Y = medium):
+- Sakura: B=11, fwdB=11, upB=8, upY=17, airB=16
+- Yusuke: B=6, fwdB=14, upB=10, Y=19, upY=21, fwdY=22, airB=10
+- Kinnikuman: B=13, fwdB=11, upB=16, upY=20
+- Hiei: B=11, upB=12
+- Gohan: B=7
+- Kenshin: B=10, fwdB=10, upB=11
+- Kakashi: B=10, upB=10
+- Dio: B=8
+- Sasuke: B=10
+
+KEY FINDING: frameStart in collision data ≠ in-game startup frames
+
+Comparison:
+| Character     | Collision frameStart | In-Game Startup | Difference |
+|---------------|---------------------|-----------------|------------|
+| Yusuke B      | 9                   | 6               | -3         |
+| Dio B         | 10                  | 8               | -2         |
+| Kenshin B     | 7                   | 10              | +3         |
+| Hiei B        | 7                   | 11              | +4         |
+| Kinnikuman B  | 8                   | 13              | +5         |
+
+Conclusion:
+- frameStart = hitbox activation frame (when attack can hit)
+- Startup frames = full move startup (input to first active frame)
+- No consistent offset - each move has different animation startup
+- Full startup data likely stored elsewhere (animation data or jpower extra section 0x80-0x12F)
+
+Note: User measurements done via video recording, may have 2-3 frame error margin.
+
+
+NDS TECHNICAL INFO
+------------------
+
+Framerate: ~59.8261 Hz (effectively 60fps)
+Most games target 60fps, fighting games like JUS likely run at 60fps.
+
+
+EMULATOR DEBUGGING OPTIONS
+--------------------------
+
+1. DeSmuME - Has Lua scripting
+   - Tools > Lua Scripting > New Lua Script Window
+   - Requires lua5.1.dll in emulator folder
+   - Can draw hitboxes with gui.drawbox()
+
+2. BizHawk with melonDS core - Also has Lua scripting
+   - More accurate emulation
+   - Tools > Lua Console > Script > Open Script
+   - Frame advance for precise testing
+
+No built-in hitbox visualization exists. Would require custom Lua script that:
+1. Finds active hitbox data in RAM (not same as ROM collision definitions)
+2. Reads position/size each frame
+3. Draws boxes with gui.drawbox()
+
+
+FINDING ACTIVE HITBOXES IN RAM (Future Research)
+------------------------------------------------
+
+Approaches to locate active hitbox memory:
+1. RAM search - Watch values that change when hitboxes appear/disappear
+2. Trace from ROM data - Breakpoint on collision data reads, follow to RAM usage
+3. Pattern scan - Look for collision record structure (20 bytes) in RAM
+4. Disassembly - Find collision detection code, see what memory it accesses
+
+The ROM stores static hitbox definitions. Game instantiates them in RAM during
+attacks, likely with position/state info added.
+
+
+REFERENCES
+----------
+- DeSmuME forums: https://forums.desmume.org/viewtopic.php?id=7
+- Universal DS Lua Script: https://github.com/DevreeseJorik/universal-ds-lua-script
+- Collision file format: docs/Combat-Specification.md

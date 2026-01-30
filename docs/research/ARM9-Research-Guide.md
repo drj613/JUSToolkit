@@ -625,6 +625,9 @@ This field indexes into a passive ability table:
 - Battle komas (type=2): Values 0-55 (47 unique values)
 - Support komas (type=1): Values 92-192 (different ability set)
 
+**NOTE:** Passives are per-form, not per-koma. All koma sizes of the same form
+(e.g., 4-koma Goku and 5-koma Goku) share the same passive ability.
+
 ### Passive Abilities (Known Types)
 
 From web research, battle passives include:

@@ -21,12 +21,11 @@ Deep dive analysis mapping Goku through all data files to understand linkages.
 
 ### Innate Passive
 
-| Koma Size | Passive Name | Effect                     |
-| --------- | ------------ | -------------------------- |
-| 4-koma    | TBD          | Needs in-game verification |
-| 5-koma    | TBD          | Needs in-game verification |
+| Form       | Passive Name | Effect                     |
+| ---------- | ------------ | -------------------------- |
+| Base Goku  | TBD          | Needs in-game verification |
 
-**Note:** Passives are stored in koma.bin `unk7` field. Each koma size may have a different passive. Goku's passive index needs verification.
+**Note:** Passives are per-form (same for all koma sizes of that form). Stored in koma.bin PassiveIndex field.
 
 ### Helper Boosts (Ally Boosts)
 

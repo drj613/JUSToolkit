@@ -16,6 +16,26 @@ JUS is a platform fighter with:
 
 ---
 
+## Screen Layout (NDS)
+
+The original game runs on Nintendo DS with two screens:
+
+| Screen | Purpose | Engine Equivalent |
+|--------|---------|-------------------|
+| Top (256×192) | Battle viewport | Main game view |
+| Bottom (256×192) | Player deck / touch UI | HUD / touch controls |
+
+**Key points for engine recreation:**
+- **No split-screen**: Each player has their own device with full viewport
+- **Local multiplayer**: Two separate NDS devices, independent cameras
+- **Camera per player**: Each player's camera follows their character
+- **Off-screen indicators**: Arrows point to opponents outside viewport
+
+The bottom screen deck UI is specific to NDS touch input but the concept
+(quick-access to supports and tag-outs) could translate to button UI.
+
+---
+
 ## 1. Movement System
 
 ### Ground Movement

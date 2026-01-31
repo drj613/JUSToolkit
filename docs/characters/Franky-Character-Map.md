@@ -57,7 +57,7 @@ Deep dive analysis mapping Franky through all data files to understand linkages.
 
 | Move   | Damage | Type       | Notes                           |
 | ------ | ------ | ---------- | ------------------------------- |
-| B      |        | Impact     | Mechanical punch                |
+| B      | **8**  | Impact     | Mechanical punch (verified 2026-01-30) |
 | fwd B  |        | Impact     | Mechanical attack               |
 | up B   |        | Impact     | Mechanical attack               |
 | down B |        | Impact     | Mechanical attack               |

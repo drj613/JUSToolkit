@@ -48,7 +48,7 @@ Deep dive analysis mapping Robin through all data files to understand linkages.
 
 | Move   | Damage | Type       | Notes                              |
 | ------ | ------ | ---------- | ---------------------------------- |
-| B      |        | Impact     | Arm spawn attack                   |
+| B      | **8**  | Impact     | Arm spawn attack (verified 2026-01-30) |
 | fwd B  |        | Impact     | Arm spawn attack                   |
 | up B   |        | Impact     | Arm spawn attack                   |
 | down B |        | Impact     | Arm spawn attack                   |

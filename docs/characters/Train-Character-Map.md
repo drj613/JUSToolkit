@@ -49,7 +49,7 @@ This means Train, Ichigo, and Bankai all pull damage values from the same jpower
 
 | Move   | Damage | Type       | Notes                            |
 | ------ | ------ | ---------- | -------------------------------- |
-| B      |        | Punch/Kick | Hades gun - blunt attacks?       |
+| B      | **7**  | Punch/Kick | Hades gun (verified 2026-01-30)  |
 | fwd B  |        | Energy?    | Gunshots - projectile            |
 | up B   |        | Energy?    |                                  |
 | down B |        | Punch/Kick |                                  |

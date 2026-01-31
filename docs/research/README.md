@@ -25,20 +25,20 @@ Run `bd ready` to see available work, or `bd show JUS-p5i` for current focus.
 
 ## Document Map
 
-| Document                        | Purpose                           | Read When                  |
-| ------------------------------- | --------------------------------- | -------------------------- |
-| **This README**                 | Entrypoint, navigation            | Start of every session     |
-| **`RE-Session-Playbook.md`**    | **Human+LLM strategies**          | **Planning research approach** |
-| `Combat-Mechanics-Reference.md` | Canonical game behavior reference | Understanding mechanics    |
-| `Combat-Mechanics.md`           | Raw research findings             | Deep diving into specifics |
-| `Character-State-Struct.md`     | In-battle character RAM structure | GDB debugging, hitstun research |
-| `chr_b-Complete-Mapping.md`     | Character file format             | Working with chr_b.bin     |
-| `jpower-Mapping.md`             | Damage/move data format           | Working with jpower.bin    |
-| `jpower-Block-Pattern-Analysis.md` | Block patterns and unknowns    | jpower deep dive           |
-| `Cheat-Code-Analysis.md`        | Known memory addresses            | GDB debugging              |
-| `ARM9-Research-Guide.md`        | ARM9 binary analysis              | Low-level research         |
-| `Research-Status.md`            | Historical status tracking        | Understanding progress     |
-| `Passives-Reference.md`         | Character passive abilities       | Passive system work        |
+| Document                           | Purpose                           | Read When                       |
+| ---------------------------------- | --------------------------------- | ------------------------------- |
+| **This README**                    | Entrypoint, navigation            | Start of every session          |
+| **`RE-Session-Playbook.md`**       | **Human+LLM strategies**          | **Planning research approach**  |
+| `Combat-Mechanics-Reference.md`    | Canonical game behavior reference | Understanding mechanics         |
+| `Combat-Mechanics.md`              | Raw research findings             | Deep diving into specifics      |
+| `Character-State-Struct.md`        | In-battle character RAM structure | GDB debugging, hitstun research |
+| `chr_b-Complete-Mapping.md`        | Character file format             | Working with chr_b.bin          |
+| `jpower-Mapping.md`                | Damage/move data format           | Working with jpower.bin         |
+| `jpower-Block-Pattern-Analysis.md` | Block patterns and unknowns       | jpower deep dive                |
+| `Cheat-Code-Analysis.md`           | Known memory addresses            | GDB debugging                   |
+| `ARM9-Research-Guide.md`           | ARM9 binary analysis              | Low-level research              |
+| `Research-Status.md`               | Historical status tracking        | Understanding progress          |
+| `Passives-Reference.md`            | Character passive abilities       | Passive system work             |
 
 ### Design Documents (in `../design/`)
 
@@ -78,16 +78,11 @@ actual_damage = floor(jsoul_damage × nature_multiplier)
 - `tier` = koma size (2=standard, 1=weak form, 3=8-koma)
 - Nature advantage: 1.5x multiplier
 
-**Verified across 12+ characters:**
-| Character | tier | B Damage | damage1 |
-|-----------|------|----------|---------|
-| Nami | 2 | 6 | 30 |
-| Train | 2 | 7 | 35 |
-| Goku, Luffy, Robin, Franky, Naruto | 2 | 8 | 40 |
-| Buu | 2 | 9 | 45 |
-| Bankai Ichigo | 1 | 9 | 50 |
-| Ichigo | 2 | 10 | 50 |
-| Caramelman | 3 | 13 | 60 |
+**Verified across 12+ characters:** | Character | tier | B Damage | damage1 |
+|-----------|------|----------|---------| | Nami | 2 | 6 | 30 | | Train | 2 | 7
+| 35 | | Goku, Luffy, Robin, Franky, Naruto | 2 | 8 | 40 | | Buu | 2 | 9 | 45 |
+| Bankai Ichigo | 1 | 9 | 50 | | Ichigo | 2 | 10 | 50 | | Caramelman | 3 | 13 |
+60 |
 
 **REMAINING UNKNOWN:** How collision files SELECT which jpower entry to use
 

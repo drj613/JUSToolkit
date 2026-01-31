@@ -1,7 +1,7 @@
 # JUS Combat Mechanics Reference
 
-Documentation of Jump Ultimate Stars combat mechanics as implemented in the original game.
-Research-driven, with clear markers for unknowns and assumptions.
+Documentation of Jump Ultimate Stars combat mechanics as implemented in the
+original game. Research-driven, with clear markers for unknowns and assumptions.
 
 **Status:** Draft - actively being refined through research
 
@@ -11,39 +11,39 @@ Research-driven, with clear markers for unknowns and assumptions.
 
 ### Grounded States
 
-| State | Description | Can Act? | Transitions To |
-|-------|-------------|----------|----------------|
-| Idle | Standing neutral | Yes | Walk, Dash, Jump, Attack, Block |
-| Walking | Moving left/right | Yes | Idle, Dash, Jump, Attack, Block |
-| Crouching | Holding down | Yes | Idle, Attack, Block |
-| Blocking | Holding down (guard) | Limited | Idle (release), Guardstun, Guardbreak |
-| Attacking | In attack animation | No | Recovery, Hitstun (if hit) |
-| Recovery | Post-attack cooldown | No | Idle |
+| State     | Description          | Can Act? | Transitions To                        |
+| --------- | -------------------- | -------- | ------------------------------------- |
+| Idle      | Standing neutral     | Yes      | Walk, Dash, Jump, Attack, Block       |
+| Walking   | Moving left/right    | Yes      | Idle, Dash, Jump, Attack, Block       |
+| Crouching | Holding down         | Yes      | Idle, Attack, Block                   |
+| Blocking  | Holding down (guard) | Limited  | Idle (release), Guardstun, Guardbreak |
+| Attacking | In attack animation  | No       | Recovery, Hitstun (if hit)            |
+| Recovery  | Post-attack cooldown | No       | Idle                                  |
 
 ### Airborne States
 
-| State | Description | Can Act? | Transitions To |
-|-------|-------------|----------|----------------|
-| Jumping | Rising/falling | Yes | Attack, Air Dash, Ledge Grab |
-| Air Attack | Attacking in air | No | Air Recovery, Hitstun |
-| Air Dash | Dashing in air | No | Jumping |
+| State      | Description      | Can Act? | Transitions To               |
+| ---------- | ---------------- | -------- | ---------------------------- |
+| Jumping    | Rising/falling   | Yes      | Attack, Air Dash, Ledge Grab |
+| Air Attack | Attacking in air | No       | Air Recovery, Hitstun        |
+| Air Dash   | Dashing in air   | No       | Jumping                      |
 
 ### Hit States
 
-| State | Vulnerable? | Duration | Triggered By | Visual |
-|-------|-------------|----------|--------------|--------|
-| Light Hitstun | Yes | Very short (~10-15f?) | Jabs, light attacks | Flinch animation |
-| Medium Hitstun | Yes | Moderate (~20-30f?) | Launchers, heavy attacks | Airborne tumble |
-| Surprise Hitstun | Yes | Short? | "Gag" attacks | Shocked expression |
-| Heavy Hitstun (Spin) | **No** | Until lands or times out | Specific moves, damage cap? | Spinning in air |
-| Knockdown | **No** | Variable | Ground spike, damage cap, landing in medium hitstun | Laying on ground |
-| Wakeup | Varies | Fixed | End of knockdown | Getting up animation |
+| State                | Vulnerable? | Duration                 | Triggered By                                        | Visual               |
+| -------------------- | ----------- | ------------------------ | --------------------------------------------------- | -------------------- |
+| Light Hitstun        | Yes         | Very short (~10-15f?)    | Jabs, light attacks                                 | Flinch animation     |
+| Medium Hitstun       | Yes         | Moderate (~20-30f?)      | Launchers, heavy attacks                            | Airborne tumble      |
+| Surprise Hitstun     | Yes         | Short?                   | "Gag" attacks                                       | Shocked expression   |
+| Heavy Hitstun (Spin) | **No**      | Until lands or times out | Specific moves, damage cap?                         | Spinning in air      |
+| Knockdown            | **No**      | Variable                 | Ground spike, damage cap, landing in medium hitstun | Laying on ground     |
+| Wakeup               | Varies      | Fixed                    | End of knockdown                                    | Getting up animation |
 
 ### Guardstun States
 
-| State | Description | Duration |
-|-------|-------------|----------|
-| Guardstun | Blocking an attack | Based on attack |
+| State      | Description           | Duration               |
+| ---------- | --------------------- | ---------------------- |
+| Guardstun  | Blocking an attack    | Based on attack        |
 | Guardbreak | Guard health depleted | Very long (punishable) |
 
 ---
@@ -52,15 +52,16 @@ Research-driven, with clear markers for unknowns and assumptions.
 
 ### Ground Movement
 
-| Action | Input | Notes |
-|--------|-------|-------|
-| Walk | Hold direction | Speed varies by character (statC threshold system) |
-| Dash | Double-tap direction | Type varies: Standard dash vs Flash dash |
-| Crouch | Hold down | Used for blocking, some attacks |
+| Action | Input                | Notes                                              |
+| ------ | -------------------- | -------------------------------------------------- |
+| Walk   | Hold direction       | Speed varies by character (statC threshold system) |
+| Dash   | Double-tap direction | Type varies: Standard dash vs Flash dash           |
+| Crouch | Hold down            | Used for blocking, some attacks                    |
 
 #### Walk Speed Tiers
 
 Based on chr_b.bin `statC` field:
+
 - **Slow:** statC < ~100
 - **Normal/Fast:** statC >= ~100
 
@@ -75,22 +76,22 @@ Based on chr_b.bin `statC` field:
 
 ### Air Movement
 
-| Action | Input | Notes |
-|--------|-------|-------|
-| Jump | Press up/jump button | Height varies by character? |
-| Double Jump | Jump again in air | Standard for all? |
-| Triple Jump | Jump third time | Requires helper passive |
-| Wall Jump | Jump while touching wall | Requires helper passive |
-| Air Dash | Double-tap direction in air | Requires helper passive OR innate |
-| Fast Fall | Hold down while falling | TBD if exists |
+| Action      | Input                       | Notes                             |
+| ----------- | --------------------------- | --------------------------------- |
+| Jump        | Press up/jump button        | Height varies by character?       |
+| Double Jump | Jump again in air           | Standard for all?                 |
+| Triple Jump | Jump third time             | Requires helper passive           |
+| Wall Jump   | Jump while touching wall    | Requires helper passive           |
+| Air Dash    | Double-tap direction in air | Requires helper passive OR innate |
+| Fast Fall   | Hold down while falling     | TBD if exists                     |
 
 ### Ledge Mechanics
 
-| Action | Input | Result |
-|--------|-------|--------|
-| Ledge Grab | Automatic when falling near ledge | Hang from ledge |
-| Ledge Stand | Press up | Stand at edge |
-| Ledge Roll | Press forward | Roll onto stage |
+| Action      | Input                             | Result          |
+| ----------- | --------------------------------- | --------------- |
+| Ledge Grab  | Automatic when falling near ledge | Hang from ledge |
+| Ledge Stand | Press up                          | Stand at edge   |
+| Ledge Roll  | Press forward                     | Roll onto stage |
 
 ---
 
@@ -98,18 +99,19 @@ Based on chr_b.bin `statC` field:
 
 ### Input Layout
 
-| Input | Grounded | Airborne |
-|-------|----------|----------|
-| Y | Light attack | Air light |
-| B | Heavy attack | Air heavy |
-| X | Special A | Air special |
-| Up + X | Special B | - |
-| Down + Y | **Guard Break** (universal) | - |
+| Input    | Grounded                     | Airborne     |
+| -------- | ---------------------------- | ------------ |
+| Y        | Light attack                 | Air light    |
+| B        | Heavy attack                 | Air heavy    |
+| X        | Special A                    | Air special  |
+| Up + X   | Special B                    | -            |
+| Down + Y | **Guard Break** (universal)  | -            |
 | Down + B | **Force Switch** (universal) | Spike attack |
 
 ### Attack Properties
 
 Each attack has:
+
 - **Startup frames:** Before hitbox is active
 - **Active frames:** Hitbox is out
 - **Recovery frames:** After hitbox, before can act
@@ -120,6 +122,7 @@ Each attack has:
 ### Move Priority System
 
 Attacks and projectiles have implicit priority tiers:
+
 - Higher priority moves beat/cancel lower priority
 - Same priority = both lose (clash)
 
@@ -141,22 +144,18 @@ actual_damage = floor(jsoul_damage × nature_multiplier)
 **Key insight:** Uses `damage1` field only, NOT total damage!
 
 Where:
+
 - `damage1` = First damage component from jpower entry
 - `tier` = Character tier (1=weak form, 2=standard, 3=8-koma)
 - `nature_multiplier` = 1.0 (neutral/disadvantage) or 1.5 (advantage)
 
-**Verified B move damages:**
-| Character | tier | B Damage | damage1 | Formula Check |
-|-----------|------|----------|---------|---------------|
-| Nami | 2 | 6 | 30 | 30/5+0=6 ✓ |
-| Train | 2 | 7 | 35 | 35/5+0=7 ✓ |
-| Goku | 2 | 8 | 40 | 40/5+0=8 ✓ |
-| Luffy | 2 | 8 | 40 | 40/5+0=8 ✓ |
-| Naruto | 2 | 8 | 40 | 40/5+0=8 ✓ |
-| Buu | 2 | 9 | 45 | 45/5+0=9 ✓ |
-| Bankai Ichigo | 1 | 9 | 50 | 50/5-1=9 ✓ |
-| Ichigo | 2 | 10 | 50 | 50/5+0=10 ✓ |
-| Caramelman | 3 | 13 | 60 | 60/5+1=13 ✓ |
+**Verified B move damages:** | Character | tier | B Damage | damage1 | Formula
+Check | |-----------|------|----------|---------|---------------| | Nami | 2 | 6
+| 30 | 30/5+0=6 ✓ | | Train | 2 | 7 | 35 | 35/5+0=7 ✓ | | Goku | 2 | 8 | 40 |
+40/5+0=8 ✓ | | Luffy | 2 | 8 | 40 | 40/5+0=8 ✓ | | Naruto | 2 | 8 | 40 |
+40/5+0=8 ✓ | | Buu | 2 | 9 | 45 | 45/5+0=9 ✓ | | Bankai Ichigo | 1 | 9 | 50 |
+50/5-1=9 ✓ | | Ichigo | 2 | 10 | 50 | 50/5+0=10 ✓ | | Caramelman | 3 | 13 | 60 |
+60/5+1=13 ✓ |
 
 **REMAINING UNKNOWN:** How collision files select which jpower entry to use
 
@@ -164,15 +163,16 @@ Where:
 
 When attacker's nature beats defender's nature: **1.5x damage**
 
-| Attacker | Beats |
-|----------|-------|
-| Power (Red) | Knowledge (Green) |
+| Attacker          | Beats             |
+| ----------------- | ----------------- |
+| Power (Red)       | Knowledge (Green) |
 | Knowledge (Green) | Laughter (Yellow) |
-| Laughter (Yellow) | Power (Red) |
+| Laughter (Yellow) | Power (Red)       |
 
 ### Damage Cap / Combo Breaker
 
 Hidden "damage since last knockdown" gauge:
+
 - Accumulates damage taken while not in knockdown/heavy hitstun
 - When threshold reached → forced knockdown state
 - Prevents infinite combos
@@ -201,6 +201,7 @@ Hidden "damage since last knockdown" gauge:
 ### Guard Break
 
 Two ways to break guard:
+
 1. **Deplete guard health:** Any attack that reduces it to 0
 2. **Guard break attack:** Down + Y (universal), some specials
 
@@ -208,13 +209,15 @@ Two ways to break guard:
 
 ### Tap-Block Behavior
 
-Rapidly tapping guard reportedly refreshes guard health, creating an exploitable defensive technique.
+Rapidly tapping guard reportedly refreshes guard health, creating an exploitable
+defensive technique.
 
 > **UNKNOWN:** Exact mechanics of tap-block refresh.
 
 ### Auto-Guard (Helper Passive)
 
 Some helper komas provide auto-guard ability:
+
 - Automatically blocks incoming attacks
 - Costs SP per block
 - See `docs/research/Passives-Reference.md` for which helpers provide this
@@ -250,6 +253,7 @@ Some helper komas provide auto-guard ability:
 ### SP Gain
 
 Multiple ways to gain SP:
+
 - Landing attacks
 - Taking damage
 - Breaking item boxes
@@ -274,6 +278,7 @@ Multiple ways to gain SP:
 ### Game Modes
 
 JUS has three game modes:
+
 - **Survival:** Last player with living characters wins
 - **Point:** Score-based (TBD)
 - **Star:** Objective-based (TBD)
@@ -302,6 +307,7 @@ JUS has three game modes:
 - Same passive for all koma sizes of that form
 
 **Categories:**
+
 - SP gain conditions (attacking, blocking, low health, KOs, etc.)
 - Damage reduction (vs punches, specials, blades)
 - Status immunities
@@ -316,6 +322,7 @@ JUS has three game modes:
 - Exception: "Increase Max SP" is deck-wide
 
 **Categories:** Similar to battle passives plus:
+
 - Increase max HP
 - Increase guard strength
 - Auto-guard (uses SP)
@@ -353,7 +360,7 @@ See `docs/research/Passives-Reference.md` for complete list.
 
 ## Changelog
 
-| Date | Changes |
-|------|---------|
-| 2026-01-30 | Initial draft with all known mechanics |
+| Date       | Changes                                                   |
+| ---------- | --------------------------------------------------------- |
+| 2026-01-30 | Initial draft with all known mechanics                    |
 | 2026-01-30 | Refocused as JUS reference doc (removed design decisions) |

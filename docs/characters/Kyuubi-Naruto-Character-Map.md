@@ -29,7 +29,7 @@ Deep dive analysis mapping Kyuubi Naruto through all data files to understand li
 
 | Move   | Damage | Type       | Notes                 |
 | ------ | ------ | ---------- | --------------------- |
-| B      |        | Punch/Kick | Different from base   |
+| B      | **8**  | Punch/Kick | tier=1 verified (d1=45, 45/5-1=8) |
 | fwd B  |        | Punch/Kick |                       |
 | up B   |        | Punch/Kick |                       |
 | down B |        | Punch/Kick |                       |

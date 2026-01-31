@@ -29,7 +29,7 @@ Deep dive analysis mapping Caramelman through all data files to understand linka
 
 | Move   | Damage | Type       | Notes                 |
 | ------ | ------ | ---------- | --------------------- |
-| B      |        |            | Needs testing         |
+| B      | **13** | Punch/Kick | tier=3 verified (d1=60, 60/5+1=13) |
 | fwd B  |        |            | Needs testing         |
 | up B   |        |            | Needs testing         |
 | down B |        |            | Needs testing         |

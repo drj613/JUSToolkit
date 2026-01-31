@@ -29,7 +29,7 @@ Deep dive analysis mapping Luffy through all data files to understand linkages.
 
 | Move   | Damage | Type       | Notes                        |
 | ------ | ------ | ---------- | ---------------------------- |
-| B      |        | Punch/Kick | Stretching attack            |
+| B      | **8**  | Punch/Kick | Stretching attack (verified 2026-01-30) |
 | fwd B  |        | Punch/Kick | Gomu Gomu no Pistol          |
 | up B   |        | Punch/Kick |                              |
 | down B |        | Punch/Kick |                              |

@@ -57,7 +57,7 @@ Deep dive analysis mapping Nami through all data files to understand linkages.
 
 | Move   | Damage | Type        | Notes                           |
 | ------ | ------ | ----------- | ------------------------------- |
-| B      |        | Impact      | Staff attack                    |
+| B      | **6**  | Impact      | Staff attack (verified 2026-01-30) |
 | fwd B  |        | Impact      | Staff attack                    |
 | up B   |        | Impact      | Upward staff                    |
 | down B |        | Impact      | Downward staff                  |

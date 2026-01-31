@@ -29,7 +29,7 @@ Deep dive analysis mapping Naruto Uzumaki through all data files to understand l
 
 | Move   | Damage | Type       | Notes                 |
 | ------ | ------ | ---------- | --------------------- |
-| B      |        | Punch/Kick | Shadow clone attacks  |
+| B      | **8**  | Punch/Kick | Shadow clone attacks (verified 2026-01-30) |
 | fwd B  |        | Punch/Kick |                       |
 | up B   |        | Punch/Kick |                       |
 | down B |        | Punch/Kick |                       |

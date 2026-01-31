@@ -69,7 +69,7 @@ will help solve the entry selection mystery. This is **HIGH PRIORITY** research.
 
 | Move   | Damage | Type       | Notes                      |
 | ------ | ------ | ---------- | -------------------------- |
-| B      |        | Punch/Kick | Stretchy punches expected  |
+| B      | **9**  | Punch/Kick | Stretchy punches (verified 2026-01-30) |
 | fwd B  |        | Punch/Kick |                            |
 | up B   |        | Punch/Kick |                            |
 | down B |        | Punch/Kick |                            |
@@ -382,7 +382,7 @@ When testing Majin Buu, record all values and compare to Goku:
 
 | Move   | Goku Damage | Buu Damage | Same? | Notes |
 | ------ | ----------- | ---------- | ----- | ----- |
-| B      | 8           |            |       |       |
+| B      | 8           | **9**      | No    | Buu B=9 verified (d1=45) |
 | fwd B  | 7           |            |       |       |
 | up B   | 3+3         |            |       |       |
 | down B | 7           |            |       |       |

@@ -137,6 +137,18 @@ you play:
 The status trigger watches `positive_status` (0x88) and `negative_status` (0xA0) fields,
 which may encode hitstun states. Use `type` = `positive`, `negative`, or `both` (default).
 
+### Noise Filtering
+
+Before analyzing combat data, capture baseline "noise" to identify timer fields:
+
+| Command                                    | Description                              |
+| ------------------------------------------ | ---------------------------------------- |
+| `jus-baseline-noise <player> [count] [prefix]` | Capture idle state over time         |
+| `jus-find-timers <prefix>`                 | Identify always-changing fields (timers) |
+
+Fields that change during idle time are timers/counters - **not** physics data.
+After running `jus-find-timers`, these offsets are marked `[TIMER - ignore]` in diff output.
+
 ### Binary Dump Scripts
 
 For detailed analysis, use the standalone GDB scripts:
@@ -217,6 +229,25 @@ python scripts/analyze_deck_dump.py --diff /tmp/jus_dumps/state1/deck_0a1000.bin
 # Fields that changed are likely velocity X or position X
 ```
 
+### FIRST: Capture Baseline Noise (Recommended!)
+
+Before analyzing combat data, identify timer fields that always change:
+
+```gdb
+# Start battle, have both characters STAND STILL
+(gdb) jus-baseline-noise 1 5 idle
+# Takes 5 snapshots: idle_0, idle_1, ..., idle_4
+
+# Analyze which fields change during idle time
+(gdb) jus-find-timers idle
+# Output shows always-changing fields (these are timers, not physics)
+# Example:
+#   +0012: 1234 -> 1235 -> 1236 ...  (frame counter)
+#   +0054: 100 -> 99 -> 98 ...       (animation timer)
+
+# Now these fields will be marked [TIMER - ignore] in future diffs!
+```
+
 ### Finding Hitstun/Knockback Fields
 
 ```gdb
@@ -231,6 +262,7 @@ python scripts/analyze_deck_dump.py --diff /tmp/jus_dumps/state1/deck_0a1000.bin
 # Look for:
 #   - Velocity fields (large signed values ~100-500)
 #   - Hitstun timer (countdown values 5-15 for light, 10-30 for heavy)
+# Timer fields from baseline are marked [TIMER - ignore]
 ```
 
 ### Comparing Weight Classes

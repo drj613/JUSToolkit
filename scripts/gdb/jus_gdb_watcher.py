@@ -731,6 +731,9 @@ class JUSCharDiff(gdb.Command):
         changed_offsets = set(d[0] for d in diffs)
 
         # Analyze as 16-bit words
+        timer_count = 0
+        physics_count = 0
+
         for i in range(0, min(len(data1), len(data2)) - 1, 2):
             word1 = struct.unpack('<H', data1[i:i+2])[0]
             word2 = struct.unpack('<H', data2[i:i+2])[0]
@@ -747,14 +750,26 @@ class JUSCharDiff(gdb.Command):
                         known = f" [{name}]"
                         break
 
+                # Check if known timer (from baseline analysis)
+                is_timer = i in _known_timer_offsets
+
                 # Highlight likely velocity/position fields
                 hint = ""
-                if abs(delta) > 100 and abs(delta) < 10000:
+                if is_timer:
+                    hint = " [TIMER - ignore]"
+                    timer_count += 1
+                elif abs(delta) > 100 and abs(delta) < 10000:
                     hint = " <-- possible velocity/position?"
+                    physics_count += 1
                 elif i < 0x40:
                     hint = " <-- physics region"
+                    physics_count += 1
 
                 print(f"  +{i:04X}: {sword1:6d} -> {sword2:6d} (delta: {delta:+6d}){known}{hint}")
+
+        if timer_count > 0:
+            print()
+            print(f"Note: {timer_count} field(s) marked as timers (run jus-baseline-noise first)")
 
         # Summary of regions that changed
         print()
@@ -1286,6 +1301,182 @@ class JUSAutoSnapshotOnDamageCode(gdb.Command):
         print("Use 'continue' to resume. Stop with: jus-auto-snapshot-off")
 
 
+class JUSBaselineNoise(gdb.Command):
+    """Capture timer/noise fields by snapshotting during idle time.
+
+    Usage: jus-baseline-noise <player> [count] [prefix]
+
+    Takes multiple snapshots while the game runs with NO input.
+    Fields that change between these snapshots are timers/counters
+    that should be IGNORED when analyzing physics/combat data.
+
+    Example workflow:
+    1. Get into battle, have both characters stand still
+    2. jus-baseline-noise 1 5 idle
+    3. Creates: idle_0, idle_1, idle_2, idle_3, idle_4
+    4. jus-find-timers idle
+    5. Shows fields that changed (these are noise, not physics)
+    """
+
+    def __init__(self):
+        super().__init__("jus-baseline-noise", gdb.COMMAND_USER)
+
+    def invoke(self, arg, from_tty):
+        args = arg.split()
+        if not args:
+            print("Usage: jus-baseline-noise <player 1-4> [count] [prefix]")
+            print()
+            print("Takes snapshots during idle time to identify timer fields.")
+            print("Fields that change with no input are noise to filter out.")
+            return
+
+        try:
+            player = int(args[0])
+        except ValueError:
+            print("Player must be a number 1-4")
+            return
+
+        count = int(args[1]) if len(args) > 1 else 5
+        prefix = args[2] if len(args) > 2 else "baseline"
+
+        if player < 1 or player > 4:
+            print("Player must be 1-4")
+            return
+
+        ptr_addr = ADDRESSES[f'player{player}_state_ptr']
+
+        print(f"=== Baseline Noise Capture ===")
+        print(f"Taking {count} snapshots with NO input")
+        print(f"Player: {player}, Prefix: {prefix}")
+        print()
+        print("Make sure both characters are STANDING STILL.")
+        print("Press Enter to start...")
+
+        # Note: In GDB context, we can't really wait for input
+        # The user will need to ensure characters are idle before running
+
+        for i in range(count):
+            ptr = read_dword(ptr_addr)
+            if ptr and ptr >= 0x02000000:
+                data = read_bytes(ptr, 0x120)
+                if data:
+                    name = f"{prefix}_{i}"
+                    _char_snapshots[name] = {
+                        'data': data,
+                        'ptr': ptr,
+                        'player': player,
+                        'baseline': True,
+                        'index': i,
+                    }
+                    print(f"  {name}: captured")
+
+            if i < count - 1:
+                # Step some instructions to let time pass
+                gdb.execute("stepi 5000", to_string=True)
+
+        print()
+        print(f"Done! Use 'jus-find-timers {prefix}' to identify noise fields.")
+
+
+class JUSFindTimers(gdb.Command):
+    """Analyze baseline snapshots to find timer/counter fields.
+
+    Usage: jus-find-timers <prefix>
+
+    Compares snapshots with the given prefix to find fields that
+    change over time even with no input. These are timers/counters
+    that should be IGNORED in physics analysis.
+    """
+
+    def __init__(self):
+        super().__init__("jus-find-timers", gdb.COMMAND_USER)
+
+    def invoke(self, arg, from_tty):
+        if not arg:
+            print("Usage: jus-find-timers <prefix>")
+            print("Example: jus-find-timers baseline")
+            return
+
+        prefix = arg.strip()
+
+        # Find all snapshots with this prefix
+        matching = [(k, v) for k, v in _char_snapshots.items()
+                    if k.startswith(prefix + "_") and v.get('baseline')]
+
+        if len(matching) < 2:
+            print(f"Need at least 2 baseline snapshots with prefix '{prefix}'")
+            print(f"Found: {[k for k, v in matching]}")
+            return
+
+        # Sort by index
+        matching.sort(key=lambda x: x[1].get('index', 0))
+
+        print(f"=== Timer/Noise Analysis: {prefix} ===")
+        print(f"Comparing {len(matching)} baseline snapshots")
+        print()
+
+        # Track which offsets change between ANY pair of snapshots
+        always_changing = set()
+        sometimes_changing = set()
+
+        for i in range(len(matching) - 1):
+            name1, snap1 = matching[i]
+            name2, snap2 = matching[i + 1]
+            data1, data2 = snap1['data'], snap2['data']
+
+            for offset in range(0, min(len(data1), len(data2)) - 1, 2):
+                word1 = struct.unpack('<H', data1[offset:offset+2])[0]
+                word2 = struct.unpack('<H', data2[offset:offset+2])[0]
+
+                if word1 != word2:
+                    if i == 0:
+                        always_changing.add(offset)
+                    elif offset in always_changing:
+                        pass  # Still in always_changing
+                    else:
+                        sometimes_changing.add(offset)
+                else:
+                    if offset in always_changing:
+                        always_changing.remove(offset)
+                        sometimes_changing.add(offset)
+
+        print("=== ALWAYS CHANGING (definite timers - ignore these) ===")
+        if always_changing:
+            for offset in sorted(always_changing):
+                # Show sample values
+                vals = []
+                for name, snap in matching[:3]:
+                    word = struct.unpack('<H', snap['data'][offset:offset+2])[0]
+                    vals.append(str(word))
+                print(f"  +{offset:04X}: {' -> '.join(vals)} ...")
+        else:
+            print("  (none found - good, less noise!)")
+
+        print()
+        print("=== SOMETIMES CHANGING (may be timers or state) ===")
+        if sometimes_changing:
+            for offset in sorted(sometimes_changing):
+                vals = []
+                for name, snap in matching[:3]:
+                    word = struct.unpack('<H', snap['data'][offset:offset+2])[0]
+                    vals.append(str(word))
+                print(f"  +{offset:04X}: {' -> '.join(vals)} ...")
+        else:
+            print("  (none found)")
+
+        # Store the timer offsets for filtering
+        global _known_timer_offsets
+        _known_timer_offsets = always_changing | sometimes_changing
+
+        print()
+        print(f"Total timer/noise offsets identified: {len(_known_timer_offsets)}")
+        print("These will be highlighted in future jus-char-diff output.")
+
+
+# Global set to track known timer offsets
+_known_timer_offsets = set()
+
+
 class JUSPeriodicSnapshot(gdb.Command):
     """Take a burst of snapshots with brief continues between.
 
@@ -1414,6 +1605,11 @@ def init():
     JUSAutoSnapshotOnState()
     JUSAutoSnapshotOnStatus()
     JUSAutoSnapshotOnDamageCode()
+
+    # Noise filtering
+    JUSBaselineNoise()
+    JUSFindTimers()
+
     JUSPeriodicSnapshot()
 
     print("=" * 50)
@@ -1446,6 +1642,10 @@ def init():
     print("  jus-auto-snapshot-on-status <player> [prefix]   - Capture on status change")
     print("  jus-burst-snapshot <count> <prefix> [player]    - Rapid-fire snapshots")
     print("  jus-auto-snapshot-off                           - Disable triggers")
+    print()
+    print("NOISE FILTERING (run first to identify timer fields):")
+    print("  jus-baseline-noise <player> [count] [prefix]    - Capture idle state")
+    print("  jus-find-timers <prefix>                        - Find always-changing fields")
     print()
     print("Tracing:")
     print("  jus-trace <addr> [on|off]  - Log function calls")

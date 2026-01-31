@@ -133,22 +133,77 @@ Convert player-facing descriptions into testable technical hypotheses.
 
 ---
 
+### Strategy 7: Hex-Theorize / Human-Validate Loop (CORE PATTERN)
+
+**When to use:** This is the primary workflow for discovering game mechanics
+
+**Why it works:**
+- LLMs excel at pattern recognition across large hex/data dumps
+- Humans excel at precise in-game observation and input
+- Rapid iteration between theory and validation
+
+**The Loop:**
+
+```
+┌─────────────────────────────────────────────────────────┐
+│  1. LLM analyzes hex data, proposes hypothesis          │
+│     "damage1 field at offset 0x04 divided by 5 = damage"│
+├─────────────────────────────────────────────────────────┤
+│  2. LLM generates specific, falsifiable predictions     │
+│     "Nami B should deal 6 damage (d1=30, 30/5=6)"       │
+├─────────────────────────────────────────────────────────┤
+│  3. Human tests prediction in-game                      │
+│     → Records actual value: Nami B = 6 ✓                │
+├─────────────────────────────────────────────────────────┤
+│  4. Results fed back to LLM                             │
+│     → If match: hypothesis gains confidence             │
+│     → If mismatch: refine hypothesis, repeat            │
+└─────────────────────────────────────────────────────────┘
+```
+
+**Success example (JUS damage formula):**
+1. LLM analyzed jpower.bin, hypothesized `total/5` formula
+2. Goku B=8 didn't match (total=50 → should be 10)
+3. Human confirmed Buu B=9 (same block as Goku)
+4. LLM refined: formula uses `damage1` only, not total
+5. Human validated across 12 characters → CONFIRMED
+
+**Keys to success:**
+- Make predictions **specific and falsifiable**
+- Test **diverse cases** (different series, tiers, move types)
+- Document **both matches AND mismatches**
+- Update docs immediately when validated
+
+**LLM responsibilities:**
+- Analyze data patterns
+- Generate testable predictions
+- Refine hypotheses based on results
+- Update documentation
+
+**Human responsibilities:**
+- Run the game
+- Execute precise test cases
+- Report exact values observed
+- Identify edge cases to test
+
+---
+
 ## Topic-Specific Research Guides
 
 ### Researching Damage/JSoul
 
 **Known:**
 - JSoul = health terminology
-- Formula: `floor(jpower_total / 5) + (tier - 2)` (tentative)
+- Formula: `floor(jpower.damage1 / 5) + (tier - 2)` (CONFIRMED)
 - Nature advantage: 1.5x multiplier
 - jpower.bin contains raw damage values
 
 **Unknown:**
-- Whether divisor varies
-- Rounding behavior
+- How collision files select which jpower entry to use (damageFlags mechanism)
 - Special move (K) formula differences
+- Multi-hit move calculation (nextId chains)
 
-**Recommended approach:** Strategy 6 (Comparative Testing) + Strategy 4 (jpower analysis)
+**Recommended approach:** Strategy 7 (Hex-Theorize/Human-Validate) + Strategy 4 (jpower analysis)
 
 ---
 

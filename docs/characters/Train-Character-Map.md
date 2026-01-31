@@ -48,18 +48,18 @@ template library, but have completely different movesets.
 
 ### Koma Sizes (CONFIRMED)
 
-- **Train Heartnet:** (needs verification) koma
+- **Train Heartnet:** 1, 2, 3, 4, 5, 5 (alt)
 
 ### Move List (CONFIRMED)
 
 | Move   | Damage | Type       | Notes                     |
 | ------ | ------ | ---------- | ------------------------- |
 | B      | **7**  | Punch/Kick | Jab (verified 2026-01-30) |
-| fwd B  |        | Energy?    | Gunshots - projectile     |
-| up B   |        | Energy?    |                           |
+| fwd B  |        | Energy?    | Kick                      |
+| up B   |        | Energy?    | Backflip with upward kick |
 | down B |        | Punch/Kick |                           |
 | air B  |        | Energy?    |                           |
-| Y      |        | Energy?    | Railgun attacks?          |
+| Y      |        | Energy?    | Pistol-whip               |
 | fwd Y  |        | Energy     |                           |
 | up Y   |        | Energy     |                           |
 | down Y |        | Energy     |                           |

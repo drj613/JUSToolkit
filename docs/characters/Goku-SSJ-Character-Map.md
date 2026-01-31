@@ -126,7 +126,7 @@ Profile: Balanced (assumed same as Goku)
 **Damage Formula:**
 
 ```
-base_damage = (jpower_total / 5) + (tier - 2)  # Confirmed formula
+base_damage = (jpower_total / 5) + (tier - 2)  # Observed pattern
 ```
 
 - Goku uses ÷7 formula (different from Bleach ÷5)

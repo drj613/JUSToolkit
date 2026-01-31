@@ -55,18 +55,27 @@ Run `bd ready` to see available work, or `bd show JUS-p5i` for current focus.
 | **PassiveIndex** | Index into passive ability table (in koma.bin) |
 | **tier** | Character power level (1-3), affects damage |
 | **nature** | Rock-paper-scissors type (Power/Knowledge/Laughter) |
+| **JSoul** | Health/HP in this game (not "health" or "HP") |
 
 ---
 
-## Key Formulas (CONFIRMED)
+## Key Formulas
 
-### Damage Formula
+### Damage Formula (TENTATIVE)
 ```
-damage = floor(jpower_total / 5) + (tier - 2)
+jsoul_damage = floor(jpower_total / 5) + (tier - 2)
 ```
 - `jpower_total` = damage1 + damage2 + damage3 from jpower.bin
 - `tier` = character tier (1, 2, or 3)
 - Nature advantage: multiply by 1.5x
+
+**Testing coverage:**
+- Ichigo: Most thoroughly tested (full kit minus specials)
+- Goku: Extensive testing
+- Caramelman, Buu: Full kit damage numbers (minus specials)
+- Various: B move spot checks only
+
+**UNKNOWN:** Whether divisor varies by character/series
 
 ### Walk Speed
 ```

@@ -55,7 +55,7 @@ docs/
 **Pattern:**
 ```
 Epic: Combat System
-├── Task: Damage formula (CONFIRMED)
+├── Task: Damage formula (TENTATIVE - divisor 5 observed)
 ├── Task: Knockback formula (BLOCKED - needs weight location)
 ├── Task: Hitstun mechanics (IN_PROGRESS)
 └── Task: Guard system (OPEN)

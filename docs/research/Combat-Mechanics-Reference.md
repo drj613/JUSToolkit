@@ -127,17 +127,30 @@ Attacks and projectiles have implicit priority tiers:
 
 ---
 
-## 4. Damage Calculation
+## 4. Damage Calculation (JSoul)
 
-### Core Formula (Confirmed)
+> **Note:** Health in JUS is called "JSoul"
+
+### Core Formula (TENTATIVE - needs more testing)
 
 ```
-damage = (jpower_total / 5) + (tier_modifier)
+jsoul_damage = (jpower_total / 5) + (tier_modifier)
 ```
 
 Where:
 - `jpower_total` = Sum of damage + hitstun values from jpower.bin
 - `tier_modifier` = tier - 2 (so tier 1 = -1, tier 2 = 0, tier 3 = +1)
+
+**Testing Status:**
+| Character | Tested Moves | Notes |
+|-----------|--------------|-------|
+| Ichigo | Full kit (minus specials) | Most thoroughly tested |
+| Goku | Extensive | Second most tested |
+| Caramelman | Full kit (minus specials) | In-battle damage numbers |
+| Buu | Full kit (minus specials) | In-battle damage numbers |
+| Various | B move only | Handful of spot checks |
+
+**UNKNOWN:** Whether divisor varies by character/series, rounding behavior
 
 ### Nature Advantage
 

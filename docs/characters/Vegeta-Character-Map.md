@@ -119,7 +119,7 @@ Profile: TBD
 **Damage Formula:**
 
 ```
-base_damage = (jpower_total / 5) + (tier - 2)  # Confirmed formula
+base_damage = (jpower_total / 5) + (tier - 2)  # Observed pattern
 - OR -
 base_damage = (jpower_total / 5) + (tier - 2) for universal formula
 ```

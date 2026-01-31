@@ -53,6 +53,7 @@ ADDRESSES = {
 }
 
 # Character state struct offsets (from pointer)
+# These are CONFIRMED from Action Replay code analysis
 CHAR_OFFSETS = {
     'ground_air': 0x0078,      # 0x00=air, 0x22=ground
     'positive_status': 0x0088,
@@ -60,6 +61,25 @@ CHAR_OFFSETS = {
     'jump_count': 0x00D9,
     'air_actions': 0x00DA,
     'defense_timer': 0x0102,
+}
+
+# Candidate offsets for velocity/hitstun (TO BE VERIFIED)
+# Gaps in known offsets suggest physics data may be nearby:
+#   - 0x00-0x77: Unknown (likely position, velocity)
+#   - 0x79-0x87: Unknown (near ground_air)
+#   - 0x89-0x9F: Unknown (between status fields)
+#   - 0xA1-0xD8: Unknown (large gap - likely combat state)
+#   - 0xDB-0x101: Unknown (between air_actions and defense)
+# Total struct size: at least 0x102+ bytes (~260+ bytes)
+VELOCITY_CANDIDATES = {
+    # Likely position/velocity region (start of struct)
+    'region_physics': (0x00, 0x40),      # First 64 bytes - likely X/Y pos/vel
+    # Near ground/air state - might have fall velocity
+    'region_air_physics': (0x70, 0x88),  # Around ground_air offset
+    # Between status and jump - might have hitstun timer
+    'region_combat_state': (0xA0, 0xD9), # Large unknown region
+    # Near defense timer - might have stun timer
+    'region_timers': (0xF0, 0x110),      # Around defense_timer
 }
 
 
@@ -509,6 +529,308 @@ class JUSBacktrace(gdb.Command):
 
 
 # ============================================================================
+# HITSTUN/VELOCITY RESEARCH COMMANDS
+# ============================================================================
+
+# Storage for character struct snapshots
+_char_snapshots = {}
+
+
+class JUSCharDump(gdb.Command):
+    """Dump character struct bytes for analysis.
+
+    Usage: jus-char-dump [player] [start_offset] [length]
+    Default: player 1, offset 0, length 0x120 (288 bytes)
+
+    This dumps raw bytes from the character state struct to help
+    identify unknown fields like velocity and hitstun timers.
+    """
+
+    def __init__(self):
+        super().__init__("jus-char-dump", gdb.COMMAND_USER)
+
+    def invoke(self, arg, from_tty):
+        args = arg.split()
+        player = int(args[0]) if args else 1
+        start_off = int(args[1], 0) if len(args) > 1 else 0
+        length = int(args[2], 0) if len(args) > 2 else 0x120
+
+        if player < 1 or player > 4:
+            print("Usage: jus-char-dump [player 1-4] [start_offset] [length]")
+            return
+
+        ptr_addr = ADDRESSES[f'player{player}_state_ptr']
+        ptr = read_dword(ptr_addr)
+
+        if not ptr or ptr < 0x02000000:
+            print(f"Player {player} state pointer invalid: {ptr:#010x if ptr else 'NULL'}")
+            return
+
+        print(f"=== Player {player} Character Struct Dump ===")
+        print(f"Base pointer: {ptr:#010x}")
+        print(f"Reading {length} bytes from offset {start_off:#04x}")
+        print()
+
+        data = read_bytes(ptr + start_off, length)
+        if not data:
+            print("Failed to read memory")
+            return
+
+        # Print hex dump with annotations
+        for row_start in range(0, length, 16):
+            addr = start_off + row_start
+            row_data = data[row_start:row_start + 16]
+
+            # Format hex bytes
+            hex_str = ' '.join(f'{b:02X}' for b in row_data)
+            if len(row_data) < 16:
+                hex_str += '   ' * (16 - len(row_data))
+
+            # Check for known offsets in this row
+            annotation = ""
+            for name, offset in CHAR_OFFSETS.items():
+                if addr <= offset < addr + 16:
+                    rel = offset - addr
+                    annotation = f"  <- {name} at +{offset:#04x}"
+                    break
+
+            print(f"  +{addr:04X}: {hex_str}{annotation}")
+
+        # Print any non-zero words that might be position/velocity
+        print()
+        print("=== Non-zero 16-bit values (potential position/velocity) ===")
+        interesting = []
+        for i in range(0, length - 1, 2):
+            word = struct.unpack('<H', data[i:i+2])[0]
+            if word != 0 and word != 0xFFFF:
+                sword = struct.unpack('<h', data[i:i+2])[0]  # Signed
+                interesting.append((start_off + i, word, sword))
+
+        for offset, uval, sval in interesting[:30]:
+            known = ""
+            for name, off in CHAR_OFFSETS.items():
+                if offset == off:
+                    known = f" [{name}]"
+                    break
+            print(f"  +{offset:04X}: {uval:5d} (0x{uval:04X}) signed: {sval:6d}{known}")
+
+        if len(interesting) > 30:
+            print(f"  ... and {len(interesting) - 30} more")
+
+
+class JUSCharSnapshot(gdb.Command):
+    """Take a snapshot of character struct for diffing.
+
+    Usage: jus-char-snapshot <name> [player]
+    Default: player 1
+
+    Use with jus-char-diff to find fields that change during combat.
+    """
+
+    def __init__(self):
+        super().__init__("jus-char-snapshot", gdb.COMMAND_USER)
+
+    def invoke(self, arg, from_tty):
+        args = arg.split()
+        if not args:
+            print("Usage: jus-char-snapshot <name> [player 1-4]")
+            print("Stored snapshots:", list(_char_snapshots.keys()))
+            return
+
+        name = args[0]
+        player = int(args[1]) if len(args) > 1 else 1
+
+        ptr_addr = ADDRESSES[f'player{player}_state_ptr']
+        ptr = read_dword(ptr_addr)
+
+        if not ptr or ptr < 0x02000000:
+            print(f"Player {player} state pointer invalid")
+            return
+
+        # Read full character struct (280 bytes should cover it)
+        data = read_bytes(ptr, 0x120)
+        if data:
+            _char_snapshots[name] = {
+                'data': data,
+                'ptr': ptr,
+                'player': player,
+            }
+            print(f"Snapshot '{name}' saved (player {player}, {len(data)} bytes)")
+        else:
+            print("Failed to read character struct")
+
+
+class JUSCharDiff(gdb.Command):
+    """Compare character struct snapshots to find changing fields.
+
+    Usage: jus-char-diff <snapshot1> <snapshot2|now>
+
+    This helps identify velocity/hitstun fields by comparing
+    snapshots taken at different game states:
+    - Idle vs moving (find velocity fields)
+    - Not hit vs in hitstun (find hitstun timer)
+    - Different knockback amounts (find knockback velocity)
+    """
+
+    def __init__(self):
+        super().__init__("jus-char-diff", gdb.COMMAND_USER)
+
+    def invoke(self, arg, from_tty):
+        args = arg.split()
+        if len(args) < 2:
+            print("Usage: jus-char-diff <snapshot1> <snapshot2|now>")
+            print("Stored snapshots:", list(_char_snapshots.keys()))
+            return
+
+        name1, name2 = args[0], args[1]
+
+        if name1 not in _char_snapshots:
+            print(f"Snapshot '{name1}' not found")
+            return
+
+        snap1 = _char_snapshots[name1]
+
+        if name2 == 'now':
+            ptr_addr = ADDRESSES[f'player{snap1["player"]}_state_ptr']
+            ptr = read_dword(ptr_addr)
+            if ptr != snap1['ptr']:
+                print(f"Warning: pointer changed {snap1['ptr']:#x} -> {ptr:#x}")
+            data2 = read_bytes(ptr, len(snap1['data']))
+            if not data2:
+                print("Failed to read current state")
+                return
+        elif name2 in _char_snapshots:
+            snap2 = _char_snapshots[name2]
+            data2 = snap2['data']
+        else:
+            print(f"Snapshot '{name2}' not found")
+            return
+
+        data1 = snap1['data']
+
+        print(f"=== Character Struct Diff: {name1} vs {name2} ===")
+        print()
+
+        # Find differences
+        diffs = []
+        for i in range(min(len(data1), len(data2))):
+            if data1[i] != data2[i]:
+                diffs.append((i, data1[i], data2[i]))
+
+        if not diffs:
+            print("No differences found!")
+            return
+
+        print(f"Changed bytes: {len(diffs)}")
+        print()
+
+        # Group by 2-byte words for velocity/position analysis
+        print("=== Changes (grouped by word) ===")
+
+        # Track which offsets changed
+        changed_offsets = set(d[0] for d in diffs)
+
+        # Analyze as 16-bit words
+        for i in range(0, min(len(data1), len(data2)) - 1, 2):
+            word1 = struct.unpack('<H', data1[i:i+2])[0]
+            word2 = struct.unpack('<H', data2[i:i+2])[0]
+
+            if word1 != word2:
+                sword1 = struct.unpack('<h', data1[i:i+2])[0]
+                sword2 = struct.unpack('<h', data2[i:i+2])[0]
+                delta = sword2 - sword1
+
+                # Check if known offset
+                known = ""
+                for name, offset in CHAR_OFFSETS.items():
+                    if i <= offset < i + 2:
+                        known = f" [{name}]"
+                        break
+
+                # Highlight likely velocity/position fields
+                hint = ""
+                if abs(delta) > 100 and abs(delta) < 10000:
+                    hint = " <-- possible velocity/position?"
+                elif i < 0x40:
+                    hint = " <-- physics region"
+
+                print(f"  +{i:04X}: {sword1:6d} -> {sword2:6d} (delta: {delta:+6d}){known}{hint}")
+
+        # Summary of regions that changed
+        print()
+        print("=== Summary ===")
+        regions_changed = set()
+        for off in changed_offsets:
+            for region_name, (start, end) in VELOCITY_CANDIDATES.items():
+                if start <= off < end:
+                    regions_changed.add(region_name)
+
+        if regions_changed:
+            print(f"Candidate regions with changes: {', '.join(regions_changed)}")
+        else:
+            print("Changes outside candidate velocity regions")
+
+
+class JUSVelocityWatch(gdb.Command):
+    """Monitor specific offsets over time to identify velocity fields.
+
+    Usage: jus-velocity-watch [player] [interval_ms]
+    Default: player 1, 100ms interval
+
+    Takes repeated readings and shows fields that are changing,
+    which helps identify velocity (constantly changing during movement)
+    vs position (gradual change) vs timers (decrementing).
+
+    Press Ctrl+C to stop.
+    """
+
+    def __init__(self):
+        super().__init__("jus-velocity-watch", gdb.COMMAND_USER)
+
+    def invoke(self, arg, from_tty):
+        args = arg.split()
+        player = int(args[0]) if args else 1
+        interval_ms = int(args[1]) if len(args) > 1 else 100
+
+        ptr_addr = ADDRESSES[f'player{player}_state_ptr']
+        ptr = read_dword(ptr_addr)
+
+        if not ptr or ptr < 0x02000000:
+            print(f"Player {player} state pointer invalid")
+            return
+
+        print(f"=== Velocity Watch (Player {player}) ===")
+        print(f"Monitoring first 64 bytes (physics region)")
+        print(f"Interval: {interval_ms}ms")
+        print("Press Ctrl+C to stop")
+        print()
+
+        # Just read once and show what looks interesting
+        # (GDB python doesn't have async sleep, so we do single read)
+
+        data = read_bytes(ptr, 0x40)  # First 64 bytes
+        if not data:
+            print("Failed to read")
+            return
+
+        print("Current physics region values (as signed 16-bit):")
+        for i in range(0, 64, 2):
+            word = struct.unpack('<h', data[i:i+2])[0]
+            if word != 0:
+                print(f"  +{i:04X}: {word:6d} (0x{struct.unpack('<H', data[i:i+2])[0]:04X})")
+
+        print()
+        print("TIP: Take snapshots during different states:")
+        print("  1. jus-char-snapshot idle       (character standing still)")
+        print("  2. jus-char-snapshot walking    (character walking)")
+        print("  3. jus-char-diff idle walking   (find velocity fields)")
+        print()
+        print("  1. jus-char-snapshot before_hit (before getting hit)")
+        print("  2. jus-char-snapshot in_hitstun (during hitstun)")
+        print("  3. jus-char-diff before_hit in_hitstun (find hitstun/knockback)")
+
+
+# ============================================================================
 # BREAKPOINT HANDLERS
 # ============================================================================
 
@@ -546,6 +868,12 @@ def init():
     JUSTrace()
     JUSBacktrace()
 
+    # Hitstun/velocity research commands
+    JUSCharDump()
+    JUSCharSnapshot()
+    JUSCharDiff()
+    JUSVelocityWatch()
+
     print("=" * 50)
     print("  JUS GDB Watcher loaded!")
     print("=" * 50)
@@ -562,6 +890,12 @@ def init():
     print("Snapshot/Diff commands (for finding changes):")
     print("  jus-snapshot <name> [region]  - Save memory snapshot")
     print("  jus-diff <snap1> <snap2|now>  - Compare snapshots")
+    print()
+    print("Character Struct Research (hitstun/velocity):")
+    print("  jus-char-dump [player]            - Dump char struct bytes")
+    print("  jus-char-snapshot <name> [player] - Save char struct snapshot")
+    print("  jus-char-diff <snap1> <snap2|now> - Find changing fields")
+    print("  jus-velocity-watch [player]       - Show physics region")
     print()
     print("Tracing:")
     print("  jus-trace <addr> [on|off]  - Log function calls")

@@ -99,6 +99,15 @@ The emulator will pause. Use `continue` to resume.
 | `jus-diff <snap1> <snap2\|now>` | Compare two snapshots or snapshot vs current |
 | `jus-bt` | Backtrace with ARM9 offset translation |
 
+### Hitstun/Velocity Research
+
+| Command | Description |
+|---------|-------------|
+| `jus-char-dump [player] [offset] [length]` | Dump character struct bytes with annotations |
+| `jus-char-snapshot <name> [player]` | Save character struct snapshot |
+| `jus-char-diff <snap1> <snap2\|now>` | Compare char struct snapshots (find velocity/hitstun) |
+| `jus-velocity-watch [player]` | Show physics region values |
+
 ### Binary Dump Scripts
 
 For detailed analysis, use the standalone GDB scripts:
@@ -161,6 +170,62 @@ python scripts/analyze_deck_dump.py --diff /tmp/jus_dumps/state1/deck_0a1000.bin
 # TRACE 0x020784fc: R0=021df1a0 R1=0000000a R2=00000002 R3=00000000 LR=0207a234
 ```
 
+### Finding Velocity/Position Fields
+
+```gdb
+(gdb) target remote localhost:3333
+(gdb) continue
+# Start a battle, have character stand still, Ctrl+C
+
+(gdb) jus-char-snapshot idle 1
+# Resume, have character walk right, Ctrl+C
+(gdb) continue
+# Ctrl+C when walking
+
+(gdb) jus-char-snapshot walking 1
+(gdb) jus-char-diff idle walking
+# Fields that changed are likely velocity X or position X
+```
+
+### Finding Hitstun/Knockback Fields
+
+```gdb
+# Start battle, position characters, Ctrl+C before getting hit
+(gdb) jus-char-snapshot before_hit 1
+(gdb) continue
+# Get hit with a known attack (light vs heavy)
+# Ctrl+C while in hitstun
+
+(gdb) jus-char-snapshot in_hitstun 1
+(gdb) jus-char-diff before_hit in_hitstun
+# Look for:
+#   - Velocity fields (large signed values ~100-500)
+#   - Hitstun timer (countdown values 5-15 for light, 10-30 for heavy)
+```
+
+### Comparing Weight Classes
+
+```gdb
+# Test same attack on different weight characters
+# Raoh (heavy) vs Lenalee (light)
+
+# 1. Set up: Raoh gets hit by Goku's B
+(gdb) jus-char-snapshot raoh_before 1
+(gdb) continue
+# ... get hit ...
+(gdb) jus-char-snapshot raoh_hit 1
+(gdb) jus-char-diff raoh_before raoh_hit
+
+# 2. Set up: Lenalee gets hit by same attack
+(gdb) jus-char-snapshot lenalee_before 1
+(gdb) continue
+# ... get hit ...
+(gdb) jus-char-snapshot lenalee_hit 1
+(gdb) jus-char-diff lenalee_before lenalee_hit
+
+# Compare velocity values - Lenalee should have higher knockback velocity
+```
+
 ## Known Addresses
 
 ### Deck Builder State
@@ -181,6 +246,9 @@ python scripts/analyze_deck_dump.py --diff /tmp/jus_dumps/state1/deck_0a1000.bin
 | `0x021DF731` | 1 | Special meter 1 |
 
 ### Character State Struct (offsets from pointer)
+
+**Confirmed offsets (from Action Replay codes):**
+
 | Offset | Description |
 |--------|-------------|
 | `+0x0078` | Ground/Air state (0=air, 0x22=ground) |
@@ -189,6 +257,17 @@ python scripts/analyze_deck_dump.py --diff /tmp/jus_dumps/state1/deck_0a1000.bin
 | `+0x00D9` | Jump counter |
 | `+0x00DA` | Air action counter |
 | `+0x0102` | Defense timer |
+
+**Candidate regions for velocity/hitstun (to be verified):**
+
+| Region | Description |
+|--------|-------------|
+| `+0x00-0x40` | Physics region - likely X/Y position and velocity |
+| `+0x70-0x88` | Near ground_air - possibly fall velocity |
+| `+0xA0-0xD9` | Large gap - combat state, hitstun timer? |
+| `+0xF0-0x110` | Near defense_timer - stun timer? |
+
+Total struct size: at least 0x120 bytes (~288 bytes)
 
 ### Code Hooks
 | Address | Description |

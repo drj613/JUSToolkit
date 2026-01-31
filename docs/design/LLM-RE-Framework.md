@@ -1,8 +1,9 @@
 # LLM-Assisted Game Reverse Engineering Framework
 
-**Status:** Draft - Capturing patterns from JUSToolkit development
+**Status:** Active - Refined through JUSToolkit development  
+**Last Updated:** 2026-01-31
 
-This document extracts reusable patterns for working with LLMs (Claude, GPT, etc.) to reverse engineer video games.
+This document captures reusable patterns for working with LLMs (Claude, GPT, etc.) to reverse engineer video games. Based on practical experience from the JUSToolkit project (Jump Ultimate Stars for Nintendo DS).
 
 ---
 
@@ -69,6 +70,44 @@ Every project needs an `AGENTS.md` file that tells LLM agents:
 - Project-specific conventions
 - What to commit vs what needs review
 
+### Session Entrypoint Document
+
+Create a `docs/research/README.md` as the starting point for every new session:
+
+```markdown
+# Research Documentation
+
+**Start here for new sessions.**
+
+## Quick Status
+Run `bd ready` to see available work.
+
+## Document Map
+| Document | Purpose | Read When |
+|----------|---------|-----------|
+| This README | Entrypoint | Start of every session |
+| RE-Session-Playbook.md | Strategies | Planning approach |
+| [Topic]-Research.md | Deep dives | Working on specific area |
+
+## Key Formulas (CONFIRMED)
+- damage = damage1/5 + (tier-2)
+- ...
+
+## Blocking Unknowns
+1. [Unknown] - blocks [what]
+2. ...
+```
+
+### Cross-Session Continuity
+
+**Problem:** Findings get lost when sessions end or context compacts.
+
+**Solution:**
+1. **Commit frequently** - Documentation should be in git, not just chat
+2. **Update issues immediately** - When you learn something, add a comment
+3. **Audit periodically** - Check if closed tickets are reflected in docs
+4. **Use session playbook** - Follow consistent research patterns
+
 ---
 
 ## 2. Research Methodology
@@ -90,17 +129,54 @@ Not all unknowns are equal. Identify which ones block progress:
    - Next: GDB snapshot on damage
 ```
 
-### Formula Derivation Process
+### The Hex-Theorize / Human-Validate Loop (CORE PATTERN)
 
-1. **Observe** - Document raw behavior (Goku B does 8 damage)
-2. **Hypothesize** - Propose formula (`damage = jpower_total / 5`)
-3. **Test** - Check against other cases (does Ichigo match?)
-4. **Refine** - Adjust formula for exceptions
-5. **Confirm** - Mark as confirmed with test evidence
+This is the most effective workflow for LLM-assisted reverse engineering:
+
+```
+┌─────────────────────────────────────────────────────────┐
+│  1. LLM analyzes hex data, proposes hypothesis          │
+│     "damage1 field at offset 0x04 divided by 5 = damage"│
+├─────────────────────────────────────────────────────────┤
+│  2. LLM generates specific, falsifiable predictions     │
+│     "Nami B should deal 6 damage (d1=30, 30/5=6)"       │
+├─────────────────────────────────────────────────────────┤
+│  3. Human tests prediction in-game                      │
+│     → Records actual value: Nami B = 6 ✓                │
+├─────────────────────────────────────────────────────────┤
+│  4. Results fed back to LLM                             │
+│     → If match: hypothesis gains confidence             │
+│     → If mismatch: refine hypothesis, repeat            │
+└─────────────────────────────────────────────────────────┘
+```
+
+**Why it works:**
+- LLMs excel at pattern recognition across large hex/data dumps
+- Humans excel at precise in-game observation and input
+- Rapid iteration between theory and validation
+
+**Real example (JUS damage formula):**
+1. LLM analyzed jpower.bin, hypothesized `totalDamage/5` formula
+2. Goku B=8 didn't match prediction (total=50 → should be 10)
+3. Human confirmed Buu B=9 (same jpower block as Goku, different value)
+4. LLM refined: formula uses `damage1` field only, not total
+5. Human validated across 12 characters → CONFIRMED as `damage1/5 + (tier-2)`
+
+**Division of labor:**
+
+| LLM Responsibilities | Human Responsibilities |
+|---------------------|----------------------|
+| Analyze data patterns | Run the game |
+| Generate testable predictions | Execute test cases |
+| Refine hypotheses from results | Report exact values |
+| Update documentation | Identify edge cases |
+
+### Confidence Levels
 
 **Always document confidence level:**
-- **CONFIRMED:** Tested across multiple characters/scenarios
-- **HYPOTHESIS:** Fits observed data, needs more testing
+- **CONFIRMED:** Tested across multiple characters/scenarios with no exceptions
+- **TENTATIVE:** Fits observed data, needs more testing
+- **HYPOTHESIS:** Proposed based on patterns, untested
 - **UNKNOWN:** No working theory yet
 
 ### Comparative Testing

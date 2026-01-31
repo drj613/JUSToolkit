@@ -850,7 +850,13 @@ class HitTriggerBreakpoint(gdb.Breakpoint):
         self.last_hp = read_byte(hp_addr)
 
     def stop(self):
-        """Called when HP changes. Take snapshot and continue."""
+        """Called when HP changes. Take snapshot and continue.
+
+        TIMING NOTE: This fires when HP is written. The knockback velocity
+        may have been applied in a previous instruction. We capture the
+        state at the moment of HP write, which should be close to (but
+        possibly not exactly at) the moment of impact.
+        """
         hp = read_byte(ADDRESSES[f'player{self.player}_hp'])
 
         # Handle read failure
@@ -860,7 +866,6 @@ class HitTriggerBreakpoint(gdb.Breakpoint):
         # Only trigger on HP decrease (taking damage)
         if self.last_hp is not None and hp < self.last_hp:
             self.hit_count += 1
-            name = f"{self.prefix}_hit{self.hit_count}"
 
             # Get character struct pointer
             ptr_addr = ADDRESSES[f'player{self.player}_state_ptr']
@@ -869,12 +874,14 @@ class HitTriggerBreakpoint(gdb.Breakpoint):
             if ptr and ptr >= 0x02000000:
                 data = read_bytes(ptr, 0x120)
                 if data:
+                    name = f"{self.prefix}_hit{self.hit_count}"
                     _char_snapshots[name] = {
                         'data': data,
                         'ptr': ptr,
                         'player': self.player,
                         'hp_before': self.last_hp,
                         'hp_after': hp,
+                        'timing': 'at_hp_write',
                     }
                     print(f"\n[AUTO] Snapshot '{name}' captured (HP: {self.last_hp} -> {hp})")
 
@@ -1191,6 +1198,94 @@ class JUSAutoSnapshotOnStatus(gdb.Command):
             print("Make sure you're in a battle and the character is loaded.")
 
 
+class DamageCodeBreakpoint(gdb.Breakpoint):
+    """Breakpoint at damage calculation function.
+
+    This triggers BEFORE HP is decremented, which may be closer to
+    the actual moment knockback velocity is applied.
+    """
+
+    def __init__(self, player, snapshot_name_prefix):
+        self.player = player
+        self.prefix = snapshot_name_prefix
+        self.trigger_count = 0
+        self.ptr_addr = ADDRESSES[f'player{player}_state_ptr']
+
+        # Break at health calculation code
+        addr = ADDRESSES['health_code']
+        super().__init__(f"*{addr:#x}", type=gdb.BP_BREAKPOINT)
+        self.silent = True
+
+    def stop(self):
+        """Called when damage code is reached."""
+        self.trigger_count += 1
+        name = f"{self.prefix}_dmg{self.trigger_count}"
+
+        ptr = read_dword(self.ptr_addr)
+
+        if ptr and ptr >= 0x02000000:
+            data = read_bytes(ptr, 0x120)
+            if data:
+                # Also capture registers for context
+                _char_snapshots[name] = {
+                    'data': data,
+                    'ptr': ptr,
+                    'player': self.player,
+                    'timing': 'at_damage_code',
+                }
+                print(f"\n[AUTO] Snapshot '{name}' captured (at damage calculation)")
+
+        return False  # Continue running
+
+
+class JUSAutoSnapshotOnDamageCode(gdb.Command):
+    """Capture state when damage calculation code is reached.
+
+    Usage: jus-auto-snapshot-on-damage <player> [prefix]
+
+    This breakpoints on the damage calculation function (0x020784FC),
+    which fires BEFORE HP is decremented. This may capture knockback
+    velocity closer to the moment of application.
+
+    Compare with jus-auto-snapshot-on-hit to see timing differences.
+    """
+
+    def __init__(self):
+        super().__init__("jus-auto-snapshot-on-damage", gdb.COMMAND_USER)
+
+    def invoke(self, arg, from_tty):
+        args = arg.split()
+        if not args:
+            print("Usage: jus-auto-snapshot-on-damage <player 1-4> [prefix]")
+            print()
+            print("This triggers at the damage calculation function,")
+            print("BEFORE HP is actually decremented.")
+            return
+
+        try:
+            player = int(args[0])
+        except ValueError:
+            print("Player must be a number 1-4")
+            return
+
+        prefix = args[1] if len(args) > 1 else "dmg"
+
+        if player < 1 or player > 4:
+            print("Player must be 1-4")
+            return
+
+        bp = DamageCodeBreakpoint(player, prefix)
+        JUSAutoSnapshotOnHit._active_breakpoints.append(bp)
+
+        print(f"=== Auto-Snapshot on Damage Code ENABLED ===")
+        print(f"Player: {player}")
+        print(f"Prefix: {prefix}")
+        print(f"Breakpoint at: {ADDRESSES['health_code']:#010x}")
+        print()
+        print("This fires BEFORE HP is decremented.")
+        print("Use 'continue' to resume. Stop with: jus-auto-snapshot-off")
+
+
 class JUSPeriodicSnapshot(gdb.Command):
     """Take a burst of snapshots with brief continues between.
 
@@ -1318,6 +1413,7 @@ def init():
     JUSAutoSnapshotOff()
     JUSAutoSnapshotOnState()
     JUSAutoSnapshotOnStatus()
+    JUSAutoSnapshotOnDamageCode()
     JUSPeriodicSnapshot()
 
     print("=" * 50)
@@ -1344,9 +1440,10 @@ def init():
     print("  jus-velocity-watch [player]       - Show physics region")
     print()
     print("AUTOMATED TRIGGERS (no manual Ctrl+C needed!):")
-    print("  jus-auto-snapshot-on-hit <player> [prefix]      - Capture on damage")
+    print("  jus-auto-snapshot-on-hit <player> [prefix]      - Capture AFTER HP write")
+    print("  jus-auto-snapshot-on-damage <player> [prefix]   - Capture BEFORE HP write (at calc)")
     print("  jus-auto-snapshot-on-state <player> [prefix]    - Capture on jump/land")
-    print("  jus-auto-snapshot-on-status <player> [prefix]   - Capture on status change (hitstun?)")
+    print("  jus-auto-snapshot-on-status <player> [prefix]   - Capture on status change")
     print("  jus-burst-snapshot <count> <prefix> [player]    - Rapid-fire snapshots")
     print("  jus-auto-snapshot-off                           - Disable triggers")
     print()

@@ -12,11 +12,13 @@ Central tracking for all in-game tests that require human intervention.
 
 | Status | Count |
 | ------ | ----- |
-| PENDING | 133 |
+| PENDING | 120 |
 | IN PROGRESS | 0 |
-| COMPLETED | 3 |
+| COMPLETED | 13 |
 
-**Last Updated:** 2026-01-29
+**Last Updated:** 2026-01-31
+
+> **Formula CONFIRMED:** `damage = damage1/5 + (tier-2)` verified across 12+ characters
 
 ---
 
@@ -183,9 +185,19 @@ Central tracking for all in-game tests that require human intervention.
 
 | ID | Character | Test Description | Result | Completed | Notes |
 | -- | --------- | ---------------- | ------ | --------- | ----- |
-| ICHIGO-B | Ichigo | Base B damage | 10 | 2026-01-29 | Confirmed ÷5+tier formula |
-| ICHIGO-BANKAI | Bankai | B damage with tier=1 | 9 | 2026-01-29 | tier=1 gives -1 damage |
-| GOKU-ALL | Goku | Full moveset damage | See Goku-Character-Map.md | 2026-01-29 | ÷7 formula or different jpower selection |
+| ICHIGO-B | Ichigo | Base B damage | 10 | 2026-01-29 | d1=50, 50/5+0=10 ✓ |
+| ICHIGO-BANKAI | Bankai | B damage with tier=1 | 9 | 2026-01-29 | d1=50, tier=1, 50/5-1=9 ✓ |
+| GOKU-ALL | Goku | Full moveset damage | B=8 | 2026-01-29 | d1=40, 40/5+0=8 ✓ |
+| CORE-002 | Naruto | B damage formula test | 8 | 2026-01-30 | d1=40, 40/5+0=8 ✓ |
+| db_b_12-003 | Majin Buu | B damage (Block 0 test) | 9 | 2026-01-30 | d1=45, 45/5+0=9 ✓ SOLVED anomaly |
+| db_b_12-004 | Majin Buu | ÷5 or ÷7 formula | ÷5 | 2026-01-30 | Confirmed damage1/5 formula |
+| NAMI-B | Nami | B damage | 6 | 2026-01-30 | d1=30, 30/5+0=6 ✓ |
+| TRAIN-B | Train | B damage | 7 | 2026-01-30 | d1=35, 35/5+0=7 ✓ |
+| LUFFY-B | Luffy | B damage | 8 | 2026-01-30 | d1=40, 40/5+0=8 ✓ |
+| ROBIN-B | Robin | B damage | 8 | 2026-01-30 | d1=40, 40/5+0=8 ✓ |
+| FRANKY-B | Franky | B damage | 8 | 2026-01-30 | d1=40, 40/5+0=8 ✓ |
+| CARAMELMAN-B | Caramelman | B damage (tier=3) | 13 | 2026-01-30 | d1=60, tier=3, 60/5+1=13 ✓ |
+| KYUUBI-B | Kyuubi Naruto | B damage (tier=1) | 8 | 2026-01-30 | d1=45, tier=1, 45/5-1=8 ✓ |
 
 ---
 

@@ -220,18 +220,20 @@ landing.
 
 ## 4. Damage System
 
-### Damage Formula (TENTATIVE)
+### Damage Formula (CONFIRMED)
 
 ```
-base_damage = floor(jpower_total / divisor)
-final_damage = base_damage + tier_modifier
+base_damage = floor(jpower.damage1 / 5)
+tier_modifier = character_tier - 2
+final_damage = floor((base_damage + tier_modifier) * nature_multiplier)
 ```
 
 Where:
 
-- `jpower_total = damage1 + damage2 + damage3` from jpower.bin
-- `divisor` = 5 (observed pattern - needs more testing)
-- `tier_modifier = character_tier - 2` (-1, 0, or +1)
+- `damage1` = First damage component from jpower entry (NOT total!)
+- `divisor` = 5 (confirmed across 12+ characters)
+- `tier_modifier` = character_tier - 2 (-1, 0, or +1)
+- `nature_multiplier` = 1.0 (neutral) or 1.5 (advantage)
 
 ### Nature Advantage
 

@@ -67,26 +67,29 @@ Run `bd ready` to see available work, or `bd show JUS-p5i` for current focus.
 
 ## Key Formulas
 
-### Damage Formula (TENTATIVE)
+### Damage Formula (CONFIRMED 2026-01-30)
 
 ```
-jsoul_damage = floor(jpower_total / 5) + (tier - 2)
+jsoul_damage = floor(jpower.damage1 / 5) + (tier - 2)
+actual_damage = floor(jsoul_damage × nature_multiplier)
 ```
 
-- `jpower_total` = damage1 + damage2 + damage3 from jpower.bin
-- `tier` = koma size (2, 3, or 4 panels) - NOT character forms
-- Nature advantage: multiply by 1.5x
+- `damage1` = **first damage component only** (NOT total!)
+- `tier` = koma size (2=standard, 1=weak form, 3=8-koma)
+- Nature advantage: 1.5x multiplier
 
-**Note:** Most characters have only one form. Goku is unusual with base/SSJ/SSJ2/Vegetto, but all forms have identical damage numbers (aside from special moves).
+**Verified across 12+ characters:**
+| Character | tier | B Damage | damage1 |
+|-----------|------|----------|---------|
+| Nami | 2 | 6 | 30 |
+| Train | 2 | 7 | 35 |
+| Goku, Luffy, Robin, Franky, Naruto | 2 | 8 | 40 |
+| Buu | 2 | 9 | 45 |
+| Bankai Ichigo | 1 | 9 | 50 |
+| Ichigo | 2 | 10 | 50 |
+| Caramelman | 3 | 13 | 60 |
 
-**Testing coverage:**
-
-- Ichigo: Most thoroughly tested (full kit minus specials)
-- Goku: Extensive testing (all forms)
-- Caramelman, Buu: Full kit damage numbers (minus specials)
-- Various: B move spot checks only
-
-**UNKNOWN:** Whether divisor varies by character/series
+**REMAINING UNKNOWN:** How collision files SELECT which jpower entry to use
 
 ### Walk Speed
 

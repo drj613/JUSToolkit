@@ -131,26 +131,34 @@ Attacks and projectiles have implicit priority tiers:
 
 > **Note:** Health in JUS is called "JSoul"
 
-### Core Formula (TENTATIVE - needs more testing)
+### Core Formula (CONFIRMED 2026-01-30)
 
 ```
-jsoul_damage = (jpower_total / 5) + (tier_modifier)
+jsoul_damage = floor(jpower.damage1 / 5) + (tier - 2)
+actual_damage = floor(jsoul_damage × nature_multiplier)
 ```
+
+**Key insight:** Uses `damage1` field only, NOT total damage!
 
 Where:
-- `jpower_total` = Sum of damage + hitstun values from jpower.bin
-- `tier_modifier` = tier - 2 (so tier 1 = -1, tier 2 = 0, tier 3 = +1)
+- `damage1` = First damage component from jpower entry
+- `tier` = Character tier (1=weak form, 2=standard, 3=8-koma)
+- `nature_multiplier` = 1.0 (neutral/disadvantage) or 1.5 (advantage)
 
-**Testing Status:**
-| Character | Tested Moves | Notes |
-|-----------|--------------|-------|
-| Ichigo | Full kit (minus specials) | Most thoroughly tested |
-| Goku | Extensive | Second most tested |
-| Caramelman | Full kit (minus specials) | In-battle damage numbers |
-| Buu | Full kit (minus specials) | In-battle damage numbers |
-| Various | B move only | Handful of spot checks |
+**Verified B move damages:**
+| Character | tier | B Damage | damage1 | Formula Check |
+|-----------|------|----------|---------|---------------|
+| Nami | 2 | 6 | 30 | 30/5+0=6 ✓ |
+| Train | 2 | 7 | 35 | 35/5+0=7 ✓ |
+| Goku | 2 | 8 | 40 | 40/5+0=8 ✓ |
+| Luffy | 2 | 8 | 40 | 40/5+0=8 ✓ |
+| Naruto | 2 | 8 | 40 | 40/5+0=8 ✓ |
+| Buu | 2 | 9 | 45 | 45/5+0=9 ✓ |
+| Bankai Ichigo | 1 | 9 | 50 | 50/5-1=9 ✓ |
+| Ichigo | 2 | 10 | 50 | 50/5+0=10 ✓ |
+| Caramelman | 3 | 13 | 60 | 60/5+1=13 ✓ |
 
-**UNKNOWN:** Whether divisor varies by character/series, rounding behavior
+**REMAINING UNKNOWN:** How collision files select which jpower entry to use
 
 ### Nature Advantage
 

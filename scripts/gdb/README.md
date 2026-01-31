@@ -1,18 +1,22 @@
 # JUS GDB Watcher
 
-Memory analysis tools for reverse engineering Jump Ultimate Stars using melonDS + GDB.
+Memory analysis tools for reverse engineering Jump Ultimate Stars using
+melonDS + GDB.
 
-**Platform:** Mac, Linux (Windows users can use this too, or use DeSmuME Lua instead)
+**Platform:** Mac, Linux (Windows users can use this too, or use DeSmuME Lua
+instead)
 
 ## Prerequisites
 
 ### macOS
+
 ```bash
 brew install melonds arm-none-eabi-gdb
 # Or build melonDS from source with GDB enabled (see below)
 ```
 
 ### Linux
+
 ```bash
 sudo apt install melonds gdb-multiarch
 # Use gdb-multiarch instead of arm-none-eabi-gdb
@@ -35,11 +39,13 @@ make -j$(nproc)
 ### 1. Configure melonDS
 
 Open melonDS, go to **Config → Emu Settings → Devtools**:
+
 - ☑ Enable GDB stub
 - ARM9 Port: `3333`
 - ARM7 Port: `3334`
 
 Or edit `~/.config/melonDS/melonDS.ini`:
+
 ```ini
 [Gdb]
 Enabled=true
@@ -64,6 +70,7 @@ gdb-multiarch -x scripts/gdb/jus_gdb_watcher.py
 ```
 
 Then in GDB:
+
 ```gdb
 (gdb) target remote localhost:3333
 ```
@@ -74,50 +81,55 @@ The emulator will pause. Use `continue` to resume.
 
 ### Basic Status
 
-| Command | Description |
-|---------|-------------|
-| `jus-status` | Show current battle state (HP, timer, special) |
-| `jus-addresses` | List all known memory addresses |
-| `jus-read-char N` | Read player N's character state struct |
+| Command           | Description                                    |
+| ----------------- | ---------------------------------------------- |
+| `jus-status`      | Show current battle state (HP, timer, special) |
+| `jus-addresses`   | List all known memory addresses                |
+| `jus-read-char N` | Read player N's character state struct         |
 
 ### Watchpoints & Breakpoints
 
-| Command | Description |
-|---------|-------------|
-| `jus-watch-hp` | Set watchpoints on all player HP addresses |
-| `jus-watch-code` | Set breakpoint at health calculation function |
-| `jus-trace <addr> on` | Log function calls at address with register values |
-| `jus-trace <addr> off` | Stop tracing |
+| Command                | Description                                        |
+| ---------------------- | -------------------------------------------------- |
+| `jus-watch-hp`         | Set watchpoints on all player HP addresses         |
+| `jus-watch-code`       | Set breakpoint at health calculation function      |
+| `jus-trace <addr> on`  | Log function calls at address with register values |
+| `jus-trace <addr> off` | Stop tracing                                       |
 
 ### Memory Analysis
 
-| Command | Description |
-|---------|-------------|
-| `jus-dump <start> <end> <file>` | Dump memory region to file |
-| `jus-scan <start> <end> <value>` | Search for byte value in range |
-| `jus-snapshot <name> [region]` | Save memory snapshot (regions: `battle`, `char`, `full`) |
-| `jus-diff <snap1> <snap2\|now>` | Compare two snapshots or snapshot vs current |
-| `jus-bt` | Backtrace with ARM9 offset translation |
+| Command                          | Description                                              |
+| -------------------------------- | -------------------------------------------------------- |
+| `jus-dump <start> <end> <file>`  | Dump memory region to file                               |
+| `jus-scan <start> <end> <value>` | Search for byte value in range                           |
+| `jus-snapshot <name> [region]`   | Save memory snapshot (regions: `battle`, `char`, `full`) |
+| `jus-diff <snap1> <snap2\|now>`  | Compare two snapshots or snapshot vs current             |
+| `jus-bt`                         | Backtrace with ARM9 offset translation                   |
 
 ### Hitstun/Velocity Research
 
-| Command | Description |
-|---------|-------------|
-| `jus-char-dump [player] [offset] [length]` | Dump character struct bytes with annotations |
-| `jus-char-snapshot <name> [player]` | Save character struct snapshot |
-| `jus-char-diff <snap1> <snap2\|now>` | Compare char struct snapshots (find velocity/hitstun) |
-| `jus-velocity-watch [player]` | Show physics region values |
+| Command                                    | Description                                           |
+| ------------------------------------------ | ----------------------------------------------------- |
+| `jus-char-dump [player] [offset] [length]` | Dump character struct bytes with annotations          |
+| `jus-char-snapshot <name> [player]`        | Save character struct snapshot                        |
+| `jus-char-diff <snap1> <snap2\|now>`       | Compare char struct snapshots (find velocity/hitstun) |
+| `jus-velocity-watch [player]`              | Show physics region values                            |
 
 ### Automated Triggers (No Manual Ctrl+C!)
 
-These commands solve the window focus problem - they run in the background while you play:
+These commands solve the window focus problem - they run in the background while
+you play:
 
-| Command | Description |
-|---------|-------------|
-| `jus-auto-snapshot-on-hit <player> [prefix]` | Auto-capture when player takes damage |
-| `jus-auto-snapshot-on-state <player> [prefix]` | Auto-capture on jump/land/launch |
-| `jus-burst-snapshot <count> <prefix> [player]` | Take N snapshots rapidly |
-| `jus-auto-snapshot-off` | Disable all auto-triggers |
+| Command                                               | Description                                  |
+| ----------------------------------------------------- | -------------------------------------------- |
+| `jus-auto-snapshot-on-hit <player> [prefix]`          | Auto-capture when player takes damage        |
+| `jus-auto-snapshot-on-state <player> [prefix]`        | Auto-capture on jump/land/launch             |
+| `jus-auto-snapshot-on-status <player> [prefix] [type]`| Auto-capture on status change (hitstun?)     |
+| `jus-burst-snapshot <count> <prefix> [player]`        | Take N snapshots rapidly                     |
+| `jus-auto-snapshot-off`                               | Disable all auto-triggers                    |
+
+The status trigger watches `positive_status` (0x88) and `negative_status` (0xA0) fields,
+which may encode hitstun states. Use `type` = `positive`, `negative`, or `both` (default).
 
 ### Binary Dump Scripts
 
@@ -134,6 +146,7 @@ dump-state2    # saves to /tmp/jus_dumps/state2/
 ```
 
 Then analyze with Python:
+
 ```bash
 python scripts/analyze_deck_dump.py --dir /tmp/jus_dumps/state1
 python scripts/analyze_deck_dump.py --diff /tmp/jus_dumps/state1/deck_0a1000.bin /tmp/jus_dumps/state2/deck_0a1000.bin
@@ -239,8 +252,8 @@ python scripts/analyze_deck_dump.py --diff /tmp/jus_dumps/state1/deck_0a1000.bin
 
 ### Using Automated Triggers (Recommended!)
 
-The manual Ctrl+C approach has a focus problem - you can't control the game
-AND the terminal simultaneously. Use these automated triggers instead:
+The manual Ctrl+C approach has a focus problem - you can't control the game AND
+the terminal simultaneously. Use these automated triggers instead:
 
 ```gdb
 # Connect and get into a battle first
@@ -293,49 +306,52 @@ AND the terminal simultaneously. Use these automated triggers instead:
 ## Known Addresses
 
 ### Deck Builder State
-| Address | Size | Description |
-|---------|------|-------------|
-| `0x020A0C98` | 1 | Deck state flag (0x05=has leader, 0x07=no leader) |
-| `0x020A2289` | 1 | Leader boolean (1=leader set, 0=no leader) |
-| `0x020A4368` | 4 | Pointer to leader koma data (0 if no leader) |
-| `0x020AFEB4` | 4 | Active deck slot index (0-7) |
-| `0x020B9480` | - | Koma master table (sequential 4-byte IDs) |
+
+| Address      | Size | Description                                       |
+| ------------ | ---- | ------------------------------------------------- |
+| `0x020A0C98` | 1    | Deck state flag (0x05=has leader, 0x07=no leader) |
+| `0x020A2289` | 1    | Leader boolean (1=leader set, 0=no leader)        |
+| `0x020A4368` | 4    | Pointer to leader koma data (0 if no leader)      |
+| `0x020AFEB4` | 4    | Active deck slot index (0-7)                      |
+| `0x020B9480` | -    | Koma master table (sequential 4-byte IDs)         |
 
 ### Battle State (RAM)
-| Address | Size | Description |
-|---------|------|-------------|
-| `0x021DEA71` | 1 | Battle timer |
-| `0x021DF1D5` | 1 | Player 1 HP |
-| `0x021DF225` | 1 | Player 2 HP |
-| `0x021DF731` | 1 | Special meter 1 |
+
+| Address      | Size | Description     |
+| ------------ | ---- | --------------- |
+| `0x021DEA71` | 1    | Battle timer    |
+| `0x021DF1D5` | 1    | Player 1 HP     |
+| `0x021DF225` | 1    | Player 2 HP     |
+| `0x021DF731` | 1    | Special meter 1 |
 
 ### Character State Struct (offsets from pointer)
 
 **Confirmed offsets (from Action Replay codes):**
 
-| Offset | Description |
-|--------|-------------|
+| Offset    | Description                           |
+| --------- | ------------------------------------- |
 | `+0x0078` | Ground/Air state (0=air, 0x22=ground) |
-| `+0x0088` | Positive status ID |
-| `+0x00A0` | Negative status flags |
-| `+0x00D9` | Jump counter |
-| `+0x00DA` | Air action counter |
-| `+0x0102` | Defense timer |
+| `+0x0088` | Positive status ID                    |
+| `+0x00A0` | Negative status flags                 |
+| `+0x00D9` | Jump counter                          |
+| `+0x00DA` | Air action counter                    |
+| `+0x0102` | Defense timer                         |
 
 **Candidate regions for velocity/hitstun (to be verified):**
 
-| Region | Description |
-|--------|-------------|
-| `+0x00-0x40` | Physics region - likely X/Y position and velocity |
-| `+0x70-0x88` | Near ground_air - possibly fall velocity |
-| `+0xA0-0xD9` | Large gap - combat state, hitstun timer? |
-| `+0xF0-0x110` | Near defense_timer - stun timer? |
+| Region        | Description                                       |
+| ------------- | ------------------------------------------------- |
+| `+0x00-0x40`  | Physics region - likely X/Y position and velocity |
+| `+0x70-0x88`  | Near ground_air - possibly fall velocity          |
+| `+0xA0-0xD9`  | Large gap - combat state, hitstun timer?          |
+| `+0xF0-0x110` | Near defense_timer - stun timer?                  |
 
 Total struct size: at least 0x120 bytes (~288 bytes)
 
 ### Code Hooks
-| Address | Description |
-|---------|-------------|
+
+| Address      | Description                 |
+| ------------ | --------------------------- |
 | `0x020784FC` | Health calculation function |
 
 ## Tips
@@ -355,15 +371,18 @@ Total struct size: at least 0x120 bytes (~288 bytes)
 ## Troubleshooting
 
 **"Connection refused"**
+
 - Make sure melonDS GDB stub is enabled
 - Check the port number (default 3333)
 - Try restarting melonDS
 
 **"Remote connection closed"**
+
 - melonDS may have crashed or closed
 - Try a different ARM9 port in melonDS settings
 
 **GDB hangs on connect**
+
 - The ROM might not be loaded yet in melonDS
 - Load the ROM first, then connect GDB
 

@@ -124,7 +124,7 @@ Profile: TBD
 **Damage Formula:**
 
 ```
-base_damage = (jpower_total / 7) for DB characters (tentative)
+base_damage = (jpower_total / 5) + (tier - 2)  # Confirmed formula
 - OR -
 base_damage = (jpower_total / 5) + (tier - 2) for universal formula
 ```

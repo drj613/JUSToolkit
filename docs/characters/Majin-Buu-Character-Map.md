@@ -183,7 +183,7 @@ as Goku with ÷7 formula. If different, there's additional selection logic.
 
 ```
 base_damage = (jpower_total / 5) + (tier - 2)   # Confirmed for Ichigo
-base_damage = (jpower_total / 7)                 # Observed for Goku
+base_damage = (jpower_total / 5) + (tier - 2)    # Confirmed formula
 ```
 
 - tier 1: -1 modifier

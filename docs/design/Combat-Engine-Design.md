@@ -32,7 +32,7 @@ The original game runs on Nintendo DS with two screens:
 - **Off-screen indicators**: Arrows point to opponents outside viewport
 
 The bottom screen deck UI is specific to NDS touch input but the concept
-(quick-access to supports and tag-outs) could translate to button UI.
+(quick-access to supports and tag-outs) could translate to button UI. The game also includes the ability to register L and R as hotkeys
 
 ---
 
@@ -211,7 +211,7 @@ final_damage = base_damage + tier_modifier
 
 Where:
 - `jpower_total = damage1 + damage2 + damage3` from jpower.bin
-- `divisor` = 7 for most characters (possibly varies)
+- `divisor` = 5 (confirmed)
 - `tier_modifier = character_tier - 2` (-1, 0, or +1)
 
 ### Nature Advantage

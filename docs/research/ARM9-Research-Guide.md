@@ -701,7 +701,7 @@ From web research, battle passives include:
 ```
 jpower_block = chr_b.classId & 0xFF
 damage = floor(jpower_total / 5) + (chr_b.tier - 2)  // For Ichigo
-damage = floor(jpower_total / 7)                     // For Goku (unconfirmed)
+damage = floor(jpower_total / 5) + (tier - 2)        // Confirmed formula
 attack_boost = 1.2×  // Universal multiplier
 nature_advantage = 1.5×  // Type advantage multiplier
 

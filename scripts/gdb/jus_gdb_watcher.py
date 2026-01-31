@@ -124,6 +124,59 @@ def read_bytes(addr, count):
         return None
 
 
+def test_watchpoint_support(test_addr=None):
+    """Test if the GDB stub supports hardware watchpoints.
+
+    Returns True if watchpoints work, False otherwise.
+    Note: ARM has limited hardware debug registers (~2 watchpoints).
+    """
+    if test_addr is None:
+        test_addr = ADDRESSES.get('battle_timer', 0x021DEA71)
+
+    try:
+        # Try to create a test watchpoint
+        test_bp = gdb.Breakpoint(f"*{test_addr:#x}", type=gdb.BP_WATCHPOINT, wp_class=gdb.WP_WRITE)
+        # If we got here, it was created - delete it
+        test_bp.delete()
+        return True
+    except gdb.error as e:
+        error_str = str(e).lower()
+        if 'watchpoint' in error_str or 'hardware' in error_str or 'not supported' in error_str:
+            return False
+        # Unknown error - assume not supported
+        return False
+    except Exception:
+        return False
+
+
+# Global flag for watchpoint support (tested once at first use)
+_watchpoint_support_tested = False
+_watchpoint_support_available = None
+
+
+def check_watchpoint_support():
+    """Check and cache watchpoint support status."""
+    global _watchpoint_support_tested, _watchpoint_support_available
+
+    if not _watchpoint_support_tested:
+        _watchpoint_support_available = test_watchpoint_support()
+        _watchpoint_support_tested = True
+
+        if not _watchpoint_support_available:
+            print()
+            print("=" * 60)
+            print("WARNING: Hardware watchpoints may not be supported!")
+            print("=" * 60)
+            print()
+            print("melonDS GDB stub has limited watchpoint support.")
+            print("If watchpoint-based triggers fail, use these alternatives:")
+            print("  - jus-auto-snapshot-on-damage (uses breakpoint, more reliable)")
+            print("  - jus-burst-snapshot (manual timing)")
+            print()
+
+    return _watchpoint_support_available
+
+
 # ============================================================================
 # GDB COMMANDS
 # ============================================================================
@@ -938,20 +991,30 @@ class JUSAutoSnapshotOnHit(gdb.Command):
             print("Player must be 1-4")
             return
 
-        # Create the watchpoint
-        bp = HitTriggerBreakpoint(player, prefix)
-        self._active_breakpoints.append(bp)
+        # Check watchpoint support (warns on first use if not supported)
+        check_watchpoint_support()
 
-        print(f"=== Auto-Snapshot on Hit ENABLED ===")
-        print(f"Player: {player}")
-        print(f"Prefix: {prefix}")
-        print()
-        print("Now use 'continue' to resume the game.")
-        print("Snapshots will be captured automatically when damage is taken.")
-        print()
-        print("To view snapshots: jus-char-snapshot (no args)")
-        print("To compare: jus-char-diff auto_hit1 auto_hit2")
-        print("To stop: jus-auto-snapshot-off")
+        # Create the watchpoint
+        try:
+            bp = HitTriggerBreakpoint(player, prefix)
+            self._active_breakpoints.append(bp)
+
+            print(f"=== Auto-Snapshot on Hit ENABLED ===")
+            print(f"Player: {player}")
+            print(f"Prefix: {prefix}")
+            print()
+            print("Now use 'continue' to resume the game.")
+            print("Snapshots will be captured automatically when damage is taken.")
+            print()
+            print("To view snapshots: jus-char-snapshot (no args)")
+            print("To compare: jus-char-diff auto_hit1 auto_hit2")
+            print("To stop: jus-auto-snapshot-off")
+
+        except gdb.error as e:
+            print(f"ERROR: Failed to create watchpoint: {e}")
+            print()
+            print("Hardware watchpoints may not be supported by melonDS.")
+            print("Try using 'jus-auto-snapshot-on-damage' instead (uses breakpoint).")
 
 
 class JUSAutoSnapshotOff(gdb.Command):

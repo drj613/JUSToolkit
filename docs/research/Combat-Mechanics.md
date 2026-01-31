@@ -9,7 +9,7 @@ Documented gameplay mechanics for Jump Ultimate Stars, derived from in-game test
 ### Damage Formula (Confirmed)
 
 ```
-actual_damage = floor(jpower_totalDamage / 7 * nature_multiplier)
+actual_damage = floor((jpower_totalDamage / 5 + tier_modifier) * nature_multiplier)
 ```
 
 Where `jpower_totalDamage = damage1 + damage2 + damage3` from the jpower.bin entry.

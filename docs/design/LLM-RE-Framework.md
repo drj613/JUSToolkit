@@ -93,7 +93,7 @@ Not all unknowns are equal. Identify which ones block progress:
 ### Formula Derivation Process
 
 1. **Observe** - Document raw behavior (Goku B does 8 damage)
-2. **Hypothesize** - Propose formula (`damage = jpower_total / 7`)
+2. **Hypothesize** - Propose formula (`damage = jpower_total / 5`)
 3. **Test** - Check against other cases (does Ichigo match?)
 4. **Refine** - Adjust formula for exceptions
 5. **Confirm** - Mark as confirmed with test evidence

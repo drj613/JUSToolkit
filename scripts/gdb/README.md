@@ -120,34 +120,39 @@ The emulator will pause. Use `continue` to resume.
 These commands solve the window focus problem - they run in the background while
 you play:
 
-| Command                                               | Description                                  |
-| ----------------------------------------------------- | -------------------------------------------- |
-| `jus-auto-snapshot-on-hit <player> [prefix]`          | Capture AFTER HP is written                  |
-| `jus-auto-snapshot-on-damage <player> [prefix]`       | Capture BEFORE HP write (at calc function)   |
-| `jus-auto-snapshot-on-state <player> [prefix]`        | Capture on jump/land/launch                  |
-| `jus-auto-snapshot-on-status <player> [prefix] [type]`| Capture on status change (hitstun?)          |
-| `jus-burst-snapshot <count> <prefix> [player]`        | Take N snapshots rapidly                     |
-| `jus-auto-snapshot-off`                               | Disable all auto-triggers                    |
+| Command                                                | Description                                |
+| ------------------------------------------------------ | ------------------------------------------ |
+| `jus-auto-snapshot-on-hit <player> [prefix]`           | Capture AFTER HP is written                |
+| `jus-auto-snapshot-on-damage <player> [prefix]`        | Capture BEFORE HP write (at calc function) |
+| `jus-auto-snapshot-on-state <player> [prefix]`         | Capture on jump/land/launch                |
+| `jus-auto-snapshot-on-status <player> [prefix] [type]` | Capture on status change (hitstun?)        |
+| `jus-burst-snapshot <count> <prefix> [player]`         | Take N snapshots rapidly                   |
+| `jus-auto-snapshot-off`                                | Disable all auto-triggers                  |
 
 **Timing considerations:**
-- `on-hit` fires when HP is *written* - knockback velocity may already be applied
-- `on-damage` fires at the damage *calculation* function - may be closer to impact
+
+- `on-hit` fires when HP is _written_ - knockback velocity may already be
+  applied
+- `on-damage` fires at the damage _calculation_ function - may be closer to
+  impact
 - Compare both to understand the game's execution order
 
-The status trigger watches `positive_status` (0x88) and `negative_status` (0xA0) fields,
-which may encode hitstun states. Use `type` = `positive`, `negative`, or `both` (default).
+The status trigger watches `positive_status` (0x88) and `negative_status` (0xA0)
+fields, which may encode hitstun states. Use `type` = `positive`, `negative`, or
+`both` (default).
 
 ### Noise Filtering
 
 Before analyzing combat data, capture baseline "noise" to identify timer fields:
 
-| Command                                    | Description                              |
-| ------------------------------------------ | ---------------------------------------- |
-| `jus-baseline-noise <player> [count] [prefix]` | Capture idle state over time         |
-| `jus-find-timers <prefix>`                 | Identify always-changing fields (timers) |
+| Command                                        | Description                              |
+| ---------------------------------------------- | ---------------------------------------- |
+| `jus-baseline-noise <player> [count] [prefix]` | Capture idle state over time             |
+| `jus-find-timers <prefix>`                     | Identify always-changing fields (timers) |
 
 Fields that change during idle time are timers/counters - **not** physics data.
-After running `jus-find-timers`, these offsets are marked `[TIMER - ignore]` in diff output.
+After running `jus-find-timers`, these offsets are marked `[TIMER - ignore]` in
+diff output.
 
 ### Binary Dump Scripts
 

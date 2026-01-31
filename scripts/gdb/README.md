@@ -108,6 +108,17 @@ The emulator will pause. Use `continue` to resume.
 | `jus-char-diff <snap1> <snap2\|now>` | Compare char struct snapshots (find velocity/hitstun) |
 | `jus-velocity-watch [player]` | Show physics region values |
 
+### Automated Triggers (No Manual Ctrl+C!)
+
+These commands solve the window focus problem - they run in the background while you play:
+
+| Command | Description |
+|---------|-------------|
+| `jus-auto-snapshot-on-hit <player> [prefix]` | Auto-capture when player takes damage |
+| `jus-auto-snapshot-on-state <player> [prefix]` | Auto-capture on jump/land/launch |
+| `jus-burst-snapshot <count> <prefix> [player]` | Take N snapshots rapidly |
+| `jus-auto-snapshot-off` | Disable all auto-triggers |
+
 ### Binary Dump Scripts
 
 For detailed analysis, use the standalone GDB scripts:
@@ -224,6 +235,59 @@ python scripts/analyze_deck_dump.py --diff /tmp/jus_dumps/state1/deck_0a1000.bin
 (gdb) jus-char-diff lenalee_before lenalee_hit
 
 # Compare velocity values - Lenalee should have higher knockback velocity
+```
+
+### Using Automated Triggers (Recommended!)
+
+The manual Ctrl+C approach has a focus problem - you can't control the game
+AND the terminal simultaneously. Use these automated triggers instead:
+
+```gdb
+# Connect and get into a battle first
+(gdb) target remote localhost:3333
+(gdb) continue
+# ... start a 1v1 battle, then Ctrl+C to set up triggers ...
+
+# Set up automatic snapshot on damage
+(gdb) jus-auto-snapshot-on-hit 1 test
+# Now resume - you can focus on melonDS!
+(gdb) continue
+
+# ... play the game, let P1 get hit multiple times ...
+# Snapshots are captured automatically in background!
+# You'll see: [AUTO] Snapshot 'test_hit1' captured (HP: 100 -> 92)
+
+# When done, Ctrl+C to analyze
+(gdb) jus-char-diff test_hit1 test_hit2
+```
+
+### Auto-Capture State Transitions
+
+```gdb
+# Capture jumps, lands, and launches automatically
+(gdb) jus-auto-snapshot-on-state 1 jump_test
+(gdb) continue
+
+# ... jump around, get launched ...
+# Captures: jump_test_state1 (ground -> air)
+#           jump_test_state2 (air -> ground)
+#           jump_test_state3 (ground -> air)  <- from getting hit
+
+(gdb) jus-auto-snapshot-off  # Disable when done
+(gdb) jus-char-diff jump_test_state1 jump_test_state3
+# Compare voluntary jump vs launched - find knockback fields!
+```
+
+### Burst Snapshots for Movement Analysis
+
+```gdb
+# Capture rapid sequence during movement
+# Pause while character is walking/dashing
+(gdb) jus-burst-snapshot 10 walking 1
+# Takes 10 snapshots with brief continues between
+
+(gdb) jus-char-diff walking_0 walking_9
+# See position/velocity change over time
 ```
 
 ## Known Addresses

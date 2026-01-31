@@ -820,14 +820,294 @@ class JUSVelocityWatch(gdb.Command):
                 print(f"  +{i:04X}: {word:6d} (0x{struct.unpack('<H', data[i:i+2])[0]:04X})")
 
         print()
-        print("TIP: Take snapshots during different states:")
-        print("  1. jus-char-snapshot idle       (character standing still)")
-        print("  2. jus-char-snapshot walking    (character walking)")
-        print("  3. jus-char-diff idle walking   (find velocity fields)")
+        print("TIP: Use automated triggers instead of manual Ctrl+C:")
+        print("  jus-auto-snapshot-on-hit 1   - Auto-capture when P1 takes damage")
+        print("  jus-auto-snapshot-on-state 1 - Auto-capture when P1 state changes")
+
+
+# ============================================================================
+# AUTOMATED SNAPSHOT TRIGGERS (solve focus problem)
+# ============================================================================
+
+class HitTriggerBreakpoint(gdb.Breakpoint):
+    """Internal breakpoint that triggers on HP change."""
+
+    def __init__(self, player, snapshot_name_prefix):
+        self.player = player
+        self.prefix = snapshot_name_prefix
+        self.hit_count = 0
+        self.last_hp = None
+
+        # Watch HP address for writes
+        hp_addr = ADDRESSES[f'player{player}_hp']
+        super().__init__(f"*{hp_addr:#x}", gdb.BP_WATCHPOINT, gdb.WP_WRITE)
+        self.silent = True
+
+    def stop(self):
+        """Called when HP changes. Take snapshot and continue."""
+        hp = read_byte(ADDRESSES[f'player{self.player}_hp'])
+
+        # Only trigger on HP decrease (taking damage)
+        if self.last_hp is not None and hp < self.last_hp:
+            self.hit_count += 1
+            name = f"{self.prefix}_hit{self.hit_count}"
+
+            # Get character struct pointer
+            ptr_addr = ADDRESSES[f'player{self.player}_state_ptr']
+            ptr = read_dword(ptr_addr)
+
+            if ptr and ptr >= 0x02000000:
+                data = read_bytes(ptr, 0x120)
+                if data:
+                    _char_snapshots[name] = {
+                        'data': data,
+                        'ptr': ptr,
+                        'player': self.player,
+                        'hp_before': self.last_hp,
+                        'hp_after': hp,
+                    }
+                    print(f"\n[AUTO] Snapshot '{name}' captured (HP: {self.last_hp} -> {hp})")
+
+        self.last_hp = hp
+        return False  # Don't stop, continue running
+
+
+class JUSAutoSnapshotOnHit(gdb.Command):
+    """Automatically take snapshots when a player takes damage.
+
+    Usage: jus-auto-snapshot-on-hit <player> [prefix]
+
+    This sets up a watchpoint on HP that automatically captures
+    character state whenever damage is taken. No need to Ctrl+C!
+
+    The snapshots are named: <prefix>_hit1, <prefix>_hit2, etc.
+    Default prefix: "auto"
+
+    To stop: jus-auto-snapshot-off
+    """
+
+    _active_breakpoints = []
+
+    def __init__(self):
+        super().__init__("jus-auto-snapshot-on-hit", gdb.COMMAND_USER)
+
+    def invoke(self, arg, from_tty):
+        args = arg.split()
+        if not args:
+            print("Usage: jus-auto-snapshot-on-hit <player 1-4> [prefix]")
+            print("Example: jus-auto-snapshot-on-hit 1 goku")
+            print("  -> Creates snapshots: goku_hit1, goku_hit2, ...")
+            return
+
+        player = int(args[0])
+        prefix = args[1] if len(args) > 1 else "auto"
+
+        if player < 1 or player > 4:
+            print("Player must be 1-4")
+            return
+
+        # Create the watchpoint
+        bp = HitTriggerBreakpoint(player, prefix)
+        self._active_breakpoints.append(bp)
+
+        print(f"=== Auto-Snapshot on Hit ENABLED ===")
+        print(f"Player: {player}")
+        print(f"Prefix: {prefix}")
         print()
-        print("  1. jus-char-snapshot before_hit (before getting hit)")
-        print("  2. jus-char-snapshot in_hitstun (during hitstun)")
-        print("  3. jus-char-diff before_hit in_hitstun (find hitstun/knockback)")
+        print("Now use 'continue' to resume the game.")
+        print("Snapshots will be captured automatically when damage is taken.")
+        print()
+        print("To view snapshots: jus-char-snapshot (no args)")
+        print("To compare: jus-char-diff auto_hit1 auto_hit2")
+        print("To stop: jus-auto-snapshot-off")
+
+
+class JUSAutoSnapshotOff(gdb.Command):
+    """Disable all automatic snapshot triggers."""
+
+    def __init__(self):
+        super().__init__("jus-auto-snapshot-off", gdb.COMMAND_USER)
+
+    def invoke(self, arg, from_tty):
+        count = 0
+        for bp in JUSAutoSnapshotOnHit._active_breakpoints:
+            bp.delete()
+            count += 1
+        JUSAutoSnapshotOnHit._active_breakpoints.clear()
+
+        if count:
+            print(f"Disabled {count} auto-snapshot trigger(s)")
+        else:
+            print("No active auto-snapshot triggers")
+
+        print(f"Captured snapshots: {list(_char_snapshots.keys())}")
+
+
+class StateTriggerBreakpoint(gdb.Breakpoint):
+    """Internal breakpoint that triggers on ground/air state change."""
+
+    def __init__(self, player, snapshot_name_prefix):
+        self.player = player
+        self.prefix = snapshot_name_prefix
+        self.state_count = 0
+        self.last_state = None
+
+        # Get character struct pointer to find state address
+        ptr_addr = ADDRESSES[f'player{player}_state_ptr']
+        ptr = read_dword(ptr_addr)
+
+        if not ptr or ptr < 0x02000000:
+            raise ValueError(f"Player {player} state pointer invalid")
+
+        # Watch the ground_air field
+        state_addr = ptr + CHAR_OFFSETS['ground_air']
+        super().__init__(f"*{state_addr:#x}", gdb.BP_WATCHPOINT, gdb.WP_WRITE)
+        self.silent = True
+        self.state_addr = state_addr
+
+    def stop(self):
+        """Called when ground/air state changes."""
+        state = read_byte(self.state_addr)
+
+        if self.last_state is not None and state != self.last_state:
+            self.state_count += 1
+
+            # Decode state
+            state_name = "air" if state == 0x00 else "ground" if state == 0x22 else f"0x{state:02X}"
+            last_name = "air" if self.last_state == 0x00 else "ground" if self.last_state == 0x22 else f"0x{self.last_state:02X}"
+
+            name = f"{self.prefix}_state{self.state_count}"
+
+            # Get full character struct
+            ptr_addr = ADDRESSES[f'player{self.player}_state_ptr']
+            ptr = read_dword(ptr_addr)
+
+            if ptr and ptr >= 0x02000000:
+                data = read_bytes(ptr, 0x120)
+                if data:
+                    _char_snapshots[name] = {
+                        'data': data,
+                        'ptr': ptr,
+                        'player': self.player,
+                        'state_from': last_name,
+                        'state_to': state_name,
+                    }
+                    print(f"\n[AUTO] Snapshot '{name}' captured ({last_name} -> {state_name})")
+
+        self.last_state = state
+        return False
+
+
+class JUSAutoSnapshotOnState(gdb.Command):
+    """Automatically take snapshots when ground/air state changes.
+
+    Usage: jus-auto-snapshot-on-state <player> [prefix]
+
+    Captures state when character:
+    - Jumps (ground -> air)
+    - Lands (air -> ground)
+    - Gets launched (ground -> air from hit)
+    - Enters hitstun states
+
+    Default prefix: "state"
+    """
+
+    _active_breakpoints = []
+
+    def __init__(self):
+        super().__init__("jus-auto-snapshot-on-state", gdb.COMMAND_USER)
+
+    def invoke(self, arg, from_tty):
+        args = arg.split()
+        if not args:
+            print("Usage: jus-auto-snapshot-on-state <player 1-4> [prefix]")
+            return
+
+        player = int(args[0])
+        prefix = args[1] if len(args) > 1 else "state"
+
+        if player < 1 or player > 4:
+            print("Player must be 1-4")
+            return
+
+        try:
+            bp = StateTriggerBreakpoint(player, prefix)
+            self._active_breakpoints.append(bp)
+            JUSAutoSnapshotOnHit._active_breakpoints.append(bp)  # Share cleanup
+
+            print(f"=== Auto-Snapshot on State Change ENABLED ===")
+            print(f"Player: {player}")
+            print(f"Prefix: {prefix}")
+            print()
+            print("Triggers on: jump, land, launched, knockdown")
+            print("Use 'continue' to resume. Stop with: jus-auto-snapshot-off")
+
+        except ValueError as e:
+            print(f"Error: {e}")
+            print("Make sure you're in a battle and the character is loaded.")
+
+
+class JUSPeriodicSnapshot(gdb.Command):
+    """Take a burst of snapshots with brief continues between.
+
+    Usage: jus-burst-snapshot <count> <name_prefix> [player]
+
+    Takes <count> snapshots, briefly continuing between each.
+    Useful for capturing movement/animation over time.
+
+    Example: jus-burst-snapshot 10 walking 1
+    Creates: walking_0, walking_1, ... walking_9
+    """
+
+    def __init__(self):
+        super().__init__("jus-burst-snapshot", gdb.COMMAND_USER)
+
+    def invoke(self, arg, from_tty):
+        args = arg.split()
+        if len(args) < 2:
+            print("Usage: jus-burst-snapshot <count> <prefix> [player]")
+            print("Example: jus-burst-snapshot 5 walking 1")
+            return
+
+        count = int(args[0])
+        prefix = args[1]
+        player = int(args[2]) if len(args) > 2 else 1
+
+        ptr_addr = ADDRESSES[f'player{player}_state_ptr']
+        ptr = read_dword(ptr_addr)
+
+        if not ptr or ptr >= 0x02000000:
+            pass  # Will check per snapshot
+        else:
+            print(f"Player {player} state pointer invalid")
+            return
+
+        print(f"Taking {count} snapshots with prefix '{prefix}'...")
+        print("(Game will briefly continue between each)")
+        print()
+
+        for i in range(count):
+            # Read current state
+            ptr = read_dword(ptr_addr)
+            if ptr and ptr >= 0x02000000:
+                data = read_bytes(ptr, 0x120)
+                if data:
+                    name = f"{prefix}_{i}"
+                    _char_snapshots[name] = {
+                        'data': data,
+                        'ptr': ptr,
+                        'player': player,
+                        'burst_index': i,
+                    }
+                    print(f"  {name}: captured")
+
+            if i < count - 1:
+                # Brief continue (stepi advances one instruction)
+                gdb.execute("stepi 1000", to_string=True)
+
+        print()
+        print(f"Done! Snapshots: {prefix}_0 through {prefix}_{count-1}")
+        print(f"Compare with: jus-char-diff {prefix}_0 {prefix}_{count-1}")
 
 
 # ============================================================================
@@ -874,6 +1154,12 @@ def init():
     JUSCharDiff()
     JUSVelocityWatch()
 
+    # Automated snapshot triggers (solve window focus problem)
+    JUSAutoSnapshotOnHit()
+    JUSAutoSnapshotOff()
+    JUSAutoSnapshotOnState()
+    JUSPeriodicSnapshot()
+
     print("=" * 50)
     print("  JUS GDB Watcher loaded!")
     print("=" * 50)
@@ -896,6 +1182,12 @@ def init():
     print("  jus-char-snapshot <name> [player] - Save char struct snapshot")
     print("  jus-char-diff <snap1> <snap2|now> - Find changing fields")
     print("  jus-velocity-watch [player]       - Show physics region")
+    print()
+    print("AUTOMATED TRIGGERS (no manual Ctrl+C needed!):")
+    print("  jus-auto-snapshot-on-hit <player> [prefix]   - Capture on damage")
+    print("  jus-auto-snapshot-on-state <player> [prefix] - Capture on jump/land")
+    print("  jus-burst-snapshot <count> <prefix> [player] - Rapid-fire snapshots")
+    print("  jus-auto-snapshot-off                        - Disable triggers")
     print()
     print("Tracing:")
     print("  jus-trace <addr> [on|off]  - Log function calls")

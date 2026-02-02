@@ -1,18 +1,22 @@
 # jpower Entry Selection Mechanism - Research Summary
 
-**Date:** 2026-01-31  
-**Status:** Partially Resolved - Two Distinct Systems Identified
+**Date:** 2026-01-31 **Status:** Partially Resolved - Two Distinct Systems
+Identified
 
 ---
 
 ## Executive Summary
 
-Collision files use **two distinct systems** to select jpower entries for damage calculation:
+Collision files use **two distinct systems** to select jpower entries for damage
+calculation:
 
-1. **Direct Reference System** (Ichigo pattern): `damageFlags` = global jpower array index
-2. **Indirect Lookup System** (Goku pattern): `damageFlags=0` triggers alternative lookup mechanism
+1. **Direct Reference System** (Ichigo pattern): `damageFlags` = global jpower
+   array index
+2. **Indirect Lookup System** (Goku pattern): `damageFlags=0` triggers
+   alternative lookup mechanism
 
-The selection mechanism is **character-dependent** and not uniform across all characters.
+The selection mechanism is **character-dependent** and not uniform across all
+characters.
 
 ---
 
@@ -20,9 +24,11 @@ The selection mechanism is **character-dependent** and not uniform across all ch
 
 ### 1. What is `damageFlags` and Where is it Located?
 
-**Location:** `CollisionEntry` structure, byte offset 0x0E (14) in collision files
+**Location:** `CollisionEntry` structure, byte offset 0x0E (14) in collision
+files
 
 **Field Definition:**
+
 - **Type:** `byte` (unsigned 8-bit integer)
 - **Size:** 1 byte
 - **Range:** 0-255 (0xFF = terminator entry)
@@ -50,14 +56,19 @@ public byte DamageFlags { get; set; }
 
 #### System 1: Direct jpower Reference (damageFlags > 0)
 
-**Pattern:** Characters like Ichigo use `damageFlags` as a **direct global jpower array index**.
+**Pattern:** Characters like Ichigo use `damageFlags` as a **direct global
+jpower array index**.
 
 **Evidence:**
+
 - **Ichigo (bl_b_01):** 19/20 collision entries have `damageFlags > 0`
-- **Example:** `damageFlags=2` → `jpower[2]` (ID=6, damage1=50) → 50/5=10 damage ✓
-- **Verified:** All Ichigo moves match jpower entries at the specified array indices
+- **Example:** `damageFlags=2` → `jpower[2]` (ID=6, damage1=50) → 50/5=10 damage
+  ✓
+- **Verified:** All Ichigo moves match jpower entries at the specified array
+  indices
 
 **How it works:**
+
 ```
 damageFlags = 2
 → jpower array index = 2
@@ -66,34 +77,37 @@ damageFlags = 2
 ```
 
 **Characteristics:**
+
 - `damageFlags` directly points to a jpower entry in the global array
 - No additional lookup required
 - Works independently of jpower block assignment
 
 #### System 2: Indirect Lookup (damageFlags = 0)
 
-**Pattern:** Characters like Goku use `damageFlags=0` to trigger an **alternative lookup mechanism**.
+**Pattern:** Characters like Goku use `damageFlags=0` to trigger an
+**alternative lookup mechanism**.
 
 **Evidence:**
+
 - **Goku (db_b_01):** Only 2/25 collision entries have `damageFlags > 0`
 - **All B attacks:** `damageFlags=0`, `subType=1`, `hitTier=2`
 - **Goku B=8** requires jpower with `damage1=40` (not in Block 0)
 - **damageFlags=0 does NOT mean jpower[0]** (that would give 50/5=10, not 8)
 
-**jpower Entries with damage1=40:**
-| Array Index | jpower ID | linkCategory | Notes |
-|-------------|-----------|--------------|-------|
-| 146 | 379 | 1 | First entry with damage1=40 |
-| 195 | 539 | 1 | Same linkCategory |
-| 218 | 604 | 1 | Same linkCategory |
+**jpower Entries with damage1=40:** | Array Index | jpower ID | linkCategory |
+Notes | |-------------|-----------|--------------|-------| | 146 | 379 | 1 |
+First entry with damage1=40 | | 195 | 539 | 1 | Same linkCategory | | 218 | 604
+| 1 | Same linkCategory |
 
 **Characteristics:**
+
 - `damageFlags=0` triggers unknown lookup mechanism
 - Likely uses `subType`, `hitTier`, `collisionType`, or ARM9 lookup table
 - May involve character-specific offsets or mappings
 - Accesses jpower entries outside the assigned block
 
 **Hypothesis:** When `damageFlags=0`, the game:
+
 1. Uses `classId` to get jpower block index
 2. Combines with `subType`/`hitTier`/other fields to select entry within block
 3. OR uses an ARM9 lookup table mapping collision properties → jpower index
@@ -106,6 +120,7 @@ damageFlags = 2
 The selection mechanism depends on which system the character uses:
 
 #### For Direct Reference Characters (Ichigo pattern):
+
 ```
 jpower_entry_index = damageFlags
 ```
@@ -113,6 +128,7 @@ jpower_entry_index = damageFlags
 **Simple and direct:** The `damageFlags` value IS the jpower array index.
 
 #### For Indirect Lookup Characters (Goku pattern):
+
 ```
 jpower_entry_index = lookup_function(
     classId,           // Points to jpower block
@@ -126,10 +142,14 @@ jpower_entry_index = lookup_function(
 **Unknown function:** The exact lookup mechanism is not yet discovered.
 
 **Possible factors:**
-1. **subType mapping:** `subType=1` (B attacks) might map to specific jpower entries
+
+1. **subType mapping:** `subType=1` (B attacks) might map to specific jpower
+   entries
 2. **hitTier selection:** Different tiers might select different entries
-3. **linkCategory matching:** Goku's entries with `damage1=40` all have `linkCategory=1`
-4. **ARM9 lookup table:** Character-specific table mapping collision properties → jpower index
+3. **linkCategory matching:** Goku's entries with `damage1=40` all have
+   `linkCategory=1`
+4. **ARM9 lookup table:** Character-specific table mapping collision properties
+   → jpower index
 5. **Block-relative indexing:** Entry index within the assigned jpower block
 
 ---
@@ -137,17 +157,21 @@ jpower_entry_index = lookup_function(
 ## Character Distribution
 
 ### Direct Reference System Users
+
 - **Ichigo (bl_b_01):** 19/20 entries with `damageFlags > 0`
 - **Bankai Ichigo (bl_b_02):** Likely similar pattern (needs verification)
 
 ### Indirect Lookup System Users
+
 - **Goku (db_b_01):** 2/25 entries with `damageFlags > 0`
 - **Naruto:** B=8 damage, likely uses same system as Goku
 - **Luffy, Robin, Franky, Nami:** All B=8 damage, likely indirect system
 
 ### Indirect Lookup System Users (continued)
-- **Majin Buu:** B=9 damage, uses jpower entry with `damage1=45` (confirmed, not anomaly)
-  - Originally thought to be anomaly because no jpower entry has *total*=45
+
+- **Majin Buu:** B=9 damage, uses jpower entry with `damage1=45` (confirmed, not
+  anomaly)
+  - Originally thought to be anomaly because no jpower entry has _total_=45
   - Resolution: Formula uses `damage1` only, and entries with `damage1=45` exist
 
 ---
@@ -156,52 +180,66 @@ jpower_entry_index = lookup_function(
 
 ### 1. jpower Blocks are Template Libraries
 
-**Key Finding:** Characters sharing the same jpower block have **different movesets**.
+**Key Finding:** Characters sharing the same jpower block have **different
+movesets**.
 
 **Examples:**
+
 - Goku and Majin Buu both use Block 0, but completely different attacks
 - Luffy and Robin both use Block 9, but different movesets
 - Nami and Franky both use Block 12, but different movesets
 
-**Implication:** jpower blocks contain a **library of potential moves**, and each character selects a subset. The selection mechanism determines which entries each character actually uses.
+**Implication:** jpower blocks contain a **library of potential moves**, and
+each character selects a subset. The selection mechanism determines which
+entries each character actually uses.
 
 ### 2. Block Assignment vs Entry Selection
 
 **Block Assignment (CONFIRMED):**
+
 ```
 jpower_block_index = classId & 0xFF
 ```
 
 **Entry Selection (PARTIALLY UNKNOWN):**
+
 - Direct system: `damageFlags` = global array index
 - Indirect system: Unknown function of collision properties
 
 ### 3. damageFlags Special Values
 
-| Value | Meaning | System |
-|-------|---------|--------|
-| `0xFF` | Terminator entry | Both |
-| `0x40` (64) | Buff trigger | Both |
-| `0` | Indirect lookup | Indirect system only |
-| `> 0` | Direct jpower index | Direct system |
+| Value       | Meaning             | System               |
+| ----------- | ------------------- | -------------------- |
+| `0xFF`      | Terminator entry    | Both                 |
+| `0x40` (64) | Buff trigger        | Both                 |
+| `0`         | Indirect lookup     | Indirect system only |
+| `> 0`       | Direct jpower index | Direct system        |
 
 ---
 
 ## Verified Examples
 
 ### Ichigo (Direct System)
+
 | Collision Entry | damageFlags | jpower Index | jpower.damage1 | Calculated Damage | Actual Damage |
-|----------------|-------------|--------------|----------------|-------------------|---------------|
-| B attack | 2 | jpower[2] | 50 | 50/5+0=10 | 10 ✓ |
-| Combo | 5 | jpower[5] | 50 | 50/5+0=10 | 10 ✓ |
-| Combo | 3 | jpower[3] | 45 | 45/5+0=9 | 9 ✓ |
+| --------------- | ----------- | ------------ | -------------- | ----------------- | ------------- |
+| B attack        | 2           | jpower[2]    | 50             | 50/5+0=10         | 10 ✓          |
+| Combo           | 5           | jpower[5]    | 50             | 50/5+0=10         | 10 ✓          |
+| Combo           | 3           | jpower[3]    | 45             | 45/5+0=9          | 9 ✓           |
 
 ### Goku (Indirect System)
-| Move | damageFlags | subType | hitTier | Required damage1 | Actual Damage | jpower Entry |
-|------|-------------|---------|---------|------------------|---------------|--------------|
-| B | 0 | 1 | 2 | 40 | 8 | Unknown (indices 146, 195, 218) |
-| Combo | 0 | 2 | 2 | ? | ? | Unknown |
-| Y attack | 14 | 7 | ? | ? | 14 | Unknown |
+
+| Move     | damageFlags | subType | hitTier | Required damage1 | Actual Damage | jpower Entry                    |
+| -------- | ----------- | ------- | ------- | ---------------- | ------------- | ------------------------------- |
+| B        | 0           | 1       | 2       | 40               | 8             | Unknown (indices 146, 195, 218) |
+| Combo    | 0           | 2       | 2       | ?                | ?             | Unknown                         |
+| Y attack | 14          | 7       | ?       | ?                | 14            | Unknown                         |
+
+### Caramelman (Mixed/Unclear System)
+
+Detailed findings and mapping attempts are documented in:
+`docs/characters/Caramelman-Character-Map.md` (see **damageFlags Mapping
+(WIP)**).
 
 ---
 
@@ -209,13 +247,15 @@ jpower_block_index = classId & 0xFF
 
 ### High Priority Questions
 
-1. **Indirect lookup function:** What is the exact formula/table for `damageFlags=0`?
+1. **Indirect lookup function:** What is the exact formula/table for
+   `damageFlags=0`?
    - Does it use `subType` + `hitTier`?
    - Is there an ARM9 lookup table?
    - Does it involve character-specific offsets?
 
 2. ~~**Majin Buu anomaly:**~~ **SOLVED** - Buu uses entry with `damage1=45`
-   - Original confusion: thought formula used total damage (no entry has *total*=45)
+   - Original confusion: thought formula used total damage (no entry has
+     _total_=45)
    - Resolution: Formula uses `damage1` only, entries with `damage1=45` exist
    - Now classified as indirect lookup system user like Goku
 
@@ -230,11 +270,13 @@ jpower_block_index = classId & 0xFF
 
 ### Medium Priority Questions
 
-5. **Block-relative indexing:** When `damageFlags=0`, does it select entries within the assigned block?
+5. **Block-relative indexing:** When `damageFlags=0`, does it select entries
+   within the assigned block?
    - Goku uses Block 0 (indices 0-8), but needs entries at 146, 195, 218
    - Suggests global array access, not block-relative
 
-6. **linkCategory role:** Do entries with same `linkCategory` get selected together?
+6. **linkCategory role:** Do entries with same `linkCategory` get selected
+   together?
    - Goku's `damage1=40` entries all have `linkCategory=1`
    - Coincidence or selection criteria?
 
@@ -285,11 +327,16 @@ jpower_block_index = classId & 0xFF
 
 ## Related Documentation
 
-- **Research Status:** `docs/research/Research-Status.md` - "jpower Entry-to-Move Mapping" section
-- **jpower Mapping:** `docs/research/jpower-Mapping.md` - Block assignment and structure
-- **Damage Formula:** `docs/research/Damage-Formula-Predictions.md` - Confirmed formula
-- **Character Maps:** `docs/characters/*-Character-Map.md` - Individual character analysis
-- **Format Definitions:** `src/JUS.Tool/Combat/Formats/CollisionEntry.cs` - Code structure
+- **Research Status:** `docs/research/Research-Status.md` - "jpower
+  Entry-to-Move Mapping" section
+- **jpower Mapping:** `docs/research/jpower-Mapping.md` - Block assignment and
+  structure
+- **Damage Formula:** `docs/research/Damage-Formula-Predictions.md` - Confirmed
+  formula
+- **Character Maps:** `docs/characters/*-Character-Map.md` - Individual
+  character analysis
+- **Format Definitions:** `src/JUS.Tool/Combat/Formats/CollisionEntry.cs` - Code
+  structure
 
 ---
 
@@ -297,15 +344,20 @@ jpower_block_index = classId & 0xFF
 
 The jpower entry selection mechanism uses **two distinct systems**:
 
-1. **Direct Reference:** `damageFlags` = global jpower array index (Ichigo pattern)
-2. **Indirect Lookup:** `damageFlags=0` triggers alternative mechanism (Goku pattern)
+1. **Direct Reference:** `damageFlags` = global jpower array index (Ichigo
+   pattern)
+2. **Indirect Lookup:** `damageFlags=0` triggers alternative mechanism (Goku
+   pattern)
 
 The indirect lookup system remains **partially unknown** and requires:
+
 - ARM9 code analysis to find the lookup function
 - More character pattern analysis to identify selection criteria
 - Investigation of edge cases (Majin Buu anomaly)
 
-**Key Insight:** The system is character-dependent, not uniform. Understanding which characters use which system is critical for accurate damage prediction and move analysis.
+**Key Insight:** The system is character-dependent, not uniform. Understanding
+which characters use which system is critical for accurate damage prediction and
+move analysis.
 
 ---
 

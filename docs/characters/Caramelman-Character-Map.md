@@ -57,9 +57,9 @@ different moveset.
 
 ### Specials (X Moves)
 
-| Koma | X Damage | X Notes | up X Damage | up X Notes |
-| ---- | -------- | ------- | ----------- | ---------- |
-| 8    |          |         |             |            |
+| Koma | X Damage | X Notes                                         | up X Damage | up X Notes                                                    |
+| ---- | -------- | ----------------------------------------------- | ----------- | ------------------------------------------------------------- |
+| 8    | 80 + 3   | Laser explosions (80) + small area near him (3) | 65/hit      | Robot grows legs and runs around, damaging anyone in its path |
 
 ---
 
@@ -126,6 +126,107 @@ Profile: Slightly offense-oriented
 - Has Type 5 (Summon) entries like Mashirito
 - Large hitbox moves (30x25, 30x10) suggest area attacks
 - damageFlags field does NOT represent actual damage values
+
+### damageFlags Mapping (WIP)
+
+**Source:** `jus_files/exported_combat/ds_b_03_collision.json`
+
+**Non-zero `damageFlags` entries (index in JSON array):**
+
+| idx | dmgFlags | type | subType | frame | dur | offX | offY | width | height |
+| --- | -------- | ---- | ------- | ----- | --- | ---- | ---- | ----- | ------ |
+| 5   | 1        | 3    | 5       | 9     | 0   | 0    | 0    | 16    | 3      |
+| 9   | 1        | 2    | 6       | 10    | 0   | 0    | 0    | 30    | 25     |
+| 10  | 2        | 0    | 0       | 0     | 0   | 12   | 0    | 0     | 4      |
+| 12  | 13       | 2    | 1       | 9     | 0   | 32   | 2    | 8     | 0      |
+| 14  | 14       | 2    | 1       | 20    | 0   | 1    | 0    | 10    | 0      |
+| 16  | 13       | 4    | 6       | 80    | 0   | 0    | 4    | 12    | 30     |
+| 17  | 1        | 5    | 6       | 65    | 0   | 1    | 10   | 30    | 10     |
+
+**Attempt A — Global jpower index (Ichigo-style):**
+
+| dmgFlags | jpower Index | jpower.id | type1 | d1  | d2  | d3  |
+| -------- | ------------ | --------- | ----- | --- | --- | --- |
+| 1        | 1            | 3         | 1     | 10  | 40  | 0   |
+| 2        | 2            | 6         | 1     | 50  | 0   | 0   |
+| 13       | 13           | 29        | 0     | 0   | 0   | 0   |
+| 14       | 14           | 30        | 0     | 0   | 0   | 0   |
+
+**Attempt B — Attack-only index (skip type1=0 entries):**
+
+| dmgFlags | Attack Index | global idx | jpower.id | d1  | d2  | d3  |
+| -------- | ------------ | ---------- | --------- | --- | --- | --- |
+| 1        | 1            | 1          | 3         | 10  | 40  | 0   |
+| 2        | 2            | 2          | 6         | 50  | 0   | 0   |
+| 13       | 13           | 23         | 47        | 0   | 30  | 20  |
+| 14       | 14           | 24         | 50        | 0   | 20  | 30  |
+
+**Observations:**
+
+- `damageFlags=1` → `damage1=10`, which matches Caramelman’s **3 damage ticks**
+  (tier=3 → 10/5+1=3). This likely corresponds to beam close-zone or multi-hit
+  tick damage (e.g., up Y or drill).
+- `damageFlags=2` → `damage1=50` (11 damage at tier=3), which does **not** match
+  any observed Caramelman hit. This suggests the lookup is **not** a simple
+  array index for all entries.
+- `damageFlags=13/14` map to entries with `damage1=0` but non-zero `damage2/3`,
+  hinting **energy moves might read damage2/3** or a different lookup path.
+- Several observed Caramelman damage components (`d1` = 20, 40, 45, 60, 70, 95)
+  do not align with any direct-index mapping, reinforcing that Caramelman is
+  **not purely Ichigo-style**.
+
+**Working Hypothesis:**
+
+Caramelman likely uses a hybrid lookup:
+
+1. Some hits use direct indices (e.g., `damageFlags=1` for 3-damage ticks).
+2. Other hits use an alternate table or interpret `damage2/3`, possibly gated by
+   attack type (Energy vs Punch/Kick) or `formType=2`.
+
+### Special Moves: Collision + Shot Correlation (WIP)
+
+**Observed special damage values (tier=3):**
+
+| Move           | Damage | Required damage1 (if standard formula) |
+| -------------- | ------ | -------------------------------------- |
+| X (explosion)  | 80     | 395                                    |
+| X (near-body)  | 3      | 10                                     |
+| up X (run hit) | 65     | 320                                    |
+
+**Collision entries likely tied to X / up X:**
+
+| idx | type | subType | frame | dmgFlags | width | height | Notes                               |
+| --- | ---- | ------- | ----- | -------- | ----- | ------ | ----------------------------------- |
+| 16  | 4    | 6       | 80    | 13       | 12    | 30     | Projectile-type; likely X explosion |
+| 17  | 5    | 6       | 65    | 1        | 30    | 10     | Summon-type; likely up X run hit    |
+
+**Projectile/Summon file:**
+
+- File: `jus_files/extracted_chrbin/ChrBin.aar/chr/shot/ds_b_03.bin`
+- Size: 288 bytes (9 records × 32 bytes)
+
+**Notes:**
+
+- Collision entries in `ds_b_03` have `projectileId=0` across the board, so the
+  shot record index is **not** directly exposed in collision data.
+- The `shot/*.bin` format is 32-byte records (per
+  `docs/formats/Combat-Formats.md`), but field meanings remain unknown. This
+  blocks direct mapping of shot record → X/up X at the moment.
+
+**Next steps to disambiguate (specials):**
+
+1. Reverse the `shot/*.bin` record layout to identify a per-record damage field.
+2. Compare shot records across characters with known projectile damage to locate
+   the damage component.
+3. Check ARM9 for projectile spawn code that selects a shot record (indexing
+   logic).
+
+**Next steps to disambiguate:**
+
+1. Correlate these collision entries to specific move animations and hit timing.
+2. Check projectile/summon data (`chr/shot/*.bin`) for related damage
+   references.
+3. Search ARM9 for a Caramelman-specific lookup path or type-based routing.
 
 ### jpower Block 105 Analysis
 

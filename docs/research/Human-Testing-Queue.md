@@ -12,9 +12,9 @@ Central tracking for all in-game tests that require human intervention.
 
 | Status      | Count |
 | ----------- | ----- |
-| PENDING     | 90    |
+| PENDING     | 89    |
 | IN PROGRESS | 0     |
-| COMPLETED   | 32    |
+| COMPLETED   | 33    |
 
 **Last Updated:** 2026-02-02
 
@@ -45,10 +45,9 @@ _All P0 tests completed!_
 
 ### P1 - High Priority
 
-| ID          | Character   | Test Description                              | Added      | Notes                                    |
-| ----------- | ----------- | --------------------------------------------- | ---------- | ---------------------------------------- |
-| db_b_07-003 | Gohan SSJ2  | Compare damage to Gotenks (same jpower block) | 2026-01-29 | Both B=8, confirms block sharing pattern |
-| db_b_09-004 | Gotenks SSJ | Verify charId=54 stat differences vs charId=7 | 2026-01-29 | May reveal what charId represents        |
+| ID          | Character   | Test Description                              | Added      | Notes                             |
+| ----------- | ----------- | --------------------------------------------- | ---------- | --------------------------------- |
+| db_b_09-004 | Gotenks SSJ | Verify charId=54 stat differences vs charId=7 | 2026-01-29 | May reveal what charId represents |
 
 ### P2 - Standard
 
@@ -174,38 +173,39 @@ _All P0 tests completed!_
 
 ## Completed Tests
 
-| ID            | Character     | Test Description        | Result       | Completed  | Notes                                  |
-| ------------- | ------------- | ----------------------- | ------------ | ---------- | -------------------------------------- |
-| ICHIGO-B      | Ichigo        | Base B damage           | 10           | 2026-01-29 | d1=50, 50/5+0=10 ✓                     |
-| ICHIGO-BANKAI | Bankai        | B damage with tier=1    | 9            | 2026-01-29 | d1=50, tier=1, 50/5-1=9 ✓              |
-| GOKU-ALL      | Goku          | Full moveset damage     | B=8          | 2026-01-29 | d1=40, 40/5+0=8 ✓                      |
-| CORE-002      | Naruto        | B damage formula test   | 8            | 2026-01-30 | d1=40, 40/5+0=8 ✓                      |
-| db_b_12-003   | Majin Buu     | B damage (Block 0 test) | 9            | 2026-01-30 | d1=45, 45/5+0=9 ✓ SOLVED anomaly       |
-| db_b_12-004   | Majin Buu     | ÷5 or ÷7 formula        | ÷5           | 2026-01-30 | Confirmed damage1/5 formula            |
-| NAMI-B        | Nami          | B damage                | 6            | 2026-01-30 | d1=30, 30/5+0=6 ✓                      |
-| TRAIN-B       | Train         | B damage                | 7            | 2026-01-30 | d1=35, 35/5+0=7 ✓                      |
-| LUFFY-B       | Luffy         | B damage                | 8            | 2026-01-30 | d1=40, 40/5+0=8 ✓                      |
-| ROBIN-B       | Robin         | B damage                | 8            | 2026-01-30 | d1=40, 40/5+0=8 ✓                      |
-| FRANKY-B      | Franky        | B damage                | 8            | 2026-01-30 | d1=40, 40/5+0=8 ✓                      |
-| CARAMELMAN-B  | Caramelman    | B damage (tier=3)       | 13           | 2026-01-30 | d1=60, tier=3, 60/5+1=13 ✓             |
-| KYUUBI-B      | Kyuubi Naruto | B damage (tier=1)       | 8            | 2026-01-30 | d1=45, tier=1, 45/5-1=8 ✓              |
-| db_b_12-001   | Majin Buu     | Full moveset damage     | All verified | 2026-02-02 | See character map for details          |
-| VEGETA-B      | Vegeta        | B damage                | 10           | 2026-02-02 | d1=50, 50/5+0=10 ✓                     |
-| VEGETA-SSJ-B  | Vegeta SSJ    | B damage                | 10           | 2026-02-02 | d1=50, 50/5+0=10 ✓                     |
-| GOHAN-SSJ-B   | Gohan SSJ     | B damage                | 8            | 2026-02-02 | d1=40, 40/5+0=8 ✓                      |
-| GOHAN-SSJ2-B  | Gohan SSJ2    | B damage                | 8            | 2026-02-02 | d1=40, 40/5+0=8 ✓                      |
-| GOTENKS-B     | Gotenks       | B damage                | 10           | 2026-02-02 | d1=50, 50/5+0=10 ✓                     |
-| GOTENKS-SSJ-B | Gotenks SSJ   | B damage                | 10           | 2026-02-02 | d1=50, 50/5+0=10 ✓                     |
-| ds_b_03-ALL   | Caramelman    | Full moveset            | All verified | 2026-02-02 | tier=3, 8-koma only, robot mech        |
-| NARUTO-B-ALL  | Naruto        | All B moves             | All 8        | 2026-02-02 | All B moves do 8 damage                |
-| bl_b_03-KOMA  | Rukia         | Koma sizes              | 4,5,6        | 2026-02-02 |                                        |
-| bl_b_04-KOMA  | Renji         | Koma sizes              | 4,5,6        | 2026-02-02 |                                        |
-| bl_b_05-KOMA  | Hitsugaya     | Koma sizes              | 4,5,6        | 2026-02-02 |                                        |
-| NARUTO-SUB    | Naruto        | Substitution mechanic   | Confirmed    | 2026-02-02 | Taunt activates log icon, blocks 1 hit |
-| na_b_03-SUB   | Sasuke        | Substitution mechanic   | Confirmed    | 2026-02-02 | Same as Naruto                         |
-| na_b_04-SUB   | Sakura        | Substitution mechanic   | Confirmed    | 2026-02-02 | Same as Naruto                         |
-| na_b_05-SUB   | Kakashi       | Substitution mechanic   | Confirmed    | 2026-02-02 | Same as Naruto                         |
-| na_b_02-TAUNT | Kyuubi Naruto | Taunt effect            | SP regen     | 2026-02-02 | Does NOT have substitution             |
+| ID            | Character     | Test Description          | Result       | Completed  | Notes                                  |
+| ------------- | ------------- | ------------------------- | ------------ | ---------- | -------------------------------------- |
+| ICHIGO-B      | Ichigo        | Base B damage             | 10           | 2026-01-29 | d1=50, 50/5+0=10 ✓                     |
+| ICHIGO-BANKAI | Bankai        | B damage with tier=1      | 9            | 2026-01-29 | d1=50, tier=1, 50/5-1=9 ✓              |
+| GOKU-ALL      | Goku          | Full moveset damage       | B=8          | 2026-01-29 | d1=40, 40/5+0=8 ✓                      |
+| CORE-002      | Naruto        | B damage formula test     | 8            | 2026-01-30 | d1=40, 40/5+0=8 ✓                      |
+| db_b_12-003   | Majin Buu     | B damage (Block 0 test)   | 9            | 2026-01-30 | d1=45, 45/5+0=9 ✓ SOLVED anomaly       |
+| db_b_12-004   | Majin Buu     | ÷5 or ÷7 formula          | ÷5           | 2026-01-30 | Confirmed damage1/5 formula            |
+| NAMI-B        | Nami          | B damage                  | 6            | 2026-01-30 | d1=30, 30/5+0=6 ✓                      |
+| TRAIN-B       | Train         | B damage                  | 7            | 2026-01-30 | d1=35, 35/5+0=7 ✓                      |
+| LUFFY-B       | Luffy         | B damage                  | 8            | 2026-01-30 | d1=40, 40/5+0=8 ✓                      |
+| ROBIN-B       | Robin         | B damage                  | 8            | 2026-01-30 | d1=40, 40/5+0=8 ✓                      |
+| FRANKY-B      | Franky        | B damage                  | 8            | 2026-01-30 | d1=40, 40/5+0=8 ✓                      |
+| CARAMELMAN-B  | Caramelman    | B damage (tier=3)         | 13           | 2026-01-30 | d1=60, tier=3, 60/5+1=13 ✓             |
+| KYUUBI-B      | Kyuubi Naruto | B damage (tier=1)         | 8            | 2026-01-30 | d1=45, tier=1, 45/5-1=8 ✓              |
+| db_b_12-001   | Majin Buu     | Full moveset damage       | All verified | 2026-02-02 | See character map for details          |
+| VEGETA-B      | Vegeta        | B damage                  | 10           | 2026-02-02 | d1=50, 50/5+0=10 ✓                     |
+| VEGETA-SSJ-B  | Vegeta SSJ    | B damage                  | 10           | 2026-02-02 | d1=50, 50/5+0=10 ✓                     |
+| GOHAN-SSJ-B   | Gohan SSJ     | B damage                  | 8            | 2026-02-02 | d1=40, 40/5+0=8 ✓                      |
+| GOHAN-SSJ2-B  | Gohan SSJ2    | B damage                  | 8            | 2026-02-02 | d1=40, 40/5+0=8 ✓                      |
+| GOTENKS-B     | Gotenks       | B damage                  | 10           | 2026-02-02 | d1=50, 50/5+0=10 ✓                     |
+| GOTENKS-SSJ-B | Gotenks SSJ   | B damage                  | 10           | 2026-02-02 | d1=50, 50/5+0=10 ✓                     |
+| db_b_07-003   | Gohan SSJ2    | Compare damage to Gotenks | B differs    | 2026-02-02 | Gohan B=8, Gotenks B=10                |
+| ds_b_03-ALL   | Caramelman    | Full moveset              | All verified | 2026-02-02 | tier=3, 8-koma only, robot mech        |
+| NARUTO-B-ALL  | Naruto        | All B moves               | All 8        | 2026-02-02 | All B moves do 8 damage                |
+| bl_b_03-KOMA  | Rukia         | Koma sizes                | 4,5,6        | 2026-02-02 |                                        |
+| bl_b_04-KOMA  | Renji         | Koma sizes                | 4,5,6        | 2026-02-02 |                                        |
+| bl_b_05-KOMA  | Hitsugaya     | Koma sizes                | 4,5,6        | 2026-02-02 |                                        |
+| NARUTO-SUB    | Naruto        | Substitution mechanic     | Confirmed    | 2026-02-02 | Taunt activates log icon, blocks 1 hit |
+| na_b_03-SUB   | Sasuke        | Substitution mechanic     | Confirmed    | 2026-02-02 | Same as Naruto                         |
+| na_b_04-SUB   | Sakura        | Substitution mechanic     | Confirmed    | 2026-02-02 | Same as Naruto                         |
+| na_b_05-SUB   | Kakashi       | Substitution mechanic     | Confirmed    | 2026-02-02 | Same as Naruto                         |
+| na_b_02-TAUNT | Kyuubi Naruto | Taunt effect              | SP regen     | 2026-02-02 | Does NOT have substitution             |
 
 ---
 

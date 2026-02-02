@@ -25,11 +25,11 @@ Deep dive analysis mapping Gotenks through all data files to understand linkages
 
 - **Gotenks:** (needs human testing) koma
 
-### Move List (NEEDS TESTING)
+### Move List (PARTIALLY VERIFIED 2026-01-31)
 
 | Move   | Damage | Type       | Notes                 |
 | ------ | ------ | ---------- | --------------------- |
-| B      |        | Punch/Kick |                       |
+| B      | 10     | Punch/Kick | Verified in-game      |
 | fwd B  |        | Punch/Kick |                       |
 | up B   |        | Punch/Kick |                       |
 | down B |        | Punch/Kick |                       |
@@ -129,7 +129,7 @@ vs Majin Buu) where same block does NOT mean same moveset.
 **Damage Formula:**
 
 ```
-base_damage = (jpower_total / 5) + (tier - 2)
+base_damage = (jpower.damage1 / 5) + (tier - 2)
 ```
 
 - tier 1: -1 modifier

@@ -1,184 +1,218 @@
 # AI Assistant Guide - Jump Ultimate Stars Research
 
-This document serves as an entrypoint for AI assistants working on JUS reverse
-engineering. Read this FIRST to avoid re-investigating solved problems.
+**Read this FIRST at the start of every session.**
+
+This document provides context for AI assistants working on the JUSToolkit project - a reverse engineering effort for Jump Ultimate Stars (Nintendo DS, 2006).
 
 ---
 
-## Quick Reference
+## Project Goals (Priority Order)
 
-### Key Files
+### 1. Build a Reusable Fighting Game Engine (Primary)
 
-| File | Location | Purpose |
-|------|----------|---------|
-| chr_b.bin | bin/ | 74 battle character entries (stats, tier, classId) |
-| jpower.bin | bin/ | Damage/hitstun values indexed by classId |
-| koma.bin | bin/ | 890 deck panel entries (type, passive index) |
-| ARM9.bin | ftc/ | Game code + pointer tables |
-| Collision files | ChrBin.aar/chr/col/ | Hitbox data per character |
+**Epic:** JUS-55i
 
-### Key Documentation
+Extract JUS's game mechanics and implement them in a clean, moddable 2D fighting game engine. This is NOT about modding the original ROM - it's about creating a new engine inspired by JUS.
 
-- `docs/research/ARM9-Research-Guide.md` - Comprehensive reverse engineering guide
-- `docs/research/Character-Mapping.md` - All 74 battle characters mapped to files
-- `docs/characters/*.md` - Per-character deep dives (Goku, Ichigo most complete)
+Key systems to implement:
+- Damage calculation (jpower system, tier modifiers, nature advantage)
+- Hitstun/knockback physics
+- Koma deck building system
+- Character passives
+- Data-driven character definitions (JSON/YAML)
+
+### 2. Create LLM-Assisted RE Framework (Secondary)
+
+**Epic:** JUS-acr (in progress)
+
+Document the methodology and tooling as a reusable template for LLM-assisted game reverse engineering.
+
+### 3. Game Decompilation (Tertiary, Lowest Priority)
+
+Create an exact decompilation of the original game code. This is a long-term goal that supports the primary goal.
+
+---
+
+## Issue Tracking
+
+This project uses **beads** (`bd`) for issue tracking:
+
+```bash
+bd ready              # Find available work
+bd show <id>          # View issue details  
+bd update <id> --status in_progress  # Claim work
+bd close <id>         # Complete work
+bd sync               # Sync with git
+```
+
+**Always check `bd ready` at session start** to see current priorities.
+
+---
+
+## Key Files & How They Work Together
+
+### Game Data Files
+
+Located in `jus_files/ripped_jus_files/`:
+
+| File | Purpose | Key Fields |
+|------|---------|------------|
+| `bin/chr_b.bin` | 74 battle character stats | formType, tier, classId, statC |
+| `bin/jpower.bin` | Damage/hitstun values | damage1, damage2, damage3, hitstun |
+| `bin/koma.bin` | 890 deck panel definitions | komaType, passiveIndex |
+| `bin/chr_s.bin` | 140+ support characters | Similar to chr_b |
+
+### How They Connect
+
+```
+chr_b.bin                     jpower.bin
+┌─────────────┐              ┌─────────────┐
+│ Character   │              │ Attack Data │
+│ - classId ──┼──────────────▶ Block Index │
+│ - tier      │              │ - damage1   │
+│ - statC     │              │ - hitstun   │
+└──────┬──────┘              └─────────────┘
+       │
+       │ (index)
+       ▼
+collision/*.bin
+┌─────────────┐
+│ Hitbox Data │
+│ - damageFlags ───▶ (Direct: jpower index)
+│ - subType        (Indirect: ARM9 lookup)
+│ - hitTier   │
+└─────────────┘
+```
+
+### Collision Files
+
+Located in `jus_files/extracted_chrbin/ChrBin.aar/chr/col/`:
+- One `.bin` file per character (e.g., `db_b_01.bin` = Goku)
+- Contains hitbox definitions with damage references
+- **Two systems**: Direct (damageFlags=jpower index) or Indirect (damageFlags≤1)
+
+### Exported JSON (Pre-processed)
+
+Located in `jus_files/exported_combat/`:
+- `chr_b.json` - All battle characters as JSON
+- `jpower.json` - All jpower entries as JSON
+- `*_collision.json` - Individual character collision exports
+
+---
+
+## Critical Research Documents
+
+### Must-Read Before Working
+
+| Document | Purpose |
+|----------|---------|
+| `docs/research/Research-Status.md` | What's CONFIRMED vs UNKNOWN |
+| `docs/research/DamageFlags-Character-Classification.md` | How damage lookup works |
+| `docs/research/Combat-Mechanics-Reference.md` | Observed game mechanics |
+| `docs/research/Character-Mapping.md` | All 74 characters mapped to files |
+
+### Design Documents
+
+| Document | Purpose |
+|----------|---------|
+| `docs/design/Combat-Engine-Design.md` | Engine implementation spec |
+| `docs/research/Passives-Reference.md` | All passive abilities documented |
+
+### Per-Character Data
+
+`docs/characters/*.md` - Individual character maps with stats, moves, collision data.
+Most complete: `Goku-Character-Map.md`, `Ichigo-Character-Map.md`
+
+---
+
+## Current Research State
+
+### CONFIRMED (High Confidence)
+
+**Damage Formula:**
+```
+damage = floor(jpower.damage1 / 5) + (tier - 2)
+```
+- tier 1: -1 damage, tier 2: +0, tier 3: +1
+- Verified across 15+ characters
+
+**DamageFlags Classification (completed 2026-02-02):**
+- 64 characters use **Indirect** lookup (damageFlags ≤ 1)
+- 10 characters use **Direct** lookup (damageFlags ≥ 2 = jpower index)
+- `damageFlags=1` is a FLAG, not an index
+
+**Character Mapping:** All 74 battle characters mapped to collision files.
+
+### UNKNOWN (Blocking Engine Development)
+
+| Unknown | Why It Matters | Ticket |
+|---------|----------------|--------|
+| Weight storage location | Knockback formula | JUS-cb0.1 |
+| Indirect lookup mechanism | 64 characters use this | JUS-9lp.1 |
+| Walk speed exact thresholds | Movement system | JUS-n3p |
+| Hitstun timer location | Combo system | JUS-9lp.2.2 |
+
+**These require GDB debugging** - see `scripts/gdb/README.md` for setup.
 
 ---
 
 ## SOLVED MYSTERIES - Do Not Re-Investigate
 
-### 1. tr_b_01 Identity (SOLVED 2026-01-30)
+### tr_b_01 Identity
+**tr_b_01 = Tsuna** from "Katekyo Hitman Reborn" (NOT Taizo, NOT cut content).
+Taizo (unused) is dt_b_04.
 
-**tr_b_01 = Tsuna Sawada & Reborn** from "Katekyo Hitman Reborn"
+### Walk Speed
+Stored in chr_b.bin `statC` field. Threshold-based (not linear).
 
-- The "tr" prefix = ka**T**ekyo hitman **R**eborn
-- This is a LEGITIMATE battle character with 35 collision entries
-- NOT Taizo, NOT Tar-chan, NOT cut content
+### Passive Storage
+koma.bin byte 7 = PassiveIndex. Passives are per-form, not per-koma.
 
-**Taizo** (the actual unused character) is **dt_b_04** under Meta/Debug category
-with only 1 collision entry ("can only move, no attacks").
-
-### 2. Character File Prefixes (SOLVED)
-
-All prefixes are documented in `docs/research/Character-Mapping.md`. Key ones:
-
-| Prefix | Series | Notes |
-|--------|--------|-------|
-| db | Dragon Ball | 12 characters |
-| bl | Bleach | 5 characters |
-| op | One Piece | 8 characters |
-| na | Naruto | 5 characters |
-| tr | Katekyo Hitman Reborn | 1 character (Tsuna) |
-| hs | Houshin Engi | 1 character (Taikoubou) |
-| hk | Hokuto no Ken | 2 characters (Kenshiro, Raoh) |
-| dt | Meta/Debug | 4 characters (Komaman x3, Taizo) |
-
-### 3. Walk Speed Storage (PARTIALLY SOLVED)
-
-**Location:** chr_b.bin `statC` field (offset 12, 2 bytes)
-
-**System:** Threshold-based, NOT linear scaling
-
-| statC Range | Walk Speed |
-|-------------|------------|
-| < ~100 | SLOW |
-| >= ~100 | Normal/Fast |
-
-**Key proof:** Lenalee (statC=153) and Killua (statC=300) have IDENTICAL walk speed.
-
-### 4. Damage Formula (CONFIRMED for most characters)
-
-```
-damage = (jpower_total / 5) + (tier - 2)
-```
-
-- tier 1 = -1 damage modifier
-- tier 2 = no modifier
-- tier 3 = +1 damage modifier
-
-**Verified for:** Ichigo, Bankai Ichigo
-
-**Exception:** Goku's B move (8 damage) doesn't fit - likely different jpower
-entry selection mechanism, NOT a different formula.
-
-### 5. Passive Storage (DISCOVERED 2026-01-30)
-
-**Location:** koma.bin `PassiveIndex` field (byte 7)
-
-**Key fact:** Passives are **per-form**, not per-koma. All koma sizes of the same
-form share the same passive ability.
-
-- Battle komas: 47 unique passive indices (values 0-55)
-- Support komas: Different range (values 92-192)
-
-### 6. Koma Types (SOLVED)
-
-koma.bin byte 6 (`KomaType`):
-- 0 = Help koma (stat booster)
-- 1 = Support koma (activatable assist)
-- 2 = Battle koma (playable fighter)
-
-### 7. chr_b Flags Field (PARTIALLY SOLVED)
-
-- `flags = 0` means support character (no battle form)
-- `flags > 0` means battle character
-- Specific flag bits not fully mapped
+### Series NOT in Game
+Toriko, Hikaru no Go - don't search for them.
 
 ---
 
-## COMMON PITFALLS - Avoid These Assumptions
+## Common Pitfalls
 
-### 1. "chr_b index = collision table index"
-**CORRECT.** These are 1:1 mapped. chr_b[39] uses collision file at table[39].
-
-### 2. "jpower block index = chr_b index"
-**WRONG.** jpower block = `classId & 0xFF`. Multiple characters share blocks.
-
-### 3. "DamageFlags in collision = actual damage"
-**WRONG.** DamageFlags is an index into jpower, not a damage value.
-
-### 4. "statA/statB are gameplay stats"
-**WRONG.** These are series-grouped values (likely sprite/text offsets).
-
-### 5. "battleParams encodes weight/speed"
-**WRONG.** Characters with identical battleParams have different weights/speeds.
-
-### 6. "Characters sharing jpower block have same moveset"
-**WRONG.** Majin Buu uses Block 0 (Goku's block) but has different moves.
-
-### 7. "Toriko or Hikaru no Go are in this game"
-**WRONG.** Neither series appears. Don't waste time searching for them.
+| Wrong Assumption | Reality |
+|------------------|---------|
+| "jpower block = chr_b index" | jpower block = `classId & 0xFF` |
+| "damageFlags = damage value" | It's a jpower index (Direct) or flag (Indirect) |
+| "Characters sharing jpower block have same moveset" | They share damage VALUES, not movesets |
+| "statA/statB are gameplay stats" | They're sprite/text offsets |
+| "battleParams = weight/speed" | Nami/Franky have identical params, opposite weight |
 
 ---
 
-## REMAINING UNKNOWNS
+## Useful Scripts
 
-### High Priority
+### Python Analysis Scripts (`scripts/`)
 
-1. **jpower entry selection mechanism** - How does damageFlags=0 select an entry?
-   Goku's collision has damageFlags=0 but damage=8 requires jpower total=40.
+| Script | Purpose |
+|--------|---------|
+| `classify_damage_flags.py` | Classify characters by damage system |
+| `extract_character_data.py` | Export character data to JSON |
+| `cheat_code_parser.py` | Parse cheat codes for RAM addresses |
 
-2. **Exact walk speed thresholds** - We know <100 is slow, but exact cutoffs
-   between tiers are unknown. May be 2 or 3+ tiers.
+### GDB Debugging (`scripts/gdb/`)
 
-3. **Passive ability table location** - We know PassiveIndex exists but haven't
-   found the ARM9 table that defines what each index means.
+| Script | Purpose |
+|--------|---------|
+| `jus_gdb_watcher.py` | Memory watching and snapshotting |
+| `README.md` | GDB experiment setup guide |
 
-4. **Dash type determination** - What makes Ichigo a "flash dasher" vs Goku's
-   standard dash?
+### CLI Commands
 
-### Medium Priority
-
-5. **Knockback formula** - Affected by HP, passives, possibly statC, but exact
-   formula unknown.
-
-6. **komaSize meaning** - chr_b values 2-6 don't match deck komas (4-8).
-
-7. **Special damage scaling** - Koma 4→8 scaling is non-linear (+8/+7/+5/+5).
-
----
-
-## USEFUL COMMANDS
-
-### Export chr_b.bin to JSON
 ```bash
-dotnet run --project src/JUS.CLI -- jus combat export-chr \
-    --bin jus_files/ripped_jus_files/bin/chr_b.bin \
-    --output /tmp/chr_b.json
-```
+# Export collision to JSON
+dotnet run --project src/JUS.CLI -- jus combat export-collision --bin <file> --output <dir>
 
-### Export jpower.bin to JSON
-```bash
-dotnet run --project src/JUS.CLI -- jus combat export-jpower \
-    --bin jus_files/ripped_jus_files/bin/jpower.bin \
-    --output /tmp/jpower.json
-```
+# Export chr_b to JSON  
+dotnet run --project src/JUS.CLI -- jus combat export-chr --bin <file> --output <dir>
 
-### Check beads issues
-```bash
-bd ready      # Show ready-to-work tasks
-bd list       # Show all issues
-bd show <id>  # Show issue details
+# Classify all characters
+python scripts/classify_damage_flags.py ./jus_files/extracted_chrbin/ChrBin.aar/chr/col/
 ```
 
 ---
@@ -187,23 +221,54 @@ bd show <id>  # Show issue details
 
 | Offset | Contents |
 |--------|----------|
-| 0x0924B0 | Collision file pointer table (74 entries × 8 bytes) |
+| 0x0924B0 | Collision file pointer table (74 entries) |
 | 0x08D4A0 | chr_b → collision identity mapping |
 | 0x09E780 | Koma name table |
 
----
-
-## Session History
-
-| Date | Key Discoveries |
-|------|-----------------|
-| 2026-01-29 | Damage formula confirmed (jpower/5 + tier-2), damageFlags = jpower index |
-| 2026-01-30 | Walk speed = statC threshold, tr_b_01 = Tsuna, passives in koma.bin |
+See `docs/research/ARM9-Research-Guide.md` for comprehensive guide.
 
 ---
 
-## Contact / Resources
+## Session Workflow
 
-- Project repo: This JUSToolkit repository
-- Issue tracking: `.beads/` directory (use `bd` commands)
-- Character list: `docs/full_character_list.md`
+### Starting a Session
+
+1. Read this document
+2. Run `bd ready` to see current priorities
+3. Check `docs/research/Research-Status.md` for context
+4. Review any in-progress tickets with `bd list --status in_progress`
+
+### Ending a Session
+
+Per `AGENTS.md`, you MUST:
+1. Update/close relevant tickets
+2. Commit and **push** changes
+3. Provide handoff context
+
+---
+
+## File Prefix Reference
+
+| Prefix | Series | Battle Chars |
+|--------|--------|--------------|
+| db | Dragon Ball | 12 |
+| op | One Piece | 8 |
+| na | Naruto | 5 |
+| bl | Bleach | 5 |
+| bb | Bobobo | 4 |
+| yh | Yu Yu Hakusho | 3 |
+| hk | Hokuto no Ken | 2 |
+| ss | Saint Seiya | 2 |
+| sk | Shaman King | 3 |
+| jj | JoJo | 2 |
+| hh | Hunter x Hunter | 2 |
+| gt | Gintama | 2 |
+| dg | D.Gray-man | 2 |
+| ds | Dr. Slump | 3 |
+| dt | Debug/Meta | 4 |
+
+Full mapping: `docs/research/Character-Mapping.md`
+
+---
+
+*Last updated: 2026-02-02*

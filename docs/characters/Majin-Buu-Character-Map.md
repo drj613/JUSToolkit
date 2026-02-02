@@ -1,21 +1,22 @@
 # Majin Buu (db_b_12) - Complete Character Mapping
 
-Deep dive analysis mapping Majin Buu through all data files to understand linkages.
+Deep dive analysis mapping Majin Buu through all data files to understand
+linkages.
 
 ---
 
 ## Basic Info
 
-| Field           | Value                  |
-| --------------- | ---------------------- |
-| Character Name  | Majin Buu              |
-| Series          | Dragon Ball            |
-| chr_b Index     | 11                     |
-| Collision File  | db_b_12.bin            |
-| charId          | 7                      |
-| tier            | 2                      |
-| jpower Block    | 0                      |
-| classId         | 256                    |
+| Field          | Value       |
+| -------------- | ----------- |
+| Character Name | Majin Buu   |
+| Series         | Dragon Ball |
+| chr_b Index    | 11          |
+| Collision File | db_b_12.bin |
+| charId         | 7           |
+| tier           | 2           |
+| jpower Block   | 0           |
+| classId        | 256         |
 
 ---
 
@@ -29,11 +30,11 @@ damage system works.
 
 ### Block 0 Characters
 
-| Character   | chr_b Index | classId | jpower Block | Moveset            |
-| ----------- | ----------- | ------- | ------------ | ------------------ |
-| Goku        | 0           | 256     | 0            | Kamehameha, kicks  |
-| Goku SSJ    | 1           | 256     | 0            | Same as Goku       |
-| Majin Buu   | 11          | 256     | 0            | Stretchy, candy    |
+| Character | chr_b Index | classId | jpower Block | Moveset           |
+| --------- | ----------- | ------- | ------------ | ----------------- |
+| Goku      | 0           | 256     | 0            | Kamehameha, kicks |
+| Goku SSJ  | 1           | 256     | 0            | Same as Goku      |
+| Majin Buu | 11          | 256     | 0            | Stretchy, candy   |
 
 ### What This Proves
 
@@ -67,23 +68,25 @@ will help solve the entry selection mystery. This is **HIGH PRIORITY** research.
 
 ### Move List (VERIFIED 2026-02-02)
 
-| Move   | Damage | d1 | Type       | Notes                      |
-| ------ | ------ | -- | ---------- | -------------------------- |
-| B      | 9      | 45 | Punch/Kick | Single jab down/forward |
-| fwd B  | 9      | 45 | Punch/Kick | Extends head tentacle forward, whips it |
-| up B   | 9      | 45 | Punch/Kick | Kicks upward, launches opponent |
-| down B | 9      | 45 | Punch/Kick | Shout attack - speech bubble deals damage |
-| air B  | 9      | 45 | Punch/Kick | Slams hands downward, spikes opponent |
-| Y      | 3+3+12 | 15,15,60 | Punch/Kick | Punch, punch, kick - extends limbs |
-| fwd Y  | 6×4=24 | 30 | Punch/Kick | Foot stomp, appears ahead, repeatable |
-| up Y   | 3+1×7+8=18 | 15,5,40 | Punch/Kick | Detached fist throw upward |
-| down Y | 18     | 90 | Punch/Kick | Leans forward, pauses, extends both fists |
-| air Y  | 4/tick | 20 | Punch/Kick | Rolling ball spin, potentially infinite |
+| Move   | Damage     | d1       | Type       | Notes                                     |
+| ------ | ---------- | -------- | ---------- | ----------------------------------------- |
+| B      | 9          | 45       | Punch/Kick | Single jab down/forward                   |
+| fwd B  | 9          | 45       | Punch/Kick | Extends head tentacle forward, whips it   |
+| up B   | 9          | 45       | Punch/Kick | Kicks upward, launches opponent           |
+| down B | 9          | 45       | Punch/Kick | Shout attack - speech bubble deals damage |
+| air B  | 9          | 45       | Punch/Kick | Slams hands downward, spikes opponent     |
+| Y      | 3+3+12     | 15,15,60 | Punch/Kick | Punch, punch, kick - extends limbs        |
+| fwd Y  | 6×4=24     | 30       | Punch/Kick | Foot stomp, appears ahead, repeatable     |
+| up Y   | 3+1×7+8=18 | 15,5,40  | Punch/Kick | Detached fist throw upward                |
+| down Y | 18         | 90       | Punch/Kick | Leans forward, pauses, extends both fists |
+| air Y  | 4/tick     | 20       | Punch/Kick | Rolling ball spin, potentially infinite   |
 
 **Damage Types:**
 
-- **Slashing** - Blade attacks with distinct SFX (reduced by Slash Defense passive)
-- **Impact** - Blunt attacks with distinct SFX (reduced by Impact Defense passive)
+- **Slashing** - Blade attacks with distinct SFX (reduced by Slash Defense
+  passive)
+- **Impact** - Blunt attacks with distinct SFX (reduced by Impact Defense
+  passive)
 - **Punch/Kick** - Physical attacks (stretchy attacks)
 - **Energy** - Projectile/energy attacks
 - **??? (Guard Break?)** - Third type immune to both defensive passives
@@ -100,25 +103,26 @@ will help solve the entry selection mystery. This is **HIGH PRIORITY** research.
 
 ### chr_b.bin Entry (Index 11)
 
-| Field        | Value            | Notes                                    |
-| ------------ | ---------------- | ---------------------------------------- |
-| charId       | 7                | Same as Goku family                      |
-| formType     | (needs verify)   | 0=Normal, 1=Powered                      |
-| tier         | (needs verify)   | 1=-1 dmg, 2=normal, 3=+1 dmg             |
-| komaSize     | (needs verify)   | Internal size (not deck koma)            |
-| classId      | 256              | SAME as Goku!                            |
-| jpower Block | 0                | SAME as Goku! (classId & 0xFF)           |
+| Field        | Value          | Notes                          |
+| ------------ | -------------- | ------------------------------ |
+| charId       | 7              | Same as Goku family            |
+| formType     | (needs verify) | 0=Normal, 1=Powered            |
+| tier         | (needs verify) | 1=-1 dmg, 2=normal, 3=+1 dmg   |
+| komaSize     | (needs verify) | Internal size (not deck koma)  |
+| classId      | 256            | SAME as Goku!                  |
+| jpower Block | 0              | SAME as Goku! (classId & 0xFF) |
 
 ### The Goku/Buu Comparison
 
-| Field        | Goku (chr_b[0])  | Majin Buu (chr_b[11]) | Match?    |
-| ------------ | ---------------- | --------------------- | --------- |
-| charId       | 7                | 7                     | SAME      |
-| classId      | 256              | 256                   | SAME      |
-| jpower Block | 0                | 0                     | SAME      |
-| Moveset      | Kamehameha       | Stretchy/Candy        | DIFFERENT |
+| Field        | Goku (chr_b[0]) | Majin Buu (chr_b[11]) | Match?    |
+| ------------ | --------------- | --------------------- | --------- |
+| charId       | 7               | 7                     | SAME      |
+| classId      | 256             | 256                   | SAME      |
+| jpower Block | 0               | 0                     | SAME      |
+| Moveset      | Kamehameha      | Stretchy/Candy        | DIFFERENT |
 
-This is the core paradox that proves jpower blocks don't directly define movesets.
+This is the core paradox that proves jpower blocks don't directly define
+movesets.
 
 ### battleParams (12 bytes)
 
@@ -174,7 +178,8 @@ Profile: (needs analysis)
 | 7     | 21        | 100   | up Y            | 14          |
 | 8     | 23        | 100   | down Y          | 14          |
 
-**Question:** Which entries does Majin Buu use, and how does the game select them?
+**Question:** Which entries does Majin Buu use, and how does the game select
+them?
 
 **Hypothesis:** If Majin Buu's B move does 7 damage, he may use the same entries
 as Goku with ÷7 formula. If different, there's additional selection logic.
@@ -192,18 +197,18 @@ base_damage = (jpower_total / 5) + (tier - 2)    # Tested - full kit minus speci
 
 ### Sprite Archives (chr/)
 
-| Archive              | Size | Purpose         |
-| -------------------- | ---- | --------------- |
-| db_b_12c.aar         |      | Main sprites    |
-| db_b_12_Xc.aar       |      | X-koma portrait |
+| Archive        | Size | Purpose         |
+| -------------- | ---- | --------------- |
+| db_b_12c.aar   |      | Main sprites    |
+| db_b_12_Xc.aar |      | X-koma portrait |
 
 ### ARM9 References
 
-| Offset   | Contents                              | This Character              |
-| -------- | ------------------------------------- | --------------------------- |
-| 0x0924B0 | Collision file pointer table          | Index 11                    |
-| 0x08D4A0 | chr_b -> collision identity mapping   |                             |
-| 0x09E780 | Koma name table                       |                             |
+| Offset   | Contents                            | This Character |
+| -------- | ----------------------------------- | -------------- |
+| 0x0924B0 | Collision file pointer table        | Index 11       |
+| 0x08D4A0 | chr_b -> collision identity mapping |                |
+| 0x09E780 | Koma name table                     |                |
 
 ---
 
@@ -222,11 +227,11 @@ base_damage = (jpower_total / 5) + (tier - 2)    # Tested - full kit minus speci
 
 ### Movement
 
-| Property      | Value              | Notes                              |
-| ------------- | ------------------ | ---------------------------------- |
-| Walk Speed    | (needs testing)    | Likely slower than Goku            |
-| Dash Type     | Standard           | Standard dash expected             |
-| Dash Distance |                    |                                    |
+| Property      | Value           | Notes                   |
+| ------------- | --------------- | ----------------------- |
+| Walk Speed    | (needs testing) | Likely slower than Goku |
+| Dash Type     | Standard        | Standard dash expected  |
+| Dash Distance |                 |                         |
 
 **Dash types:**
 
@@ -236,6 +241,7 @@ base_damage = (jpower_total / 5) + (tier - 2)    # Tested - full kit minus speci
 ### Unique Mechanics
 
 Majin Buu's signature abilities:
+
 - **Stretchy Body** - Extended reach on punches
 - **Candy Beam** - Transforms opponents (likely a special)
 - **Regeneration** - May have HP recovery mechanic
@@ -251,19 +257,21 @@ Majin Buu's signature abilities:
 
 ## Human Testing Required
 
-> **AGENTS**: When you need in-game verification, add items here AND to the central
-> queue at `docs/research/Human-Testing-Queue.md`. Format: `[CHARACTER] - [TEST]`
+> **AGENTS**: When you need in-game verification, add items here AND to the
+> central queue at `docs/research/Human-Testing-Queue.md`. Format:
+> `[CHARACTER] - [TEST]`
 
 ### Pending Tests
 
-| Test ID | Test Description | Priority | Status | Result |
-| ------- | ---------------- | -------- | ------ | ------ |
-| db_b_12-001 | Full moveset damage values | P1 | PENDING | Key to jpower mystery |
-| db_b_12-002 | Available koma sizes | P2 | PENDING | |
-| db_b_12-003 | Compare B damage to Goku's B (both Block 0) | P0 | PENDING | CRITICAL for entry selection |
-| db_b_12-004 | Test if ÷7 or ÷5 formula applies | P1 | PENDING | |
+| Test ID     | Test Description                            | Priority | Status  | Result                       |
+| ----------- | ------------------------------------------- | -------- | ------- | ---------------------------- |
+| db_b_12-001 | Full moveset damage values                  | P1       | PENDING | Key to jpower mystery        |
+| db_b_12-002 | Available koma sizes                        | P2       | PENDING |                              |
+| db_b_12-003 | Compare B damage to Goku's B (both Block 0) | P0       | PENDING | CRITICAL for entry selection |
+| db_b_12-004 | Test if ÷7 or ÷5 formula applies            | P1       | PENDING |                              |
 
-**Priority Guide:** P0=Blocking other work, P1=High value, P2=Standard, P3=Nice to have
+**Priority Guide:** P0=Blocking other work, P1=High value, P2=Standard, P3=Nice
+to have
 
 **Status:** PENDING | IN PROGRESS | DONE | NOT POSSIBLE
 
@@ -315,20 +323,22 @@ Majin Buu's signature abilities:
 
 ### Open Questions
 
-1. **CRITICAL:** How does Majin Buu select different jpower entries from Block 0 than Goku?
+1. **CRITICAL:** How does Majin Buu select different jpower entries from Block 0
+   than Goku?
 2. Does Buu share ANY damage values with Goku despite different moveset?
-3. Is the selection based on collision file fields (subType, type2, linkCategory)?
+3. Is the selection based on collision file fields (subType, type2,
+   linkCategory)?
 4. Does Buu use ÷5 formula (like Ichigo) or ÷7 formula (like Goku)?
 
 ---
 
 ## Related Characters
 
-| Character         | chr_b Index | Collision File | Relationship              |
-| ----------------- | ----------- | -------------- | ------------------------- |
-| Goku              | 0           | db_b_01        | SAME jpower Block 0!      |
-| Goku SSJ          | 1           | db_b_02        | SAME jpower Block 0!      |
-| Luffy             | 12          | op_b_01        | Similar paradox (Block 9 with Robin) |
+| Character | chr_b Index | Collision File | Relationship                         |
+| --------- | ----------- | -------------- | ------------------------------------ |
+| Goku      | 0           | db_b_01        | SAME jpower Block 0!                 |
+| Goku SSJ  | 1           | db_b_02        | SAME jpower Block 0!                 |
+| Luffy     | 12          | op_b_01        | Similar paradox (Block 9 with Robin) |
 
 **Characters sharing jpower Block 0:**
 
@@ -338,7 +348,8 @@ Majin Buu's signature abilities:
 
 **Characters sharing charId 7 (stat template):**
 
-- Goku, Goku SSJ, Vegetto, Vegeta, Vegeta SSJ, Gohan SSJ, Gohan SSJ2, Gotenks, Majin Buu
+- Goku, Goku SSJ, Vegetto, Vegeta, Vegeta SSJ, Gohan SSJ, Gohan SSJ2, Gotenks,
+  Majin Buu
 
 ---
 
@@ -346,11 +357,11 @@ Majin Buu's signature abilities:
 
 ### ARM9.bin Key Offsets
 
-| Offset   | Contents                               |
-| -------- | -------------------------------------- |
-| 0x0924B0 | Collision file pointer table           |
-| 0x08D4A0 | chr_b -> collision identity mapping    |
-| 0x09E780 | Koma name table                        |
+| Offset   | Contents                            |
+| -------- | ----------------------------------- |
+| 0x0924B0 | Collision file pointer table        |
+| 0x08D4A0 | chr_b -> collision identity mapping |
+| 0x09E780 | Koma name table                     |
 
 ### Related Documentation
 
@@ -362,8 +373,8 @@ Majin Buu's signature abilities:
 
 ## Session Log
 
-| Date | Session | Verified | Notes |
-| ---- | ------- | -------- | ----- |
+| Date       | Session          | Verified                                 | Notes                        |
+| ---------- | ---------------- | ---------------------------------------- | ---------------------------- |
 | 2026-01-29 | Initial Creation | File data from chr_b-Complete-Mapping.md | High priority testing needed |
 
 ---
@@ -371,26 +382,29 @@ Majin Buu's signature abilities:
 ## Notes
 
 - **KEY PARADOX:** Shares jpower Block 0 with Goku but has DIFFERENT moveset
-- This proves jpower blocks are template libraries, not direct moveset definitions
+- This proves jpower blocks are template libraries, not direct moveset
+  definitions
 - Testing Majin Buu is HIGH PRIORITY for understanding entry selection
 - Comparing collision files between Goku and Buu may reveal selection mechanism
 - Part of charId=7 family with Goku - same stat template, different character
 
 ## Comparison: Buu vs Goku (Both Block 0)
 
-**VERIFIED 2026-02-02:** Despite sharing jpower Block 0, Buu and Goku have completely different damage values.
+**VERIFIED 2026-02-02:** Despite sharing jpower Block 0, Buu and Goku have
+completely different damage values.
 
-| Move   | Goku Damage | Buu Damage | Same? | Notes |
-| ------ | ----------- | ---------- | ----- | ----- |
-| B      | 8           | 9          | No    | Goku d1=40, Buu d1=45 |
-| fwd B  | 7           | 9          | No    | Goku d1=35, Buu d1=45 |
-| up B   | 3+3         | 9          | No    | Completely different |
-| down B | 7           | 9          | No    | Goku d1=35, Buu d1=45 |
-| air B  | ?           | 9          | ?     | |
-| Y      | 4+4+6       | 3+3+12     | No    | Different structure |
-| fwd Y  | 5+5+5       | 6×4=24     | No    | Different structure |
-| up Y   | 14          | 18 (9 hits)| No    | Goku d1=70, Buu multi-hit |
-| down Y | 14          | 18         | No    | Goku d1=70, Buu d1=90 |
-| air Y  | ?           | 4/tick     | ?     | Buu has unique infinite |
+| Move   | Goku Damage | Buu Damage  | Same? | Notes                     |
+| ------ | ----------- | ----------- | ----- | ------------------------- |
+| B      | 8           | 9           | No    | Goku d1=40, Buu d1=45     |
+| fwd B  | 7           | 9           | No    | Goku d1=35, Buu d1=45     |
+| up B   | 3+3         | 9           | No    | Completely different      |
+| down B | 7           | 9           | No    | Goku d1=35, Buu d1=45     |
+| air B  | ?           | 9           | ?     |                           |
+| Y      | 4+4+6       | 3+3+12      | No    | Different structure       |
+| fwd Y  | 5+5+5       | 6×4=24      | No    | Different structure       |
+| up Y   | 14          | 18 (9 hits) | No    | Goku d1=70, Buu multi-hit |
+| down Y | 14          | 18          | No    | Goku d1=70, Buu d1=90     |
+| air Y  | ?           | 4/tick      | ?     | Buu has unique infinite   |
 
-**Conclusion:** Entry selection is per-character, not just per-block. Characters sharing a jpower block use completely different entries from that block.
+**Conclusion:** Entry selection is per-character, not just per-block. Characters
+sharing a jpower block use completely different entries from that block.

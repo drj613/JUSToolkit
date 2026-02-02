@@ -21,24 +21,27 @@ Deep dive analysis mapping Caramelman through all data files to understand linka
 
 ## In-Game Verified Data
 
-### Koma Sizes (UNVERIFIED)
+### Koma Sizes (VERIFIED)
 
-- **Caramelman:** 8 koma only (based on sprite archives - only ds_b_03_8c.aar exists)
+- **Caramelman:** 8 koma only (confirmed - alternate form of Dr. Mashirito)
 
-### Move List (UNVERIFIED)
+**Character Description:** Caramelman rides in a robotic head (like Dr. Robotnik from Sonic).
+He is the 8-koma version of Dr. Mashirito with a completely different moveset.
 
-| Move   | Damage | Type       | Notes                 |
-| ------ | ------ | ---------- | --------------------- |
-| B      | **13** | Punch/Kick | tier=3 verified (d1=60, 60/5+1=13) |
-| fwd B  |        |            | Needs testing         |
-| up B   |        |            | Needs testing         |
-| down B |        |            | Needs testing         |
-| air B  |        |            | Needs testing         |
-| Y      |        |            | Needs testing         |
-| fwd Y  |        |            | Needs testing         |
-| up Y   |        |            | Needs testing         |
-| down Y |        |            | Needs testing         |
-| air Y  |        |            | Needs testing         |
+### Move List (VERIFIED 2026-02-02)
+
+| Move   | Damage | d1 | Type       | Notes                 |
+| ------ | ------ | -- | ---------- | --------------------- |
+| B      | 13     | 60 | Punch/Kick | Robot punches once |
+| fwd B  | 5/hit  | 20 | Punch/Kick | Rocket fist extends out and back, hits both ways |
+| up B   | 15     | 70 | Punch/Kick | Bat swing upward, slight knockup |
+| down B | 10     | 45 | Punch/Kick | Dramatic lick with giant tongue |
+| air B  | 15+5   | 70,20 | Punch/Kick | Spiked ball wraps around robot; ball=15, body contact=5 |
+| Y      | 2×N+9  | 5,40 | Punch/Kick | Drill tank; 4-12 hits of 2 dmg, final hit 9 |
+| fwd Y  | 2-3/tick | 5,10 | Energy | Mouth beam; 3 dmg close, 2 dmg far; max ~22 |
+| up Y   | 3×6+10 | 10,45 | Punch/Kick | Tornado, 6 hits of 3 + final 10 with huge knockup |
+| down Y | 20     | 95 | Energy | Big electrical shock |
+| air Y  | 9×3    | 40 | Energy | Up to 3 homing rockets, 9 each |
 
 **Damage Types:**
 

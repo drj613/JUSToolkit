@@ -12,14 +12,15 @@ Central tracking for all in-game tests that require human intervention.
 
 | Status      | Count |
 | ----------- | ----- |
-| PENDING     | 112   |
+| PENDING     | 90    |
 | IN PROGRESS | 0     |
-| COMPLETED   | 21    |
+| COMPLETED   | 32    |
 
 **Last Updated:** 2026-02-02
 
-> **Formula CONFIRMED:** `damage = damage1/5 + (tier-2)` verified across 12+
-> characters
+> **Formula CONFIRMED:** `damage = damage1/5 + (tier-2)` verified across 20+ characters
+>
+> **NEW:** Naruto series substitution mechanic documented (Naruto, Sasuke, Sakura, Kakashi)
 
 ---
 
@@ -38,24 +39,13 @@ Central tracking for all in-game tests that require human intervention.
 
 ### P0 - Critical / Blocking
 
-| ID          | Character | Test Description                            | Added      | Notes                                       |
-| ----------- | --------- | ------------------------------------------- | ---------- | ------------------------------------------- |
-| db_b_12-003 | Majin Buu | Compare B damage to Goku's B (both Block 0) | 2026-01-29 | CRITICAL - proves entry selection mechanism |
+*All P0 tests completed!*
 
 ### P1 - High Priority
 
 | ID          | Character   | Test Description                                           | Added      | Notes                                               |
 | ----------- | ----------- | ---------------------------------------------------------- | ---------- | --------------------------------------------------- |
-| CORE-001    | Caramelman  | Test if tier=3 gives +1 damage (formula verification)      | 2026-01-29 | ds_b_03 is tier=3, 8-koma only                      |
-| ds_b_03-009 | Caramelman  | Verify 8-koma only availability                            | 2026-01-29 | Only 8c portrait exists                             |
-| ds_b_03-010 | Caramelman  | Tier 3 damage bonus verification                           | 2026-01-29 | Compare to tier=2 with same base                    |
-| CORE-002    | Naruto      | Test B damage to verify ÷5+tier formula on non-Bleach char | 2026-01-29 | Naruto is tier=2, classId=529, block=17             |
-| na_b_01-001 | Naruto      | Verify B damage matches jpower/5+tier formula              | 2026-01-29 | **TEST CASE for damage formula** - tier=2, block=17 |
-| db_b_05-004 | Vegeta SSJ  | Compare moveset to base Vegeta                             | 2026-01-29 | B=10 same as base despite different block           |
-| db_b_07-003 | Gohan SSJ2  | Compare damage to Gotenks (same jpower block)              | 2026-01-29 | Tests block sharing with different characters       |
-| db_b_08-003 | Gotenks     | Compare damage to Gohan SSJ2 (same jpower block)           | 2026-01-29 | Tests block sharing with different characters       |
-| db_b_08-004 | Gotenks     | Compare damage to Gotenks SSJ (same char, diff form)       | 2026-01-29 | Tests form transformation damage changes            |
-| db_b_09-003 | Gotenks SSJ | Compare damage to base Gotenks (different charId!)         | 2026-01-29 | Tests charId=54 vs charId=7 differences             |
+| db_b_07-003 | Gohan SSJ2  | Compare damage to Gotenks (same jpower block)              | 2026-01-29 | Both B=8, confirms block sharing pattern            |
 | db_b_09-004 | Gotenks SSJ | Verify charId=54 stat differences vs charId=7              | 2026-01-29 | May reveal what charId represents                   |
 
 ### P2 - Standard
@@ -204,6 +194,16 @@ Central tracking for all in-game tests that require human intervention.
 | GOHAN-SSJ2-B  | Gohan SSJ2    | B damage                | 8            | 2026-02-02 | d1=40, 40/5+0=8 ✓                |
 | GOTENKS-B     | Gotenks       | B damage                | 10           | 2026-02-02 | d1=50, 50/5+0=10 ✓               |
 | GOTENKS-SSJ-B | Gotenks SSJ   | B damage                | 10           | 2026-02-02 | d1=50, 50/5+0=10 ✓               |
+| ds_b_03-ALL   | Caramelman    | Full moveset            | All verified | 2026-02-02 | tier=3, 8-koma only, robot mech  |
+| NARUTO-B-ALL  | Naruto        | All B moves             | All 8        | 2026-02-02 | All B moves do 8 damage          |
+| bl_b_03-KOMA  | Rukia         | Koma sizes              | 4,5,6        | 2026-02-02 |                                  |
+| bl_b_04-KOMA  | Renji         | Koma sizes              | 4,5,6        | 2026-02-02 |                                  |
+| bl_b_05-KOMA  | Hitsugaya     | Koma sizes              | 4,5,6        | 2026-02-02 |                                  |
+| NARUTO-SUB    | Naruto        | Substitution mechanic   | Confirmed    | 2026-02-02 | Taunt activates log icon, blocks 1 hit |
+| na_b_03-SUB   | Sasuke        | Substitution mechanic   | Confirmed    | 2026-02-02 | Same as Naruto                   |
+| na_b_04-SUB   | Sakura        | Substitution mechanic   | Confirmed    | 2026-02-02 | Same as Naruto                   |
+| na_b_05-SUB   | Kakashi       | Substitution mechanic   | Confirmed    | 2026-02-02 | Same as Naruto                   |
+| na_b_02-TAUNT | Kyuubi Naruto | Taunt effect            | SP regen     | 2026-02-02 | Does NOT have substitution       |
 
 ---
 

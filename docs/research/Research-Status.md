@@ -318,13 +318,13 @@ For Ichigo (bl_b_01):
 For Goku (db_b_01):
 - Almost all damageFlags=0 (different pattern from Ichigo)
 - damageFlags=0 does NOT simply mean "use jpower[0]"
-- Goku B=8 requires total=40 (at indices 146, 195, 218) but damageFlags=0
+- Goku B=8 requires damage1=40 (at indices 146, 195, 218) but damageFlags=0
 
-**Entries with jpower total=40:**
+**Entries with jpower damage1=40:**
 
 | Array Index | jpower ID | linkCategory | Notes |
 |-------------|-----------|--------------|-------|
-| 146 | 379 | 1 | First entry with total=40 |
+| 146 | 379 | 1 | First entry with damage1=40 |
 | 195 | 539 | 1 | Same linkCategory |
 | 218 | 604 | 1 | Same linkCategory |
 
@@ -338,31 +338,28 @@ Characters fall into two categories:
 2. **Indirect/ARM9 lookup** (Goku pattern): damageFlags mostly 0
    - Goku: Only 2/25 collision entries have damageFlags > 0
    - Most moves use damageFlags=0 → triggers unknown lookup mechanism
-   - Somehow accesses jpower entries with total=40 (indices 146, 195, 218)
+   - Somehow accesses jpower entries with damage1=40 (indices 146, 195, 218)
 
 **Verified damage values (2026-01-30):**
 
-| Character | tier | B Damage | Required jpower total | Status |
-|-----------|------|----------|----------------------|--------|
+| Character | tier | B Damage | Required d1 | Status |
+|-----------|------|----------|-------------|--------|
 | Ichigo | 2 | 10 | 50 | ✓ Confirmed |
-| Bankai | 1 | 9 | 50 (9+1=10, 10×5=50) | ✓ Confirmed |
+| Bankai | 1 | 9 | 50 | ✓ Confirmed (50/5-1=9) |
 | Goku | 2 | 8 | 40 | ✓ Entries exist |
 | Naruto | 2 | 8 | 40 | ✓ Entries exist |
-| Caramelman | 3 | 13 | 60 (13-1=12, 12×5=60) | ✓ Entry exists |
-| **Buu** | 2 | **9** | **45** | ❌ NO ENTRIES WITH TOTAL=45 |
+| Buu | 2 | 9 | 45 | ✓ Entries exist |
+| Caramelman | 3 | 13 | 60 | ✓ Confirmed (60/5+1=13) |
 
-**Buu anomaly**: Majin Buu B=9 requires jpower total=45 with ÷5 formula, but NO jpower entries have total=45. Buu shares Block 0 with Goku but has completely different damage values. Possible explanations:
-- Character-specific modifier in chr_b or ARM9
-- Different divisor (though no clean divisor works)
-- Hardcoded exception
+> **NOTE:** Buu was previously listed as "anomaly" because we looked for `total=45`.
+> **RESOLVED:** Formula uses `damage1` only, and entries with `damage1=45` DO exist.
 
 **Still Unknown:**
 
 - How damageFlags=0 resolves to jpower entries (ARM9 lookup table?)
-- Why Buu B=9 when no jpower entry has total=45
 - Which jpower entry within a block corresponds to which move (B, fwd B, Y, etc.)
 - How multi-hit moves work (Y combo 4+4+6, up B 3+3)
-- Why only some collision entries have damage>0 while most reference jpower
+- Why only some collision entries have damageFlags>0 while most use 0
 
 ---
 

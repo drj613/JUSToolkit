@@ -13,7 +13,7 @@ Deep dive analysis mapping Majin Buu through all data files to understand linkag
 | chr_b Index     | 11                     |
 | Collision File  | db_b_12.bin            |
 | charId          | 7                      |
-| tier            | (needs verification)   |
+| tier            | 2                      |
 | jpower Block    | 0                      |
 | classId         | 256                    |
 
@@ -65,20 +65,20 @@ will help solve the entry selection mystery. This is **HIGH PRIORITY** research.
 
 - **Majin Buu:** (needs human testing) koma
 
-### Move List (NEEDS TESTING)
+### Move List (VERIFIED 2026-02-02)
 
-| Move   | Damage | Type       | Notes                      |
-| ------ | ------ | ---------- | -------------------------- |
-| B      | **9**  | Punch/Kick | Stretchy punches (verified 2026-01-30) |
-| fwd B  |        | Punch/Kick |                            |
-| up B   |        | Punch/Kick |                            |
-| down B |        | Punch/Kick |                            |
-| air B  |        | Punch/Kick |                            |
-| Y      |        | Punch/Kick |                            |
-| fwd Y  |        | Energy     | Possible candy beam        |
-| up Y   |        | Punch/Kick |                            |
-| down Y |        | Punch/Kick |                            |
-| air Y  |        | Energy     |                            |
+| Move   | Damage | d1 | Type       | Notes                      |
+| ------ | ------ | -- | ---------- | -------------------------- |
+| B      | 9      | 45 | Punch/Kick | Single jab down/forward |
+| fwd B  | 9      | 45 | Punch/Kick | Extends head tentacle forward, whips it |
+| up B   | 9      | 45 | Punch/Kick | Kicks upward, launches opponent |
+| down B | 9      | 45 | Punch/Kick | Shout attack - speech bubble deals damage |
+| air B  | 9      | 45 | Punch/Kick | Slams hands downward, spikes opponent |
+| Y      | 3+3+12 | 15,15,60 | Punch/Kick | Punch, punch, kick - extends limbs |
+| fwd Y  | 6×4=24 | 30 | Punch/Kick | Foot stomp, appears ahead, repeatable |
+| up Y   | 3+1×7+8=18 | 15,5,40 | Punch/Kick | Detached fist throw upward |
+| down Y |        |    |            | Not tested |
+| air Y  | 4/tick | 20 | Punch/Kick | Rolling ball spin, potentially infinite |
 
 **Damage Types:**
 
@@ -376,20 +376,21 @@ Majin Buu's signature abilities:
 - Comparing collision files between Goku and Buu may reveal selection mechanism
 - Part of charId=7 family with Goku - same stat template, different character
 
-## Comparison Checklist for Testing
+## Comparison: Buu vs Goku (Both Block 0)
 
-When testing Majin Buu, record all values and compare to Goku:
+**VERIFIED 2026-02-02:** Despite sharing jpower Block 0, Buu and Goku have completely different damage values.
 
 | Move   | Goku Damage | Buu Damage | Same? | Notes |
 | ------ | ----------- | ---------- | ----- | ----- |
-| B      | 8           | **9**      | No    | Buu B=9 verified (d1=45) |
-| fwd B  | 7           |            |       |       |
-| up B   | 3+3         |            |       |       |
-| down B | 7           |            |       |       |
-| Y      | 4+4+6       |            |       |       |
-| fwd Y  | 5+5+5       |            |       |       |
-| up Y   | 14          |            |       |       |
-| down Y | 14          |            |       |       |
+| B      | 8           | 9          | No    | Goku d1=40, Buu d1=45 |
+| fwd B  | 7           | 9          | No    | Goku d1=35, Buu d1=45 |
+| up B   | 3+3         | 9          | No    | Completely different |
+| down B | 7           | 9          | No    | Goku d1=35, Buu d1=45 |
+| air B  | ?           | 9          | ?     | |
+| Y      | 4+4+6       | 3+3+12     | No    | Different structure |
+| fwd Y  | 5+5+5       | 6×4=24     | No    | Different structure |
+| up Y   | 14          | 18 (9 hits)| No    | Goku d1=70, Buu multi-hit |
+| down Y | 14          | ?          | ?     | |
+| air Y  | ?           | 4/tick     | ?     | Buu has unique infinite |
 
-If ANY values match, those moves likely use the same jpower entry.
-If ALL values differ, entry selection is per-move or per-character.
+**Conclusion:** Entry selection is per-character, not just per-block. Characters sharing a jpower block use completely different entries from that block.

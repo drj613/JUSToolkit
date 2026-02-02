@@ -12,11 +12,11 @@ Central tracking for all in-game tests that require human intervention.
 
 | Status | Count |
 | ------ | ----- |
-| PENDING | 120 |
+| PENDING | 112 |
 | IN PROGRESS | 0 |
-| COMPLETED | 13 |
+| COMPLETED | 21 |
 
-**Last Updated:** 2026-01-31
+**Last Updated:** 2026-02-02
 
 > **Formula CONFIRMED:** `damage = damage1/5 + (tier-2)` verified across 12+ characters
 
@@ -50,14 +50,12 @@ Central tracking for all in-game tests that require human intervention.
 | ds_b_03-010 | Caramelman | Tier 3 damage bonus verification | 2026-01-29 | Compare to tier=2 with same base |
 | CORE-002 | Naruto | Test B damage to verify ÷5+tier formula on non-Bleach char | 2026-01-29 | Naruto is tier=2, classId=529, block=17 |
 | na_b_01-001 | Naruto | Verify B damage matches jpower/5+tier formula | 2026-01-29 | **TEST CASE for damage formula** - tier=2, block=17 |
-| db_b_05-004 | Vegeta SSJ | Compare moveset to base Vegeta | 2026-01-29 | Different jpower block (2 vs 1) unlike Goku/SSJ |
+| db_b_05-004 | Vegeta SSJ | Compare moveset to base Vegeta | 2026-01-29 | B=10 same as base despite different block |
 | db_b_07-003 | Gohan SSJ2 | Compare damage to Gotenks (same jpower block) | 2026-01-29 | Tests block sharing with different characters |
 | db_b_08-003 | Gotenks | Compare damage to Gohan SSJ2 (same jpower block) | 2026-01-29 | Tests block sharing with different characters |
 | db_b_08-004 | Gotenks | Compare damage to Gotenks SSJ (same char, diff form) | 2026-01-29 | Tests form transformation damage changes |
 | db_b_09-003 | Gotenks SSJ | Compare damage to base Gotenks (different charId!) | 2026-01-29 | Tests charId=54 vs charId=7 differences |
 | db_b_09-004 | Gotenks SSJ | Verify charId=54 stat differences vs charId=7 | 2026-01-29 | May reveal what charId represents |
-| db_b_12-001 | Majin Buu | Full moveset damage values | 2026-01-29 | Key to understanding jpower entry selection |
-| db_b_12-004 | Majin Buu | Test if ÷7 or ÷5 formula applies | 2026-01-29 | Resolves formula conflict |
 
 ### P2 - Standard
 
@@ -198,6 +196,13 @@ Central tracking for all in-game tests that require human intervention.
 | FRANKY-B | Franky | B damage | 8 | 2026-01-30 | d1=40, 40/5+0=8 ✓ |
 | CARAMELMAN-B | Caramelman | B damage (tier=3) | 13 | 2026-01-30 | d1=60, tier=3, 60/5+1=13 ✓ |
 | KYUUBI-B | Kyuubi Naruto | B damage (tier=1) | 8 | 2026-01-30 | d1=45, tier=1, 45/5-1=8 ✓ |
+| db_b_12-001 | Majin Buu | Full moveset damage | All verified | 2026-02-02 | See character map for details |
+| VEGETA-B | Vegeta | B damage | 10 | 2026-02-02 | d1=50, 50/5+0=10 ✓ |
+| VEGETA-SSJ-B | Vegeta SSJ | B damage | 10 | 2026-02-02 | d1=50, 50/5+0=10 ✓ |
+| GOHAN-SSJ-B | Gohan SSJ | B damage | 8 | 2026-02-02 | d1=40, 40/5+0=8 ✓ |
+| GOHAN-SSJ2-B | Gohan SSJ2 | B damage | 8 | 2026-02-02 | d1=40, 40/5+0=8 ✓ |
+| GOTENKS-B | Gotenks | B damage | 10 | 2026-02-02 | d1=50, 50/5+0=10 ✓ |
+| GOTENKS-SSJ-B | Gotenks SSJ | B damage | 10 | 2026-02-02 | d1=50, 50/5+0=10 ✓ |
 
 ---
 

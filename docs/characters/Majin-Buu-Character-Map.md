@@ -77,7 +77,7 @@ will help solve the entry selection mystery. This is **HIGH PRIORITY** research.
 | Y      | 3+3+12 | 15,15,60 | Punch/Kick | Punch, punch, kick - extends limbs |
 | fwd Y  | 6×4=24 | 30 | Punch/Kick | Foot stomp, appears ahead, repeatable |
 | up Y   | 3+1×7+8=18 | 15,5,40 | Punch/Kick | Detached fist throw upward |
-| down Y |        |    |            | Not tested |
+| down Y | 18     | 90 | Punch/Kick | Leans forward, pauses, extends both fists |
 | air Y  | 4/tick | 20 | Punch/Kick | Rolling ball spin, potentially infinite |
 
 **Damage Types:**
@@ -390,7 +390,7 @@ Majin Buu's signature abilities:
 | Y      | 4+4+6       | 3+3+12     | No    | Different structure |
 | fwd Y  | 5+5+5       | 6×4=24     | No    | Different structure |
 | up Y   | 14          | 18 (9 hits)| No    | Goku d1=70, Buu multi-hit |
-| down Y | 14          | ?          | ?     | |
+| down Y | 14          | 18         | No    | Goku d1=70, Buu d1=90 |
 | air Y  | ?           | 4/tick     | ?     | Buu has unique infinite |
 
 **Conclusion:** Entry selection is per-character, not just per-block. Characters sharing a jpower block use completely different entries from that block.

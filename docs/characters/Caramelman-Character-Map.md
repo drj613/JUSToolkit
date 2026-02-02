@@ -1,21 +1,22 @@
 # Caramelman (ds_b_03) - Complete Character Mapping
 
-Deep dive analysis mapping Caramelman through all data files to understand linkages.
+Deep dive analysis mapping Caramelman through all data files to understand
+linkages.
 
 ---
 
 ## Basic Info
 
-| Field           | Value                  |
-| --------------- | ---------------------- |
-| Character Name  | Caramelman             |
-| Series          | Dr. Slump              |
-| chr_b Index     | 58                     |
-| Collision File  | ds_b_03.bin            |
-| charId          | 45                     |
-| tier            | 3                      |
-| jpower Block    | 105                    |
-| classId         | 361                    |
+| Field          | Value       |
+| -------------- | ----------- |
+| Character Name | Caramelman  |
+| Series         | Dr. Slump   |
+| chr_b Index    | 58          |
+| Collision File | ds_b_03.bin |
+| charId         | 45          |
+| tier           | 3           |
+| jpower Block   | 105         |
+| classId        | 361         |
 
 ---
 
@@ -25,28 +26,31 @@ Deep dive analysis mapping Caramelman through all data files to understand linka
 
 - **Caramelman:** 8 koma only (confirmed - alternate form of Dr. Mashirito)
 
-**Character Description:** Caramelman rides in a robotic head (like Dr. Robotnik from Sonic).
-He is the 8-koma version of Dr. Mashirito with a completely different moveset.
+**Character Description:** Caramelman rides in a robotic head (like Dr. Robotnik
+from Sonic). He is the 8-koma version of Dr. Mashirito with a completely
+different moveset.
 
 ### Move List (VERIFIED 2026-02-02)
 
-| Move   | Damage | d1 | Type       | Notes                 |
-| ------ | ------ | -- | ---------- | --------------------- |
-| B      | 13     | 60 | Punch/Kick | Robot punches once |
-| fwd B  | 5/hit  | 20 | Punch/Kick | Rocket fist extends out and back, hits both ways |
-| up B   | 15     | 70 | Punch/Kick | Bat swing upward, slight knockup |
-| down B | 10     | 45 | Punch/Kick | Dramatic lick with giant tongue |
-| air B  | 15+5   | 70,20 | Punch/Kick | Spiked ball wraps around robot; ball=15, body contact=5 |
-| Y      | 2×N+9  | 5,40 | Punch/Kick | Drill tank; 4-12 hits of 2 dmg, final hit 9 |
-| fwd Y  | 2-3/tick | 5,10 | Energy | Mouth beam; 3 dmg close, 2 dmg far; max ~22 |
-| up Y   | 3×6+10 | 10,45 | Punch/Kick | Tornado, 6 hits of 3 + final 10 with huge knockup |
-| down Y | 20     | 95 | Energy | Big electrical shock |
-| air Y  | 9×3    | 40 | Energy | Up to 3 homing rockets, 9 each |
+| Move   | Damage   | d1    | Type       | Notes                                                   |
+| ------ | -------- | ----- | ---------- | ------------------------------------------------------- |
+| B      | 13       | 60    | Punch/Kick | Robot punches once                                      |
+| fwd B  | 5/hit    | 20    | Punch/Kick | Rocket fist extends out and back, hits both ways        |
+| up B   | 15       | 70    | Punch/Kick | Bat swing upward, slight knockup                        |
+| down B | 10       | 45    | Punch/Kick | Dramatic lick with giant tongue                         |
+| air B  | 15+5     | 70,20 | Punch/Kick | Spiked ball wraps around robot; ball=15, body contact=5 |
+| Y      | 2×N+9    | 5,40  | Punch/Kick | Drill tank; 4-12 hits of 2 dmg, final hit 9             |
+| fwd Y  | 2-3/tick | 5,10  | Energy     | Mouth beam; 3 dmg close, 2 dmg far; max ~22             |
+| up Y   | 3×6+10   | 10,45 | Punch/Kick | Tornado, 6 hits of 3 + final 10 with huge knockup       |
+| down Y | 20       | 95    | Energy     | Big electrical shock                                    |
+| air Y  | 9×3      | 40    | Energy     | Up to 3 homing rockets, 9 each                          |
 
 **Damage Types:**
 
-- **Slashing** - Blade attacks with distinct SFX (reduced by Slash Defense passive)
-- **Impact** - Blunt attacks with distinct SFX (reduced by Impact Defense passive)
+- **Slashing** - Blade attacks with distinct SFX (reduced by Slash Defense
+  passive)
+- **Impact** - Blunt attacks with distinct SFX (reduced by Impact Defense
+  passive)
 - **Punch/Kick** - Physical attacks
 - **Energy** - Projectile/energy attacks
 - **??? (Guard Break?)** - Third type immune to both defensive passives
@@ -63,18 +67,18 @@ He is the 8-koma version of Dr. Mashirito with a completely different moveset.
 
 ### chr_b.bin Entry (Index 58)
 
-| Field        | Value   | Notes                              |
-| ------------ | ------- | ---------------------------------- |
-| charId       | 45      | Shared with Mashirito              |
-| formType     | 2       | Special/combo character            |
-| tier         | 3       | +1 damage modifier (IMPORTANT!)    |
-| komaSize     | 4       | Internal size (not deck koma)      |
-| classId      | 361     | Low byte = jpower block index      |
-| jpower Block | 105     | classId & 0xFF                     |
+| Field        | Value | Notes                           |
+| ------------ | ----- | ------------------------------- |
+| charId       | 45    | Shared with Mashirito           |
+| formType     | 2     | Special/combo character         |
+| tier         | 3     | +1 damage modifier (IMPORTANT!) |
+| komaSize     | 4     | Internal size (not deck koma)   |
+| classId      | 361   | Low byte = jpower block index   |
+| jpower Block | 105   | classId & 0xFF                  |
 
 **IMPORTANT:** Caramelman has tier=3, which means +1 damage modifier if the
-standard formula (damage = jpower/5 + tier-2) applies. This is one of only
-~7 characters in the game with tier=3.
+standard formula (damage = jpower/5 + tier-2) applies. This is one of only ~7
+characters in the game with tier=3.
 
 ### battleParams (12 bytes)
 
@@ -99,21 +103,21 @@ Profile: Slightly offense-oriented
 
 ### Collision File (ds_b_03.bin)
 
-| Property    | Value      |
-| ----------- | ---------- |
-| Size        | 460 bytes  |
-| Entry Count | 23         |
+| Property    | Value               |
+| ----------- | ------------------- |
+| Size        | 460 bytes           |
+| Entry Count | 23                  |
 | Location    | ChrBin.aar/chr/col/ |
 
 **Notable Entries:**
 
-| #   | Type | SubType | Frame | Width | Height | DmgFlags | KB  | Tier | Notes |
-| --- | ---- | ------- | ----- | ----- | ------ | -------- | --- | ---- | ----- |
-| 0   | 3    | 1       | 13    | 8     | 0      | 0        | 1   | 1    | Basic attack |
-| 5   | 3    | 5       | 9     | 16    | 3      | 1        | 29  | 3    | Knockdown move |
-| 9   | 2    | 6       | 10    | 30    | 25     | 1        | 0   | 3    | Large hitbox move |
+| #   | Type | SubType | Frame | Width | Height | DmgFlags | KB  | Tier | Notes                |
+| --- | ---- | ------- | ----- | ----- | ------ | -------- | --- | ---- | -------------------- |
+| 0   | 3    | 1       | 13    | 8     | 0      | 0        | 1   | 1    | Basic attack         |
+| 5   | 3    | 5       | 9     | 16    | 3      | 1        | 29  | 3    | Knockdown move       |
+| 9   | 2    | 6       | 10    | 30    | 25     | 1        | 0   | 3    | Large hitbox move    |
 | 16  | 4    | 6       | 80    | 12    | 30     | 13       | 16  | 3    | X move (high damage) |
-| 17  | 5    | 6       | 65    | 30    | 10     | 1        | 0   | 3    | Summon finisher |
+| 17  | 5    | 6       | 65    | 30    | 10     | 1        | 0   | 3    | Summon finisher      |
 
 **Notes:**
 
@@ -126,28 +130,28 @@ Profile: Slightly offense-oriented
 ### jpower Block 105 Analysis
 
 **Note:** jpower block 105 is beyond the standard 88 DATA blocks in jpower.bin.
-The jpower entry selection mechanism for Caramelman may work differently or use a
-different formula than low-tier characters.
+The jpower entry selection mechanism for Caramelman may work differently or use
+a different formula than low-tier characters.
 
 **Status:** jpower entries for this block need further investigation.
 
 ### Sprite Archives (chr/)
 
-| Archive          | Size   | Purpose         |
-| ---------------- | ------ | --------------- |
-| ds_b_03c.aar     | 254KB  | Main sprites    |
-| ds_b_03_8c.aar   | 60KB   | 8-koma portrait |
+| Archive        | Size  | Purpose         |
+| -------------- | ----- | --------------- |
+| ds_b_03c.aar   | 254KB | Main sprites    |
+| ds_b_03_8c.aar | 60KB  | 8-koma portrait |
 
 **Note:** Only 8-koma portrait exists, suggesting Caramelman is an 8-koma only
 character (high cost, powerful). This is typical for boss/powerful characters.
 
 ### ARM9 References
 
-| Offset   | Contents                              | This Character  |
-| -------- | ------------------------------------- | --------------- |
-| 0x0924B0 | Collision file pointer table          | Index 58        |
-| 0x08D4A0 | chr_b -> collision identity mapping   |                 |
-| 0x09E780 | Koma name table                       |                 |
+| Offset   | Contents                            | This Character |
+| -------- | ----------------------------------- | -------------- |
+| 0x0924B0 | Collision file pointer table        | Index 58       |
+| 0x08D4A0 | chr_b -> collision identity mapping |                |
+| 0x09E780 | Koma name table                     |                |
 
 ---
 
@@ -168,11 +172,11 @@ Options: LIGHT / STANDARD / HEAVY
 
 ### Movement
 
-| Property      | Value              | Notes                              |
-| ------------- | ------------------ | ---------------------------------- |
-| Walk Speed    | LIKELY SLOW        | Big character = usually slow       |
-| Dash Type     | UNKNOWN            | Standard / Flash                   |
-| Dash Distance |                    |                                    |
+| Property      | Value       | Notes                        |
+| ------------- | ----------- | ---------------------------- |
+| Walk Speed    | LIKELY SLOW | Big character = usually slow |
+| Dash Type     | UNKNOWN     | Standard / Flash             |
+| Dash Distance |             |                              |
 
 **Dash types:**
 
@@ -200,25 +204,27 @@ collision file analysis:
 
 ## Human Testing Required
 
-> **AGENTS**: When you need in-game verification, add items here AND to the central
-> queue at `docs/research/Human-Testing-Queue.md`. Format: `[CHARACTER] - [TEST]`
+> **AGENTS**: When you need in-game verification, add items here AND to the
+> central queue at `docs/research/Human-Testing-Queue.md`. Format:
+> `[CHARACTER] - [TEST]`
 
 ### Pending Tests
 
-| Test ID     | Test Description                              | Priority | Status    | Result |
-| ----------- | --------------------------------------------- | -------- | --------- | ------ |
-| ds_b_03-001 | All B move damage values (neutral)            | P2       | PENDING   |        |
-| ds_b_03-002 | All Y move damage values (neutral)            | P2       | PENDING   |        |
-| ds_b_03-003 | X move damage (8-koma)                        | P2       | PENDING   |        |
-| ds_b_03-004 | up X move damage (8-koma)                     | P2       | PENDING   |        |
-| ds_b_03-005 | Walk speed comparison (vs Goku standard)      | P2       | PENDING   |        |
-| ds_b_03-006 | Dash type (standard vs flash)                 | P2       | PENDING   |        |
-| ds_b_03-007 | Weight feel (compare knockback received)      | P2       | PENDING   |        |
-| ds_b_03-008 | Damage type verification (use defense passives)| P2      | PENDING   |        |
-| ds_b_03-009 | Verify 8-koma only availability               | P1       | PENDING   |        |
-| ds_b_03-010 | Tier 3 damage bonus verification              | P1       | PENDING   |        |
+| Test ID     | Test Description                                | Priority | Status  | Result |
+| ----------- | ----------------------------------------------- | -------- | ------- | ------ |
+| ds_b_03-001 | All B move damage values (neutral)              | P2       | PENDING |        |
+| ds_b_03-002 | All Y move damage values (neutral)              | P2       | PENDING |        |
+| ds_b_03-003 | X move damage (8-koma)                          | P2       | PENDING |        |
+| ds_b_03-004 | up X move damage (8-koma)                       | P2       | PENDING |        |
+| ds_b_03-005 | Walk speed comparison (vs Goku standard)        | P2       | PENDING |        |
+| ds_b_03-006 | Dash type (standard vs flash)                   | P2       | PENDING |        |
+| ds_b_03-007 | Weight feel (compare knockback received)        | P2       | PENDING |        |
+| ds_b_03-008 | Damage type verification (use defense passives) | P2       | PENDING |        |
+| ds_b_03-009 | Verify 8-koma only availability                 | P1       | PENDING |        |
+| ds_b_03-010 | Tier 3 damage bonus verification                | P1       | PENDING |        |
 
-**Priority Guide:** P0=Blocking other work, P1=High value, P2=Standard, P3=Nice to have
+**Priority Guide:** P0=Blocking other work, P1=High value, P2=Standard, P3=Nice
+to have
 
 **Status:** PENDING | IN PROGRESS | DONE | NOT POSSIBLE
 
@@ -234,12 +240,14 @@ collision file analysis:
    - [ ] X move damage at 8-koma
 
 2. **Movement/Physics**
-   - [ ] Walk speed observation (compare to Goku=standard, Nami=fast, Franky=slow)
+   - [ ] Walk speed observation (compare to Goku=standard, Nami=fast,
+         Franky=slow)
    - [ ] Dash type (standard or flash)
    - [ ] Weight feel (compare knockback received vs Goku)
 
 3. **Unique Mechanics**
-   - [ ] Verify tier=3 gives +1 damage (compare to tier=2 character with same jpower)
+   - [ ] Verify tier=3 gives +1 damage (compare to tier=2 character with same
+         jpower)
    - [ ] Summon behavior if any
    - [ ] Damage type verification (use Slash Defense / Impact Defense passives)
 
@@ -276,10 +284,10 @@ collision file analysis:
 
 ## Related Characters
 
-| Character     | chr_b Index | Collision File | Relationship           |
-| ------------- | ----------- | -------------- | ---------------------- |
-| Arale         | 56          | ds_b_01.bin    | Same series (Dr. Slump)|
-| Mashirito     | 57          | ds_b_02.bin    | Creator of Caramelman  |
+| Character | chr_b Index | Collision File | Relationship            |
+| --------- | ----------- | -------------- | ----------------------- |
+| Arale     | 56          | ds_b_01.bin    | Same series (Dr. Slump) |
+| Mashirito | 57          | ds_b_02.bin    | Creator of Caramelman   |
 
 **Characters sharing charId 45:**
 
@@ -297,11 +305,11 @@ This makes him valuable for testing the tier damage formula.
 
 ### ARM9.bin Key Offsets
 
-| Offset   | Contents                               |
-| -------- | -------------------------------------- |
-| 0x0924B0 | Collision file pointer table           |
-| 0x08D4A0 | chr_b -> collision identity mapping    |
-| 0x09E780 | Koma name table                        |
+| Offset   | Contents                            |
+| -------- | ----------------------------------- |
+| 0x0924B0 | Collision file pointer table        |
+| 0x08D4A0 | chr_b -> collision identity mapping |
+| 0x09E780 | Koma name table                     |
 
 ### Related Documentation
 
@@ -313,8 +321,8 @@ This makes him valuable for testing the tier damage formula.
 
 ## Session Log
 
-| Date       | Session      | Verified | Notes                              |
-| ---------- | ------------ | -------- | ---------------------------------- |
+| Date       | Session      | Verified | Notes                                   |
+| ---------- | ------------ | -------- | --------------------------------------- |
 | 2026-01-29 | Initial scan | No       | Extracted file data, no in-game testing |
 
 ---

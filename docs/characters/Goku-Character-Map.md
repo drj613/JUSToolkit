@@ -1,6 +1,30 @@
-# Goku (db_b_01) - Complete Character Mapping
+# Goku / Goku SSJ - Character Map
 
-Deep dive analysis mapping Goku through all data files to understand linkages.
+Deep dive analysis mapping Goku and Goku SSJ through all data files.
+
+> **Note:** Base Goku and Goku SSJ share the same jpower block (0) and classId (256),
+> meaning they have identical damage values for all B/Y moves. They differ only in
+> sprites, koma costs, and X moves. This document covers both forms.
+
+---
+
+## Overview
+
+| Field           | Base Goku | Goku SSJ |
+| --------------- | --------- | -------- |
+| Series          | Dragon Ball | Dragon Ball |
+| chr_b Index     | 0         | 1        |
+| Collision File  | db_b_01.bin | db_b_02.bin |
+| Collision Entries | 25      | 36       |
+| charId          | 7         | 7        |
+| tier            | 2         | 2        |
+| jpower Block    | 0         | 0        |
+| classId         | 256       | 256      |
+| Koma Sizes      | 4, 5      | 6, 7     |
+
+**Why consolidated:** Both forms use identical jpower block 0 and classId 256,
+meaning they have the same damage values for all B/Y moves. User confirmed same
+moveset. SSJ differs in sprites, koma cost, and X moves.
 
 ---
 
@@ -84,9 +108,25 @@ then 5 | ✓ | | down B | 10 | 7 × 1.5 = 10.5 → 10 | ✓ | | Y | 6+6+9 | 4 ×
 
 **Character variants:**
 
-- db_b_01 (chr_b[0]): Base Goku
-- db_b_02 (chr_b[1]): Goku SSJ - same moveset except specials
-- db_b_03 (chr_b[2]): Vegetto - different character
+- db_b_01 (chr_b[0]): Base Goku - THIS FILE
+- db_b_02 (chr_b[1]): Goku SSJ - THIS FILE (same jpower block)
+- db_b_03 (chr_b[2]): Vegetto - SEPARATE FILE (different jpower block 1)
+
+### Form-Specific: Specials (X Moves)
+
+| Form      | Koma | X Damage | X Notes | up X Damage | up X Notes |
+| --------- | ---- | -------- | ------- | ----------- | ---------- |
+| Base Goku | 4    |          |         |             |            |
+| Base Goku | 5    |          |         |             |            |
+| Goku SSJ  | 6    |          |         |             |            |
+| Goku SSJ  | 7    |          |         |             |            |
+
+### Form-Specific: Sprite Archives
+
+| Form      | Main Sprites  | X-Koma Portrait  |
+| --------- | ------------- | ---------------- |
+| Base Goku | db_b_01c.aar  | db_b_01_Xc.aar   |
+| Goku SSJ  | db_b_02c.aar  | db_b_02_Xc.aar   |
 
 ---
 

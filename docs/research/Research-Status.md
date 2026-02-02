@@ -16,40 +16,46 @@ damage = (jpower.damage1 ÷ 5) + (tier - 2)
 actual_damage = floor(damage × nature_multiplier)
 ```
 
-**Key insight:** The formula uses `damage1` (first component), NOT `totalDamage`!
+**Key insight:** The formula uses `damage1` (first component), NOT
+`totalDamage`!
 
 **Tier Modifiers:**
+
 - tier=1: -1 damage (e.g., Bankai Ichigo)
 - tier=2: +0 damage (most characters)
 - tier=3: +1 damage (e.g., Caramelman)
 
 **Nature Multipliers:**
+
 - Neutral: 1.0x
 - Advantage: 1.5x
 - Disadvantage: 1.0x (no penalty - bonus-only system)
 
 **Verified B move damages (2026-01-30):**
 
-| Character | tier | B Damage | Required d1 | d1 exists? |
-|-----------|------|----------|-------------|------------|
-| Nami | 2 | 6 | 30 | ✓ 27 entries |
-| Train | 2 | 7 | 35 | ✓ 4 entries |
-| Goku | 2 | 8 | 40 | ✓ 16 entries |
-| Luffy | 2 | 8 | 40 | ✓ |
-| Robin | 2 | 8 | 40 | ✓ |
-| Franky | 2 | 8 | 40 | ✓ |
-| Naruto | 2 | 8 | 40 | ✓ |
-| Buu | 2 | 9 | 45 | ✓ 3 entries |
-| Bankai | 1 | 9 | 50 | ✓ 5 entries |
-| Ichigo | 2 | 10 | 50 | ✓ |
-| Caramelman | 3 | 13 | 60 | ✓ 1 entry |
-| Kyuubi Naruto | 1 | 8 | 45* | ✓ |
+| Character     | tier | B Damage | Required d1 | d1 exists?   |
+| ------------- | ---- | -------- | ----------- | ------------ |
+| Nami          | 2    | 6        | 30          | ✓ 27 entries |
+| Train         | 2    | 7        | 35          | ✓ 4 entries  |
+| Goku          | 2    | 8        | 40          | ✓ 16 entries |
+| Luffy         | 2    | 8        | 40          | ✓            |
+| Robin         | 2    | 8        | 40          | ✓            |
+| Franky        | 2    | 8        | 40          | ✓            |
+| Naruto        | 2    | 8        | 40          | ✓            |
+| Buu           | 2    | 9        | 45          | ✓ 3 entries  |
+| Bankai        | 1    | 9        | 50          | ✓ 5 entries  |
+| Ichigo        | 2    | 10       | 50          | ✓            |
+| Caramelman    | 3    | 13       | 60          | ✓ 1 entry    |
+| Kyuubi Naruto | 1    | 8        | 45\*        | ✓            |
 
-*Kyuubi has tier=1 but B=8, implying he uses d1=45 entry (45/5-1=8), not d1=40 like base Naruto
+\*Kyuubi has tier=1 but B=8, implying he uses d1=45 entry (45/5-1=8), not d1=40
+like base Naruto
 
-**What's confirmed:** The calculation formula works - all tested damages match jpower entries with the correct d1 value.
+**What's confirmed:** The calculation formula works - all tested damages match
+jpower entries with the correct d1 value.
 
-**What's NOT confirmed:** How collision files SELECT which jpower entry to use. See "jpower Entry Selection" in UNKNOWN section below.
+**What's NOT confirmed:** How collision files SELECT which jpower entry to use.
+See "jpower Entry Selection" in UNKNOWN section below.
 
 ---
 
@@ -306,32 +312,37 @@ chr_b.bin `komaSize` values (2-6) do NOT match deck koma sizes (4-8).
 - classId points to jpower ATTACK block (confirmed)
 - Blocks contain damage values for moves
 - **jpower blocks are template libraries** - characters select subset of entries
-- Characters sharing same block can have completely different movesets (Goku ≠ Majin Buu, Luffy ≠ Robin, Nami ≠ Franky)
+- Characters sharing same block can have completely different movesets (Goku ≠
+  Majin Buu, Luffy ≠ Robin, Nami ≠ Franky)
 
 **NEW DISCOVERY (2026-01-30): Collision damageFlags can be global jpower index**
 
 For Ichigo (bl_b_01):
+
 - damageFlags values (2, 3, 5, 7, 8, etc.) = **direct jpower array indices**
 - Example: damageFlags=2 → jpower[2] (ID=6, total=50) → 50/5=10 damage ✓
 - Most Ichigo collision entries have non-zero damageFlags
 
 For Goku (db_b_01):
+
 - Almost all damageFlags=0 (different pattern from Ichigo)
 - damageFlags=0 does NOT simply mean "use jpower[0]"
 - Goku B=8 requires damage1=40 (at indices 146, 195, 218) but damageFlags=0
 
 **Entries with jpower damage1=40:**
 
-| Array Index | jpower ID | linkCategory | Notes |
-|-------------|-----------|--------------|-------|
-| 146 | 379 | 1 | First entry with damage1=40 |
-| 195 | 539 | 1 | Same linkCategory |
-| 218 | 604 | 1 | Same linkCategory |
+| Array Index | jpower ID | linkCategory | Notes                       |
+| ----------- | --------- | ------------ | --------------------------- |
+| 146         | 379       | 1            | First entry with damage1=40 |
+| 195         | 539       | 1            | Same linkCategory           |
+| 218         | 604       | 1            | Same linkCategory           |
 
 **NEW DISCOVERY (2026-01-30): Two distinct damage reference systems**
 
 Characters fall into two categories:
-1. **Direct jpower reference** (Ichigo pattern): damageFlags = global jpower array index
+
+1. **Direct jpower reference** (Ichigo pattern): damageFlags = global jpower
+   array index
    - Ichigo: 19/20 collision entries have damageFlags > 0
    - damageFlags=2 → jpower[2] (total=50) → 50/5=10 damage ✓
 
@@ -342,22 +353,24 @@ Characters fall into two categories:
 
 **Verified damage values (2026-01-30):**
 
-| Character | tier | B Damage | Required d1 | Status |
-|-----------|------|----------|-------------|--------|
-| Ichigo | 2 | 10 | 50 | ✓ Confirmed |
-| Bankai | 1 | 9 | 50 | ✓ Confirmed (50/5-1=9) |
-| Goku | 2 | 8 | 40 | ✓ Entries exist |
-| Naruto | 2 | 8 | 40 | ✓ Entries exist |
-| Buu | 2 | 9 | 45 | ✓ Entries exist |
-| Caramelman | 3 | 13 | 60 | ✓ Confirmed (60/5+1=13) |
+| Character  | tier | B Damage | Required d1 | Status                  |
+| ---------- | ---- | -------- | ----------- | ----------------------- |
+| Ichigo     | 2    | 10       | 50          | ✓ Confirmed             |
+| Bankai     | 1    | 9        | 50          | ✓ Confirmed (50/5-1=9)  |
+| Goku       | 2    | 8        | 40          | ✓ Entries exist         |
+| Naruto     | 2    | 8        | 40          | ✓ Entries exist         |
+| Buu        | 2    | 9        | 45          | ✓ Entries exist         |
+| Caramelman | 3    | 13       | 60          | ✓ Confirmed (60/5+1=13) |
 
-> **NOTE:** Buu was previously listed as "anomaly" because we looked for `total=45`.
-> **RESOLVED:** Formula uses `damage1` only, and entries with `damage1=45` DO exist.
+> **NOTE:** Buu was previously listed as "anomaly" because we looked for
+> `total=45`. **RESOLVED:** Formula uses `damage1` only, and entries with
+> `damage1=45` DO exist.
 
 **Still Unknown:**
 
 - How damageFlags=0 resolves to jpower entries (ARM9 lookup table?)
-- Which jpower entry within a block corresponds to which move (B, fwd B, Y, etc.)
+- Which jpower entry within a block corresponds to which move (B, fwd B, Y,
+  etc.)
 - How multi-hit moves work (Y combo 4+4+6, up B 3+3)
 - Why only some collision entries have damageFlags>0 while most use 0
 

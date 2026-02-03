@@ -1530,7 +1530,8 @@ class DamageCodeBreakpoint(gdb.Breakpoint):
             else:
                 hp_addr = ADDRESSES[f'opponent_deck{slot-1}_hp']
             # For opponents, we don't have state pointers yet
-            self.ptr_addr = ADDRESSES.get('player1_state_ptr')  # Fallback
+            # TODO: Find opponent state pointer addresses
+            self.ptr_addr = None  # Don't capture invalid data
         else:
             if is_active:
                 hp_addr = ADDRESSES['player_active_hp']
@@ -1707,6 +1708,10 @@ class JUSAutoSnapshotOnDamageCode(gdb.Command):
         print(f"Breakpoint at: {ADDRESSES['health_code']:#010x}")
         print(f"HP address: {bp.hp_addr:#010x}")
         print(f"Current HP value: {bp.last_hp} (displayed: ~{bp.last_hp * 4 if bp.last_hp else 0})")
+        if is_opponent:
+            print()
+            print("NOTE: Opponent state pointer not yet known - will log HP changes")
+            print("      but won't capture character struct snapshots.")
         if debug:
             print(f"DEBUG MODE: Will show HP values for first 5 calls")
         print()

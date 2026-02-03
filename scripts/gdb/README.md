@@ -84,6 +84,8 @@ The emulator will pause. Use `continue` to resume.
 | Command           | Description                                    |
 | ----------------- | ---------------------------------------------- |
 | `jus-status`      | Show current battle state (HP, timer, special) |
+| `jus-check-hp`    | Show HP for you and opponent (active + deck)   |
+| `jus-find-hp <n>` | Search memory for HP value (to find addresses) |
 | `jus-addresses`   | List all known memory addresses                |
 | `jus-read-char N` | Read player N's character state struct         |
 
@@ -117,44 +119,92 @@ The emulator will pause. Use `continue` to resume.
 | `jus-compare-field <off> <snaps...>`       | Compare one field across multiple snapshots           |
 | `jus-velocity-watch [player]`              | Show physics region values                            |
 
-### Automated Triggers (No Manual Ctrl+C!)
+### Automated Triggers
 
-These commands solve the window focus problem - they run in the background while
-you play:
+The main working command for automatic capture:
 
 | Command                                                | Description                                |
 | ------------------------------------------------------ | ------------------------------------------ |
-| `jus-auto-snapshot-on-hit <player> [prefix]`           | Capture AFTER HP is written                |
-| `jus-auto-snapshot-on-damage <player> [prefix]`        | Capture BEFORE HP write (at calc function) |
-| `jus-auto-snapshot-on-state <player> [prefix]`         | Capture on jump/land/launch                |
-| `jus-auto-snapshot-on-status <player> [prefix] [type]` | Capture on status change (hitstun?)        |
-| `jus-burst-snapshot <count> <prefix> [player]`         | Take N snapshots rapidly                   |
-| `jus-auto-snapshot-off`                                | Disable all auto-triggers                  |
+| `jus-auto-snapshot-on-damage <target> [prefix]`        | Capture when HP decreases (WORKS!)         |
+| `jus-auto-snapshot-off`                                | Disable all auto-triggers + show summary   |
 
-**Timing considerations:**
+**Target options:**
 
-- `on-hit` fires when HP is _written_ - knockback velocity may already be
-  applied
-- `on-damage` fires at the damage _calculation_ function - may be closer to
-  impact
-- Compare both to understand the game's execution order
+| Target              | Description                        |
+| ------------------- | ---------------------------------- |
+| `me` / `player` / `1` | Your active character            |
+| `2-4`               | Your deck members (supports)       |
+| `opp` / `enemy` / `o1` | Opponent's active character     |
+| `o2-o4`             | Opponent's deck members            |
 
-The status trigger watches `positive_status` (0x88) and `negative_status` (0xA0)
-fields, which may encode hitstun states. Use `type` = `positive`, `negative`, or
-`both` (default).
+**Examples:**
+
+```gdb
+jus-auto-snapshot-on-damage me goku       # Track damage to your character
+jus-auto-snapshot-on-damage opp enemy     # Track damage to opponent
+```
+
+**Important notes:**
+
+- HP is stored at **1/4 scale** (160 displayed HP = 40 stored)
+- The damage code fires constantly during idle, but the command filters to only
+  capture when HP actually decreases.
+- Use `jus-check-hp` to see current HP values for both sides.
+
+**Broken with melonDS** (these use hardware watchpoints which melonDS doesn't support):
+
+| Command                         | Status                          |
+| ------------------------------- | ------------------------------- |
+| `jus-auto-snapshot-on-hit`      | ❌ Uses watchpoints, fails      |
+| `jus-auto-snapshot-on-state`    | ❌ Uses watchpoints, fails      |
+| `jus-auto-snapshot-on-status`   | ❌ Uses watchpoints, fails      |
+
+### Manual Capture Commands
+
+These require manual continue/Ctrl+C between captures (stepi doesn't work with melonDS):
+
+| Command                                         | Description                    |
+| ----------------------------------------------- | ------------------------------ |
+| `jus-burst-snapshot <count> <prefix> [player]`  | Capture one, then c/Ctrl+C     |
+| `jus-baseline-noise <player> [count] [prefix]`  | Capture one, then c/Ctrl+C     |
+
+### Velocity Logging (Lightweight Alternative)
+
+Instead of capturing full 288-byte snapshots, you can log just the physics
+region values:
+
+| Command                          | Description                              |
+| -------------------------------- | ---------------------------------------- |
+| `jus-velocity-log <player> [file]` | Log physics offsets when HP decreases  |
+| `jus-velocity-show [last_n]`     | Show velocity log entries                |
+| `jus-velocity-clear`             | Clear velocity log                       |
+
+This logs offsets 0x006A-0x007E (likely velocity), 0x0078 (ground/air state),
+and 0x0098-0x009A (timer region) each time damage is taken.
+
+### Snapshot Management
+
+| Command                      | Description                              |
+| ---------------------------- | ---------------------------------------- |
+| `jus-snapshot-list [prefix]` | List all snapshots with metadata         |
 
 ### Noise Filtering
 
 Before analyzing combat data, capture baseline "noise" to identify timer fields:
 
-| Command                                        | Description                              |
-| ---------------------------------------------- | ---------------------------------------- |
-| `jus-baseline-noise <player> [count] [prefix]` | Capture idle state over time             |
-| `jus-find-timers <prefix>`                     | Identify always-changing fields (timers) |
+| Command                                              | Description                                |
+| ---------------------------------------------------- | ------------------------------------------ |
+| `jus-baseline-noise <player> [count] [prefix] [steps]` | Capture idle state (stepi-based)         |
+| `jus-baseline-timed <player> [count] [prefix]`       | Capture idle state (continue-based)        |
+| `jus-find-timers <prefix>`                           | Identify always-changing fields (timers)   |
 
 Fields that change during idle time are timers/counters - **not** physics data.
 After running `jus-find-timers`, these offsets are marked `[TIMER - ignore]` in
 diff output.
+
+**Note:** `jus-baseline-noise` uses `stepi` (default 500,000 steps) between
+snapshots. If timers don't change, increase steps or use `jus-baseline-timed`
+which uses `continue` for more realistic timing (requires manual Ctrl+C).
 
 ### Binary Dump Scripts
 
@@ -304,7 +354,7 @@ periodically even without combat).
 ### Using Automated Triggers (Recommended!)
 
 The manual Ctrl+C approach has a focus problem - you can't control the game AND
-the terminal simultaneously. Use these automated triggers instead:
+the terminal simultaneously. Use the damage-based trigger instead:
 
 ```gdb
 # Connect and get into a battle first
@@ -312,45 +362,45 @@ the terminal simultaneously. Use these automated triggers instead:
 (gdb) continue
 # ... start a 1v1 battle, then Ctrl+C to set up triggers ...
 
-# Set up automatic snapshot on damage
-(gdb) jus-auto-snapshot-on-hit 1 test
-# Now resume - you can focus on melonDS!
+# Track when YOU take damage
+(gdb) jus-auto-snapshot-on-damage me mychar
 (gdb) continue
 
-# ... play the game, let P1 get hit multiple times ...
+# ... play the game, get hit multiple times ...
 # Snapshots are captured automatically in background!
-# You'll see: [AUTO] Snapshot 'test_hit1' captured (HP: 100 -> 92)
+# You'll see: [AUTO] Snapshot 'mychar_dmg1' captured (player_active HP: 160 -> 148, dmg: 12)
 
 # When done, Ctrl+C to analyze
-(gdb) jus-char-diff test_hit1 test_hit2
+(gdb) jus-auto-snapshot-off
+(gdb) jus-char-diff mychar_dmg1 mychar_dmg2
 ```
 
-### Auto-Capture State Transitions
+### Tracking Opponent Damage
 
 ```gdb
-# Capture jumps, lands, and launches automatically
-(gdb) jus-auto-snapshot-on-state 1 jump_test
+# Track when OPPONENT takes damage
+(gdb) jus-auto-snapshot-on-damage opp enemy
 (gdb) continue
 
-# ... jump around, get launched ...
-# Captures: jump_test_state1 (ground -> air)
-#           jump_test_state2 (air -> ground)
-#           jump_test_state3 (ground -> air)  <- from getting hit
+# ... attack the opponent ...
+# You'll see: [AUTO] Snapshot 'enemy_dmg1' captured (opponent_active HP: 160 -> 140, dmg: 20)
 
-(gdb) jus-auto-snapshot-off  # Disable when done
-(gdb) jus-char-diff jump_test_state1 jump_test_state3
-# Compare voluntary jump vs launched - find knockback fields!
+(gdb) jus-auto-snapshot-off
 ```
 
 ### Burst Snapshots for Movement Analysis
 
 ```gdb
-# Capture rapid sequence during movement
-# Pause while character is walking/dashing
-(gdb) jus-burst-snapshot 10 walking 1
-# Takes 10 snapshots with brief continues between
+# Capture sequence during movement (manual continue/Ctrl+C between each)
+(gdb) jus-burst-snapshot 5 walking 1
+# Captured: walking_0 (1/5)
+(gdb) c
+# (wait, Ctrl+C)
+(gdb) jus-burst-snapshot 5 walking 1
+# Captured: walking_1 (2/5)
+# ... repeat ...
 
-(gdb) jus-char-diff walking_0 walking_9
+(gdb) jus-char-diff walking_0 walking_4
 # See position/velocity change over time
 ```
 
@@ -371,9 +421,31 @@ the terminal simultaneously. Use these automated triggers instead:
 | Address      | Size | Description     |
 | ------------ | ---- | --------------- |
 | `0x021DEA71` | 1    | Battle timer    |
-| `0x021DF1D5` | 1    | Player 1 HP     |
-| `0x021DF225` | 1    | Player 2 HP     |
 | `0x021DF731` | 1    | Special meter 1 |
+
+### HP Addresses
+
+HP is stored at **1/4 scale** (160 displayed = 40 stored).
+
+**Your side:**
+
+| Address      | Description                    |
+| ------------ | ------------------------------ |
+| `0x021DF1D5` | Your active character HP       |
+| `0x021DF225` | Your deck slot 1 (support/tagged out) |
+| `0x021DF275` | Your deck slot 2               |
+| `0x021DF2C5` | Your deck slot 3               |
+
+**Opponent side** (0x61C offset from your side):
+
+| Address      | Description                    |
+| ------------ | ------------------------------ |
+| `0x021DF7F1` | Opponent active character HP   |
+| `0x021DF841` | Opponent deck slot 1           |
+| `0x021DF891` | Opponent deck slot 2           |
+| `0x021DF8E1` | Opponent deck slot 3           |
+
+Deck slots are spaced 0x50 apart. Use `jus-check-hp` to see all values at once.
 
 ### Character State Struct (offsets from pointer)
 
@@ -430,6 +502,44 @@ Total struct size: at least 0x120 bytes (~288 bytes)
   - `koma` = `0x02280000-0x022A0000` (koma holder during deck building)
   - `char` = `0x021DF000-0x021E0000` (character data in-battle)
   - `full` = `0x02000000-0x02400000` (all main RAM, slow)
+
+## Known Limitations
+
+### Hardware Watchpoints Not Supported
+
+The melonDS GDB stub does not properly support hardware watchpoints. Commands
+that use watchpoints (`jus-auto-snapshot-on-hit`, `jus-auto-snapshot-on-state`,
+`jus-auto-snapshot-on-status`) will fail with errors like:
+
+```
+Hardware watchpoint 1: *0x21dea71
+Python Exception <class 'RuntimeError'>: Breakpoint 0 is invalid.
+```
+
+**Workaround:** Use `jus-auto-snapshot-on-damage` instead, which uses a regular
+breakpoint at the damage calculation function.
+
+### stepi Doesn't Work Reliably
+
+The melonDS GDB stub crashes or hangs when executing large `stepi` counts. The
+`jus-baseline-noise` and `jus-burst-snapshot` commands now require manual
+continue/Ctrl+C between captures instead of automatic stepping.
+
+### HP Memory Layout
+
+The battle has separate addresses for **active characters** (currently fighting)
+and **deck slots** (supports, tagged out characters):
+
+- **Your active** + **Your deck 1-3**: Starting at `0x021DF1D5`, spaced 0x50 apart
+- **Opponent active** + **Opponent deck 1-3**: Starting at `0x021DF7F1`, spaced 0x50 apart
+- **Offset between sides**: 0x61C (1564 bytes)
+
+HP values are stored at **1/4 of displayed value**:
+- 160 HP displayed = 40 stored
+- 128 HP displayed = 32 stored
+
+Use `jus-check-hp` to see all HP values, or `jus-find-hp <value>` to search for
+specific HP values in memory.
 
 ## Troubleshooting
 

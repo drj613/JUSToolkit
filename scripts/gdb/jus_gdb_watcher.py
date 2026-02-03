@@ -27,11 +27,35 @@ ADDRESSES = {
     'battle_timer': 0x021DEA71,
     'battle_timer_wifi': 0x021E29B0,
 
-    # Player HP (spaced 0x50 apart)
-    'player1_hp': 0x021DF1D5,
-    'player2_hp': 0x021DF225,
-    'player3_hp': 0x021DF275,
-    'player4_hp': 0x021DF2C5,
+    # HP ADDRESSES
+    # HP is stored at 1/4 scale (160 displayed = 40 stored)
+    # Structure: active character, then deck slots spaced 0x50 apart
+    #
+    # YOUR SIDE:
+    #   active = currently fighting character
+    #   deck1-3 = other deck members (supports, tagged out, etc.)
+    'player_active_hp': 0x021DF1D5,
+    'player_deck1_hp': 0x021DF225,
+    'player_deck2_hp': 0x021DF275,
+    'player_deck3_hp': 0x021DF2C5,
+
+    # OPPONENT SIDE (0x61C offset from your active):
+    #   active = opponent's currently fighting character
+    #   deck1-3 = opponent's other deck members
+    'opponent_active_hp': 0x021DF7F1,
+    'opponent_deck1_hp': 0x021DF841,
+    'opponent_deck2_hp': 0x021DF891,
+    'opponent_deck3_hp': 0x021DF8E1,
+
+    # Legacy aliases (for backward compatibility)
+    'player1_hp': 0x021DF1D5,  # = player_active_hp
+    'player2_hp': 0x021DF225,  # = player_deck1_hp
+    'player3_hp': 0x021DF275,  # = player_deck2_hp
+    'player4_hp': 0x021DF2C5,  # = player_deck3_hp
+    'opponent1_hp': 0x021DF7F1,  # = opponent_active_hp
+    'opponent2_hp': 0x021DF841,  # = opponent_deck1_hp
+    'opponent3_hp': 0x021DF891,  # = opponent_deck2_hp
+    'opponent4_hp': 0x021DF8E1,  # = opponent_deck3_hp
 
     # Special meter
     'special_1': 0x021DF731,
@@ -222,6 +246,160 @@ class JUSStatus(gdb.Command):
             print(f"Special: {sp1} / {sp2}")
 
         print()
+
+
+class JUSFindHP(gdb.Command):
+    """Search for HP value in memory to find correct address.
+
+    Usage: jus-find-hp <expected_hp> [region]
+
+    Searches for a byte matching the expected HP value in the battle
+    memory region. Useful for verifying HP addresses or finding the
+    correct one for different game modes.
+
+    Example:
+        jus-find-hp 160       # Find where HP=160 is stored
+        jus-find-hp 100 char  # Search in character region only
+    """
+
+    REGIONS = {
+        'battle': (0x021DF000, 0x021E0000),  # Character data region
+        'char': (0x021DF100, 0x021DF400),    # Narrower char region
+        'wide': (0x021D0000, 0x02200000),    # Full battle RAM
+    }
+
+    def __init__(self):
+        super().__init__("jus-find-hp", gdb.COMMAND_USER)
+
+    def invoke(self, arg, from_tty):
+        args = arg.split()
+        if not args:
+            print("Usage: jus-find-hp <expected_hp> [region]")
+            print()
+            print("Searches for HP value in memory.")
+            print("Regions: battle (default), char, wide")
+            print()
+            print("Example: If Kenshin shows 160 HP on screen:")
+            print("  jus-find-hp 160")
+            print("  jus-find-hp 40    # Maybe stored as HP/4?")
+            return
+
+        try:
+            target_hp = int(args[0])
+        except ValueError:
+            print("HP must be a number")
+            return
+
+        region = args[1] if len(args) > 1 else 'battle'
+        if region not in self.REGIONS:
+            print(f"Unknown region: {region}")
+            print(f"Available: {list(self.REGIONS.keys())}")
+            return
+
+        start, end = self.REGIONS[region]
+        print(f"Searching for HP={target_hp} in {region} ({start:#x}-{end:#x})...")
+
+        data = read_bytes(start, end - start)
+        if not data:
+            print("Failed to read memory")
+            return
+
+        # Find all matches
+        matches = []
+        for i, b in enumerate(data):
+            if b == target_hp:
+                addr = start + i
+                matches.append(addr)
+
+        if not matches:
+            print(f"No matches found for value {target_hp}")
+            print()
+            print("Try searching for related values:")
+            print(f"  jus-find-hp {target_hp // 4}  # HP/4")
+            print(f"  jus-find-hp {target_hp // 2}  # HP/2")
+            return
+
+        print(f"Found {len(matches)} matches:")
+        print()
+
+        # Show matches with context
+        known_hp_addrs = [
+            ADDRESSES['player1_hp'],
+            ADDRESSES['player2_hp'],
+            ADDRESSES['player3_hp'],
+            ADDRESSES['player4_hp'],
+        ]
+
+        for addr in matches[:20]:
+            # Check if this is a known HP address
+            known = ""
+            for i, known_addr in enumerate(known_hp_addrs, 1):
+                if addr == known_addr:
+                    known = f" <- KNOWN player{i}_hp"
+                    break
+                elif abs(addr - known_addr) < 0x10:
+                    known = f" (near player{i}_hp)"
+                    break
+
+            # Show nearby bytes for context
+            offset = addr - start
+            context_start = max(0, offset - 2)
+            context_end = min(len(data), offset + 3)
+            context = data[context_start:context_end]
+            context_hex = ' '.join(f'{b:02X}' for b in context)
+
+            print(f"  {addr:#010x}: {target_hp} (0x{target_hp:02X})  context: [{context_hex}]{known}")
+
+        if len(matches) > 20:
+            print(f"  ... and {len(matches) - 20} more")
+
+
+class JUSCheckHP(gdb.Command):
+    """Quick check of current HP values at known addresses.
+
+    Usage: jus-check-hp
+
+    Shows HP values for active characters and deck members.
+    Run before and after damage to verify addresses are correct.
+    """
+
+    def __init__(self):
+        super().__init__("jus-check-hp", gdb.COMMAND_USER)
+
+    def invoke(self, arg, from_tty):
+        print("=== HP Check (raw values at known addresses) ===")
+        print("Note: Values are stored at 1/4 scale (40 = 160 displayed)")
+        print()
+
+        # Your side
+        print("YOUR SIDE:")
+        addr = ADDRESSES['player_active_hp']
+        hp = read_byte(addr)
+        displayed = hp * 4 if hp else 0
+        print(f"  Active:  {hp:3d} (displayed: ~{displayed:3d}) @ {addr:#010x}")
+
+        for i in range(1, 4):
+            addr = ADDRESSES[f'player_deck{i}_hp']
+            hp = read_byte(addr)
+            displayed = hp * 4 if hp else 0
+            note = " [KO'd or empty]" if hp == 0 else ""
+            print(f"  Deck {i}:  {hp:3d} (displayed: ~{displayed:3d}) @ {addr:#010x}{note}")
+
+        print()
+
+        # Opponent side
+        print("OPPONENT SIDE:")
+        addr = ADDRESSES['opponent_active_hp']
+        hp = read_byte(addr)
+        displayed = hp * 4 if hp else 0
+        print(f"  Active:  {hp:3d} (displayed: ~{displayed:3d}) @ {addr:#010x}")
+
+        for i in range(1, 4):
+            addr = ADDRESSES[f'opponent_deck{i}_hp']
+            hp = read_byte(addr)
+            displayed = hp * 4 if hp else 0
+            note = " [KO'd or empty]" if hp == 0 else ""
+            print(f"  Deck {i}:  {hp:3d} (displayed: ~{displayed:3d}) @ {addr:#010x}{note}")
 
 
 class JUSWatchHP(gdb.Command):
@@ -978,15 +1156,10 @@ class HitTriggerBreakpoint(gdb.Breakpoint):
 class JUSAutoSnapshotOnHit(gdb.Command):
     """Automatically take snapshots when a player takes damage.
 
+    WARNING: This uses hardware watchpoints which do NOT work with melonDS!
+    Use 'jus-auto-snapshot-on-damage' instead.
+
     Usage: jus-auto-snapshot-on-hit <player> [prefix]
-
-    This sets up a watchpoint on HP that automatically captures
-    character state whenever damage is taken. No need to Ctrl+C!
-
-    The snapshots are named: <prefix>_hit1, <prefix>_hit2, etc.
-    Default prefix: "auto"
-
-    To stop: jus-auto-snapshot-off
     """
 
     _active_breakpoints = []
@@ -995,11 +1168,21 @@ class JUSAutoSnapshotOnHit(gdb.Command):
         super().__init__("jus-auto-snapshot-on-hit", gdb.COMMAND_USER)
 
     def invoke(self, arg, from_tty):
+        print("=" * 60)
+        print("WARNING: This command uses hardware watchpoints which")
+        print("do NOT work with the melonDS GDB stub!")
+        print("=" * 60)
+        print()
+        print("Use this instead (works reliably):")
+        print("  jus-auto-snapshot-on-damage <player> [prefix]")
+        print()
+        print("Example:")
+        print("  jus-auto-snapshot-on-damage 1 goku")
+        print()
+
+        # Still allow attempting it in case user has different emulator
         args = arg.split()
         if not args:
-            print("Usage: jus-auto-snapshot-on-hit <player 1-4> [prefix]")
-            print("Example: jus-auto-snapshot-on-hit 1 goku")
-            print("  -> Creates snapshots: goku_hit1, goku_hit2, ...")
             return
 
         player = int(args[0])
@@ -1009,34 +1192,17 @@ class JUSAutoSnapshotOnHit(gdb.Command):
             print("Player must be 1-4")
             return
 
-        # Check watchpoint support (warns on first use if not supported)
-        check_watchpoint_support()
-
-        # Create the watchpoint
+        print("Attempting anyway (may fail with melonDS)...")
         try:
             bp = HitTriggerBreakpoint(player, prefix)
             self._active_breakpoints.append(bp)
-
-            print(f"=== Auto-Snapshot on Hit ENABLED ===")
-            print(f"Player: {player}")
-            print(f"Prefix: {prefix}")
-            print()
-            print("Now use 'continue' to resume the game.")
-            print("Snapshots will be captured automatically when damage is taken.")
-            print()
-            print("To view snapshots: jus-char-snapshot (no args)")
-            print("To compare: jus-char-diff auto_hit1 auto_hit2")
-            print("To stop: jus-auto-snapshot-off")
-
-        except gdb.error as e:
-            print(f"ERROR: Failed to create watchpoint: {e}")
-            print()
-            print("Hardware watchpoints may not be supported by melonDS.")
-            print("Try using 'jus-auto-snapshot-on-damage' instead (uses breakpoint).")
+            print(f"Watchpoint created for player {player}")
+        except (gdb.error, RuntimeError) as e:
+            print(f"Failed (as expected with melonDS): {e}")
 
 
 class JUSAutoSnapshotOff(gdb.Command):
-    """Disable all automatic snapshot triggers."""
+    """Disable all automatic snapshot triggers and show capture summary."""
 
     def __init__(self):
         super().__init__("jus-auto-snapshot-off", gdb.COMMAND_USER)
@@ -1053,7 +1219,65 @@ class JUSAutoSnapshotOff(gdb.Command):
         else:
             print("No active auto-snapshot triggers")
 
-        print(f"Captured snapshots: {list(_char_snapshots.keys())}")
+        # Show summary of captured snapshots
+        if not _char_snapshots:
+            print("\nNo snapshots captured.")
+            return
+
+        print(f"\n=== Capture Summary ({len(_char_snapshots)} snapshots) ===")
+
+        # Group by type
+        hit_snaps = []
+        dmg_snaps = []
+        state_snaps = []
+        other_snaps = []
+
+        for name, snap in _char_snapshots.items():
+            if 'hp_before' in snap and 'hp_after' in snap:
+                hp_b, hp_a = snap['hp_before'], snap['hp_after']
+                entry = f"{name}: HP {hp_b} -> {hp_a}"
+                if snap.get('timing') == 'at_damage_code':
+                    dmg_snaps.append(entry)
+                else:
+                    hit_snaps.append(entry)
+            elif 'state_from' in snap:
+                state_snaps.append(f"{name}: {snap['state_from']} -> {snap['state_to']}")
+            else:
+                other_snaps.append(name)
+
+        if hit_snaps:
+            print(f"\nHP Change (on-hit): {len(hit_snaps)}")
+            for s in hit_snaps[-5:]:  # Show last 5
+                print(f"  {s}")
+            if len(hit_snaps) > 5:
+                print(f"  ... and {len(hit_snaps) - 5} more")
+
+        if dmg_snaps:
+            print(f"\nDamage Code: {len(dmg_snaps)}")
+            for s in dmg_snaps[-5:]:
+                print(f"  {s}")
+            if len(dmg_snaps) > 5:
+                print(f"  ... and {len(dmg_snaps) - 5} more")
+
+        if state_snaps:
+            print(f"\nState Changes: {len(state_snaps)}")
+            for s in state_snaps[-5:]:
+                print(f"  {s}")
+            if len(state_snaps) > 5:
+                print(f"  ... and {len(state_snaps) - 5} more")
+
+        if other_snaps:
+            print(f"\nOther: {len(other_snaps)}")
+            for s in other_snaps[-5:]:
+                print(f"  {s}")
+            if len(other_snaps) > 5:
+                print(f"  ... and {len(other_snaps) - 5} more")
+
+        print()
+        print("Next steps:")
+        print("  jus-snapshot-list              - Full list with metadata")
+        print("  jus-char-diff <s1> <s2>        - Compare two snapshots")
+        print("  jus-compare-field 0x0078 <s1> <s2>  - Compare specific field")
 
 
 class StateTriggerBreakpoint(gdb.Breakpoint):
@@ -1124,14 +1348,9 @@ class StateTriggerBreakpoint(gdb.Breakpoint):
 class JUSAutoSnapshotOnState(gdb.Command):
     """Automatically take snapshots when ground/air state changes.
 
+    WARNING: This uses hardware watchpoints which do NOT work with melonDS!
+
     Usage: jus-auto-snapshot-on-state <player> [prefix]
-
-    Captures state when character:
-    - Jumps (ground -> air)
-    - Lands (air -> ground)
-    - Gets launched (ground -> air from hit)
-
-    Default prefix: "state"
     """
 
     _active_breakpoints = []
@@ -1140,9 +1359,17 @@ class JUSAutoSnapshotOnState(gdb.Command):
         super().__init__("jus-auto-snapshot-on-state", gdb.COMMAND_USER)
 
     def invoke(self, arg, from_tty):
+        print("=" * 60)
+        print("WARNING: This command uses hardware watchpoints which")
+        print("do NOT work with the melonDS GDB stub!")
+        print("=" * 60)
+        print()
+        print("For damage-based capture, use:")
+        print("  jus-auto-snapshot-on-damage <player> [prefix]")
+        print()
+
         args = arg.split()
         if not args:
-            print("Usage: jus-auto-snapshot-on-state <player 1-4> [prefix]")
             return
 
         try:
@@ -1157,21 +1384,14 @@ class JUSAutoSnapshotOnState(gdb.Command):
             print("Player must be 1-4")
             return
 
+        print("Attempting anyway (may fail with melonDS)...")
         try:
             bp = StateTriggerBreakpoint(player, prefix)
             self._active_breakpoints.append(bp)
-            JUSAutoSnapshotOnHit._active_breakpoints.append(bp)  # Share cleanup
-
-            print(f"=== Auto-Snapshot on State Change ENABLED ===")
-            print(f"Player: {player}")
-            print(f"Prefix: {prefix}")
-            print()
-            print("Triggers on: jump, land, launched")
-            print("Use 'continue' to resume. Stop with: jus-auto-snapshot-off")
-
-        except (ValueError, gdb.error) as e:
-            print(f"Error: {e}")
-            print("Make sure you're in a battle and the character is loaded.")
+            JUSAutoSnapshotOnHit._active_breakpoints.append(bp)
+            print(f"Watchpoint created for player {player}")
+        except (ValueError, gdb.error, RuntimeError) as e:
+            print(f"Failed: {e}")
 
 
 class StatusTriggerBreakpoint(gdb.Breakpoint):
@@ -1238,23 +1458,26 @@ class StatusTriggerBreakpoint(gdb.Breakpoint):
 class JUSAutoSnapshotOnStatus(gdb.Command):
     """Automatically take snapshots when status fields change.
 
+    WARNING: This uses hardware watchpoints which do NOT work with melonDS!
+
     Usage: jus-auto-snapshot-on-status <player> [prefix] [type]
-
-    Watches status fields that may encode hitstun states:
-    - positive_status (0x88): buffs, invulnerability states
-    - negative_status (0xA0): debuffs, possibly hitstun
-
-    Type can be: positive, negative, or both (default)
     """
 
     def __init__(self):
         super().__init__("jus-auto-snapshot-on-status", gdb.COMMAND_USER)
 
     def invoke(self, arg, from_tty):
+        print("=" * 60)
+        print("WARNING: This command uses hardware watchpoints which")
+        print("do NOT work with the melonDS GDB stub!")
+        print("=" * 60)
+        print()
+        print("For damage-based capture, use:")
+        print("  jus-auto-snapshot-on-damage <player> [prefix]")
+        print()
+
         args = arg.split()
         if not args:
-            print("Usage: jus-auto-snapshot-on-status <player 1-4> [prefix] [type]")
-            print("Type: positive, negative, or both (default)")
             return
 
         try:
@@ -1270,28 +1493,15 @@ class JUSAutoSnapshotOnStatus(gdb.Command):
             print("Player must be 1-4")
             return
 
-        if status_type not in ("positive", "negative", "both"):
-            print("Type must be: positive, negative, or both")
-            return
-
+        print("Attempting anyway (may fail with melonDS)...")
         try:
             types_to_watch = ["positive", "negative"] if status_type == "both" else [status_type]
-
             for st in types_to_watch:
                 bp = StatusTriggerBreakpoint(player, prefix, st)
                 JUSAutoSnapshotOnHit._active_breakpoints.append(bp)
-
-            print(f"=== Auto-Snapshot on Status Change ENABLED ===")
-            print(f"Player: {player}")
-            print(f"Prefix: {prefix}")
-            print(f"Watching: {', '.join(types_to_watch)}")
-            print()
-            print("This may capture hitstun state transitions.")
-            print("Use 'continue' to resume. Stop with: jus-auto-snapshot-off")
-
-        except (ValueError, gdb.error) as e:
-            print(f"Error: {e}")
-            print("Make sure you're in a battle and the character is loaded.")
+            print(f"Watchpoints created for player {player}")
+        except (ValueError, gdb.error, RuntimeError) as e:
+            print(f"Failed: {e}")
 
 
 class DamageCodeBreakpoint(gdb.Breakpoint):
@@ -1299,13 +1509,39 @@ class DamageCodeBreakpoint(gdb.Breakpoint):
 
     This triggers BEFORE HP is decremented, which may be closer to
     the actual moment knockback velocity is applied.
+
+    NOTE: The damage code fires VERY frequently (~every few ms) even during
+    idle time, not just when damage is dealt. We filter by tracking HP and
+    only capturing when HP actually decreases.
     """
 
-    def __init__(self, player, snapshot_name_prefix):
-        self.player = player
+    def __init__(self, slot, snapshot_name_prefix, debug=False, is_opponent=False, is_active=False):
+        self.slot = slot
+        self.is_opponent = is_opponent
+        self.is_active = is_active
         self.prefix = snapshot_name_prefix
         self.trigger_count = 0
-        self.ptr_addr = ADDRESSES[f'player{player}_state_ptr']
+        self.debug = debug
+
+        # Get HP address based on target
+        if is_opponent:
+            if is_active:
+                hp_addr = ADDRESSES['opponent_active_hp']
+            else:
+                hp_addr = ADDRESSES[f'opponent_deck{slot-1}_hp']
+            # For opponents, we don't have state pointers yet
+            self.ptr_addr = ADDRESSES.get('player1_state_ptr')  # Fallback
+        else:
+            if is_active:
+                hp_addr = ADDRESSES['player_active_hp']
+                self.ptr_addr = ADDRESSES['player1_state_ptr']
+            else:
+                hp_addr = ADDRESSES[f'player_deck{slot-1}_hp']
+                self.ptr_addr = ADDRESSES.get(f'player{slot}_state_ptr')
+
+        self.hp_addr = hp_addr
+        self.last_hp = read_byte(hp_addr)
+        self.call_count = 0  # Track total calls for debugging
 
         # Break at health calculation code
         addr = ADDRESSES['health_code']
@@ -1313,37 +1549,92 @@ class DamageCodeBreakpoint(gdb.Breakpoint):
         self.silent = True
 
     def stop(self):
-        """Called when damage code is reached."""
+        """Called when damage code is reached.
+
+        Only captures snapshot when HP has DECREASED since last check.
+        This filters out the constant noise from damage code firing during idle.
+        """
+        self.call_count += 1
+
+        # Read current HP
+        current_hp = read_byte(self.hp_addr)
+        if current_hp is None:
+            if self.debug:
+                print(f"[DEBUG] Call #{self.call_count}: HP read failed")
+            return False
+
+        # Debug: show HP values periodically
+        if self.debug and self.call_count <= 5:
+            target = f"opponent{self.slot}" if self.is_opponent else f"player{self.slot}"
+            print(f"[DEBUG] Call #{self.call_count}: {target} HP addr={self.hp_addr:#x}, current={current_hp}, last={self.last_hp}")
+
+        # Only trigger on HP decrease (actual damage taken)
+        if self.last_hp is None or current_hp >= self.last_hp:
+            # HP didn't decrease - this is noise, skip it
+            # But if HP INCREASED, that's a heal or reset - update tracking
+            if current_hp != self.last_hp:
+                if self.debug:
+                    print(f"[DEBUG] HP changed but not decrease: {self.last_hp} -> {current_hp}")
+                self.last_hp = current_hp
+            return False
+
+        # HP decreased! This is a real damage event
         self.trigger_count += 1
         name = f"{self.prefix}_dmg{self.trigger_count}"
 
-        ptr = read_dword(self.ptr_addr)
+        # For opponents, we may not have valid state pointer - just log HP change
+        ptr = read_dword(self.ptr_addr) if self.ptr_addr else None
+
+        if self.is_active:
+            target_name = "opponent_active" if self.is_opponent else "player_active"
+        else:
+            target_name = f"opponent_deck{self.slot-1}" if self.is_opponent else f"player_deck{self.slot-1}"
+        displayed_before = self.last_hp * 4
+        displayed_after = current_hp * 4
+        damage = displayed_before - displayed_after
 
         if ptr and ptr >= 0x02000000:
             data = read_bytes(ptr, 0x120)
             if data:
-                # Also capture registers for context
+                # Capture with HP change info
                 _char_snapshots[name] = {
                     'data': data,
                     'ptr': ptr,
-                    'player': self.player,
+                    'slot': self.slot,
+                    'is_opponent': self.is_opponent,
                     'timing': 'at_damage_code',
+                    'hp_before': self.last_hp,
+                    'hp_after': current_hp,
                 }
-                print(f"\n[AUTO] Snapshot '{name}' captured (at damage calculation)")
+                print(f"\n[AUTO] Snapshot '{name}' captured ({target_name} HP: {displayed_before} -> {displayed_after}, dmg: {damage})")
+        else:
+            # No state pointer (e.g., opponent) - just log the HP change
+            print(f"\n[AUTO] {target_name} took {damage} damage (HP: {displayed_before} -> {displayed_after})")
 
+        self.last_hp = current_hp
         return False  # Continue running
 
 
 class JUSAutoSnapshotOnDamageCode(gdb.Command):
-    """Capture state when damage calculation code is reached.
+    """Capture state when damage calculation code is reached AND HP decreases.
 
-    Usage: jus-auto-snapshot-on-damage <player> [prefix]
+    Usage: jus-auto-snapshot-on-damage <target> [prefix] [debug]
+
+    Target can be:
+      me / player / 1    Your active character
+      2-4                Your deck members (supports, tagged out)
+      opp / enemy / o1   Opponent's active character
+      o2-o4              Opponent's deck members
 
     This breakpoints on the damage calculation function (0x020784FC),
-    which fires BEFORE HP is decremented. This may capture knockback
-    velocity closer to the moment of application.
+    which fires BEFORE HP is decremented. Snapshots are only captured
+    when HP actually DECREASES - filtering out the constant noise from
+    the damage code firing during idle time (~every few ms).
 
-    Compare with jus-auto-snapshot-on-hit to see timing differences.
+    Examples:
+      jus-auto-snapshot-on-damage me goku       # You take damage
+      jus-auto-snapshot-on-damage opp enemy     # Opponent takes damage
+      jus-auto-snapshot-on-damage 2 support     # Your deck slot 2
     """
 
     def __init__(self):
@@ -1352,10 +1643,217 @@ class JUSAutoSnapshotOnDamageCode(gdb.Command):
     def invoke(self, arg, from_tty):
         args = arg.split()
         if not args:
-            print("Usage: jus-auto-snapshot-on-damage <player 1-4> [prefix]")
+            print("Usage: jus-auto-snapshot-on-damage <target> [prefix] [debug]")
             print()
-            print("This triggers at the damage calculation function,")
-            print("BEFORE HP is actually decremented.")
+            print("Target can be:")
+            print("  me / player / 1    Your active character")
+            print("  2-4                Your deck members")
+            print("  opp / enemy / o1   Opponent's active character")
+            print("  o2-o4              Opponent's deck members")
+            print()
+            print("Examples:")
+            print("  jus-auto-snapshot-on-damage me goku     # You take damage")
+            print("  jus-auto-snapshot-on-damage opp enemy   # Opponent takes damage")
+            print()
+            print("Add 'debug' as last arg to see HP values being read.")
+            return
+
+        target = args[0].lower()
+        prefix = args[1] if len(args) > 1 else "dmg"
+        debug = len(args) > 2 and args[-1].lower() == 'debug'
+
+        # Parse target
+        is_opponent = False
+        is_active = False
+        slot = None
+
+        if target in ('me', 'player', '1'):
+            is_active = True
+            slot = 1
+        elif target in ('opp', 'opponent', 'enemy', 'o1'):
+            is_opponent = True
+            is_active = True
+            slot = 1
+        elif target.isdigit():
+            slot = int(target)
+            if slot < 1 or slot > 4:
+                print("Slot must be 1-4")
+                return
+            is_active = (slot == 1)
+        elif target.startswith('o') and len(target) == 2 and target[1].isdigit():
+            slot = int(target[1])
+            is_opponent = True
+            is_active = (slot == 1)
+        else:
+            print(f"Invalid target: {target}")
+            print("Use: me, opp, 1-4, o1-o4")
+            return
+
+        if slot < 1 or slot > 4:
+            print("Slot must be 1-4")
+            return
+
+        bp = DamageCodeBreakpoint(slot, prefix, debug=debug, is_opponent=is_opponent, is_active=is_active)
+        JUSAutoSnapshotOnHit._active_breakpoints.append(bp)
+
+        if is_active:
+            target_name = "Opponent active" if is_opponent else "Your active"
+        else:
+            target_name = f"Opponent deck {slot-1}" if is_opponent else f"Your deck {slot-1}"
+
+        print(f"=== Auto-Snapshot on Damage Code ENABLED ===")
+        print(f"Target: {target_name}")
+        print(f"Prefix: {prefix}")
+        print(f"Breakpoint at: {ADDRESSES['health_code']:#010x}")
+        print(f"HP address: {bp.hp_addr:#010x}")
+        print(f"Current HP value: {bp.last_hp} (displayed: ~{bp.last_hp * 4 if bp.last_hp else 0})")
+        if debug:
+            print(f"DEBUG MODE: Will show HP values for first 5 calls")
+        print()
+        print("This fires BEFORE HP is decremented.")
+        print("NOTE: Only captures when HP actually DECREASES (filters idle noise).")
+        print("Use 'continue' to resume. Stop with: jus-auto-snapshot-off")
+
+
+# ============================================================================
+# VELOCITY LOGGING (lightweight alternative to full snapshots)
+# ============================================================================
+
+# Global log storage for velocity logger
+_velocity_log = []
+
+
+class VelocityLoggerBreakpoint(gdb.Breakpoint):
+    """Breakpoint that logs specific offsets when HP changes.
+
+    This is a lightweight alternative to full snapshots - it only logs
+    the specific offsets that are likely to contain velocity/physics data,
+    making it easier to analyze without storing full 288-byte snapshots.
+    """
+
+    # Default offsets to log (physics/velocity region)
+    DEFAULT_OFFSETS = [
+        0x006A, 0x006C, 0x006E,  # Possible velocity region
+        0x0070, 0x0072, 0x0074, 0x0076,  # Near ground_air
+        0x0078,  # ground_air state
+        0x007A, 0x007C, 0x007E,  # After ground_air
+        0x0098, 0x009A,  # Timer region start
+    ]
+
+    def __init__(self, player, offsets=None, log_file=None):
+        self.player = player
+        self.offsets = offsets or self.DEFAULT_OFFSETS
+        self.log_file = log_file
+        self.ptr_addr = ADDRESSES[f'player{player}_state_ptr']
+        self.trigger_count = 0
+
+        # Track HP to filter noise
+        hp_addr = ADDRESSES[f'player{player}_hp']
+        self.hp_addr = hp_addr
+        self.last_hp = read_byte(hp_addr)
+
+        # Break at health calculation code
+        addr = ADDRESSES['health_code']
+        super().__init__(f"*{addr:#x}", type=gdb.BP_BREAKPOINT)
+        self.silent = True
+
+    def stop(self):
+        """Called when damage code is reached."""
+        # Read current HP
+        current_hp = read_byte(self.hp_addr)
+        if current_hp is None:
+            return False
+
+        # Only trigger on HP decrease
+        if self.last_hp is None or current_hp >= self.last_hp:
+            self.last_hp = current_hp
+            return False
+
+        # HP decreased! Log the physics values
+        self.trigger_count += 1
+
+        ptr = read_dword(self.ptr_addr)
+        if not ptr or ptr < 0x02000000:
+            self.last_hp = current_hp
+            return False
+
+        # Read values at each offset
+        entry = {
+            'hit': self.trigger_count,
+            'player': self.player,
+            'hp_before': self.last_hp,
+            'hp_after': current_hp,
+            'damage': self.last_hp - current_hp,
+            'values': {},
+        }
+
+        for offset in self.offsets:
+            val = read_word(ptr + offset)
+            if val is not None:
+                # Store both unsigned and signed interpretations
+                sval = struct.unpack('<h', struct.pack('<H', val))[0]
+                entry['values'][offset] = {'unsigned': val, 'signed': sval}
+
+        _velocity_log.append(entry)
+
+        # Print summary
+        print(f"\n[VELOCITY] Hit #{self.trigger_count} (HP: {self.last_hp} -> {current_hp}, dmg: {entry['damage']})")
+
+        # Print key values
+        ground_air = entry['values'].get(0x0078, {}).get('unsigned', 0)
+        state_name = GROUND_AIR_STATES.get(ground_air & 0xFF, f"0x{ground_air:04X}")
+        print(f"  State: {state_name}")
+
+        # Print velocity candidates (signed values)
+        vel_offsets = [0x006A, 0x006C, 0x006E, 0x0070, 0x0072, 0x0074]
+        vel_str = " ".join(f"{entry['values'].get(o, {}).get('signed', 0):+5d}" for o in vel_offsets)
+        print(f"  Velocity region: {vel_str}")
+
+        # Write to file if specified
+        if self.log_file:
+            import json
+            with open(self.log_file, 'a') as f:
+                f.write(json.dumps(entry) + '\n')
+
+        self.last_hp = current_hp
+        return False
+
+
+class JUSVelocityLog(gdb.Command):
+    """Log velocity/physics values when damage is taken.
+
+    Usage: jus-velocity-log <player> [file]
+
+    This is a lightweight alternative to full snapshots. It logs only
+    the specific offsets likely to contain velocity/physics data each
+    time HP decreases.
+
+    The logged offsets include:
+    - 0x006A-0x007E: Likely velocity/position region
+    - 0x0078: Ground/air state
+    - 0x0098-0x009A: Timer region start
+
+    Example:
+        jus-velocity-log 1                    # Log to console only
+        jus-velocity-log 1 /tmp/velocity.log  # Also save to file
+
+    To view logged data: jus-velocity-show
+    To clear log: jus-velocity-clear
+    """
+
+    def __init__(self):
+        super().__init__("jus-velocity-log", gdb.COMMAND_USER)
+
+    def invoke(self, arg, from_tty):
+        args = arg.split()
+        if not args:
+            print("Usage: jus-velocity-log <player 1-4> [log_file]")
+            print()
+            print("Logs velocity/physics values when HP decreases.")
+            print("Lighter weight than full snapshots.")
+            print()
+            print("View data: jus-velocity-show")
+            print("Clear log: jus-velocity-clear")
             return
 
         try:
@@ -1364,22 +1862,83 @@ class JUSAutoSnapshotOnDamageCode(gdb.Command):
             print("Player must be a number 1-4")
             return
 
-        prefix = args[1] if len(args) > 1 else "dmg"
-
         if player < 1 or player > 4:
             print("Player must be 1-4")
             return
 
-        bp = DamageCodeBreakpoint(player, prefix)
+        log_file = args[1] if len(args) > 1 else None
+
+        bp = VelocityLoggerBreakpoint(player, log_file=log_file)
         JUSAutoSnapshotOnHit._active_breakpoints.append(bp)
 
-        print(f"=== Auto-Snapshot on Damage Code ENABLED ===")
+        print(f"=== Velocity Logger ENABLED ===")
         print(f"Player: {player}")
-        print(f"Prefix: {prefix}")
-        print(f"Breakpoint at: {ADDRESSES['health_code']:#010x}")
+        print(f"Current HP: {bp.last_hp}")
+        if log_file:
+            print(f"Log file: {log_file}")
         print()
-        print("This fires BEFORE HP is decremented.")
+        print("Logs physics values when HP decreases.")
         print("Use 'continue' to resume. Stop with: jus-auto-snapshot-off")
+
+
+class JUSVelocityShow(gdb.Command):
+    """Show the velocity log entries.
+
+    Usage: jus-velocity-show [last_n]
+
+    Shows logged velocity data from jus-velocity-log.
+    Optionally show only the last N entries.
+    """
+
+    def __init__(self):
+        super().__init__("jus-velocity-show", gdb.COMMAND_USER)
+
+    def invoke(self, arg, from_tty):
+        if not _velocity_log:
+            print("No velocity data logged yet.")
+            print("Use 'jus-velocity-log <player>' to start logging.")
+            return
+
+        args = arg.split()
+        last_n = int(args[0]) if args else len(_velocity_log)
+
+        entries = _velocity_log[-last_n:]
+
+        print(f"=== Velocity Log ({len(entries)} entries) ===")
+        print()
+
+        for entry in entries:
+            print(f"Hit #{entry['hit']}: HP {entry['hp_before']} -> {entry['hp_after']} (dmg: {entry['damage']})")
+
+            # Ground/air state
+            ground_air = entry['values'].get(0x0078, {}).get('unsigned', 0)
+            state_name = GROUND_AIR_STATES.get(ground_air & 0xFF, f"0x{ground_air:04X}")
+            print(f"  State: {state_name}")
+
+            # All values
+            print("  Offsets:")
+            for offset in sorted(entry['values'].keys()):
+                val = entry['values'][offset]
+                known = ""
+                for name, off in CHAR_OFFSETS.items():
+                    if offset == off:
+                        known = f" [{name}]"
+                        break
+                print(f"    +{offset:04X}: {val['signed']:+6d} (0x{val['unsigned']:04X}){known}")
+            print()
+
+
+class JUSVelocityClear(gdb.Command):
+    """Clear the velocity log."""
+
+    def __init__(self):
+        super().__init__("jus-velocity-clear", gdb.COMMAND_USER)
+
+    def invoke(self, arg, from_tty):
+        global _velocity_log
+        count = len(_velocity_log)
+        _velocity_log = []
+        print(f"Cleared {count} velocity log entries.")
 
 
 class JUSBaselineNoise(gdb.Command):
@@ -1387,16 +1946,19 @@ class JUSBaselineNoise(gdb.Command):
 
     Usage: jus-baseline-noise <player> [count] [prefix]
 
-    Takes multiple snapshots while the game runs with NO input.
+    Takes multiple snapshots. You manually continue/pause between each.
     Fields that change between these snapshots are timers/counters
     that should be IGNORED when analyzing physics/combat data.
+
+    NOTE: melonDS GDB stub doesn't support stepi well, so this command
+    now requires manual continue/Ctrl+C between snapshots.
 
     Example workflow:
     1. Get into battle, have both characters stand still
     2. jus-baseline-noise 1 5 idle
-    3. Creates: idle_0, idle_1, idle_2, idle_3, idle_4
-    4. jus-find-timers idle
-    5. Shows fields that changed (these are noise, not physics)
+    3. Type 'c', wait 1 second, Ctrl+C
+    4. Repeat step 3 until all snapshots captured
+    5. jus-find-timers idle
     """
 
     def __init__(self):
@@ -1408,7 +1970,16 @@ class JUSBaselineNoise(gdb.Command):
             print("Usage: jus-baseline-noise <player 1-4> [count] [prefix]")
             print()
             print("Takes snapshots during idle time to identify timer fields.")
-            print("Fields that change with no input are noise to filter out.")
+            print("Run this command repeatedly - it captures one snapshot each time.")
+            print()
+            print("Workflow:")
+            print("  1. jus-baseline-noise 1 5 idle   # Start capture")
+            print("  2. c                              # Continue game")
+            print("  3. (wait ~1 second)")
+            print("  4. Ctrl+C                         # Pause")
+            print("  5. jus-baseline-noise 1 5 idle   # Capture next")
+            print("  6. Repeat until done")
+            print("  7. jus-find-timers idle")
             return
 
         try:
@@ -1426,37 +1997,141 @@ class JUSBaselineNoise(gdb.Command):
 
         ptr_addr = ADDRESSES[f'player{player}_state_ptr']
 
-        print(f"=== Baseline Noise Capture ===")
-        print(f"Taking {count} snapshots with NO input")
+        # Check how many we already have
+        existing = [k for k in _char_snapshots.keys()
+                   if k.startswith(prefix + "_") and _char_snapshots[k].get('baseline')]
+        current_idx = len(existing)
+
+        if current_idx >= count:
+            print(f"Already have {current_idx} snapshots with prefix '{prefix}'.")
+            print(f"Use 'jus-find-timers {prefix}' to analyze them.")
+            print(f"Or use a different prefix to start fresh.")
+            return
+
+        # Capture one snapshot
+        ptr = read_dword(ptr_addr)
+        if not ptr or ptr < 0x02000000:
+            print(f"Player {player} state pointer invalid: {ptr:#x if ptr else 'NULL'}")
+            return
+
+        data = read_bytes(ptr, 0x120)
+        if data:
+            name = f"{prefix}_{current_idx}"
+            _char_snapshots[name] = {
+                'data': data,
+                'ptr': ptr,
+                'player': player,
+                'baseline': True,
+                'index': current_idx,
+            }
+            print(f"Captured: {name} ({current_idx + 1}/{count})")
+
+            remaining = count - current_idx - 1
+            if remaining > 0:
+                print(f"\n{remaining} more needed. Now:")
+                print("  1. Type 'c' to continue")
+                print("  2. Wait ~1 second")
+                print("  3. Press Ctrl+C")
+                print(f"  4. Run: jus-baseline-noise {player} {count} {prefix}")
+            else:
+                print(f"\nAll {count} snapshots captured!")
+                print(f"Run: jus-find-timers {prefix}")
+        else:
+            print("Failed to read character data")
+
+
+class JUSBaselineTimed(gdb.Command):
+    """Capture timer/noise fields using timed continues (more realistic timing).
+
+    Usage: jus-baseline-timed <player> [count] [prefix]
+
+    Like jus-baseline-noise but uses brief 'continue' periods instead of
+    'stepi'. This lets the game run at full speed for a short time,
+    which is more likely to trigger timer changes.
+
+    The downside is less control over exact timing - the game runs
+    freely until you Ctrl+C again.
+
+    Workflow:
+    1. Run: jus-baseline-timed 1 5 idle
+    2. After each snapshot, press Enter to continue briefly
+    3. Press Ctrl+C after a moment to capture next snapshot
+    4. Repeat until all snapshots taken
+    5. Run: jus-find-timers idle
+    """
+
+    def __init__(self):
+        super().__init__("jus-baseline-timed", gdb.COMMAND_USER)
+
+    def invoke(self, arg, from_tty):
+        args = arg.split()
+        if not args:
+            print("Usage: jus-baseline-timed <player 1-4> [count] [prefix]")
+            print()
+            print("Takes snapshots with 'continue' between them.")
+            print("More realistic timing than stepi, but requires manual Ctrl+C.")
+            return
+
+        try:
+            player = int(args[0])
+        except ValueError:
+            print("Player must be a number 1-4")
+            return
+
+        count = int(args[1]) if len(args) > 1 else 5
+        prefix = args[2] if len(args) > 2 else "baseline"
+
+        if player < 1 or player > 4:
+            print("Player must be 1-4")
+            return
+
+        ptr_addr = ADDRESSES[f'player{player}_state_ptr']
+
+        print(f"=== Baseline Timed Capture ===")
+        print(f"Taking {count} snapshots")
         print(f"Player: {player}, Prefix: {prefix}")
         print()
         print("Make sure both characters are STANDING STILL.")
-        print("Press Enter to start...")
-
-        # Note: In GDB context, we can't really wait for input
-        # The user will need to ensure characters are idle before running
-
-        for i in range(count):
-            ptr = read_dword(ptr_addr)
-            if ptr and ptr >= 0x02000000:
-                data = read_bytes(ptr, 0x120)
-                if data:
-                    name = f"{prefix}_{i}"
-                    _char_snapshots[name] = {
-                        'data': data,
-                        'ptr': ptr,
-                        'player': player,
-                        'baseline': True,
-                        'index': i,
-                    }
-                    print(f"  {name}: captured")
-
-            if i < count - 1:
-                # Step some instructions to let time pass
-                gdb.execute("stepi 5000", to_string=True)
-
         print()
-        print(f"Done! Use 'jus-find-timers {prefix}' to identify noise fields.")
+        print("After each snapshot:")
+        print("  1. Type 'continue' (or 'c') and press Enter")
+        print("  2. Wait ~0.5 seconds")
+        print("  3. Press Ctrl+C to pause")
+        print("  4. Run this command again with same args to continue")
+        print()
+
+        # Check how many we already have with this prefix
+        existing = [k for k in _char_snapshots.keys()
+                   if k.startswith(prefix + "_") and _char_snapshots[k].get('baseline')]
+        start_idx = len(existing)
+
+        if start_idx >= count:
+            print(f"Already have {start_idx} snapshots with prefix '{prefix}'.")
+            print(f"Use 'jus-find-timers {prefix}' to analyze them.")
+            return
+
+        # Take one snapshot
+        ptr = read_dword(ptr_addr)
+        if ptr and ptr >= 0x02000000:
+            data = read_bytes(ptr, 0x120)
+            if data:
+                name = f"{prefix}_{start_idx}"
+                _char_snapshots[name] = {
+                    'data': data,
+                    'ptr': ptr,
+                    'player': player,
+                    'baseline': True,
+                    'index': start_idx,
+                }
+                print(f"Captured: {name} ({start_idx + 1}/{count})")
+
+        remaining = count - start_idx - 1
+        if remaining > 0:
+            print(f"\n{remaining} more snapshot(s) needed.")
+            print("Type 'c' to continue, wait briefly, then Ctrl+C and run this again.")
+        else:
+            print(f"\nAll {count} snapshots captured!")
+            print(f"Run: jus-find-timers {prefix}")
 
 
 class JUSFindTimers(gdb.Command):
@@ -1705,16 +2380,111 @@ class JUSCompareSnapshots(gdb.Command):
             print(f"{name:<30} {uval:>8} {sval:>8}   0x{uval:04X}{extra}")
 
 
+class JUSSnapshotList(gdb.Command):
+    """List all stored character snapshots with metadata.
+
+    Usage: jus-snapshot-list [prefix]
+
+    Shows all stored snapshots with their metadata including:
+    - Player number
+    - HP change (if captured during damage)
+    - State change (if captured during state transition)
+    - Snapshot type (baseline, hit, damage, state, etc.)
+
+    Optionally filter by prefix to show only matching snapshots.
+
+    Example:
+        jus-snapshot-list           # Show all
+        jus-snapshot-list goku      # Show only goku_* snapshots
+    """
+
+    def __init__(self):
+        super().__init__("jus-snapshot-list", gdb.COMMAND_USER)
+
+    def invoke(self, arg, from_tty):
+        prefix = arg.strip() if arg else None
+
+        if not _char_snapshots:
+            print("No character snapshots stored.")
+            print()
+            print("Capture snapshots with:")
+            print("  jus-char-snapshot <name> [player]")
+            print("  jus-auto-snapshot-on-hit <player> [prefix]")
+            print("  jus-auto-snapshot-on-damage <player> [prefix]")
+            return
+
+        # Filter by prefix if provided
+        if prefix:
+            snapshots = {k: v for k, v in _char_snapshots.items()
+                        if k.startswith(prefix)}
+            if not snapshots:
+                print(f"No snapshots with prefix '{prefix}'")
+                print(f"Available: {list(_char_snapshots.keys())}")
+                return
+        else:
+            snapshots = _char_snapshots
+
+        print(f"=== Character Snapshots ({len(snapshots)} stored) ===")
+        print()
+        print(f"{'Name':<25} {'Player':>6} {'Type':<12} {'Details'}")
+        print("-" * 70)
+
+        for name in sorted(snapshots.keys()):
+            snap = snapshots[name]
+            player = snap.get('player', '?')
+
+            # Determine type and details
+            if snap.get('baseline'):
+                snap_type = "baseline"
+                details = f"index {snap.get('index', '?')}"
+            elif 'hp_before' in snap and 'hp_after' in snap:
+                hp_b, hp_a = snap['hp_before'], snap['hp_after']
+                if snap.get('timing') == 'at_damage_code':
+                    snap_type = "damage"
+                else:
+                    snap_type = "hit"
+                details = f"HP: {hp_b} -> {hp_a} (dmg: {hp_b - hp_a})"
+            elif 'state_from' in snap and 'state_to' in snap:
+                snap_type = "state"
+                details = f"{snap['state_from']} -> {snap['state_to']}"
+            elif 'status_type' in snap:
+                snap_type = "status"
+                s_from = snap.get('status_from', '?')
+                s_to = snap.get('status_to', '?')
+                details = f"{snap['status_type']}: 0x{s_from:02X} -> 0x{s_to:02X}"
+            elif snap.get('burst_index') is not None:
+                snap_type = "burst"
+                details = f"index {snap['burst_index']}"
+            else:
+                snap_type = "manual"
+                details = ""
+
+            print(f"{name:<25} {player:>6} {snap_type:<12} {details}")
+
+        print()
+        print("Commands:")
+        print("  jus-char-diff <snap1> <snap2>    - Compare two snapshots")
+        print("  jus-char-values <snap>           - Show values in snapshot")
+        print("  jus-compare-field <off> <snaps>  - Compare field across snapshots")
+
+
 class JUSPeriodicSnapshot(gdb.Command):
-    """Take a burst of snapshots with brief continues between.
+    """Take a burst of snapshots with manual continues between.
 
-    Usage: jus-burst-snapshot <count> <name_prefix> [player]
+    Usage: jus-burst-snapshot <count> <prefix> [player]
 
-    Takes <count> snapshots, briefly continuing between each.
+    Takes snapshots one at a time. You manually continue/pause between each.
     Useful for capturing movement/animation over time.
 
-    Example: jus-burst-snapshot 10 walking 1
-    Creates: walking_0, walking_1, ... walking_9
+    NOTE: melonDS GDB stub doesn't support stepi well, so this command
+    requires manual continue/Ctrl+C between snapshots.
+
+    Example workflow:
+        jus-burst-snapshot 5 walking 1   # Capture first
+        c                                 # Continue game
+        (Ctrl+C after brief moment)
+        jus-burst-snapshot 5 walking 1   # Capture next
+        ... repeat ...
     """
 
     def __init__(self):
@@ -1724,7 +2494,16 @@ class JUSPeriodicSnapshot(gdb.Command):
         args = arg.split()
         if len(args) < 2:
             print("Usage: jus-burst-snapshot <count> <prefix> [player]")
-            print("Example: jus-burst-snapshot 5 walking 1")
+            print()
+            print("Takes snapshots one at a time with manual continue between.")
+            print("Run repeatedly until all snapshots captured.")
+            print()
+            print("Example:")
+            print("  jus-burst-snapshot 5 walking 1")
+            print("  c              # continue")
+            print("  (Ctrl+C)")
+            print("  jus-burst-snapshot 5 walking 1")
+            print("  ... repeat ...")
             return
 
         try:
@@ -1748,39 +2527,48 @@ class JUSPeriodicSnapshot(gdb.Command):
             return
 
         ptr_addr = ADDRESSES[f'player{player}_state_ptr']
-        ptr = read_dword(ptr_addr)
 
-        # Check pointer validity (FIXED: was inverted)
+        # Check how many we already have
+        existing = [k for k in _char_snapshots.keys()
+                   if k.startswith(prefix + "_") and
+                   _char_snapshots[k].get('burst_index') is not None]
+        current_idx = len(existing)
+
+        if current_idx >= count:
+            print(f"Already have {current_idx} snapshots with prefix '{prefix}'.")
+            print(f"Compare with: jus-char-diff {prefix}_0 {prefix}_{count-1}")
+            print(f"Or use a different prefix to start fresh.")
+            return
+
+        # Capture one snapshot
+        ptr = read_dword(ptr_addr)
         if not ptr or ptr < 0x02000000:
             print(f"Player {player} state pointer invalid")
             return
 
-        print(f"Taking {count} snapshots with prefix '{prefix}'...")
-        print("(Game will briefly continue between each)")
-        print()
+        data = read_bytes(ptr, 0x120)
+        if data:
+            name = f"{prefix}_{current_idx}"
+            _char_snapshots[name] = {
+                'data': data,
+                'ptr': ptr,
+                'player': player,
+                'burst_index': current_idx,
+            }
+            print(f"Captured: {name} ({current_idx + 1}/{count})")
 
-        for i in range(count):
-            # Read current state
-            ptr = read_dword(ptr_addr)
-            if ptr and ptr >= 0x02000000:
-                data = read_bytes(ptr, 0x120)
-                if data:
-                    name = f"{prefix}_{i}"
-                    _char_snapshots[name] = {
-                        'data': data,
-                        'ptr': ptr,
-                        'player': player,
-                        'burst_index': i,
-                    }
-                    print(f"  {name}: captured")
-
-            if i < count - 1:
-                # Brief continue (stepi advances one instruction)
-                gdb.execute("stepi 1000", to_string=True)
-
-        print()
-        print(f"Done! Snapshots: {prefix}_0 through {prefix}_{count-1}")
-        print(f"Compare with: jus-char-diff {prefix}_0 {prefix}_{count-1}")
+            remaining = count - current_idx - 1
+            if remaining > 0:
+                print(f"\n{remaining} more needed. Now:")
+                print("  1. Type 'c' to continue")
+                print("  2. Wait briefly (or perform action)")
+                print("  3. Press Ctrl+C")
+                print(f"  4. Run: jus-burst-snapshot {count} {prefix} {player}")
+            else:
+                print(f"\nAll {count} snapshots captured!")
+                print(f"Compare with: jus-char-diff {prefix}_0 {prefix}_{count-1}")
+        else:
+            print("Failed to read character data")
 
 
 # ============================================================================
@@ -1810,6 +2598,8 @@ class HPChangeBreakpoint(gdb.Breakpoint):
 def init():
     """Initialize JUS GDB commands."""
     JUSStatus()
+    JUSFindHP()
+    JUSCheckHP()
     JUSWatchHP()
     JUSWatchCode()
     JUSReadChar()
@@ -1834,8 +2624,14 @@ def init():
     JUSAutoSnapshotOnStatus()
     JUSAutoSnapshotOnDamageCode()
 
+    # Velocity logging (lightweight alternative to full snapshots)
+    JUSVelocityLog()
+    JUSVelocityShow()
+    JUSVelocityClear()
+
     # Noise filtering
     JUSBaselineNoise()
+    JUSBaselineTimed()
     JUSFindTimers()
 
     JUSPeriodicSnapshot()
@@ -1843,6 +2639,7 @@ def init():
     # Snapshot inspection (added 2026-02-03)
     JUSCharValues()
     JUSCompareSnapshots()
+    JUSSnapshotList()
 
     print("=" * 50)
     print("  JUS GDB Watcher loaded!")
@@ -1867,19 +2664,34 @@ def init():
     print("  jus-char-diff <snap1> <snap2|now> - Find changing fields")
     print("  jus-char-values <snap> [start] [end]  - Show actual values in snapshot")
     print("  jus-compare-field <off> <snaps...>    - Compare field across snapshots")
-    print("  jus-velocity-watch [player]       - Show physics region")
+    print("  jus-snapshot-list [prefix]            - List all snapshots with metadata")
+    print("  jus-velocity-watch [player]           - Show physics region")
     print()
-    print("AUTOMATED TRIGGERS (no manual Ctrl+C needed!):")
-    print("  jus-auto-snapshot-on-hit <player> [prefix]      - Capture AFTER HP write")
-    print("  jus-auto-snapshot-on-damage <player> [prefix]   - Capture BEFORE HP write (at calc)")
-    print("  jus-auto-snapshot-on-state <player> [prefix]    - Capture on jump/land")
-    print("  jus-auto-snapshot-on-status <player> [prefix]   - Capture on status change")
-    print("  jus-burst-snapshot <count> <prefix> [player]    - Rapid-fire snapshots")
-    print("  jus-auto-snapshot-off                           - Disable triggers")
+    print("AUTOMATED TRIGGERS:")
+    print("  jus-auto-snapshot-on-damage <player> [prefix]   - Capture on HP decrease (WORKS!)")
+    print("  jus-auto-snapshot-off                           - Disable + show summary")
+    print()
+    print("  NOTE: 'player' = deck slot (1=lead, 2-3=supports), not opponent!")
+    print("        Use jus-find-hp to locate opponent HP addresses.")
+    print()
+    print("  BROKEN with melonDS (use on-damage instead):")
+    print("    jus-auto-snapshot-on-hit     - Uses hardware watchpoints")
+    print("    jus-auto-snapshot-on-state   - Uses hardware watchpoints")
+    print("    jus-auto-snapshot-on-status  - Uses hardware watchpoints")
+    print()
+    print("MANUAL CAPTURE (for burst/baseline):")
+    print("  jus-burst-snapshot <count> <prefix> [player]    - One at a time, manual c/Ctrl+C")
+    print("  jus-baseline-noise <player> [count] [prefix]    - One at a time, manual c/Ctrl+C")
+    print()
+    print("VELOCITY LOGGING (lightweight alternative):")
+    print("  jus-velocity-log <player> [file]                - Log physics on HP decrease")
+    print("  jus-velocity-show [last_n]                      - Show velocity log")
+    print("  jus-velocity-clear                              - Clear velocity log")
     print()
     print("NOISE FILTERING (run first to identify timer fields):")
-    print("  jus-baseline-noise <player> [count] [prefix]    - Capture idle state")
-    print("  jus-find-timers <prefix>                        - Find always-changing fields")
+    print("  jus-baseline-noise <player> [count] [prefix] [steps] - Capture idle (stepi)")
+    print("  jus-baseline-timed <player> [count] [prefix]         - Capture idle (continue)")
+    print("  jus-find-timers <prefix>                             - Find always-changing fields")
     print()
     print("Tracing:")
     print("  jus-trace <addr> [on|off]  - Log function calls")

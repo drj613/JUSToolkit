@@ -382,14 +382,27 @@ Characters fall into two categories:
 
 - knockback field exists (0-255 values)
 
-**Unknown:**
+**NEW: Character Struct Region (2026-02-03 GDB session):**
 
-- How knockback value translates to screen distance
+- Physics/velocity data is in `+0x006A` to `+0x00BA` region (not 0x00-0x40 as
+  originally hypothesized)
+- Fields `+0x006A/6C`, `+0x0072/74`, `+0x007A/7C` show large deltas during
+  knockback
+- Exact velocity field not yet isolated - comparing light vs heavy characters
+  showed differences but position/timing variations made isolation difficult
+
+**Observed:**
+
+- Different characters have different knockback distances with same attack
+- Nami (light) visually travels farther than Raoh (heavy) from same attack
+- Light characters may have shorter hitstun duration (recover faster)
+
+**Still Unknown:**
+
+- Exact byte offset containing knockback velocity
+- How jpower knockback value translates to velocity
 - How character weight affects knockback received
 - Formula for applied knockback
-
-**Observed:** Different characters have different knockback distances with same
-attack.
 
 ---
 
@@ -399,9 +412,21 @@ attack.
 
 - hitstun field exists (values: 0, 5, 10, 50+)
 
-**Unknown:**
+**NEW: Character Struct Findings (2026-02-03 GDB session):**
 
-- What hitstun values mean in frames
+- `+0x0078 [ground_air] = 0xC0 (192)` indicates **LAUNCHED/HITSTUN state**
+  - Distinct from 0x00 (air/jumping) and 0x22 (ground)
+  - This is a state FLAG, not a timer
+- **Timer region `+0x0098` to `+0x00BA`** contains countdown timers
+  - Decrements in -5/-3 alternating pattern (suggests 32-bit values read as 16-bit)
+  - Fields: +0x0098/9A, +0x00A0/A2, +0x00A8/AA, +0x00B0/B2, +0x00B8/BA
+  - These timers run during hitstun/recovery
+- Heavier characters (Raoh) show longer timer activity than lighter characters (Nami)
+
+**Still Unknown:**
+
+- Exact mapping of jpower hitstun values to timer initial values
+- Which specific timer field controls hitstun vs recovery vs other states
 - How hitstun affects combo potential
 - Blockstun mechanics
 

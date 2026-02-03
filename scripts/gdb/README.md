@@ -113,6 +113,8 @@ The emulator will pause. Use `continue` to resume.
 | `jus-char-dump [player] [offset] [length]` | Dump character struct bytes with annotations          |
 | `jus-char-snapshot <name> [player]`        | Save character struct snapshot                        |
 | `jus-char-diff <snap1> <snap2\|now>`       | Compare char struct snapshots (find velocity/hitstun) |
+| `jus-char-values <snap> [start] [end]`     | Show actual values in snapshot (not just diffs)       |
+| `jus-compare-field <off> <snaps...>`       | Compare one field across multiple snapshots           |
 | `jus-velocity-watch [player]`              | Show physics region values                            |
 
 ### Automated Triggers (No Manual Ctrl+C!)
@@ -253,6 +255,12 @@ Before analyzing combat data, identify timer fields that always change:
 # Now these fields will be marked [TIMER - ignore] in future diffs!
 ```
 
+**Known limitation:** The baseline-noise command uses `stepi 5000` between
+snapshots, which may not advance enough game time to see timer changes. If you
+get "none found", the snapshots were taken too quickly. Alternative: use
+jus-auto-snapshot-on-damage and capture during idle time (the damage code fires
+periodically even without combat).
+
 ### Finding Hitstun/Knockback Fields
 
 ```gdb
@@ -369,25 +377,37 @@ the terminal simultaneously. Use these automated triggers instead:
 
 ### Character State Struct (offsets from pointer)
 
-**Confirmed offsets (from Action Replay codes):**
+**Confirmed offsets (from Action Replay codes + GDB testing 2026-02-03):**
 
-| Offset    | Description                           |
-| --------- | ------------------------------------- |
-| `+0x0078` | Ground/Air state (0=air, 0x22=ground) |
-| `+0x0088` | Positive status ID                    |
-| `+0x00A0` | Negative status flags                 |
-| `+0x00D9` | Jump counter                          |
-| `+0x00DA` | Air action counter                    |
-| `+0x0102` | Defense timer                         |
+| Offset    | Description                                        |
+| --------- | -------------------------------------------------- |
+| `+0x0078` | Ground/Air state (0=air, 0x22=ground, **0xC0=LAUNCHED/HITSTUN**) |
+| `+0x0088` | Positive status ID                                 |
+| `+0x00A0` | Negative status flags                              |
+| `+0x00D9` | Jump counter                                       |
+| `+0x00DA` | Air action counter                                 |
+| `+0x0102` | Defense timer                                      |
 
-**Candidate regions for velocity/hitstun (to be verified):**
+**Timer region (discovered 2026-02-03):**
+
+These fields decrement in a -5/-3 alternating pattern during hitstun/recovery.
+They appear to be 32-bit countdown timers read as 16-bit pairs:
+
+| Offset Pair     | Description          |
+| --------------- | -------------------- |
+| `+0x0098/0x009A` | Timer pair 1        |
+| `+0x00A0/0x00A2` | Timer pair 2 (overlaps negative_status) |
+| `+0x00A8/0x00AA` | Timer pair 3        |
+| `+0x00B0/0x00B2` | Timer pair 4        |
+| `+0x00B8/0x00BA` | Timer pair 5        |
+
+**Physics/combat data region:**
 
 | Region        | Description                                       |
 | ------------- | ------------------------------------------------- |
-| `+0x00-0x40`  | Physics region - likely X/Y position and velocity |
-| `+0x70-0x88`  | Near ground_air - possibly fall velocity          |
-| `+0xA0-0xD9`  | Large gap - combat state, hitstun timer?          |
-| `+0xF0-0x110` | Near defense_timer - stun timer?                  |
+| `+0x006A-0x007C` | Shows large deltas during knockback - possible velocity |
+| `+0x0070-0x0092` | Near ground_air - state/physics data             |
+| `+0x0098-0x00BA` | Timer region - countdown timers during hitstun   |
 
 Total struct size: at least 0x120 bytes (~288 bytes)
 

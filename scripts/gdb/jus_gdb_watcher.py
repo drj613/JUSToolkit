@@ -53,14 +53,32 @@ ADDRESSES = {
 }
 
 # Character state struct offsets (from pointer)
-# These are CONFIRMED from Action Replay code analysis
+# These are CONFIRMED from Action Replay code analysis and GDB testing
 CHAR_OFFSETS = {
-    'ground_air': 0x0078,      # 0x00=air, 0x22=ground
+    'ground_air': 0x0078,      # 0x00=air, 0x22=ground, 0xC0=LAUNCHED/HITSTUN
     'positive_status': 0x0088,
     'negative_status': 0x00A0,
     'jump_count': 0x00D9,
     'air_actions': 0x00DA,
     'defense_timer': 0x0102,
+}
+
+# Timer region offsets (discovered 2026-02-03)
+# These fields decrement in -5/-3 pattern during hitstun/recovery
+# Appear to be 32-bit values read as 16-bit pairs
+TIMER_REGION_OFFSETS = [
+    0x0098, 0x009A,  # Timer pair 1
+    0x00A0, 0x00A2,  # Timer pair 2 (overlaps negative_status)
+    0x00A8, 0x00AA,  # Timer pair 3
+    0x00B0, 0x00B2,  # Timer pair 4
+    0x00B8, 0x00BA,  # Timer pair 5
+]
+
+# Ground/air state values
+GROUND_AIR_STATES = {
+    0x00: 'air (jumping)',
+    0x22: 'ground',
+    0xC0: 'LAUNCHED/HITSTUN',  # Discovered 2026-02-03
 }
 
 # Candidate offsets for velocity/hitstun (TO BE VERIFIED)
@@ -1540,6 +1558,153 @@ class JUSFindTimers(gdb.Command):
 _known_timer_offsets = set()
 
 
+class JUSCharValues(gdb.Command):
+    """Show actual values from a stored character snapshot.
+
+    Usage: jus-char-values <snapshot_name> [start_offset] [end_offset]
+
+    Unlike jus-char-diff which shows deltas, this shows the actual
+    stored values at specific offsets. Useful for comparing absolute
+    values between different characters.
+
+    Example:
+        jus-char-values nami_hit1 0x0070 0x00C0
+        jus-char-values raoh_hit1 0x0070 0x00C0
+    """
+
+    def __init__(self):
+        super().__init__("jus-char-values", gdb.COMMAND_USER)
+
+    def invoke(self, arg, from_tty):
+        args = arg.split()
+        if not args:
+            print("Usage: jus-char-values <snapshot_name> [start_offset] [end_offset]")
+            print("Stored snapshots:", list(_char_snapshots.keys()))
+            return
+
+        name = args[0]
+        start_off = int(args[1], 0) if len(args) > 1 else 0x0070
+        end_off = int(args[2], 0) if len(args) > 2 else 0x00C0
+
+        if name not in _char_snapshots:
+            print(f"Snapshot '{name}' not found")
+            print("Available:", list(_char_snapshots.keys()))
+            return
+
+        snap = _char_snapshots[name]
+        data = snap['data']
+
+        print(f"=== Snapshot '{name}' Values ===")
+        print(f"Player: {snap.get('player', '?')}")
+        if 'hp_before' in snap:
+            print(f"HP: {snap['hp_before']} -> {snap['hp_after']}")
+        print(f"Offsets: {start_off:#04x} to {end_off:#04x}")
+        print()
+
+        # Print as 16-bit signed values with annotations
+        print("Offset    Unsigned   Signed    Hex       Notes")
+        print("-" * 60)
+
+        for offset in range(start_off, min(end_off, len(data) - 1), 2):
+            if offset + 2 > len(data):
+                break
+
+            uval = struct.unpack('<H', data[offset:offset+2])[0]
+            sval = struct.unpack('<h', data[offset:offset+2])[0]
+
+            # Check for known offsets
+            notes = []
+            for field_name, field_off in CHAR_OFFSETS.items():
+                if offset == field_off:
+                    notes.append(f"[{field_name}]")
+                    break
+
+            # Check ground_air state
+            if offset == 0x0078:
+                low_byte = data[offset]
+                state_name = GROUND_AIR_STATES.get(low_byte, f"unknown(0x{low_byte:02X})")
+                notes.append(f"state={state_name}")
+
+            # Check if in timer region
+            if offset in TIMER_REGION_OFFSETS:
+                notes.append("[timer]")
+
+            note_str = " ".join(notes)
+            print(f"+{offset:04X}:   {uval:6d}    {sval:6d}    0x{uval:04X}    {note_str}")
+
+
+class JUSCompareSnapshots(gdb.Command):
+    """Compare specific field values across multiple snapshots.
+
+    Usage: jus-compare-field <offset> <snapshot1> <snapshot2> [snapshot3] ...
+
+    Shows the actual value at a specific offset across multiple snapshots.
+    Useful for tracking how a single field changes over time or between
+    characters.
+
+    Example:
+        jus-compare-field 0x0078 nami_hit1 nami_hit2 nami_hit3
+        jus-compare-field 0x0098 nami_hit1 raoh_hit1
+    """
+
+    def __init__(self):
+        super().__init__("jus-compare-field", gdb.COMMAND_USER)
+
+    def invoke(self, arg, from_tty):
+        args = arg.split()
+        if len(args) < 3:
+            print("Usage: jus-compare-field <offset> <snapshot1> <snapshot2> ...")
+            print("Example: jus-compare-field 0x0078 nami_hit1 raoh_hit1")
+            return
+
+        try:
+            offset = int(args[0], 0)
+        except ValueError:
+            print(f"Invalid offset: {args[0]}")
+            return
+
+        snapshots = args[1:]
+
+        print(f"=== Field +{offset:04X} Comparison ===")
+        print()
+
+        # Check for known field name
+        for field_name, field_off in CHAR_OFFSETS.items():
+            if offset == field_off:
+                print(f"Known field: {field_name}")
+                break
+
+        if offset in TIMER_REGION_OFFSETS:
+            print("Note: This is in the timer region")
+
+        print()
+        print(f"{'Snapshot':<30} {'Unsigned':>8} {'Signed':>8} {'Hex':>8}")
+        print("-" * 60)
+
+        for name in snapshots:
+            if name not in _char_snapshots:
+                print(f"{name:<30} (not found)")
+                continue
+
+            data = _char_snapshots[name]['data']
+            if offset + 2 > len(data):
+                print(f"{name:<30} (offset out of range)")
+                continue
+
+            uval = struct.unpack('<H', data[offset:offset+2])[0]
+            sval = struct.unpack('<h', data[offset:offset+2])[0]
+
+            # Special handling for ground_air
+            extra = ""
+            if offset == 0x0078:
+                low_byte = data[offset]
+                state = GROUND_AIR_STATES.get(low_byte, "")
+                if state:
+                    extra = f"  <- {state}"
+
+            print(f"{name:<30} {uval:>8} {sval:>8}   0x{uval:04X}{extra}")
+
+
 class JUSPeriodicSnapshot(gdb.Command):
     """Take a burst of snapshots with brief continues between.
 
@@ -1675,6 +1840,10 @@ def init():
 
     JUSPeriodicSnapshot()
 
+    # Snapshot inspection (added 2026-02-03)
+    JUSCharValues()
+    JUSCompareSnapshots()
+
     print("=" * 50)
     print("  JUS GDB Watcher loaded!")
     print("=" * 50)
@@ -1696,6 +1865,8 @@ def init():
     print("  jus-char-dump [player]            - Dump char struct bytes")
     print("  jus-char-snapshot <name> [player] - Save char struct snapshot")
     print("  jus-char-diff <snap1> <snap2|now> - Find changing fields")
+    print("  jus-char-values <snap> [start] [end]  - Show actual values in snapshot")
+    print("  jus-compare-field <off> <snaps...>    - Compare field across snapshots")
     print("  jus-velocity-watch [player]       - Show physics region")
     print()
     print("AUTOMATED TRIGGERS (no manual Ctrl+C needed!):")

@@ -508,7 +508,8 @@ class JUSProbeOffline(gdb.Command):
                 y = read_dword(coords_ptr + 0x44)
                 facing = read_byte(coords_ptr + 0x48)
                 if x is not None:
-                    print(f"    Position: X={x}, Y={y}, facing=0x{facing:02X if facing else 0:02X}")
+                    facing_str = f"0x{facing:02X}" if facing is not None else "N/A"
+                    print(f"    Position: X={x}, Y={y}, facing={facing_str}")
         else:
             print(f"  player1_coords_ptr @ {ADDRESSES['player1_coords_ptr']:#010x} = NULL")
 

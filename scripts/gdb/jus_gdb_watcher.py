@@ -447,7 +447,8 @@ class JUSProbeOffline(gdb.Command):
             ptr = read_dword(ptr_addr)
             valid = ptr and 0x02000000 <= ptr < 0x02400000
             status = "VALID" if valid else "INVALID"
-            print(f"  player{i}_state_ptr @ {ptr_addr:#010x} = {ptr:#010x if ptr else 'NULL'} [{status}]")
+            ptr_str = f"{ptr:#010x}" if ptr else "NULL"
+            print(f"  player{i}_state_ptr @ {ptr_addr:#010x} = {ptr_str} [{status}]")
 
         print()
         print("--- Alternative Pointers ---")
@@ -766,7 +767,8 @@ class JUSReadChar(gdb.Command):
         ptr = read_dword(ptr_addr)
 
         if not ptr or ptr < 0x02000000:
-            print(f"Player {player} state pointer invalid: {ptr:#010x if ptr else 'NULL'}")
+            ptr_str = f"{ptr:#010x}" if ptr else "NULL"
+            print(f"Player {player} state pointer invalid: {ptr_str}")
             return
 
         print(f"=== Player {player} Character State ===")
@@ -1135,7 +1137,8 @@ class JUSCharDump(gdb.Command):
         ptr = read_dword(ptr_addr)
 
         if not ptr or ptr < 0x02000000:
-            print(f"Player {player} state pointer invalid: {ptr:#010x if ptr else 'NULL'}")
+            ptr_str = f"{ptr:#010x}" if ptr else "NULL"
+            print(f"Player {player} state pointer invalid: {ptr_str}")
             return
 
         print(f"=== Player {player} Character Struct Dump ===")

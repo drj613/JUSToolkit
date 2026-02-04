@@ -61,11 +61,29 @@ ADDRESSES = {
     'special_1': 0x021DF731,
     'special_2': 0x021DF8B1,
 
-    # Player state pointers (wifi)
+    # Player state pointers (wifi mode only!)
+    # WARNING: These contain invalid data in training/offline modes
     'player1_state_ptr': 0x021E2A7C,
     'player2_state_ptr': 0x021E2A80,
     'player3_state_ptr': 0x021E2A84,
     'player4_state_ptr': 0x021E2A88,
+
+    # ALTERNATIVE POINTERS for offline/training modes (JUS-98z)
+    # These may work when wifi pointers don't
+    'alt_state_base': 0x023D2A74,      # +0x10 to reach char struct
+    'alt_position_ptr': 0x020A3A6C,    # Player state for position tracking
+    'char_ptr_leader': 0x021DF1F0,     # Character pointer (leader) - near HP
+    'player1_coords_ptr': 0x02181AF8,  # Player 1 base coordinates
+    'player2_coords_base': 0x02181BDC, # Player 2 base reference
+    # Position offsets from coords_ptr:
+    #   P1: X=+0x40, Y=+0x44, facing=+0x48
+    #   P3: X=+0x80, Y=+0x84
+    #   P4: X=+0xC0, Y=+0xC4
+
+    # SP gauge (from cheat codes)
+    'sp_check': 0x020ADAD8,           # Battle state check for SP
+    'sp_base_ptr': 0x020A282C,        # SP gauge base pointer
+    'char_state_alt': 0x02172960,     # Alt character state pointer
 
     # ARM9 code hooks
     'health_code': 0x020784FC,
@@ -400,6 +418,311 @@ class JUSCheckHP(gdb.Command):
             displayed = hp * 4 if hp else 0
             note = " [KO'd or empty]" if hp == 0 else ""
             print(f"  Deck {i}:  {hp:3d} (displayed: ~{displayed:3d}) @ {addr:#010x}{note}")
+
+
+class JUSProbeOffline(gdb.Command):
+    """Probe alternative pointer addresses for offline/training mode.
+
+    Usage: jus-probe-offline
+
+    The wifi state pointers (0x021E2A7C etc) don't work in training or
+    offline modes. This command probes alternative addresses that may
+    contain character state data in these modes.
+
+    Run this while in a training/offline battle to find working pointers.
+    """
+
+    def __init__(self):
+        super().__init__("jus-probe-offline", gdb.COMMAND_USER)
+
+    def invoke(self, arg, from_tty):
+        print("=== Probing Alternative State Pointers ===")
+        print("Use this in TRAINING or OFFLINE mode to find working pointers.")
+        print()
+
+        # Check wifi pointers first (expect invalid)
+        print("--- Wifi Pointers (should be INVALID in offline mode) ---")
+        for i in range(1, 5):
+            ptr_addr = ADDRESSES[f'player{i}_state_ptr']
+            ptr = read_dword(ptr_addr)
+            valid = ptr and 0x02000000 <= ptr < 0x02400000
+            status = "VALID" if valid else "INVALID"
+            print(f"  player{i}_state_ptr @ {ptr_addr:#010x} = {ptr:#010x if ptr else 'NULL'} [{status}]")
+
+        print()
+        print("--- Alternative Pointers ---")
+
+        # Probe alt_state_base + 0x10
+        alt_base = read_dword(ADDRESSES['alt_state_base'])
+        if alt_base:
+            print(f"  alt_state_base @ {ADDRESSES['alt_state_base']:#010x} = {alt_base:#010x}")
+            # Try +0x10 offset as per cheat codes
+            alt_char = read_dword(alt_base + 0x10) if alt_base >= 0x02000000 else None
+            if alt_char and 0x02000000 <= alt_char < 0x02400000:
+                print(f"    +0x10 -> {alt_char:#010x} [POTENTIALLY VALID]")
+                # Try to read ground_air state to verify
+                ground_air = read_byte(alt_char + CHAR_OFFSETS['ground_air'])
+                if ground_air is not None:
+                    state = GROUND_AIR_STATES.get(ground_air, f"0x{ground_air:02X}")
+                    print(f"      ground_air (+0x78) = {ground_air} ({state})")
+        else:
+            print(f"  alt_state_base @ {ADDRESSES['alt_state_base']:#010x} = NULL/invalid")
+
+        # Probe char_ptr_leader (near HP address)
+        char_ptr = read_dword(ADDRESSES['char_ptr_leader'])
+        if char_ptr:
+            valid = 0x02000000 <= char_ptr < 0x02400000
+            print(f"  char_ptr_leader @ {ADDRESSES['char_ptr_leader']:#010x} = {char_ptr:#010x} [{'VALID' if valid else 'INVALID'}]")
+            if valid:
+                # Try to read character struct
+                ground_air = read_byte(char_ptr + CHAR_OFFSETS['ground_air'])
+                if ground_air is not None:
+                    state = GROUND_AIR_STATES.get(ground_air, f"0x{ground_air:02X}")
+                    print(f"    ground_air (+0x78) = {ground_air} ({state})")
+        else:
+            print(f"  char_ptr_leader @ {ADDRESSES['char_ptr_leader']:#010x} = NULL")
+
+        # Probe char_state_alt
+        char_alt = read_dword(ADDRESSES['char_state_alt'])
+        if char_alt:
+            valid = 0x02000000 <= char_alt < 0x02400000
+            print(f"  char_state_alt @ {ADDRESSES['char_state_alt']:#010x} = {char_alt:#010x} [{'VALID' if valid else 'INVALID'}]")
+            if valid:
+                # Read a few bytes to see what's there
+                data = read_bytes(char_alt, 16)
+                if data:
+                    hex_str = ' '.join(f'{b:02X}' for b in data)
+                    print(f"    First 16 bytes: {hex_str}")
+        else:
+            print(f"  char_state_alt @ {ADDRESSES['char_state_alt']:#010x} = NULL")
+
+        # Probe coordinates pointer
+        coords_ptr = read_dword(ADDRESSES['player1_coords_ptr'])
+        if coords_ptr:
+            valid = 0x02000000 <= coords_ptr < 0x02400000
+            print(f"  player1_coords_ptr @ {ADDRESSES['player1_coords_ptr']:#010x} = {coords_ptr:#010x} [{'VALID' if valid else 'INVALID'}]")
+            if valid:
+                # Read position data
+                x = read_dword(coords_ptr + 0x40)
+                y = read_dword(coords_ptr + 0x44)
+                facing = read_byte(coords_ptr + 0x48)
+                if x is not None:
+                    print(f"    Position: X={x}, Y={y}, facing=0x{facing:02X if facing else 0:02X}")
+        else:
+            print(f"  player1_coords_ptr @ {ADDRESSES['player1_coords_ptr']:#010x} = NULL")
+
+        # Probe alt_position_ptr
+        pos_ptr = read_dword(ADDRESSES['alt_position_ptr'])
+        if pos_ptr:
+            valid = 0x02000000 <= pos_ptr < 0x02400000
+            print(f"  alt_position_ptr @ {ADDRESSES['alt_position_ptr']:#010x} = {pos_ptr:#010x} [{'VALID' if valid else 'INVALID'}]")
+        else:
+            print(f"  alt_position_ptr @ {ADDRESSES['alt_position_ptr']:#010x} = NULL")
+
+        print()
+        print("--- Calculated Character Pointers (HP stride = 0x50) ---")
+        # If char_ptr_leader at +0x1B from HP, calculate for all slots
+        hp_base = ADDRESSES['player_active_hp']
+        char_ptr_offset = ADDRESSES['char_ptr_leader'] - hp_base  # Should be 0x1B
+        print(f"  (char_ptr is at HP + {char_ptr_offset:#x})")
+
+        for slot in range(4):
+            hp_addr = hp_base + slot * 0x50
+            ptr_addr = hp_addr + char_ptr_offset
+            ptr = read_dword(ptr_addr)
+            if ptr:
+                valid = 0x02000000 <= ptr < 0x02400000
+                ground_air = read_byte(ptr + CHAR_OFFSETS['ground_air']) if valid else None
+                state_str = ""
+                if ground_air is not None:
+                    state_str = f" ground_air={GROUND_AIR_STATES.get(ground_air, f'0x{ground_air:02X}')}"
+                status = "VALID" + state_str if valid else "INVALID"
+                print(f"  Slot {slot} ptr @ {ptr_addr:#010x} = {ptr:#010x} [{status}]")
+            else:
+                print(f"  Slot {slot} ptr @ {ptr_addr:#010x} = NULL")
+
+        print()
+        print("--- Memory Near HP (scanning for pointers to char structs) ---")
+        hp_addr = ADDRESSES['player_active_hp']
+        print(f"Player HP at {hp_addr:#010x}")
+
+        # Scan nearby memory for pointers
+        found_valid = []
+        scan_start = hp_addr - 0x30
+        for offset in range(0, 0x60, 4):
+            addr = scan_start + offset
+            val = read_dword(addr)
+            if val and 0x02000000 <= val < 0x02400000:
+                # Might be a pointer - check if it points to valid char struct
+                ground_air = read_byte(val + CHAR_OFFSETS['ground_air'])
+                note = ""
+                if ground_air is not None and ground_air in GROUND_AIR_STATES:
+                    note = f" <- ground_air={GROUND_AIR_STATES[ground_air]} *** LIKELY CHAR STRUCT ***"
+                    found_valid.append((addr, val, ground_air))
+                print(f"  {addr:#010x} (+{offset-0x30:+d} from HP): {val:#010x}{note}")
+
+        print()
+        print("--- Searching for Character Struct Pattern ---")
+        # The character struct should have ground_air at +0x78 with value 0x00, 0x22, or 0xC0
+        # Search the 0x021DF000 region for this pattern
+        search_start = 0x021DF000
+        search_end = 0x021E0000
+        print(f"Scanning {search_start:#010x} - {search_end:#010x} for structs with valid ground_air at +0x78...")
+
+        candidates = []
+        for base in range(search_start, search_end - 0x120, 0x10):  # Align to 16 bytes
+            ground_air = read_byte(base + 0x78)
+            if ground_air is not None and ground_air in GROUND_AIR_STATES:
+                # Check if this looks like a char struct (defense_timer at +0x102 should be small)
+                defense = read_byte(base + 0x102)
+                if defense is not None and defense < 60:  # Reasonable timer value
+                    candidates.append((base, ground_air, defense))
+
+        if candidates:
+            print(f"Found {len(candidates)} potential character struct bases:")
+            for base, ground_air, defense in candidates[:10]:
+                state = GROUND_AIR_STATES.get(ground_air, f"0x{ground_air:02X}")
+                print(f"  {base:#010x}: ground_air={state}, defense_timer={defense}")
+            if len(candidates) > 10:
+                print(f"  ... and {len(candidates) - 10} more")
+        else:
+            print("  No candidates found with valid ground_air pattern")
+
+        print()
+        if found_valid:
+            print("=== RECOMMENDATION ===")
+            print("Found pointer(s) with valid ground_air state:")
+            for addr, ptr, state in found_valid:
+                print(f"  {addr:#010x} -> {ptr:#010x}")
+            print()
+            print("Try using this pointer for character state snapshots!")
+            print("Update player1_state_ptr or use jus-read-char-at <address>")
+        else:
+            print("TIP: If wifi pointers are invalid but HP works, the game must")
+            print("     access character state differently in offline mode.")
+            print("     Check the 'Calculated Character Pointers' section above.")
+
+
+class JUSReadCharAt(gdb.Command):
+    """Read character state from a specific address.
+
+    Usage: jus-read-char-at <address>
+
+    Reads a character struct from the given address (not a pointer to a pointer).
+    Use this to test candidate addresses found by jus-probe-offline.
+
+    Example:
+        jus-read-char-at 0x021E5000
+    """
+
+    def __init__(self):
+        super().__init__("jus-read-char-at", gdb.COMMAND_USER)
+
+    def invoke(self, arg, from_tty):
+        if not arg:
+            print("Usage: jus-read-char-at <address>")
+            print("Example: jus-read-char-at 0x021E5000")
+            return
+
+        try:
+            addr = int(arg.strip(), 0)
+        except ValueError:
+            print(f"Invalid address: {arg}")
+            return
+
+        if addr < 0x02000000 or addr >= 0x02400000:
+            print(f"Warning: Address {addr:#010x} is outside main RAM (0x02000000-0x02400000)")
+
+        print(f"=== Character State at {addr:#010x} ===")
+        print()
+
+        # Read known offsets
+        print("Known fields:")
+        for name, offset in sorted(CHAR_OFFSETS.items(), key=lambda x: x[1]):
+            value = read_byte(addr + offset)
+            if value is not None:
+                extra = ""
+                if name == 'ground_air':
+                    state = GROUND_AIR_STATES.get(value, f"unknown")
+                    extra = f" ({state})"
+                print(f"  +0x{offset:04X} {name:20s} = {value:3d} (0x{value:02X}){extra}")
+            else:
+                print(f"  +0x{offset:04X} {name:20s} = READ FAILED")
+
+        # Read timer region
+        print()
+        print("Timer region:")
+        for offset in TIMER_REGION_OFFSETS:
+            value = read_word(addr + offset)
+            if value is not None:
+                signed = struct.unpack('<h', struct.pack('<H', value))[0]
+                print(f"  +0x{offset:04X}: {value:5d} (signed: {signed:+6d})")
+
+        # Read physics region
+        print()
+        print("Physics region (0x6A-0x7E):")
+        for offset in range(0x6A, 0x80, 2):
+            value = read_word(addr + offset)
+            if value is not None:
+                signed = struct.unpack('<h', struct.pack('<H', value))[0]
+                marker = " <-- ground_air" if offset == 0x78 else ""
+                print(f"  +0x{offset:04X}: {signed:+6d} (0x{value:04X}){marker}")
+
+        # Show first 32 bytes as hex dump
+        print()
+        print("First 32 bytes:")
+        data = read_bytes(addr, 32)
+        if data:
+            for row in range(0, 32, 16):
+                hex_str = ' '.join(f'{b:02X}' for b in data[row:row+16])
+                print(f"  +0x{row:04X}: {hex_str}")
+
+
+class JUSSnapshotAt(gdb.Command):
+    """Take a character struct snapshot from a specific address.
+
+    Usage: jus-snapshot-at <name> <address>
+
+    Like jus-char-snapshot but uses a direct address instead of the wifi pointer.
+    Use for offline/training mode when wifi pointers are invalid.
+
+    Example:
+        jus-snapshot-at idle 0x021E5000
+    """
+
+    def __init__(self):
+        super().__init__("jus-snapshot-at", gdb.COMMAND_USER)
+
+    def invoke(self, arg, from_tty):
+        args = arg.split()
+        if len(args) < 2:
+            print("Usage: jus-snapshot-at <name> <address>")
+            print("Example: jus-snapshot-at before_hit 0x021E5000")
+            return
+
+        name = args[0]
+        try:
+            addr = int(args[1], 0)
+        except ValueError:
+            print(f"Invalid address: {args[1]}")
+            return
+
+        # Read full character struct
+        data = read_bytes(addr, 0x120)
+        if data:
+            _char_snapshots[name] = {
+                'data': data,
+                'ptr': addr,
+                'player': 'direct',
+                'source': 'jus-snapshot-at',
+            }
+            print(f"Snapshot '{name}' saved from {addr:#010x} ({len(data)} bytes)")
+            # Show current ground_air state
+            ground_air = data[CHAR_OFFSETS['ground_air']]
+            state = GROUND_AIR_STATES.get(ground_air, f"0x{ground_air:02X}")
+            print(f"  ground_air = {ground_air} ({state})")
+        else:
+            print(f"Failed to read memory at {addr:#010x}")
 
 
 class JUSWatchHP(gdb.Command):
@@ -2605,6 +2928,9 @@ def init():
     JUSStatus()
     JUSFindHP()
     JUSCheckHP()
+    JUSProbeOffline()  # New command for offline/training mode (JUS-98z)
+    JUSReadCharAt()    # Read char struct from direct address (JUS-98z)
+    JUSSnapshotAt()    # Snapshot from direct address (JUS-98z)
     JUSWatchHP()
     JUSWatchCode()
     JUSReadChar()
@@ -2652,12 +2978,18 @@ def init():
     print()
     print("Commands:")
     print("  jus-status       - Show battle state")
+    print("  jus-check-hp     - Show HP for both sides")
     print("  jus-watch-hp     - Set HP watchpoints")
     print("  jus-watch-code   - Break at health code")
-    print("  jus-read-char N  - Read player N char state")
+    print("  jus-read-char N  - Read player N char state (wifi mode only)")
     print("  jus-dump         - Dump memory to file")
     print("  jus-scan         - Scan for byte value")
     print("  jus-addresses    - List known addresses")
+    print()
+    print("OFFLINE/TRAINING MODE (when wifi pointers are invalid):")
+    print("  jus-probe-offline              - Probe alternative pointers, find char struct")
+    print("  jus-read-char-at <addr>        - Read char struct from direct address")
+    print("  jus-snapshot-at <name> <addr>  - Take snapshot from direct address")
     print()
     print("Snapshot/Diff commands (for finding changes):")
     print("  jus-snapshot <name> [region]  - Save memory snapshot")

@@ -81,13 +81,14 @@ The emulator will pause. Use `continue` to resume.
 
 ### Basic Status
 
-| Command           | Description                                    |
-| ----------------- | ---------------------------------------------- |
-| `jus-status`      | Show current battle state (HP, timer, special) |
-| `jus-check-hp`    | Show HP for you and opponent (active + deck)   |
-| `jus-find-hp <n>` | Search memory for HP value (to find addresses) |
-| `jus-addresses`   | List all known memory addresses                |
-| `jus-read-char N` | Read player N's character state struct         |
+| Command            | Description                                     |
+| ------------------ | ----------------------------------------------- |
+| `jus-status`       | Show current battle state (HP, timer, special)  |
+| `jus-check-hp`     | Show HP for you and opponent (active + deck)    |
+| `jus-find-hp <n>`  | Search memory for HP value (to find addresses)  |
+| `jus-probe-offline`| Probe alternative pointers for offline/training |
+| `jus-addresses`    | List all known memory addresses                 |
+| `jus-read-char N`  | Read player N's character state struct          |
 
 ### Watchpoints & Breakpoints
 
@@ -504,6 +505,46 @@ Total struct size: at least 0x120 bytes (~288 bytes)
   - `full` = `0x02000000-0x02400000` (all main RAM, slow)
 
 ## Known Limitations
+
+### Wifi Pointers Don't Work in Offline/Training Mode
+
+The character state pointers (`player1_state_ptr` at `0x021E2A7C` etc.) were
+extracted from **wifi mode** cheat codes and contain **invalid data** in
+training or offline battle modes:
+
+```
+(gdb) x/1xw 0x021E2A7C
+0x21e2a7c:  0xe8100842   # NOT a valid 0x02xxxxxx pointer
+```
+
+This means `jus-read-char`, `jus-char-snapshot`, and other commands that use
+these pointers will fail to capture meaningful data in offline modes.
+
+**Investigation Status (JUS-98z):**
+
+**Workaround commands (added 2026-02-03):**
+
+| Command                          | Description                              |
+| -------------------------------- | ---------------------------------------- |
+| `jus-probe-offline`              | Probe all alternative pointers, search for char struct |
+| `jus-read-char-at <addr>`        | Read character struct from direct address |
+| `jus-snapshot-at <name> <addr>`  | Take snapshot from direct address        |
+
+**Known alternative pointer candidates:**
+
+| Address      | Description                          | Status      |
+| ------------ | ------------------------------------ | ----------- |
+| `0x023D2A74` | Alt state base (+0x10 for struct)    | Untested    |
+| `0x021DF1F0` | Character pointer (near HP address)  | **Most promising** |
+| `0x02172960` | Alt character state pointer          | Untested    |
+| `0x02181AF8` | Player 1 coordinates pointer         | Has X/Y pos |
+| `0x020A3A6C` | Position tracking pointer            | Untested    |
+
+The `char_ptr_leader` at `0x021DF1F0` is only 0x1B bytes from the HP address.
+Since HP works in all modes, this pointer likely does too.
+
+These addresses come from various Action Replay codes and may work in modes
+where the wifi pointers don't.
 
 ### Hardware Watchpoints Not Supported
 

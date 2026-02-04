@@ -118,10 +118,18 @@ TIMER_REGION_OFFSETS = [
 
 # Ground/air state values
 GROUND_AIR_STATES = {
-    0x00: 'air (jumping)',
+    0x00: 'air (jumping/rising)',
+    0x02: 'fast fall',           # Discovered 2026-02-03 (down+jump in air)
     0x22: 'ground',
-    0xC0: 'LAUNCHED/HITSTUN',  # Discovered 2026-02-03
+    0xC0: 'LAUNCHED/HITSTUN',
 }
+
+# WORKING OFFLINE MODE POINTER CHAIN (discovered 2026-02-03, JUS-98z)
+# This works in training/offline modes where wifi pointers are invalid:
+#   1. Read dword from 0x023D2A74 (alt_state_base)
+#   2. Add 0x10 to get character struct pointer
+#   3. Read character struct from that address
+# Example: 0x023D2A74 -> 0x02206838 -> +0x10 -> 0x0220f30c (char struct)
 
 # Candidate offsets for velocity/hitstun (TO BE VERIFIED)
 # Gaps in known offsets suggest physics data may be nearby:
@@ -678,6 +686,117 @@ class JUSReadCharAt(gdb.Command):
             for row in range(0, 32, 16):
                 hex_str = ' '.join(f'{b:02X}' for b in data[row:row+16])
                 print(f"  +0x{row:04X}: {hex_str}")
+
+
+def get_offline_char_ptr():
+    """Get character struct pointer for offline/training mode.
+    
+    Uses the working pointer chain: alt_state_base -> +0x10 -> char struct
+    Returns the character struct address, or None if invalid.
+    """
+    alt_base = read_dword(ADDRESSES['alt_state_base'])
+    if not alt_base or alt_base < 0x02000000:
+        return None
+    
+    char_ptr = read_dword(alt_base + 0x10)
+    if not char_ptr or char_ptr < 0x02000000 or char_ptr >= 0x02400000:
+        return None
+    
+    return char_ptr
+
+
+class JUSReadCharOffline(gdb.Command):
+    """Read character state using offline mode pointer chain.
+
+    Usage: jus-read-char-offline
+
+    Automatically follows the working pointer chain for offline/training mode:
+      alt_state_base (0x023D2A74) -> +0x10 -> character struct
+
+    This is the recommended command for offline/training mode.
+    """
+
+    def __init__(self):
+        super().__init__("jus-read-char-offline", gdb.COMMAND_USER)
+
+    def invoke(self, arg, from_tty):
+        char_ptr = get_offline_char_ptr()
+        if not char_ptr:
+            print("Failed to get offline character pointer.")
+            print("Make sure you're in a battle (training or offline mode).")
+            return
+
+        print(f"=== Character State (Offline Mode) ===")
+        print(f"Pointer chain: 0x023D2A74 -> +0x10 -> {char_ptr:#010x}")
+        print()
+
+        # Read known offsets
+        print("State fields:")
+        for name, offset in sorted(CHAR_OFFSETS.items(), key=lambda x: x[1]):
+            value = read_byte(char_ptr + offset)
+            if value is not None:
+                extra = ""
+                if name == 'ground_air':
+                    state = GROUND_AIR_STATES.get(value, f"unknown(0x{value:02X})")
+                    extra = f" ({state})"
+                print(f"  {name:20s} = {value:3d} (0x{value:02X}){extra}")
+
+        # Show physics region
+        print()
+        print("Physics region (0x6A-0x7E):")
+        for offset in range(0x6A, 0x80, 2):
+            value = read_word(char_ptr + offset)
+            if value is not None:
+                signed = struct.unpack('<h', struct.pack('<H', value))[0]
+                marker = " <-- ground_air" if offset == 0x78 else ""
+                print(f"  +0x{offset:04X}: {signed:+6d}{marker}")
+
+
+class JUSSnapshotOffline(gdb.Command):
+    """Take character snapshot using offline mode pointer chain.
+
+    Usage: jus-snapshot-offline <name>
+
+    Automatically follows the working pointer chain for offline/training mode.
+    Use with jus-char-diff to compare snapshots.
+
+    Example:
+        jus-snapshot-offline before
+        (do action)
+        jus-snapshot-offline after
+        jus-char-diff before after
+    """
+
+    def __init__(self):
+        super().__init__("jus-snapshot-offline", gdb.COMMAND_USER)
+
+    def invoke(self, arg, from_tty):
+        if not arg:
+            print("Usage: jus-snapshot-offline <name>")
+            return
+
+        name = arg.strip()
+        char_ptr = get_offline_char_ptr()
+        
+        if not char_ptr:
+            print("Failed to get offline character pointer.")
+            print("Make sure you're in a battle (training or offline mode).")
+            return
+
+        data = read_bytes(char_ptr, 0x120)
+        if data:
+            _char_snapshots[name] = {
+                'data': data,
+                'ptr': char_ptr,
+                'player': 'offline',
+                'source': 'jus-snapshot-offline',
+            }
+            ground_air = data[CHAR_OFFSETS['ground_air']]
+            state = GROUND_AIR_STATES.get(ground_air, f"0x{ground_air:02X}")
+            print(f"Snapshot '{name}' saved from {char_ptr:#010x}")
+            print(f"  ground_air = {ground_air} ({state})")
+        else:
+            print(f"Failed to read character struct at {char_ptr:#010x}")
 
 
 class JUSSnapshotAt(gdb.Command):
@@ -2932,9 +3051,11 @@ def init():
     JUSStatus()
     JUSFindHP()
     JUSCheckHP()
-    JUSProbeOffline()  # New command for offline/training mode (JUS-98z)
-    JUSReadCharAt()    # Read char struct from direct address (JUS-98z)
-    JUSSnapshotAt()    # Snapshot from direct address (JUS-98z)
+    JUSProbeOffline()      # Probe for offline/training mode (JUS-98z)
+    JUSReadCharOffline()   # Read char using offline pointer chain (JUS-98z)
+    JUSSnapshotOffline()   # Snapshot using offline pointer chain (JUS-98z)
+    JUSReadCharAt()        # Read char struct from direct address (JUS-98z)
+    JUSSnapshotAt()        # Snapshot from direct address (JUS-98z)
     JUSWatchHP()
     JUSWatchCode()
     JUSReadChar()
@@ -2992,6 +3113,8 @@ def init():
     print()
     print("OFFLINE/TRAINING MODE (when wifi pointers are invalid):")
     print("  jus-probe-offline              - Probe alternative pointers, find char struct")
+    print("  jus-read-char-offline          - Read char using working pointer chain (RECOMMENDED)")
+    print("  jus-snapshot-offline <name>    - Snapshot using working pointer chain")
     print("  jus-read-char-at <addr>        - Read char struct from direct address")
     print("  jus-snapshot-at <name> <addr>  - Take snapshot from direct address")
     print()

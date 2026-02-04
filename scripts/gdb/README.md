@@ -522,29 +522,41 @@ these pointers will fail to capture meaningful data in offline modes.
 
 **Investigation Status (JUS-98z):**
 
-**Workaround commands (added 2026-02-03):**
+**SOLUTION FOUND (2026-02-03):**
+
+The working pointer chain for offline/training mode is:
+```
+0x023D2A74 (alt_state_base) -> read dword -> +0x10 -> character struct
+```
+
+**Recommended commands:**
 
 | Command                          | Description                              |
 | -------------------------------- | ---------------------------------------- |
-| `jus-probe-offline`              | Probe all alternative pointers, search for char struct |
+| `jus-read-char-offline`          | Read char state using working pointer chain |
+| `jus-snapshot-offline <name>`    | Take snapshot using working pointer chain |
+| `jus-probe-offline`              | Probe all alternative pointers (for debugging) |
 | `jus-read-char-at <addr>`        | Read character struct from direct address |
 | `jus-snapshot-at <name> <addr>`  | Take snapshot from direct address        |
 
-**Known alternative pointer candidates:**
+**Example workflow for offline mode:**
+```gdb
+(gdb) jus-read-char-offline           # View current state
+(gdb) jus-snapshot-offline standing   # Take snapshot while standing
+(gdb) c
+# (jump, Ctrl+C while in air)
+(gdb) jus-snapshot-offline jumping    # Take snapshot while jumping
+(gdb) jus-char-diff standing jumping  # Compare the two
+```
 
-| Address      | Description                          | Status      |
-| ------------ | ------------------------------------ | ----------- |
-| `0x023D2A74` | Alt state base (+0x10 for struct)    | Untested    |
-| `0x021DF1F0` | Character pointer (near HP address)  | **Most promising** |
-| `0x02172960` | Alt character state pointer          | Untested    |
-| `0x02181AF8` | Player 1 coordinates pointer         | Has X/Y pos |
-| `0x020A3A6C` | Position tracking pointer            | Untested    |
+**Ground/Air state values (updated):**
 
-The `char_ptr_leader` at `0x021DF1F0` is only 0x1B bytes from the HP address.
-Since HP works in all modes, this pointer likely does too.
-
-These addresses come from various Action Replay codes and may work in modes
-where the wifi pointers don't.
+| Value  | State              |
+| ------ | ------------------ |
+| `0x00` | Air (jumping/rising) |
+| `0x02` | Fast fall (down+jump in air) |
+| `0x22` | Ground             |
+| `0xC0` | Launched/Hitstun   |
 
 ### Hardware Watchpoints Not Supported
 

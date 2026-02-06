@@ -549,6 +549,39 @@ The working pointer chain for offline/training mode is:
 (gdb) jus-char-diff standing jumping  # Compare the two
 ```
 
+### Opponent State Pointer (JUS-nqp)
+
+**SOLUTION FOUND (2026-02-03):**
+
+The opponent uses a **different pointer chain** than the player:
+
+```
+PLAYER:   0x023D2A74 -> intermediate -> +0x10 -> player struct
+OPPONENT: 0x023D2A74 -> intermediate -> +0x00 -> ptr -> +0x10 -> opponent struct
+```
+
+The intermediate structure at `alt_state_base` contains:
+- `+0x00`: Pointer to another struct (follow +0x10 for opponent)
+- `+0x10`: Direct pointer to player struct
+
+**Opponent commands:**
+
+| Command                        | Description                              |
+| ------------------------------ | ---------------------------------------- |
+| `jus-read-opponent`            | Read opponent state using pointer chain  |
+| `jus-snapshot-opponent <name>` | Take opponent snapshot                   |
+| `jus-probe-opponent`           | Search for opponent pointer (debugging)  |
+
+**Example workflow for analyzing opponent:**
+```gdb
+(gdb) jus-read-opponent                # View opponent's current state
+(gdb) jus-snapshot-opponent opp_idle   # Snapshot while opponent idle
+(gdb) c
+# (opponent jumps, Ctrl+C while in air)
+(gdb) jus-snapshot-opponent opp_jump   # Snapshot while opponent jumping
+(gdb) jus-char-diff opp_idle opp_jump  # Compare states
+```
+
 **Ground/Air state values (updated):**
 
 | Value  | State              |

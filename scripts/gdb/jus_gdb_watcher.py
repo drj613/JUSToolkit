@@ -688,21 +688,96 @@ class JUSReadCharAt(gdb.Command):
                 print(f"  +0x{row:04X}: {hex_str}")
 
 
-def get_offline_char_ptr():
+def get_offline_char_ptr(slot=0):
     """Get character struct pointer for offline/training mode.
     
-    Uses the working pointer chain: alt_state_base -> +0x10 -> char struct
+    Uses the working pointer chain: alt_state_base -> +offset -> char struct
+    
+    Args:
+        slot: 0 for player, 1-3 for other slots (opponent search)
+    
     Returns the character struct address, or None if invalid.
     """
     alt_base = read_dword(ADDRESSES['alt_state_base'])
     if not alt_base or alt_base < 0x02000000:
         return None
     
-    char_ptr = read_dword(alt_base + 0x10)
+    # Player is at +0x10, try +0x14, +0x18, etc. for other slots
+    offset = 0x10 + (slot * 4)
+    char_ptr = read_dword(alt_base + offset)
     if not char_ptr or char_ptr < 0x02000000 or char_ptr >= 0x02400000:
         return None
     
     return char_ptr
+
+
+def get_offline_opponent_ptr():
+    """Get opponent character struct pointer for offline/training mode.
+    
+    Uses the discovered pointer chain:
+      alt_state_base -> intermediate -> +0x00 -> ptr -> +0x10 -> opponent struct
+    
+    Returns the opponent struct address, or None if invalid.
+    """
+    alt_base = read_dword(ADDRESSES['alt_state_base'])
+    if not alt_base or alt_base < 0x02000000:
+        return None
+    
+    # Opponent chain: intermediate+0x00 -> ptr -> +0x10 -> struct
+    ptr1 = read_dword(alt_base + 0x00)
+    if not ptr1 or ptr1 < 0x02000000 or ptr1 >= 0x02400000:
+        return None
+    
+    opponent_ptr = read_dword(ptr1 + 0x10)
+    if not opponent_ptr or opponent_ptr < 0x02000000 or opponent_ptr >= 0x02400000:
+        return None
+    
+    return opponent_ptr
+
+
+def _probe_opponent_candidates():
+    """Internal: Search for opponent pointer candidates (used by probe command).
+    
+    Returns list of (address, method_description, ground_air) tuples.
+    """
+    player_ptr = get_offline_char_ptr(0)
+    if not player_ptr:
+        return []
+    
+    alt_base = read_dword(ADDRESSES['alt_state_base'])
+    candidates = []
+    
+    # Method 1: Try adjacent slots in alt_state_base structure
+    for slot in range(1, 8):  # Try slots 1-7
+        offset = 0x10 + (slot * 4)
+        ptr = read_dword(alt_base + offset) if alt_base else None
+        if ptr and 0x02000000 <= ptr < 0x02400000 and ptr != player_ptr:
+            # Verify it looks like a character struct
+            ground_air = read_byte(ptr + CHAR_OFFSETS['ground_air'])
+            if ground_air is not None and ground_air in [0x00, 0x02, 0x22, 0xC0]:
+                candidates.append((ptr, f"alt_base+0x{offset:02X}", ground_air))
+    
+    # Method 2: Search around player struct (character structs might be contiguous)
+    # Typical struct size seems to be ~0x120 bytes
+    for stride in [0x120, 0x140, 0x100, 0x200]:
+        for direction in [1, -1]:
+            test_ptr = player_ptr + (stride * direction)
+            if 0x02000000 <= test_ptr < 0x02400000:
+                ground_air = read_byte(test_ptr + CHAR_OFFSETS['ground_air'])
+                if ground_air is not None and ground_air in [0x00, 0x02, 0x22, 0xC0]:
+                    dir_str = "+" if direction > 0 else "-"
+                    candidates.append((test_ptr, f"player{dir_str}0x{stride:X}", ground_air))
+    
+    # Method 3: Check player2_coords_base area
+    coords2 = ADDRESSES.get('player2_coords_base')
+    if coords2:
+        ptr = read_dword(coords2)
+        if ptr and 0x02000000 <= ptr < 0x02400000 and ptr != player_ptr:
+            ground_air = read_byte(ptr + CHAR_OFFSETS['ground_air'])
+            if ground_air is not None:
+                candidates.append((ptr, "player2_coords_base", ground_air))
+    
+    return candidates
 
 
 class JUSReadCharOffline(gdb.Command):
@@ -797,6 +872,234 @@ class JUSSnapshotOffline(gdb.Command):
             print(f"  ground_air = {ground_air} ({state})")
         else:
             print(f"Failed to read character struct at {char_ptr:#010x}")
+
+
+class JUSProbeOpponent(gdb.Command):
+    """Probe for opponent character state pointer in offline/training mode.
+
+    Usage: jus-probe-opponent
+
+    Searches multiple memory locations to find the opponent's character
+    state struct. This extends jus-probe-offline specifically for opponent.
+
+    The command tries:
+    1. Explore intermediate structure from alt_state_base
+    2. Follow pointer chains from intermediate structure
+    3. Search near opponent HP address
+    4. Adjacent slots and stride search from player
+
+    Run this while in training/offline mode with an opponent present.
+    """
+
+    def __init__(self):
+        super().__init__("jus-probe-opponent", gdb.COMMAND_USER)
+
+    def invoke(self, arg, from_tty):
+        print("=== Probing for Opponent State Pointer ===")
+        print("Run this in TRAINING or OFFLINE mode with opponent present.")
+        print()
+
+        # First show player state for reference
+        player_ptr = get_offline_char_ptr(0)
+        if not player_ptr:
+            print("ERROR: Cannot find player state pointer.")
+            print("Make sure you're in a battle first.")
+            return
+
+        player_ground_air = read_byte(player_ptr + CHAR_OFFSETS['ground_air'])
+        player_state = GROUND_AIR_STATES.get(player_ground_air, f"0x{player_ground_air:02X}")
+        print(f"Player state @ {player_ptr:#010x}")
+        print(f"  ground_air = {player_ground_air} ({player_state})")
+        print()
+
+        # Explore intermediate structure thoroughly
+        alt_state_base_addr = ADDRESSES['alt_state_base']
+        alt_base = read_dword(alt_state_base_addr)
+        
+        print(f"--- Exploring Intermediate Structure ---")
+        print(f"alt_state_base @ {alt_state_base_addr:#010x} = {alt_base:#010x}")
+        print()
+        
+        if alt_base and 0x02000000 <= alt_base < 0x02400000:
+            # Dump the intermediate structure (first 0x40 bytes)
+            print(f"Intermediate struct at {alt_base:#010x}:")
+            int_data = read_bytes(alt_base, 0x40)
+            if int_data:
+                for row in range(0, 0x40, 16):
+                    hex_str = ' '.join(f'{b:02X}' for b in int_data[row:row+16])
+                    print(f"  +0x{row:02X}: {hex_str}")
+            print()
+            
+            # Try each dword as a potential character pointer
+            print("Checking each pointer in intermediate struct:")
+            found_candidates = []
+            for offset in range(0, 0x40, 4):
+                ptr = read_dword(alt_base + offset)
+                if ptr and 0x02000000 <= ptr < 0x02400000 and ptr != player_ptr:
+                    ground_air = read_byte(ptr + CHAR_OFFSETS['ground_air'])
+                    if ground_air is not None:
+                        state = GROUND_AIR_STATES.get(ground_air, f"0x{ground_air:02X}")
+                        marker = " <-- PLAYER" if ptr == player_ptr else ""
+                        if ground_air in [0x00, 0x02, 0x22, 0xC0]:
+                            marker += " [VALID STATE]"
+                            found_candidates.append((ptr, f"intermediate+0x{offset:02X}", ground_air))
+                        print(f"  +0x{offset:02X}: {ptr:#010x} -> ground_air={ground_air} ({state}){marker}")
+            print()
+            
+            # Also try dereferencing those pointers (double indirection)
+            print("Checking double-indirection (ptr -> ptr -> struct):")
+            for offset in range(0, 0x20, 4):
+                ptr1 = read_dword(alt_base + offset)
+                if ptr1 and 0x02000000 <= ptr1 < 0x02400000:
+                    # Try +0x10 offset like player chain
+                    ptr2 = read_dword(ptr1 + 0x10)
+                    if ptr2 and 0x02000000 <= ptr2 < 0x02400000 and ptr2 != player_ptr:
+                        ground_air = read_byte(ptr2 + CHAR_OFFSETS['ground_air'])
+                        if ground_air is not None and ground_air in [0x00, 0x02, 0x22, 0xC0]:
+                            state = GROUND_AIR_STATES.get(ground_air, f"0x{ground_air:02X}")
+                            print(f"  +0x{offset:02X} -> {ptr1:#010x} -> +0x10 -> {ptr2:#010x}")
+                            print(f"       ground_air = {ground_air} ({state})")
+                            found_candidates.append((ptr2, f"double_ind+0x{offset:02X}", ground_air))
+            print()
+        
+        # Search near opponent HP (0x61C offset from player HP)
+        print("--- Searching Near Opponent HP ---")
+        opponent_hp_addr = ADDRESSES['opponent_active_hp']
+        print(f"Opponent HP @ {opponent_hp_addr:#010x}")
+        
+        # Look for pointers in region around opponent HP
+        search_start = opponent_hp_addr - 0x20
+        search_end = opponent_hp_addr + 0x40
+        for addr in range(search_start, search_end, 4):
+            ptr = read_dword(addr)
+            if ptr and 0x02000000 <= ptr < 0x02400000:
+                ground_air = read_byte(ptr + CHAR_OFFSETS['ground_air'])
+                if ground_air is not None and ground_air in [0x00, 0x02, 0x22, 0xC0]:
+                    state = GROUND_AIR_STATES.get(ground_air, f"0x{ground_air:02X}")
+                    offset = addr - opponent_hp_addr
+                    print(f"  HP{offset:+d} @ {addr:#010x} -> {ptr:#010x}")
+                    print(f"       ground_air = {ground_air} ({state})")
+                    found_candidates.append((ptr, f"near_opp_hp+{offset:+d}", ground_air))
+        print()
+
+        # Summary of candidates
+        if found_candidates:
+            print(f"=== {len(found_candidates)} Candidates Found ===")
+            for i, (ptr, method, ground_air) in enumerate(found_candidates):
+                state = GROUND_AIR_STATES.get(ground_air, f"0x{ground_air:02X}")
+                print(f"  [{i+1}] {ptr:#010x} via {method} - ground_air={ground_air} ({state})")
+            print()
+            print("TIP: Test candidates by making opponent jump/land and re-running.")
+        else:
+            print("No valid candidates found.")
+        
+        print()
+        print("Use 'jus-read-char-at <address>' to examine a candidate.")
+
+
+class JUSReadOpponent(gdb.Command):
+    """Read opponent character state using offline mode pointer chain.
+
+    Usage: jus-read-opponent
+
+    Follows the discovered pointer chain for opponent in offline/training mode:
+      alt_state_base -> +0x00 -> ptr -> +0x10 -> opponent struct
+
+    This is the recommended command for reading opponent state.
+    """
+
+    def __init__(self):
+        super().__init__("jus-read-opponent", gdb.COMMAND_USER)
+
+    def invoke(self, arg, from_tty):
+        opponent_ptr = get_offline_opponent_ptr()
+        if not opponent_ptr:
+            print("Failed to get opponent pointer.")
+            print("Make sure you're in a battle with an opponent present.")
+            return
+
+        # Also show player for comparison
+        player_ptr = get_offline_char_ptr()
+        if player_ptr:
+            player_ga = read_byte(player_ptr + CHAR_OFFSETS['ground_air'])
+            player_state = GROUND_AIR_STATES.get(player_ga, f"0x{player_ga:02X}") if player_ga else "?"
+            print(f"Player   @ {player_ptr:#010x} - ground_air={player_ga} ({player_state})")
+
+        opp_ga = read_byte(opponent_ptr + CHAR_OFFSETS['ground_air'])
+        opp_state = GROUND_AIR_STATES.get(opp_ga, f"0x{opp_ga:02X}") if opp_ga else "?"
+        print(f"Opponent @ {opponent_ptr:#010x} - ground_air={opp_ga} ({opp_state})")
+        print()
+
+        print(f"=== Opponent State @ {opponent_ptr:#010x} ===")
+        print()
+
+        # Read known offsets
+        print("State fields:")
+        for name, offset in sorted(CHAR_OFFSETS.items(), key=lambda x: x[1]):
+            value = read_byte(opponent_ptr + offset)
+            if value is not None:
+                extra = ""
+                if name == 'ground_air':
+                    state = GROUND_AIR_STATES.get(value, f"unknown(0x{value:02X})")
+                    extra = f" ({state})"
+                print(f"  {name:20s} = {value:3d} (0x{value:02X}){extra}")
+
+        # Show physics region
+        print()
+        print("Physics region (0x6A-0x7E):")
+        for offset in range(0x6A, 0x80, 2):
+            value = read_word(opponent_ptr + offset)
+            if value is not None:
+                signed = struct.unpack('<h', struct.pack('<H', value))[0]
+                marker = " <-- ground_air" if offset == 0x78 else ""
+                print(f"  +0x{offset:04X}: {signed:+6d}{marker}")
+
+
+class JUSSnapshotOpponent(gdb.Command):
+    """Take opponent character snapshot using offline mode pointer chain.
+
+    Usage: jus-snapshot-opponent <name>
+
+    Takes a snapshot of opponent state for comparison.
+    Use with jus-char-diff to compare snapshots.
+
+    Example:
+        jus-snapshot-opponent opp_idle
+        (opponent does action)
+        jus-snapshot-opponent opp_attack
+        jus-char-diff opp_idle opp_attack
+    """
+
+    def __init__(self):
+        super().__init__("jus-snapshot-opponent", gdb.COMMAND_USER)
+
+    def invoke(self, arg, from_tty):
+        if not arg:
+            print("Usage: jus-snapshot-opponent <name>")
+            return
+
+        name = arg.strip()
+        opponent_ptr = get_offline_opponent_ptr()
+        
+        if not opponent_ptr:
+            print("Failed to get opponent pointer.")
+            print("Make sure you're in a battle with an opponent present.")
+            return
+
+        data = read_bytes(opponent_ptr, 0x120)
+        if data:
+            _char_snapshots[name] = {
+                'data': data,
+                'ptr': opponent_ptr,
+                'player': 'opponent',
+                'source': 'jus-snapshot-opponent',
+            }
+            ground_air = data[CHAR_OFFSETS['ground_air']]
+            state = GROUND_AIR_STATES.get(ground_air, f"0x{ground_air:02X}")
+            print(f"Opponent snapshot '{name}' saved from {opponent_ptr:#010x}")
+            print(f"  ground_air = {ground_air} ({state})")
+        else:
+            print(f"Failed to read opponent struct at {opponent_ptr:#010x}")
 
 
 class JUSSnapshotAt(gdb.Command):
@@ -3056,6 +3359,9 @@ def init():
     JUSSnapshotOffline()   # Snapshot using offline pointer chain (JUS-98z)
     JUSReadCharAt()        # Read char struct from direct address (JUS-98z)
     JUSSnapshotAt()        # Snapshot from direct address (JUS-98z)
+    JUSProbeOpponent()     # Probe for opponent state pointer (JUS-nqp)
+    JUSReadOpponent()      # Read opponent state (JUS-nqp)
+    JUSSnapshotOpponent()  # Snapshot opponent state (JUS-nqp)
     JUSWatchHP()
     JUSWatchCode()
     JUSReadChar()
@@ -3113,8 +3419,11 @@ def init():
     print()
     print("OFFLINE/TRAINING MODE (when wifi pointers are invalid):")
     print("  jus-probe-offline              - Probe alternative pointers, find char struct")
-    print("  jus-read-char-offline          - Read char using working pointer chain (RECOMMENDED)")
-    print("  jus-snapshot-offline <name>    - Snapshot using working pointer chain")
+    print("  jus-probe-opponent             - Search for opponent state pointer")
+    print("  jus-read-char-offline          - Read PLAYER using working pointer chain")
+    print("  jus-read-opponent              - Read OPPONENT using working pointer chain")
+    print("  jus-snapshot-offline <name>    - Snapshot PLAYER state")
+    print("  jus-snapshot-opponent <name>   - Snapshot OPPONENT state")
     print("  jus-read-char-at <addr>        - Read char struct from direct address")
     print("  jus-snapshot-at <name> <addr>  - Take snapshot from direct address")
     print()

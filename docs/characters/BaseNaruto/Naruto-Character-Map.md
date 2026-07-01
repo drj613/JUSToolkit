@@ -126,11 +126,11 @@ Profile: NEEDS EXTRACTION
 **Damage Formula:**
 
 ```
-base_damage = (jpower_total / 5) + (tier - 2)
+base_damage = floor(jpower.damage1 / 5) + (tier - 2)
 ```
 
 - Naruto tier=2: No modifier (+0)
-- Example: If jpower_total=50, damage = 50/5 + 0 = 10
+- Example: If jpower.damage1=50, damage = 50/5 + 0 = 10
 
 ### Sprite Archives (chr/)
 

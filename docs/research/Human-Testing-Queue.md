@@ -18,8 +18,8 @@ Central tracking for all in-game tests that require human intervention.
 
 **Last Updated:** 2026-02-02
 
-> **Formula CONFIRMED:** `damage = damage1/5 + (tier-2)` verified across 20+
-> characters
+> **Formula CONFIRMED:** `damage = damage1/5 + (tier-2)` - verified character
+> table in Research-Status.md (12 characters)
 >
 > **NEW:** Naruto series substitution mechanic documented (Naruto, Sasuke,
 > Sakura, Kakashi)

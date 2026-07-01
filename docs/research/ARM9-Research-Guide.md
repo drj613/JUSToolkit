@@ -228,10 +228,10 @@ Block 52 entries have total=50
 **Step 4: Derive formula**
 
 ```
-If jpower_total=50 and damage=10: divisor = 5
+If jpower.damage1=50 and damage=10: divisor = 5
 If tier=1 reduces damage by 1: modifier = tier - 2
 
-Formula: damage = (jpower_total / 5) + (tier - 2)
+Formula: damage = floor(jpower.damage1 / 5) + (tier - 2)
 ```
 
 **Step 5: Verify with Bankai**
@@ -242,11 +242,13 @@ Bankai: 50/5 + (1-2) = 10 - 1 = 9 ✓
 
 ### Cross-Character Validation
 
-The formula was tested but showed different behavior for Goku:
+The formula initially seemed to fail for Goku, spawning a "÷7 alternative"
+hypothesis. That was an artifact of summing all three damage components
+(total) instead of using `damage1` alone:
 
-- Goku (tier=2): B=8, fwd B=7
-- jpower Block 0 has total=50
-- 50/5 = 10 ≠ 8, but 50/7 ≈ 7 ✓
+- Goku (tier=2): B=8 → requires damage1=40 (exists at indices 146, 195, 218)
+- fwd B=7 → requires damage1=35
+- **DEBUNKED:** the ÷7 formula; there is one formula for all characters
 
 **Conclusion:** Either different characters use different formulas, OR the
 jpower entry selection mechanism varies by character.
@@ -437,10 +439,12 @@ Common patterns to search for:
 **Wrong:** "DamageFlags contains the damage value" **Reality:** In-game testing
 showed these values don't match actual damage
 
-### 3. Universal Formulas
+### 3. Summing Damage Components
 
-**Wrong:** "All characters use damage = jpower/5" **Reality:** Goku's damage
-suggests ÷7, or different entry selection
+**Wrong:** "damage = floor(jpower_total / 5)" where total = d1+d2+d3
+**Reality:** The formula uses `damage1` ALONE:
+`floor(damage1 / 5) + (tier - 2)`. Summing components created a fake "Goku ÷7
+paradox" that wasted research time
 
 ### 4. jpower Block = Moveset
 
@@ -700,8 +704,8 @@ From web research, battle passives include:
 
 ```
 jpower_block = chr_b.classId & 0xFF
-damage = floor(jpower_total / 5) + (chr_b.tier - 2)  // For Ichigo
-damage = floor(jpower_total / 5) + (tier - 2)        // Tentative - divisor 5 observed
+damage = floor(jpower.damage1 / 5) + (tier - 2)  // CONFIRMED, all tested characters
+                                                 // damage1 only - NOT d1+d2+d3 total!
 attack_boost = 1.2×  // Universal multiplier
 nature_advantage = 1.5×  // Type advantage multiplier
 

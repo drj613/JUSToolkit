@@ -136,26 +136,12 @@ Attacks and projectiles have implicit priority tiers:
 
 ### Core Formula (CONFIRMED 2026-01-30)
 
-```
-jsoul_damage = floor(jpower.damage1 / 5) + (tier - 2)
-actual_damage = floor(jsoul_damage × nature_multiplier)
-```
+`jsoul_damage = floor(jpower.damage1 / 5) + (tier - 2)`, then
+`actual_damage = floor(jsoul_damage × nature_multiplier)` (1.5x on advantage
+only). Uses `damage1` only — NOT total damage.
 
-**Key insight:** Uses `damage1` field only, NOT total damage!
-
-Where:
-
-- `damage1` = First damage component from jpower entry
-- `tier` = Character tier (1=weak form, 2=standard, 3=8-koma)
-- `nature_multiplier` = 1.0 (neutral/disadvantage) or 1.5 (advantage)
-
-**Verified B move damages:** | Character | tier | B Damage | damage1 | Formula
-Check | |-----------|------|----------|---------|---------------| | Nami | 2 | 6
-| 30 | 30/5+0=6 ✓ | | Train | 2 | 7 | 35 | 35/5+0=7 ✓ | | Goku | 2 | 8 | 40 |
-40/5+0=8 ✓ | | Luffy | 2 | 8 | 40 | 40/5+0=8 ✓ | | Naruto | 2 | 8 | 40 |
-40/5+0=8 ✓ | | Buu | 2 | 9 | 45 | 45/5+0=9 ✓ | | Bankai Ichigo | 1 | 9 | 50 |
-50/5-1=9 ✓ | | Ichigo | 2 | 10 | 50 | 50/5+0=10 ✓ | | Caramelman | 3 | 13 | 60 |
-60/5+1=13 ✓ |
+**Canonical reference (derivation + verified character table):**
+[Research-Status.md](Research-Status.md)
 
 **REMAINING UNKNOWN:** How collision files select which jpower entry to use
 

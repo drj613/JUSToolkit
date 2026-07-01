@@ -104,26 +104,27 @@ Comprehensive analysis of jpower block patterns, damage values, hitstun patterns
 
 ## 2. Damage Value Patterns
 
-### Damage Formula (Partially Solved)
+### Damage Formula (SOLVED - see Research-Status.md)
 
-**Confirmed formula (Bleach characters):**
+**Confirmed formula (all tested characters):**
 ```
-damage = floor(jpower_total / 5) + (tier - 2)
+damage = floor(jpower.damage1 / 5) + (tier - 2)
 ```
 
 Where:
-- `jpower_total = damage1 + damage2 + damage3`
+- `jpower.damage1` = **first damage component only** (NOT the d1+d2+d3 total!)
 - `tier` from chr_b.bin (1-3)
   - tier 1: -1 modifier
   - tier 2: +0 modifier
   - tier 3: +1 modifier
+- Nature multiplier: 1.5x on advantage only (no disadvantage penalty)
 
-**Alternative formula (Goku Block 0):**
-```
-damage = floor(jpower_total / 7)
-```
-- Block 0 entries: total=50 → 7 damage, total=100 → 14 damage
-- **Exception:** Goku B=8 damage requires total=40 or 56, NOT found in Block 0
+**DEBUNKED - historical note:** Earlier analysis used
+`jpower_total = damage1 + damage2 + damage3` with ÷5, plus an "alternative"
+÷7 formula to explain a "Goku paradox" (B=8 needing total=40/56 missing from
+Block 0). Both were wrong. The formula uses `damage1` alone: Goku B=8 comes
+from `damage1=40` entries (global indices 146, 195, 218), which DO exist.
+There is no ÷7 formula and no paradox.
 
 ### Damage Distribution Patterns
 
@@ -133,8 +134,7 @@ damage = floor(jpower_total / 7)
 |--------------|-----------|---------------|----------|
 | **50** | Very common | Standard attacks, jabs | Goku fwd B, Ichigo B |
 | **100** | Common | Heavy attacks, specials | Goku up Y, down Y |
-| **40** | Rare | Light attacks | Found at indices 146, 195, 218 (not in Block 0) |
-| **56** | Rare | Unknown | Needed for Goku B=8 with ÷7 formula |
+| **40** | Rare | Light attacks | Found at indices 146, 195, 218 (not in Block 0); damage1=40 explains Goku B=8 |
 | **57** | Rare | Special attacks | Luffy/Robin Block 9 first entry |
 | **28** | Rare | Special moves | Gotenks SSJ Block 4 |
 
@@ -166,7 +166,9 @@ damage = floor(jpower_total / 7)
 - 7 entries with total=50 (damage1: 20-50, damage2: 0-40, damage3: 0-20)
 - 2 entries with total=100 (damage1: 60-100, damage2: 0-40)
 - Hitstun: 5 (light) or 10 (heavy)
-- **Missing:** Entry with total=40 or 56 for B=8 damage
+- **Resolved:** Goku B=8 comes from `damage1=40` entries OUTSIDE Block 0
+  (indices 146, 195, 218) - nothing is "missing" (the old total=40/56 framing
+  used the debunked total-based formula)
 
 **Block 1 (Vegetto/Vegeta):**
 - 2 entries with total=50 each
@@ -389,17 +391,17 @@ damage = floor(jpower_total / 7)
 
 **Research priority:** CRITICAL
 
-### 2. Goku B=8 Damage Mystery
+### 2. Goku B=8 Damage Mystery (FORMULA SIDE RESOLVED)
 
-**Problem:** Goku's B move deals 8 damage, but Block 0 has no entry with total=40 or 56.
+**Resolution:** The "mystery" was an artifact of the debunked total-based
+formula. With the confirmed formula `floor(damage1 / 5) + (tier - 2)`, Goku
+B=8 requires `damage1=40`, and such entries exist at global indices 146, 195,
+218 (outside Block 0).
 
-**Possible explanations:**
-1. Uses jpower entry outside Block 0 (indices 146, 195, 218 have total=40)
-2. Uses collision-based damage (bypasses jpower)
-3. Uses different formula (not ÷5 or ÷7)
-4. Uses modifier sub-record (2x damage from different entry)
+**Remaining question:** How Goku's collision entries (damageFlags=0, Indirect
+lookup) SELECT those out-of-block entries — see Open Question 1 above.
 
-**Research priority:** HIGH
+**Research priority:** Folded into entry selection research
 
 ### 3. Multi-Hit Move Implementation
 
@@ -496,7 +498,8 @@ The jpower.bin structure reveals a sophisticated template library system where:
 
 1. **Blocks are shared templates**, not character-specific movesets
 2. **Entry selection mechanism is unknown** - Critical research gap
-3. **Damage formulas vary** - ÷5 for some characters, ÷7 for others
+3. **Damage formula is uniform** - `floor(damage1 / 5) + (tier - 2)` for all
+   tested characters (the earlier ÷7 "alternative" was debunked)
 4. **Multi-hit moves use chains** - nextId links multiple entries
 5. **ExtendedData contains hidden mechanics** - 66 entries have non-zero data
 

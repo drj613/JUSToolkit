@@ -17,18 +17,16 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
-using System;
-using System.IO;
 using System.Text.RegularExpressions;
-using JUSToolkit.Texts.Converters;
-using JUSToolkit.Texts.Formats;
-using JUSToolkit.Utils;
+using JUS.Tool.Texts.Converters;
+using JUS.Tool.Texts.Formats;
+using JUS.Tool.Utils;
 using Yarhl.FileFormat;
 using Yarhl.FileSystem;
 using Yarhl.IO;
 using Yarhl.Media.Text;
 
-namespace JUSToolkit.CLI.JUS
+namespace JUS.CLI.JUS
 {
     /// <summary>
     /// Commands related to text files.
@@ -61,7 +59,7 @@ namespace JUSToolkit.CLI.JUS
         {
             Console.WriteLine($"Importing {po}");
 
-            string parentDirectory = GetParentName(Path.GetFileNameWithoutExtension(po));
+            string parentDirectory = GetParentName(Path.GetFileNameWithoutExtension(po))!;
 
             using Node poNode = NodeFactory.FromFile(po, FileOpenMode.Read)
                 .TransformWith<Binary2Po>() ?? throw new FormatException("Invalid po file");
@@ -77,7 +75,7 @@ namespace JUSToolkit.CLI.JUS
                 file.TransformWith(binConverter);
 
                 string outputFile = Path.Combine(output, $"deck-{parentDirectory}-{file.Name}");
-                file.Stream.WriteTo(outputFile);
+                file.Stream!.WriteTo(outputFile);
             }
 
             Console.WriteLine("Done");
@@ -118,7 +116,7 @@ namespace JUSToolkit.CLI.JUS
 
             JQuiz jquiz = inputFiles
                 .TransformWith<JQuiz2Po>()
-                .GetFormatAs<JQuiz>();
+                .GetFormatAs<JQuiz>()!;
 
             using BinaryFormat binary = new Binary2JQuiz().Convert(jquiz);
 
@@ -145,7 +143,7 @@ namespace JUSToolkit.CLI.JUS
             object textFormat = ConvertFormat.With(poConverterName, poNode.Format!);
 
             // // Text Format -> Binary
-            var binaryFormat = (BinaryFormat)ConvertFormat.With(binConverterName, textFormat);
+            var binaryFormat = (BinaryFormat)ConvertFormat.With(binConverterName, textFormat)!;
 
             string outputFile = Path.Combine(output, cleanFileName);
             binaryFormat.Stream.WriteTo(outputFile);
@@ -156,7 +154,7 @@ namespace JUSToolkit.CLI.JUS
         /// </summary>
         /// <param name="name">The string containing potentially "bin-deck-", "bin-info-", "deck-play"... prefixes.</param>
         /// <returns>The directory name. Returns null if the input string is null or empty, or the name format is not correct.</returns>
-        private static string GetParentName(string name)
+        private static string? GetParentName(string name)
         {
             if (string.IsNullOrEmpty(name) || !name.Contains('-')) {
                 return null;

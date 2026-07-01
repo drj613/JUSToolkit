@@ -156,7 +156,7 @@ Profile: Attack-focused (60 attack)
 **Damage Formula:**
 
 ```
-base_damage = (jpower_total / 5) + (tier - 2)
+base_damage = floor(jpower.damage1 / 5) + (tier - 2)
 ```
 
 ### Sprite Archives (chr/)

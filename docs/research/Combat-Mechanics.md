@@ -8,34 +8,13 @@ Documented gameplay mechanics for Jump Ultimate Stars, derived from in-game test
 
 ### Damage Formula (CONFIRMED 2026-01-30)
 
-```
-actual_damage = floor((jpower.damage1 / 5 + tier_modifier) * nature_multiplier)
-```
+`damage = floor(jpower.damage1 / 5) + (tier - 2)`, times 1.5x nature
+multiplier on advantage only (bonus-only system; floor after multiplying).
+Uses `damage1` (first component) only — NOT the d1+d2+d3 total.
 
-Where `damage1` = **first damage component only** (NOT total!). Verified across 12+ characters.
-
-### Nature Multipliers
-
-| Matchup | Multiplier |
-|---------|------------|
-| Neutral | 1.0x |
-| Advantage | 1.5x |
-| Disadvantage | 1.0x (no penalty) |
-
-The nature system is **bonus-only** - you gain advantage but never take extra damage from disadvantage.
-
-### Verified Damage Values (Goku)
-
-| Move | jpower Total | Neutral | Advantage (1.5x) |
-|------|--------------|---------|------------------|
-| B (jab) | ~56 | 8 | 12 |
-| fwd B | ~50 | 7 | 10 |
-| up B (2 hits) | ~42 | 3+3 | 4+5 |
-| down B | ~50 | 7 | 10 |
-| Y combo (3 hits) | ~100 | 4+4+6 | 6+6+9 |
-| fwd Y (projectile x3) | ~105 | 5+5+5 | 7+8+7 |
-| up Y | ~100 | 14 | 21 |
-| down Y | ~100 | 14 | 21 |
+**Canonical reference (full derivation + verified character table):**
+[Research-Status.md](Research-Status.md). Per-move Goku verification:
+`docs/characters/Goku-Character-Map.md`.
 
 ### Damage Types
 
@@ -85,9 +64,9 @@ Characters have different weights affecting knockback physics.
 
 ### Technical Details
 
-- `battleParams` bytes 8-10 in chr_b.bin likely contain weight values
-- Lighter characters tend to have higher values in byte 8
-- Knockback formula: `applied_knockback = base_knockback * weight_factor * hp_factor`
+- Weight is NOT in chr_b.bin battleParams (proven via Nami/Franky identical
+  params) - storage location unknown (JUS-cb0.1)
+- Knockback formula hypothesis: `applied_knockback = base_knockback * weight_factor * hp_factor`
 - HP factor likely based on remaining HP percentage
 
 ---

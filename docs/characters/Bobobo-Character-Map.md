@@ -124,7 +124,7 @@ This is consistent with the finding that jpower blocks are **template libraries*
 **Damage Formula:**
 
 ```
-base_damage = (jpower_total / 5) + (tier - 2)
+base_damage = floor(jpower.damage1 / 5) + (tier - 2)
 ```
 
 - tier 1: -1 modifier

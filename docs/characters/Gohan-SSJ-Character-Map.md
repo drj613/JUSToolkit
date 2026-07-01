@@ -112,16 +112,15 @@ Profile: TBD
 
 **Attack entries in this block:**
 
-| Entry | jpower ID | d1  | d2  | d3  | Total | Calculated Damage (÷7) | Notes |
+| Entry | jpower ID | d1  | d2  | d3  | Total | Old ÷7 calc (DEBUNKED) | Notes |
 | ----- | --------- | --- | --- | --- | ----- | ---------------------- | ----- |
 |       |           |     |     |     |       |                        |       |
 
 **Damage Formula:**
 
 ```
-base_damage = (jpower_total / 5) + (tier - 2)  # Observed pattern
-- OR -
-base_damage = (jpower_total / 5) + (tier - 2) for universal formula
+base_damage = floor(jpower.damage1 / 5) + (tier - 2)  # Confirmed formula (Research-Status.md)
+# NOTE: earlier ÷7-of-total calculation in the table above is DEBUNKED
 ```
 
 ### Sprite Archives (chr/)

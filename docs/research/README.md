@@ -69,20 +69,12 @@ Run `bd ready` to see available work, or `bd show JUS-p5i` for current focus.
 
 ### Damage Formula (CONFIRMED 2026-01-30)
 
-```
-jsoul_damage = floor(jpower.damage1 / 5) + (tier - 2)
-actual_damage = floor(jsoul_damage × nature_multiplier)
-```
+`jsoul_damage = floor(jpower.damage1 / 5) + (tier - 2)`, then
+`actual_damage = floor(jsoul_damage × nature_multiplier)` (1.5x advantage
+only). `damage1` = first component only, NOT total.
 
-- `damage1` = **first damage component only** (NOT total!)
-- `tier` = koma size (2=standard, 1=weak form, 3=8-koma)
-- Nature advantage: 1.5x multiplier
-
-**Verified across 12+ characters:** | Character | tier | B Damage | damage1 |
-|-----------|------|----------|---------| | Nami | 2 | 6 | 30 | | Train | 2 | 7
-| 35 | | Goku, Luffy, Robin, Franky, Naruto | 2 | 8 | 40 | | Buu | 2 | 9 | 45 |
-| Bankai Ichigo | 1 | 9 | 50 | | Ichigo | 2 | 10 | 50 | | Caramelman | 3 | 13 |
-60 |
+**Canonical reference (verified across 12 characters — see table):**
+[Research-Status.md](Research-Status.md)
 
 **REMAINING UNKNOWN:** How collision files SELECT which jpower entry to use
 

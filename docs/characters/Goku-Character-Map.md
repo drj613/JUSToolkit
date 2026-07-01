@@ -136,31 +136,25 @@ then 5 | ✓ | | down B | 10 | 7 × 1.5 = 10.5 → 10 | ✓ | | Y | 6+6+9 | 4 ×
 
 **9 attack entries (indices 0-8):**
 
-| Entry | jpower ID | d1  | d2  | d3  | Total | With ÷7 Formula | With ÷5 Formula | hitstun |
-| ----- | --------- | --- | --- | --- | ----- | --------------- | --------------- | ------- |
-| 0     | 0         | 30  | 20  | 0   | 50    | **7 damage**    | 10 damage       | 5       |
-| 1     | 3         | 10  | 40  | 0   | 50    | **7 damage**    | 10 damage       | 0       |
-| 2     | 6         | 50  | 0   | 0   | 50    | **7 damage**    | 10 damage       | 5       |
-| 3     | 9         | 30  | 0   | 20  | 50    | **7 damage**    | 10 damage       | 5       |
-| 4     | 12        | 25  | 25  | 0   | 50    | **7 damage**    | 10 damage       | 5       |
-| 5     | 15        | 20  | 0   | 30  | 50    | **7 damage**    | 10 damage       | 5       |
-| 6     | 18        | 25  | 25  | 0   | 50    | **7 damage**    | 10 damage       | 5       |
-| 7     | 21        | 60  | 40  | 0   | 100   | **14 damage**   | 20 damage       | 10      |
-| 8     | 23        | 100 | 0   | 0   | 100   | **14 damage**   | 20 damage       | 10      |
+| Entry | jpower ID | d1  | d2  | d3  | Total | floor(d1÷5)+(tier-2) | hitstun |
+| ----- | --------- | --- | --- | --- | ----- | -------------------- | ------- |
+| 0     | 0         | 30  | 20  | 0   | 50    | 6                    | 5       |
+| 1     | 3         | 10  | 40  | 0   | 50    | 2                    | 0       |
+| 2     | 6         | 50  | 0   | 0   | 50    | 10                   | 5       |
+| 3     | 9         | 30  | 0   | 20  | 50    | 6                    | 5       |
+| 4     | 12        | 25  | 25  | 0   | 50    | 5                    | 5       |
+| 5     | 15        | 20  | 0   | 30  | 50    | 4                    | 5       |
+| 6     | 18        | 25  | 25  | 0   | 50    | 5                    | 5       |
+| 7     | 21        | 60  | 40  | 0   | 100   | 12                   | 10      |
+| 8     | 23        | 100 | 0   | 0   | 100   | 20                   | 10      |
 
-**With ÷7 formula:**
-
-- 7 entries match tested 7-damage moves (fwd B, down B) ✓
-- 2 entries match tested 14-damage moves (up Y, down Y) ✓
-- Missing: B=8, multi-hits
-
-**With ÷5 + tier formula:**
-
-- All entries would give 10 damage (wrong for Goku's 7-damage moves)
-- Doesn't match any of Goku's tested values
-
-**Tentative conclusion:** Goku uses **÷7 formula**, conflicting with Ichigo
-doc's ÷5 formula.
+> **DEBUNKED (historical):** This table originally carried "÷7" and "÷5 of
+> total" columns; both formulas summed d1+d2+d3 and were wrong. The confirmed
+> formula is `floor(damage1 / 5) + (tier - 2)` (Research-Status.md). Note none
+> of Goku's tested damages (B=8, fwd B=7, up Y=14) match Block 0 entries under
+> the confirmed formula — Goku's moves resolve to jpower entries OUTSIDE
+> Block 0 via the unknown Indirect (damageFlags=0) lookup, e.g. B=8 uses
+> `damage1=40` at global indices 146/195/218.
 
 ### Shared jpower Block
 
@@ -181,23 +175,24 @@ unknown).
 
 ### Missing Move Data
 
-**Moves not found in jpower Block 0:**
+**Moves not found in jpower Block 0** (required `damage1` per confirmed
+formula `floor(d1/5) + (tier-2)`, tier=2):
 
 1. **B (8 damage)**
-   - Expected jpower total: 56 (with ÷7) or 40 (with ÷5)
-   - NOT FOUND in Block 0 or anywhere in jpower.bin
+   - Required damage1 = 40
+   - **FOUND outside Block 0:** global indices 146, 195, 218
 
 2. **up B hits (3 damage each)**
-   - Expected: total ≈ 21 each
-   - NOT FOUND
+   - Required damage1 = 15 each
+   - Not yet located
 
 3. **Y combo hits (4+4+6 damage)**
-   - Expected: totals ≈ 28, 28, 42
-   - NOT FOUND
+   - Required damage1 = 20, 20, 30
+   - Not yet located
 
 4. **fwd Y projectiles (5 damage each)**
-   - Expected: total ≈ 35 each
-   - NOT FOUND
+   - Required damage1 = 25 each
+   - Not yet located
 
 **Possible explanations:**
 
@@ -206,38 +201,27 @@ unknown).
 - Different selection mechanism from jpower block
 - Damage calculated with modifiers we don't understand
 
-### Damage Formula Analysis
+### Damage Formula Analysis (RESOLVED)
 
-**CONFLICT RESOLUTION IN PROGRESS:**
+**Confirmed formula (Research-Status.md):**
 
-| Formula   | Ichigo (tier=2)   | Bankai (tier=1)  | Goku (tier=2)  |
-| --------- | ----------------- | ---------------- | -------------- |
-| ÷5 + tier | 50÷5+0 = **10** ✓ | 50÷5-1 = **9** ✓ | 50÷5+0 = 10 ✗  |
-| ÷7        | 50÷7 = 7 ✗        | 50÷7 = 7 ✗       | 50÷7 = **7** ✓ |
+```
+damage = floor(jpower.damage1 / 5) + (tier - 2)
+```
 
-**Key observation from Ichigo session:**
+- Uses `damage1` (first component) only — NOT the d1+d2+d3 total
+- tier 1 = -1 damage, tier 2 = 0, tier 3 = +1
 
-- chr_b `tier` field IS a damage modifier (proven)
-- tier 1 = -1 damage, tier 2 = 0, tier 3 = +1 (likely)
-- Formula `damage = jpower/5 + (tier-2)` works for Ichigo/Bankai
+**The former "Goku paradox" and ÷7 alternative are DEBUNKED.** Both arose
+from summing all three damage components. With `damage1` alone:
 
-**Goku paradox:**
+- Ichigo (tier=2): damage1=50 → 50/5+0 = 10 ✓
+- Bankai (tier=1): damage1=50 → 50/5-1 = 9 ✓
+- Goku B (tier=2) = 8 → requires damage1=40, which exists at global indices
+  146, 195, 218 (outside Block 0)
 
-- Goku B = 8 damage, tier = 2
-- If ÷5 formula: needs jpower = 40 (exists at indices 146, 195, 218)
-- BUT Goku uses Block 0, which has totals of 50 and 100, not 40
-
-**Possible resolutions:**
-
-1. **Block 0 entry mismatch:** The Block 0 entries with total=50 may not
-   correspond to Goku's B move - the selection mechanism is unknown
-
-2. **jpower total=40 exists:** Entries 146, 195, 218 have total=40
-   - If Goku somehow accesses these, B=8 with ÷5 formula works
-   - BUT these aren't in Block 0
-
-3. **Collision file damage:** Some moves may store damage in collision files
-   rather than jpower (needs investigation)
+**Remaining open question (moved to entry-selection research):** how Goku's
+damageFlags=0 collision entries select out-of-block jpower entries.
 
 ### Walk Speed (PARTIALLY SOLVED 2026-01-30)
 
@@ -289,7 +273,7 @@ Comparing Goku vs Ichigo collision files reveals different patterns:
 - Goku B collision: damageFlags=0, hitTier=2
 - All Goku subType=1 (B attacks) entries have damageFlags=0
 - damageFlags=0 does NOT simply mean jpower[0]
-- Goku B=8 requires jpower with total=40 (not in Block 0)
+- Goku B=8 requires jpower with damage1=40 (not in Block 0)
 
 **collision subType distribution (Goku):**
 
@@ -363,10 +347,11 @@ weights (bytes 8-10) likely affect AI or battle calculations.
 
 **Damage formula status:**
 
-- ÷5 + tier formula **CONFIRMED** for Ichigo/Bankai
-- Goku B=8 requires jpower=40 with ÷5 formula
-- jpower entries with total=40 exist (indices 146, 195, 218) but not in Block 0
+- `floor(damage1/5) + (tier-2)` **CONFIRMED** for all tested characters
+- Goku B=8 requires damage1=40
+- jpower entries with damage1=40 exist (indices 146, 195, 218) but not in Block 0
 - **Resolution needed:** Determine which jpower entry Goku's B actually uses
+  (entry selection mechanism, not formula)
 
 **ARM9 findings from Ichigo session:**
 
@@ -389,9 +374,9 @@ weights (bytes 8-10) likely affect AI or battle calculations.
 **For Goku (db_b_01):** UNRESOLVED
 - Most entries have damageFlags=0
 - damageFlags=0 does NOT mean jpower array[0] (that would give 50/5=10, not 8)
-- Goku B=8 requires jpower total=40, which exists at indices 146, 195, 218
+- Goku B=8 requires jpower damage1=40, which exists at indices 146, 195, 218
 
-**jpower entries with total=40:**
+**jpower entries with damage1=40:**
 
 | Index | ID | linkCategory | Used By |
 |-------|-----|--------------|---------|
@@ -412,7 +397,7 @@ weights (bytes 8-10) likely affect AI or battle calculations.
 
 ## Next Steps
 
-1. **Search ARM9 for jpower lookup table:** Might find mapping between characters and entries with total=40
+1. **Search ARM9 for jpower lookup table:** Might find mapping between characters and entries with damage1=40
 
 2. **Test more characters with damageFlags=0:** Find another character like Goku and verify their B damage
 

@@ -145,7 +145,9 @@ damage = floor(jpower.damage1 / 5) + (tier - 2)
 ```
 
 - tier 1: -1 damage, tier 2: +0, tier 3: +1
-- Verified across 15+ characters
+- Nature multiplier: 1.5x on advantage only
+- Verified across 12 characters - canonical table in
+  `docs/research/Research-Status.md`
 
 **DamageFlags Classification (completed 2026-02-02):**
 

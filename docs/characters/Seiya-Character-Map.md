@@ -124,7 +124,7 @@ This is similar to other character variants (Goku/Goku SSJ sharing Block 0). The
 **Damage Formula:**
 
 ```
-base_damage = (jpower_total / 5) + (tier - 2)
+base_damage = floor(jpower.damage1 / 5) + (tier - 2)
 ```
 
 - tier 1: -1 modifier

@@ -313,21 +313,24 @@ Ichigo's actual name (黒崎一護) is at chr_b_t.bin index **1014**, Bankai at
 - **88 DATA entries** act as block markers
 - **classId low byte** points to DATA entry indices
 
-### Damage Formula (Partial)
-
-Most jpower entries have total damage (damage1+damage2+damage3) of **50** or
-**100**. The formula appears to be:
+### Damage Formula (CONFIRMED - see Research-Status.md)
 
 ```
-actual_damage = jpower_total / 5
+actual_damage = floor(jpower.damage1 / 5)
 ```
 
-| jpower Total | ÷5  | Matches                   |
-| ------------ | --- | ------------------------- |
-| 10           | 2   | Y combo hit ✓             |
-| 20           | 4   | Y combo finisher (base) ✓ |
-| 50           | 10  | Base Ichigo B moves ✓     |
-| 100          | 20  | Modified/buffed?          |
+> **Correction note:** This was originally derived here as "jpower_total ÷ 5"
+> (total = d1+d2+d3). Cross-character testing later confirmed the divisor
+> applies to **damage1 alone**. Ichigo's relevant entries have damage2/3 = 0,
+> so total == damage1 and the error was masked — but the total-based version
+> is DEBUNKED (it created the fake "Goku ÷7 paradox").
+
+| jpower damage1 | ÷5  | Matches                   |
+| -------------- | --- | ------------------------- |
+| 10             | 2   | Y combo hit ✓             |
+| 20             | 4   | Y combo finisher (base) ✓ |
+| 50             | 10  | Base Ichigo B moves ✓     |
+| 100            | 20  | Modified/buffed?          |
 
 **SOLVED:** The **tier** field in chr_b.bin applies a damage modifier!
 
@@ -340,7 +343,7 @@ actual_damage = jpower_total / 5
 **Formula:**
 
 ```
-base_damage = (jpower_total ÷ 5) + (tier - 2)
+base_damage = floor(jpower.damage1 ÷ 5) + (tier - 2)
 ```
 
 - Base Ichigo (tier=2): 50 ÷ 5 + 0 = 10 ✓

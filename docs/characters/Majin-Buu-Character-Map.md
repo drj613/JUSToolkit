@@ -181,14 +181,15 @@ Profile: (needs analysis)
 **Question:** Which entries does Majin Buu use, and how does the game select
 them?
 
-**Hypothesis:** If Majin Buu's B move does 7 damage, he may use the same entries
-as Goku with ÷7 formula. If different, there's additional selection logic.
+**Note:** Buu's damage follows the confirmed universal formula
+`floor(damage1 / 5) + (tier - 2)` (÷7 alternative DEBUNKED). Which specific
+entries he selects from Block 0 (vs Goku) is still the open entry-selection
+question.
 
 **Damage Formula:**
 
 ```
-base_damage = (jpower_total / 5) + (tier - 2)   # Confirmed for Ichigo
-base_damage = (jpower_total / 5) + (tier - 2)    # Tested - full kit minus specials
+base_damage = floor(jpower.damage1 / 5) + (tier - 2)   # Confirmed universal formula
 ```
 
 - tier 1: -1 modifier
@@ -268,7 +269,7 @@ Majin Buu's signature abilities:
 | db_b_12-001 | Full moveset damage values                  | P1       | PENDING | Key to jpower mystery        |
 | db_b_12-002 | Available koma sizes                        | P2       | PENDING |                              |
 | db_b_12-003 | Compare B damage to Goku's B (both Block 0) | P0       | PENDING | CRITICAL for entry selection |
-| db_b_12-004 | Test if ÷7 or ÷5 formula applies            | P1       | PENDING |                              |
+| db_b_12-004 | Test if ÷7 or ÷5 formula applies            | P1       | RESOLVED | Confirmed damage1÷5 (÷7 debunked) |
 
 **Priority Guide:** P0=Blocking other work, P1=High value, P2=Standard, P3=Nice
 to have
@@ -300,7 +301,6 @@ to have
 4. **Block 0 Investigation (CRITICAL)**
    - [ ] Does any Buu damage match a Goku damage? (proves shared entry)
    - [ ] Does any Buu damage match jpower total ÷5? (proves formula)
-   - [ ] Does any Buu damage match jpower total ÷7? (proves alternative formula)
 
 ---
 
@@ -328,7 +328,7 @@ to have
 2. Does Buu share ANY damage values with Goku despite different moveset?
 3. Is the selection based on collision file fields (subType, type2,
    linkCategory)?
-4. Does Buu use ÷5 formula (like Ichigo) or ÷7 formula (like Goku)?
+4. ~~Does Buu use ÷5 or ÷7 formula?~~ RESOLVED: universal floor(damage1/5)+(tier-2)
 
 ---
 

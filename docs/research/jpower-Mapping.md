@@ -99,9 +99,15 @@ Each jpower entry (304 bytes) contains:
 | 7     | 21        | 60      | 40      | 0       | 100   | 14      | up Y            |
 | 8     | 23        | 100     | 0       | 0       | 100   | 14      | down Y          |
 
-**Missing from Block 0:**
+> **Note (formula correction):** The "In-Game" and "Likely Move" columns above
+> were attributed using the DEBUNKED total-based (÷7) formula. The confirmed
+> formula is `floor(damage1 / 5) + (tier - 2)` (see Research-Status.md), so
+> the move attributions need re-verification.
 
-- B (8 damage) - might be collision-only or calculated
+**Not in Block 0:**
+
+- B (8 damage) - **resolved:** uses `damage1=40` entries at global indices
+  146, 195, 218 (outside the block); selection mechanism still unknown
 - up B (3+3 damage) - multi-hit, might use nextId chains
 - Y combo (4+4+6) - multi-hit, might be in collision
 
@@ -133,6 +139,6 @@ investigate nextId chains for multi-hit moves.
 
 1. **Entry selection:** How do characters select specific jpower entries from their assigned block?
 2. **Move-to-entry mapping:** How do moves (B, fwd B, Y) map to jpower entries?
-3. **Missing damage values:** Why doesn't Goku's B move (8 damage, needs total=56) exist in jpower?
+3. ~~**Missing damage values:** Why doesn't Goku's B move (8 damage) exist in jpower?~~ **RESOLVED:** it does — `damage1=40` at indices 146/195/218 (confirmed formula uses damage1, not total)
 4. **Multi-hit moves:** Where are combos (Y 4+4+6, up B 3+3) stored?
 5. **DATA entries:** What purpose do type1=0 entries serve?

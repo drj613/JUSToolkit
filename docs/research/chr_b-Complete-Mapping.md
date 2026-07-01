@@ -106,24 +106,24 @@ Characters select specific entries from their assigned block via unknown
 mechanism (possibly collision subType, type2, linkCategory, or other selection
 logic).
 
-### Damage Formula (PARTIALLY SOLVED)
+### Damage Formula (SOLVED - see Research-Status.md)
 
-**Confirmed for Bleach (Ichigo/Bankai):**
+**Confirmed for all tested characters:**
 
 ```
-damage = floor(jpower_total / 5) + (tier - 2)
+damage = floor(jpower.damage1 / 5) + (tier - 2)
 ```
 
+- Uses `damage1` (first component) ONLY - NOT the d1+d2+d3 total
 - tier 1: -1 modifier (Bankai B = 9)
 - tier 2: +0 modifier (Ichigo B = 10)
-- tier 3: +1 modifier (untested)
+- tier 3: +1 modifier (Caramelman B = 13)
+- Nature multiplier: 1.5x on advantage only
 
-**Goku paradox (Block 0):**
-
-- Block 0 only has totals: 50 (×7 entries), 100 (×2 entries)
-- With ÷7: 50→7 (matches fwd B=7), 100→14 (matches up Y=14)
-- With ÷5: 50→10, 100→20 (doesn't match Goku)
-- **B = 8 damage NOT explained** - needs total 40 or 56, not found in Block 0
+**Former "Goku paradox" (DEBUNKED):** An earlier total-based version of the
+formula could not explain Goku B=8 and spawned a bogus ÷7 alternative. With
+`damage1` alone there is no paradox: B=8 comes from `damage1=40` entries
+(global indices 146, 195, 218, outside Block 0).
 
 **Collision damage difference:**
 

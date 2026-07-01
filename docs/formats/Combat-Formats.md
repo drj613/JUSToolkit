@@ -55,7 +55,8 @@ Combat data is split across multiple files:
 - **komaSize** field (2-6) does NOT match deck koma sizes (4-8) - meaning unclear
 - Combat stat modifiers: 0=none, 256/257=type1, 512/514=type2
 - `textIds` reference strings in chr_b_t.bin (Shift-JIS encoded)
-- **battleParams does NOT contain:** weight, walk speed (location unknown)
+- **battleParams does NOT contain:** weight (location unknown) or walk speed
+  (walk speed is in `statC`, threshold-based - see docs/research/Research-Status.md)
 
 ---
 

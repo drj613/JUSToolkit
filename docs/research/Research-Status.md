@@ -135,11 +135,37 @@ identity.
 
 ---
 
-### Character Mapping
+### Character Mapping (Identity Only)
 
-**All 74 battle characters mapped** to collision files with confirmed names.
+**All 74 battle characters identity-mapped** — every collision filename is
+matched to a confirmed character name.
 
 **Source:** Character-Mapping.md verified via in-game deck order checks.
+
+**Note:** This is filename → character *identity* mapping only. Full
+per-character kit maps (moves, damages, collision entries) exist only for Goku
+(complete) and Ichigo (unverified); the rest of `docs/characters/*.md` are
+partial or stubs — see the `Map status` header in each file.
+
+---
+
+### Walk Speed (chr_b.bin `statC`)
+
+**Confirmed:** Walk speed IS stored in chr_b.bin, in the `statC` field.
+It is **threshold/tier-based**, not linear:
+
+- Zoro (statC=33) = slowest tier
+- Luffy (statC=82) = middle tier
+- Ichigo (statC=225) = fastest tier
+- Lenalee (statC=153) and Killua (statC=300) share the same speed tier
+
+**Edajima outlier (resolved confounder):** Edajima is the heaviest/slowest
+character yet has a normal statC value — an **innate character passive** slows
+him. This outlier confounded the earlier Nami/Franky comparison and led to the
+now-retracted conclusion that walk speed was "NOT in chr_b.bin".
+
+**Still open:** Only the exact threshold/tier boundary values remain unknown —
+see ticket **JUS-n3p**.
 
 ---
 
@@ -259,18 +285,9 @@ HP = base_hp + (deck_koma_size - 1) * 16
 - Overlays or other code sections
 - Calculated from undiscovered formula
 
----
-
-### Walk Speed
-
-**NOT in chr_b.bin** (Nami/Franky proof).
-
-**Known from gameplay:**
-
-- Nami: fastest
-- Franky: slowest
-
-**Location:** Unknown, likely same as weight.
+**Note:** Weight was previously assumed co-located with walk speed. Walk speed
+is now **confirmed** in chr_b.bin `statC` (see CONFIRMED section); weight
+remains unknown and must be tracked separately.
 
 ---
 
@@ -537,7 +554,8 @@ Characters fall into two categories:
 
 1. **jpower subType mapping** - How collision entries select jpower moves
 2. **Multi-hit move mechanics** - nextId chains and combo system
-3. **Weight/walk speed location** - Critical for physics understanding
+3. **Weight location** - Critical for physics understanding (walk speed is
+   solved: chr_b `statC`; only tier thresholds remain — JUS-n3p)
 
 ### Medium Value
 

@@ -12,44 +12,44 @@ Pointer-relative offsets (fields are scattered, not contiguous)
 
 ## Complete Struct Map
 
-| Offset              | Size | Name                      | Research Status  | Notes                                                                                  |
-| ------------------- | ---- | ------------------------- | ---------------- | -------------------------------------------------------------------------------------- |
-| **0x0000 - 0x003F** | 64   | **Physics Region**        | 🔍 **CANDIDATE** | Likely contains X/Y position and velocity. First 64 bytes of struct.                   |
-| 0x0000              | 2    | Unknown (word)            | ❓ Unknown       | Potential X position (signed 16-bit)                                                   |
-| 0x0002              | 2    | Unknown (word)            | ❓ Unknown       | Potential Y position (signed 16-bit)                                                   |
-| 0x0004              | 2    | Unknown (word)            | ❓ Unknown       | Potential X velocity (signed 16-bit)                                                   |
-| 0x0006              | 2    | Unknown (word)            | ❓ Unknown       | Potential Y velocity (signed 16-bit)                                                   |
-| 0x0008 - 0x003F     | 56   | Unknown                   | ❓ Unknown       | Additional physics/position data (rotation? hitbox offsets?)                           |
-| **0x0040 - 0x0077** | 56   | Unknown                   | ❓ Unknown       | Gap between physics region and ground/air state                                        |
-| **0x0078**          | 1    | **Ground/Air State**      | ✅ **KNOWN**     | `0x00` = In Air, `0x22` = On Ground                                                    |
-| **0x0079 - 0x0087** | 15   | Unknown                   | ❓ Unknown       | Near ground/air state - might contain fall velocity or air physics                     |
-| **0x0088**          | 1    | **Positive Status ID**    | ✅ **KNOWN**     | `0x00` = Nothing, `0x09` = Invincibility (visual only?)                                |
-| **0x0089 - 0x009F** | 23   | Unknown                   | ❓ Unknown       | Gap between positive and negative status fields                                        |
-| **0x00A0**          | 1    | **Negative Status Flags** | ✅ **KNOWN**     | Bit flags for negative status effects (immune to negative status cheat)                |
-| **0x00A1 - 0x00D8** | 56   | **Combat State Region**   | 🔍 **CANDIDATE** | Large unknown region - likely contains hitstun timer, knockback state, attack state    |
-| 0x00A1 - 0x00D8     | 56   | Unknown                   | ❓ Unknown       | Potential fields: hitstun timer, knockback velocity, attack frame counter, guard state |
-| **0x00D9**          | 1    | **Jump Counter**          | ✅ **KNOWN**     | Number of jumps remaining (infinite jumps cheat)                                       |
-| **0x00DA**          | 1    | **Air Action Counter**    | ✅ **KNOWN**     | Number of air actions remaining (infinite air actions cheat)                           |
-| **0x00DB - 0x00F1** | 23   | Unknown                   | ❓ Unknown       | Gap between air actions and defense timer                                              |
-| **0x00F0 - 0x0101** | 18   | **Timer Region**          | 🔍 **CANDIDATE** | Around defense timer - might contain other timers (stun, guardstun, etc.)              |
-| **0x0102**          | 1    | **Defense Duration**      | ✅ **KNOWN**     | Defense timer (defense never wears cheat)                                              |
-| **0x0103+**         | ?    | Unknown                   | ❓ Unknown       | Struct continues beyond 0x102 (exact size unknown)                                     |
+| Offset              | Size | Name                        | Research Status   | Notes                                                                                                                        |
+| ------------------- | ---- | --------------------------- | ----------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| **0x0000 - 0x003F** | 64   | ~~Physics Region~~          | ❌ **DISPROVEN**  | Old hypothesis (X/Y position + velocity in first 64 bytes). 2026-02-03 GDB session showed physics deltas live at +0x006A-0x00BA instead. |
+| 0x0000 - 0x003F     | 64   | Unknown                     | ❓ Unknown        | Purpose unknown (NOT position/velocity)                                                                                       |
+| **0x0040 - 0x0069** | 42   | Unknown                     | ❓ Unknown        | Gap before physics/velocity region                                                                                             |
+| **0x006A - 0x00BA** | 81   | **Physics/Velocity Region** | ⚠️ **LIKELY**     | 2026-02-03 GDB: fields `+0x006A/6C`, `+0x0072/74`, `+0x007A/7C` show large deltas during knockback. Exact velocity field not yet isolated. |
+| **0x0078**          | 1    | **Ground/Air/Hitstun State**| ✅ **KNOWN**      | `0x00` = In Air, `0x22` = On Ground, `0xC0` = **Launched/Hitstun** (state FLAG, not a timer; 2026-02-03 GDB)                   |
+| **0x0079 - 0x0087** | 15   | Unknown                     | ❓ Unknown        | Within physics region - might contain fall velocity or air physics                                                             |
+| **0x0088**          | 1    | **Positive Status ID**      | ✅ **KNOWN**      | `0x00` = Nothing, `0x09` = Invincibility (visual only?)                                                                        |
+| **0x0089 - 0x0097** | 15   | Unknown                     | ❓ Unknown        | Gap before countdown timer region                                                                                              |
+| **0x0098 - 0x00BA** | 35   | **Countdown Timer Region**  | ⚠️ **LIKELY**     | 2026-02-03 GDB: timers at `+0x0098/9A`, `+0x00A0/A2`, `+0x00A8/AA`, `+0x00B0/B2`, `+0x00B8/BA`. Decrement in -5/-3 alternating pattern (32-bit values read as 16-bit?). Run during hitstun/recovery. |
+| **0x00A0**          | 1    | **Negative Status Flags**   | ✅ **KNOWN**      | Bit flags for negative status effects (immune to negative status cheat). NOTE: overlaps timer region above - needs reconciliation. |
+| **0x00BB - 0x00D8** | 30   | **Combat State Region**     | 🔍 **CANDIDATE**  | Remaining unknown region - possibly attack frame counter, guard state                                                          |
+| **0x00D9**          | 1    | **Jump Counter**            | ✅ **KNOWN**      | Number of jumps remaining (infinite jumps cheat)                                                                               |
+| **0x00DA**          | 1    | **Air Action Counter**      | ✅ **KNOWN**      | Number of air actions remaining (infinite air actions cheat)                                                                   |
+| **0x00DB - 0x00F1** | 23   | Unknown                     | ❓ Unknown        | Gap between air actions and defense timer                                                                                      |
+| **0x00F0 - 0x0101** | 18   | **Timer Region**            | 🔍 **CANDIDATE**  | Around defense timer - might contain other timers (stun, guardstun, etc.)                                                      |
+| **0x0102**          | 1    | **Defense Duration**        | ✅ **KNOWN**      | Defense timer (defense never wears cheat)                                                                                      |
+| **0x0103+**         | ?    | Unknown                     | ❓ Unknown        | Struct continues beyond 0x102 (exact size unknown)                                                                             |
 
 ---
 
 ## Known Fields Detail
 
-### Ground/Air State (`+0x0078`)
+### Ground/Air/Hitstun State (`+0x0078`)
 
-| Value  | Meaning   | Source                            |
-| ------ | --------- | --------------------------------- |
-| `0x00` | In Air    | "Always on Ground/Air" cheat code |
-| `0x22` | On Ground | "Always on Ground/Air" cheat code |
+| Value  | Meaning              | Source                            |
+| ------ | -------------------- | --------------------------------- |
+| `0x00` | In Air               | "Always on Ground/Air" cheat code |
+| `0x22` | On Ground            | "Always on Ground/Air" cheat code |
+| `0xC0` | Launched/Hitstun     | 2026-02-03 GDB session            |
 
 **Research Notes:**
 
 - Single byte field
 - Changes when character jumps or lands
+- `0xC0` (192) is a state FLAG indicating launched/hitstun, NOT a timer
+  (confirmed 2026-02-03 GDB session)
 - Used by `jus-auto-snapshot-on-state` trigger
 
 ### Positive Status (`+0x0088`)
@@ -117,29 +117,29 @@ Pointer-relative offsets (fields are scattered, not contiguous)
 
 ## Candidate Regions for Research
 
-### 1. Physics Region (`0x0000 - 0x003F`)
+### ~~1. Physics Region (`0x0000 - 0x003F`)~~ - DISPROVEN
 
-**Hypothesis:** Contains position and velocity data
+**Old hypothesis:** Contained position and velocity data in the first 64 bytes.
 
-**Research Strategy:**
+**DISPROVEN (2026-02-03 GDB session):** Movement/knockback snapshots showed no
+physics deltas in this range. Physics/velocity data lives in the
+`+0x006A - 0x00BA` region instead (see below).
 
-- Use `jus-char-dump` to view raw bytes
-- Compare snapshots during movement vs idle
-- Look for signed 16-bit values that change smoothly during movement
-- Filter out timer fields using `jus-baseline-noise` first
+### 1. Physics/Velocity Region (`0x006A - 0x00BA`) - LIKELY
 
-**Expected Fields:**
+**Finding (2026-02-03 GDB session):** Fields `+0x006A/6C`, `+0x0072/74`, and
+`+0x007A/7C` show large deltas during knockback.
 
-- X position (signed 16-bit, likely at 0x0000 or 0x0002)
-- Y position (signed 16-bit)
-- X velocity (signed 16-bit)
-- Y velocity (signed 16-bit)
-- Possibly: rotation angle, hitbox offsets
+**Still open:**
+
+- Exact velocity field not yet isolated (light vs heavy comparisons showed
+  differences, but position/timing variations made isolation difficult)
+- Which fields are position vs velocity vs derived values
 
 **GDB Commands:**
 
 ```gdb
-jus-char-dump 1 0 0x40        # Dump physics region
+jus-char-dump 1 0x60 0x60      # Dump physics/velocity region
 jus-velocity-watch 1           # Monitor physics region
 jus-baseline-noise 1 5 idle    # Filter timer noise first
 ```
@@ -147,7 +147,7 @@ jus-baseline-noise 1 5 idle    # Filter timer noise first
 ### 2. Air Physics Region (`0x0070 - 0x0088`)
 
 **Hypothesis:** Contains fall velocity or air-specific physics near ground/air
-state
+state (overlaps the physics/velocity region above)
 
 **Research Strategy:**
 
@@ -163,18 +163,21 @@ jus-auto-snapshot-on-state 1 air_physics
 jus-char-diff air_physics_state1 air_physics_state2
 ```
 
-### 3. Combat State Region (`0x00A1 - 0x00D8`)
+### 3. Countdown Timer Region (`0x0098 - 0x00BA`) - LIKELY
 
-**Hypothesis:** Contains hitstun timer, knockback velocity, attack state
+**Finding (2026-02-03 GDB session):** Contains countdown timers that run
+during hitstun/recovery:
 
-**Research Strategy:**
+- Fields: `+0x0098/9A`, `+0x00A0/A2`, `+0x00A8/AA`, `+0x00B0/B2`, `+0x00B8/BA`
+- Decrement in a -5/-3 alternating pattern (suggests 32-bit values read as
+  16-bit halves)
+- Heavier characters (Raoh) show longer timer activity than lighter (Nami)
 
-- Compare snapshots: idle vs hit vs in hitstun
-- Use `jus-auto-snapshot-on-hit` to capture on damage
-- Look for:
-  - Timer that decrements (hitstun countdown)
-  - Velocity values that spike on hit (knockback)
-  - Attack frame counter
+**Still open:**
+
+- Which specific timer controls hitstun vs recovery vs other states
+- Mapping of jpower hitstun values to timer initial values
+- Reconciling with the known Negative Status Flags byte at `+0x00A0`
 
 **GDB Commands:**
 
@@ -321,19 +324,22 @@ ground_state = read_byte(ptr + 0x0078)  # Read ground/air state
 
 ## Research Status Summary
 
-| Category             | Status        | Count    |
-| -------------------- | ------------- | -------- |
-| ✅ Known Fields      | Documented    | 6        |
-| 🔍 Candidate Regions | Identified    | 4        |
-| ❓ Unknown Regions   | Need Research | ~15 gaps |
+| Category              | Status        | Count    |
+| --------------------- | ------------- | -------- |
+| ✅ Known Fields       | Documented    | 6        |
+| ⚠️ Likely Regions     | GDB-supported | 2        |
+| 🔍 Candidate Regions  | Identified    | 2        |
+| ❌ Disproven Regions  | Retired       | 1        |
+| ❓ Unknown Regions    | Need Research | ~15 gaps |
 
 **Next Steps:**
 
-1. Run baseline noise filtering to identify timer fields
-2. Capture movement snapshots to find velocity fields
-3. Capture hit snapshots to find hitstun/knockback fields
+1. Isolate the exact velocity fields within `+0x006A - 0x00BA`
+2. Map jpower hitstun values to the `+0x0098 - 0x00BA` countdown timers
+3. Reconcile Negative Status Flags (`+0x00A0`) with the timer region overlap
 4. Decode status flag bit meanings
 
 ---
 
-_Last updated: 2026-01-31_ _Research tool: `scripts/gdb/jus_gdb_watcher.py`_
+_Last updated: 2026-07-01 (folded in 2026-02-03 GDB findings)_ _Research tool:
+`scripts/gdb/jus_gdb_watcher.py`_

@@ -152,7 +152,7 @@ index.
 - **charId=13**: Mixed group (7 chars including Raoh)
 - **charId=16**: Nami + Franky (opposites!)
 
-## Weight & Physics (UNKNOWN)
+## Weight (UNKNOWN) & Walk Speed (SOLVED)
 
 **Weight is NOT stored in:**
 
@@ -166,10 +166,12 @@ index.
 - LIGHT: Lenalee, Nami
 - STANDARD: Goku, Dio, Gon, Momotaro
 
-**Walk speed is NOT in chr_b.bin either:**
+**Walk speed IS in chr_b.bin** (`statC` field, threshold/tier-based):
 
-- Nami: fastest
-- Franky: slowest
-- Both share identical chr_b data
+The earlier conclusion that walk speed was "not in chr_b" was wrong — it was
+confounded by **Edajima**, who has a normal statC value but is slowed by an
+innate character passive (he is the heaviest/slowest character). See
+Research-Status.md for the confirmed tier data; exact thresholds are tracked
+in JUS-n3p.
 
-Weight and walk speed location remains unknown.
+Weight location remains unknown. Walk speed is solved (statC).

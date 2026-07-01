@@ -1,5 +1,7 @@
 # Toru Muhyo (mr_b_01) - Character Mapping
 
+> **Map status:** STUB — basic IDs/series info only; collision, koma, and damage data not yet extracted or tested.
+
 Deep dive analysis mapping Muhyo through all data files.
 
 ---

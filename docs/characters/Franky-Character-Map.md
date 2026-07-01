@@ -1,5 +1,7 @@
 # Franky (op_b_08) - Complete Character Mapping
 
+> **Map status:** PARTIAL — file data (chr_b/collision/jpower IDs) extracted; most move damages and koma data unverified (needs in-game testing).
+
 Deep dive analysis mapping Franky through all data files to understand linkages.
 
 ---
@@ -33,12 +35,18 @@ Deep dive analysis mapping Franky through all data files to understand linkages.
 | Walk Speed      | **SLOW**           | **FAST**           | OPPOSITE         |
 | Moveset         | Mechanical/Brute   | Staff/Weather      | DIFFERENT        |
 
-**This proves that weight and walk speed are NOT stored in:**
+**This proves that weight is NOT stored in:**
 - chr_b.bin battleParams
 - jpower.bin
 - Collision files
 
-**Weight and walk speed must be stored elsewhere** (possibly ARM9 hardcoded or overlay files).
+**Weight must be stored elsewhere** (possibly ARM9 hardcoded or overlay files).
+
+> **Correction (walk speed SOLVED):** Walk speed IS in chr_b.bin — the `statC`
+> field (threshold/tier-based), which DIFFERS between Nami and Franky even
+> though charId/classId/battleParams are identical. The earlier "walk speed
+> not in chr_b" conclusion was confounded by Edajima (normal statC, slowed by
+> an innate passive). See docs/research/Research-Status.md; thresholds: JUS-n3p.
 
 ---
 
@@ -284,12 +292,12 @@ base_damage = floor(jpower.damage1 / 5) + (tier - 2)
 - [ ] Complete move damage values (needs human testing)
 - [ ] All koma size special damage scaling (needs human testing)
 - [ ] **WHERE IS WEIGHT STORED?** (not in chr_b, collision, or jpower)
-- [ ] **WHERE IS WALK SPEED STORED?** (not in chr_b, collision, or jpower)
+- [x] ~~Where is walk speed stored?~~ SOLVED: chr_b `statC` (threshold-based)
 
 ### Open Questions
 
 1. **CRITICAL:** If Franky and Nami have identical chr_b data, where is weight stored?
-2. **CRITICAL:** If Franky and Nami have identical chr_b data, where is walk speed stored?
+2. ~~Where is walk speed stored?~~ SOLVED: chr_b `statC` field (differs between Nami and Franky)
 3. Why do Franky and Nami share the same jpower block despite different movesets?
 4. How does the taunt buff interact with fwd Y specifically?
 
@@ -347,7 +355,7 @@ base_damage = floor(jpower.damage1 / 5) + (tier - 2)
 - Cyborg body grants mechanical/heavy attacks
 - **REFERENCE CHARACTER for HEAVY weight and SLOW walk speed**
 - Shares ALL chr_b data with Nami despite being complete opposites
-- This paradox proves weight/walk speed is NOT in chr_b battleParams
+- This paradox proves weight is NOT in chr_b battleParams (walk speed is in statC - solved)
 - Has taunt buff mechanic that enables fwd Y attack
 - Critical for research: comparing Franky to Nami will reveal where weight/speed values are stored
 - See also: Nami-Character-Map.md for the other half of this paradox

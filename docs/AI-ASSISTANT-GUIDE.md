@@ -118,7 +118,7 @@ Located in `jus_files/exported_combat/`:
 | `docs/research/Research-Status.md`                      | What's CONFIRMED vs UNKNOWN       |
 | `docs/research/DamageFlags-Character-Classification.md` | How damage lookup works           |
 | `docs/research/Combat-Mechanics-Reference.md`           | Observed game mechanics           |
-| `docs/research/Character-Mapping.md`                    | All 74 characters mapped to files |
+| `docs/research/Character-Mapping.md`                    | 74-char identity map (file→name)  |
 
 ### Design Documents
 
@@ -130,7 +130,9 @@ Located in `jus_files/exported_combat/`:
 ### Per-Character Data
 
 `docs/characters/*.md` - Individual character maps with stats, moves, collision
-data. Most complete: `Goku-Character-Map.md`, `Ichigo-Character-Map.md`
+data. Each file carries a `Map status` header (COMPLETE | PARTIAL | STUB).
+Only `Goku-Character-Map.md` is complete (`Ichigo-Character-Map.md` is complete
+but unverified); most others are stubs or partial.
 
 ---
 
@@ -155,7 +157,10 @@ damage = floor(jpower.damage1 / 5) + (tier - 2)
 - 10 characters use **Direct** lookup (damageFlags ≥ 2 = jpower index)
 - `damageFlags=1` is a FLAG, not an index
 
-**Character Mapping:** All 74 battle characters mapped to collision files.
+**Character Mapping (identity only):** All 74 battle characters are
+identity-mapped (collision filename → character name). Full per-character kit
+maps exist only for Goku (complete) and Ichigo (unverified); the rest of
+`docs/characters/*.md` are stubs/partial — see each file's `Map status` header.
 
 ### UNKNOWN (Blocking Engine Development)
 

@@ -1,5 +1,7 @@
 # Goku / Goku SSJ - Character Map
 
+> **Map status:** COMPLETE — full kit verified in-game (2026-01); remaining open item is the jpower entry-selection mechanism (damageFlags=0 Indirect lookup).
+
 Deep dive analysis mapping Goku and Goku SSJ through all data files.
 
 > **Note:** Base Goku and Goku SSJ share the same jpower block (0) and classId (256),

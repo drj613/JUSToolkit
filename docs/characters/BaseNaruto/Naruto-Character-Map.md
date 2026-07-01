@@ -1,5 +1,7 @@
 # Naruto Uzumaki (na_b_01) - Complete Character Mapping
 
+> **Map status:** PARTIAL — file data (chr_b/collision/jpower IDs) extracted; most move damages and koma data unverified (needs in-game testing).
+
 Deep dive analysis mapping Naruto Uzumaki through all data files to understand linkages.
 
 ---

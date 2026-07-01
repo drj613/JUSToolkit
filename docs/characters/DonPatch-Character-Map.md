@@ -1,5 +1,7 @@
 # Don Patch / Super Patch - Character Map
 
+> **Map status:** PARTIAL — file data (chr_b/collision/jpower IDs) extracted; most move damages and koma data unverified (needs in-game testing).
+
 Deep dive analysis mapping Don Patch and Super Patch through all data files.
 
 > **Note:** These two characters share the same moveset and jpower data. They differ

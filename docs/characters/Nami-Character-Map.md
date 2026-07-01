@@ -1,5 +1,7 @@
 # Nami (op_b_04) - Complete Character Mapping
 
+> **Map status:** PARTIAL — file data (chr_b/collision/jpower IDs) extracted; most move damages and koma data unverified (needs in-game testing).
+
 Deep dive analysis mapping Nami through all data files to understand linkages.
 
 ---
@@ -33,12 +35,18 @@ Deep dive analysis mapping Nami through all data files to understand linkages.
 | Walk Speed      | **FAST**           | **SLOW**           | OPPOSITE         |
 | Moveset         | Staff/Weather      | Mechanical/Brute   | DIFFERENT        |
 
-**This proves that weight and walk speed are NOT stored in:**
+**This proves that weight is NOT stored in:**
 - chr_b.bin battleParams
 - jpower.bin
 - Collision files
 
-**Weight and walk speed must be stored elsewhere** (possibly ARM9 hardcoded or overlay files).
+**Weight must be stored elsewhere** (possibly ARM9 hardcoded or overlay files).
+
+> **Correction (walk speed SOLVED):** Walk speed IS in chr_b.bin — the `statC`
+> field (threshold/tier-based), which DIFFERS between Nami and Franky even
+> though charId/classId/battleParams are identical. The earlier "walk speed
+> not in chr_b" conclusion was confounded by Edajima (normal statC, slowed by
+> an innate passive). See docs/research/Research-Status.md; thresholds: JUS-n3p.
 
 ---
 
@@ -275,12 +283,12 @@ base_damage = floor(jpower.damage1 / 5) + (tier - 2)
 - [ ] Complete move damage values (needs human testing)
 - [ ] All koma size special damage scaling (needs human testing)
 - [ ] **WHERE IS WEIGHT STORED?** (not in chr_b, collision, or jpower)
-- [ ] **WHERE IS WALK SPEED STORED?** (not in chr_b, collision, or jpower)
+- [x] ~~Where is walk speed stored?~~ SOLVED: chr_b `statC` (threshold-based)
 
 ### Open Questions
 
 1. **CRITICAL:** If Nami and Franky have identical chr_b data, where is weight stored?
-2. **CRITICAL:** If Nami and Franky have identical chr_b data, where is walk speed stored?
+2. ~~Where is walk speed stored?~~ SOLVED: chr_b `statC` field (differs between Nami and Franky)
 3. Why do Nami and Franky share the same jpower block despite different movesets?
 4. Does Clima-Tact have any weather-based effects in-game?
 
@@ -338,6 +346,6 @@ base_damage = floor(jpower.damage1 / 5) + (tier - 2)
 - Uses Clima-Tact (weather staff) for attacks
 - **REFERENCE CHARACTER for LIGHT weight and FAST walk speed**
 - Shares ALL chr_b data with Franky despite being complete opposites
-- This paradox proves weight/walk speed is NOT in chr_b battleParams
+- This paradox proves weight is NOT in chr_b battleParams (walk speed is in statC - solved)
 - Critical for research: comparing Nami to Franky will reveal where these values are stored
 - See also: Franky-Character-Map.md for the other half of this paradox

@@ -1,5 +1,7 @@
 # Gohan SSJ2 (db_b_07) - Complete Character Mapping
 
+> **Map status:** PARTIAL — file data (chr_b/collision/jpower IDs) extracted; most move damages and koma data unverified (needs in-game testing).
+
 Deep dive analysis mapping Gohan SSJ2 through all data files to understand linkages.
 
 ---

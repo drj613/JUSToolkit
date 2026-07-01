@@ -1,5 +1,7 @@
 # Taizo (dt_b_04) - Debug Character Mapping
 
+> **Map status:** STUB — basic IDs/series info only; collision, koma, and damage data not yet extracted or tested.
+
 Analysis of debug/test character data.
 
 ---

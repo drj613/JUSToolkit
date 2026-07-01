@@ -1,5 +1,7 @@
 # Roronoa Zoro (op_b_03) - Complete Character Mapping
 
+> **Map status:** PARTIAL — file data (chr_b/collision/jpower IDs) extracted; most move damages and koma data unverified (needs in-game testing).
+
 Deep dive analysis mapping Zoro through all data files to understand linkages.
 
 ---

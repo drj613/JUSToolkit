@@ -1,5 +1,7 @@
 # Ichigo Kurosaki - Complete Character Mapping
 
+> **Map status:** COMPLETE — full move list with in-game verified damages for base and Bankai (2026-01-29); file-linkage sections pending independent re-verification.
+
 Deep dive analysis mapping Ichigo through all data files to understand linkages.
 
 ---

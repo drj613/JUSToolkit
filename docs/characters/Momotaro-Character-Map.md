@@ -1,5 +1,7 @@
 # Momotaro Tsurugi (oj_b_01) - Character Mapping
 
+> **Map status:** STUB — basic IDs/series info only; collision, koma, and damage data not yet extracted or tested.
+
 Deep dive analysis mapping Momotaro through all data files.
 
 ---

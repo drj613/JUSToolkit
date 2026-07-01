@@ -495,36 +495,63 @@ namespace JUS.CLI.JUS
 
         private static Command CreateCombatCommand()
         {
+            var exportCollisionBin = new Option<string>("--bin") { Description = "the collision .bin file" };
+            var exportCollisionOutput = new Option<string>("--output") { Description = "the output folder" };
             var exportCollision = new Command("export-collision", "Export collision .bin to JSON") {
-                new Option<string>("--bin", "the collision .bin file", ArgumentArity.ExactlyOne),
-                new Option<string>("--output", "the output folder", ArgumentArity.ExactlyOne),
+                exportCollisionBin,
+                exportCollisionOutput,
             };
-            exportCollision.Handler = CommandHandler.Create<string, string>(CombatCommands.ExportCollision);
+            exportCollision.SetAction(parseResult =>
+                CombatCommands.ExportCollision(
+                    parseResult.GetValue(exportCollisionBin)!,
+                    parseResult.GetValue(exportCollisionOutput)!));
 
+            var exportChrBin = new Option<string>("--bin") { Description = "the chr_b.bin file" };
+            var exportChrOutput = new Option<string>("--output") { Description = "the output folder" };
             var exportBattleCharacter = new Command("export-chr", "Export chr_b.bin to JSON") {
-                new Option<string>("--bin", "the chr_b.bin file", ArgumentArity.ExactlyOne),
-                new Option<string>("--output", "the output folder", ArgumentArity.ExactlyOne),
+                exportChrBin,
+                exportChrOutput,
             };
-            exportBattleCharacter.Handler = CommandHandler.Create<string, string>(CombatCommands.ExportBattleCharacter);
+            exportBattleCharacter.SetAction(parseResult =>
+                CombatCommands.ExportBattleCharacter(
+                    parseResult.GetValue(exportChrBin)!,
+                    parseResult.GetValue(exportChrOutput)!));
 
+            var exportJPowerBin = new Option<string>("--bin") { Description = "the jpower.bin file" };
+            var exportJPowerOutput = new Option<string>("--output") { Description = "the output folder" };
             var exportJPower = new Command("export-jpower", "Export jpower.bin to JSON") {
-                new Option<string>("--bin", "the jpower.bin file", ArgumentArity.ExactlyOne),
-                new Option<string>("--output", "the output folder", ArgumentArity.ExactlyOne),
+                exportJPowerBin,
+                exportJPowerOutput,
             };
-            exportJPower.Handler = CommandHandler.Create<string, string>(CombatCommands.ExportJPower);
+            exportJPower.SetAction(parseResult =>
+                CombatCommands.ExportJPower(
+                    parseResult.GetValue(exportJPowerBin)!,
+                    parseResult.GetValue(exportJPowerOutput)!));
 
+            var exportAllCollisionsDirectory = new Option<string>("--directory") { Description = "directory containing collision .bin files" };
+            var exportAllCollisionsOutput = new Option<string>("--output") { Description = "the output folder" };
             var exportAllCollisions = new Command("export-all-collisions", "Batch export all collision files to JSON") {
-                new Option<string>("--directory", "directory containing collision .bin files", ArgumentArity.ExactlyOne),
-                new Option<string>("--output", "the output folder", ArgumentArity.ExactlyOne),
+                exportAllCollisionsDirectory,
+                exportAllCollisionsOutput,
             };
-            exportAllCollisions.Handler = CommandHandler.Create<string, string>(CombatCommands.ExportAllCollisions);
+            exportAllCollisions.SetAction(parseResult =>
+                CombatCommands.ExportAllCollisions(
+                    parseResult.GetValue(exportAllCollisionsDirectory)!,
+                    parseResult.GetValue(exportAllCollisionsOutput)!));
 
+            var exportAllBinDir = new Option<string>("--binDir") { Description = "directory containing chr_b.bin and jpower.bin" };
+            var exportAllColDir = new Option<string>("--colDir") { Description = "directory containing collision .bin files" };
+            var exportAllOutput = new Option<string>("--output") { Description = "the output folder" };
             var exportAll = new Command("export-all", "Export all combat data (collision, chr_b, jpower)") {
-                new Option<string>("--binDir", "directory containing chr_b.bin and jpower.bin", ArgumentArity.ExactlyOne),
-                new Option<string>("--colDir", "directory containing collision .bin files", ArgumentArity.ExactlyOne),
-                new Option<string>("--output", "the output folder", ArgumentArity.ExactlyOne),
+                exportAllBinDir,
+                exportAllColDir,
+                exportAllOutput,
             };
-            exportAll.Handler = CommandHandler.Create<string, string, string>(CombatCommands.ExportAll);
+            exportAll.SetAction(parseResult =>
+                CombatCommands.ExportAll(
+                    parseResult.GetValue(exportAllBinDir)!,
+                    parseResult.GetValue(exportAllColDir)!,
+                    parseResult.GetValue(exportAllOutput)!));
 
             return new Command("combat", "Export combat data (hitboxes, character stats, move parameters)") {
                 exportCollision,

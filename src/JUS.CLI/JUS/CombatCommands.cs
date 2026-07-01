@@ -10,7 +10,7 @@ using JUSToolkit.Combat.Formats;
 using Yarhl.FileSystem;
 using Yarhl.IO;
 
-namespace JUSToolkit.CLI.JUS
+namespace JUS.CLI.JUS
 {
     /// <summary>
     /// Commands for exporting combat data files.

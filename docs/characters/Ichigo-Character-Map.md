@@ -537,6 +537,6 @@ focused (50 attack vs 40), less defense (35 vs 40), less utility (15 vs 20).
 
 - Collision file field names in code (`BattleCharacterEntry.cs`) contain
   speculative comments that are not validated
-- The chr_b-Mapping.md document in this repo has different ordering than ARM9
-  analysis reveals
+- The deck-builder order table (now in Character-Mapping.md) uses a different
+  ordering than the ARM9/file order
 - Actual damage comes from somewhere other than collision damageFlags field

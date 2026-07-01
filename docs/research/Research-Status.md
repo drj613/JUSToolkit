@@ -57,6 +57,25 @@ jpower entries with the correct d1 value.
 **What's NOT confirmed:** How collision files SELECT which jpower entry to use.
 See "jpower Entry Selection" in UNKNOWN section below.
 
+#### Previous Mysteries - EXPLAINED (merged from Damage-Formula-Predictions.md)
+
+**"Goku B=8 Mystery"**
+
+- Old assumption: formula uses `total = damage1+damage2+damage3`
+- Problem: Block 0 has total=50 entries, which would give 10 damage, not 8
+- Solution: formula uses `damage1` only. Goku B uses an entry with damage1=40
+
+**"Buu B=9 Anomaly"**
+
+- Old assumption: no jpower entry has total=45
+- Solution: Buu uses an entry with damage1=45 (45/5+0=9)
+
+**"Divisor ÷5 vs ÷7"**
+
+- Old assumption: some characters use ÷7 (Goku Y=14 from total=100)
+- Solution: ALL characters use ÷5 on `damage1`. Goku Y uses damage1=70 →
+  70/5=14
+
 ---
 
 ### Damage Types

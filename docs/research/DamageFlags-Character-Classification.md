@@ -138,6 +138,31 @@ Analysis of all 1214 collision entries across 74 battle characters:
 
 ---
 
+## Verified Examples (merged from jpower-Entry-Selection-Research.md)
+
+### Ichigo (Direct System)
+
+| Collision Entry | damageFlags | jpower Index | jpower.damage1 | Calculated Damage | Actual Damage |
+| --------------- | ----------- | ------------ | -------------- | ----------------- | ------------- |
+| B attack        | 2           | jpower[2]    | 50             | 50/5+0=10         | 10 ✓          |
+| Combo           | 5           | jpower[5]    | 50             | 50/5+0=10         | 10 ✓          |
+| Combo           | 3           | jpower[3]    | 45             | 45/5+0=9          | 9 ✓           |
+
+### Goku (Indirect System)
+
+| Move     | damageFlags | subType | hitTier | Required damage1 | Actual Damage | jpower Entry                    |
+| -------- | ----------- | ------- | ------- | ---------------- | ------------- | ------------------------------- |
+| B        | 0           | 1       | 2       | 40               | 8             | Unknown (indices 146, 195, 218) |
+| Combo    | 0           | 2       | 2       | ?                | ?             | Unknown                         |
+| Y attack | 14          | 7       | ?       | ?                | 14            | Unknown                         |
+
+**Indirect lookup hypothesis:** when `damageFlags=0`, the game likely combines
+`classId` (block), `subType`, `hitTier`, and/or an ARM9 lookup table to select
+the entry; Goku's damage1=40 candidates all share `linkCategory=1`
+(coincidence or criterion - unresolved).
+
+---
+
 ## Patterns
 
 ### NOT Series-Based

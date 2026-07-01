@@ -85,4 +85,4 @@ REFERENCES
 ----------
 - DeSmuME forums: https://forums.desmume.org/viewtopic.php?id=7
 - Universal DS Lua Script: https://github.com/DevreeseJorik/universal-ds-lua-script
-- Collision file format: docs/Combat-Specification.md
+- Collision file format: docs/formats/Combat-Formats.md

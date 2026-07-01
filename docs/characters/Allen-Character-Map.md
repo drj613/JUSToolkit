@@ -270,7 +270,7 @@ TBD - Allen uses his Innocence-powered left arm which can transform into various
 
 ### Related Documentation
 
-- [chr_b-Mapping.md](../formats/chr_b-Mapping.md)
+- [Character-Mapping.md](../research/Character-Mapping.md) (deck-builder order table)
 - [jpower-Analysis.md](../formats/jpower-Analysis.md)
 - [Collision-Format.md](../formats/Collision-Format.md)
 

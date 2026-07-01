@@ -233,6 +233,145 @@ python scripts/classify_damage_flags.py ./jus_files/extracted_chrbin/ChrBin.aar/
 
 ---
 
+## Physics Engine Sprint Checklist (GDB)
+
+Use this checklist when continuing physics RE from the confirmed opponent struct
+workflow. Focus on movement, velocity, and hitstun mapping before broad
+decompilation.
+
+### 0) Preflight
+
+- [ ] Start emulator and GDB watcher:
+
+```bash
+arm-none-eabi-gdb -x scripts/gdb/jus_gdb_watcher.py
+```
+
+```gdb
+target remote localhost:3333
+jus-probe-opponent
+jus-read-opponent
+```
+
+Success criteria:
+
+- [ ] Opponent pointer resolves and struct reads cleanly
+- [ ] No pointer chain errors during basic reads
+
+### 1) Build Idle Baseline (Timer Noise Filter)
+
+- [ ] Capture several idle snapshots to identify always-ticking timer fields:
+
+```gdb
+jus-baseline-noise 1 5 idle
+jus-find-timers idle
+```
+
+Success criteria:
+
+- [ ] Candidate timer offsets list is produced
+- [ ] "Always changing" offsets are separated from event-driven offsets
+
+### 2) Map Position Fields (X/Y)
+
+- [ ] Horizontal test (no jumps): capture left and right positions
+- [ ] Vertical test (jump/fall): capture ground and air positions
+
+```gdb
+jus-snapshot-opponent opp_left
+continue
+jus-snapshot-opponent opp_right
+jus-char-diff opp_left opp_right
+```
+
+```gdb
+jus-snapshot-opponent opp_ground
+continue
+jus-snapshot-opponent opp_air
+jus-char-diff opp_ground opp_air
+```
+
+Success criteria:
+
+- [ ] One or more offsets correlate strongly with X-only movement
+- [ ] One or more offsets correlate strongly with Y-only movement
+
+### 3) Map Velocity and Knockback
+
+- [ ] Turn on auto-snapshot for opponent damage and perform repeated same-move
+      hits:
+
+```gdb
+jus-auto-snapshot-on-damage opp enemy
+continue
+# perform repeated same attack
+jus-auto-snapshot-off
+```
+
+- [ ] Diff consecutive damage snapshots to isolate immediate post-hit velocity
+      writes and decay behavior:
+
+```gdb
+jus-char-diff enemy_dmg1 enemy_dmg2
+jus-char-diff enemy_dmg2 enemy_dmg3
+```
+
+Success criteria:
+
+- [ ] Horizontal and vertical velocity candidates are distinguishable
+- [ ] At least one "write on hit, decay over frames" pattern is observed
+
+### 4) Map Hitstun/Recovery Timers
+
+- [ ] Capture sequence: idle -> hit -> recovery
+- [ ] Compare with baseline timer noise from step 1
+
+Success criteria:
+
+- [ ] Timer fields that begin on hit and count down to neutral are identified
+- [ ] Preliminary hitstun offset candidates are documented
+
+### 5) Validate Across Character Weight Classes
+
+- [ ] Run the same knockback experiment with one heavy and one light character
+- [ ] Keep move choice and spacing consistent
+
+Success criteria:
+
+- [ ] Differences in velocity/timer behavior are measurable and repeatable
+- [ ] Data is sufficient to evaluate weight-related hypotheses (JUS-cb0.1)
+
+### 6) Correlate in ARM9 (After Memory Mapping)
+
+- [ ] Disassemble around known damage code entry (`0x020784FC`) in Ghidra
+- [ ] Trace where mapped offsets are written/read per frame
+
+Success criteria:
+
+- [ ] At least one routine that writes knockback/velocity is identified
+- [ ] At least one routine that applies frame-to-frame decay/integration is
+      identified
+
+### 7) Documentation + Ticket Hygiene
+
+- [ ] Update:
+  - `docs/research/Character-State-Struct.md` (new offsets + confidence level)
+  - `docs/research/Research-Status.md` (what moved from UNKNOWN to PARTIAL/CONFIRMED)
+  - `docs/research/RE-Session-Playbook.md` (repeatable experiment notes)
+- [ ] Link results to relevant beads tickets:
+  - `JUS-9lp.2.1` (velocity fields)
+  - `JUS-9lp.2.2` (hitstun timer)
+  - `JUS-cb0.1` (weight storage/impact)
+  - `JUS-cw4` (watcher refactor for maintainability)
+
+### Scope Guardrails
+
+- [ ] Prioritize opponent struct + combat runtime memory work first
+- [ ] Avoid character map deep-dives during this sprint unless directly needed
+      for experiment design
+
+---
+
 ## ARM9 Key Offsets
 
 | Offset   | Contents                                  |
@@ -288,4 +427,4 @@ Full mapping: `docs/research/Character-Mapping.md`
 
 ---
 
-_Last updated: 2026-02-02_
+_Last updated: 2026-02-11_

@@ -1,19 +1,20 @@
 {
-  "iteration": 3,
+  "iteration": 4,
   "stage": "B_C_D",
   "queue": [
     {"id": "P1-export-collisions", "type": "tool", "priority": 1, "attempts": 1, "depends_on": [], "status": "done", "spec": "Static-RE-Phase0.md P1"},
     {"id": "P2-remine-collision-data", "type": "tracer", "priority": 2, "attempts": 1, "depends_on": ["P1-export-collisions"], "status": "done", "spec": "Static-RE-Phase0.md P2"},
     {"id": "P3-verify-projectile-entities", "type": "verify", "priority": 2, "attempts": 1, "depends_on": [], "status": "done", "spec": "Static-RE-Phase0.md P3"},
-    {"id": "P4-B12-trampoline-sweep", "type": "tracer", "priority": 2, "attempts": 0, "depends_on": [], "status": "ready", "spec": "Static-RE-Phase0.md P4 + critic.round1.json B12"},
+    {"id": "P4-B12-trampoline-sweep", "type": "tracer", "priority": 2, "attempts": 1, "depends_on": [], "status": "done", "spec": "Static-RE-Phase0.md P4 + critic.round1.json B12"},
+    {"id": "P4v-verify-guard-sp-gauges", "type": "verify", "priority": 2, "attempts": 0, "depends_on": ["P4-B12-trampoline-sweep"], "status": "ready", "spec": "3 lenses on guard-sp-gauges.round1.json, standard scoring"},
     {"id": "P5-B14-chrb-catalog", "type": "tracer", "priority": 2, "attempts": 0, "depends_on": [], "status": "ready", "spec": "Static-RE-Phase0.md P5 + critic.round1.json B14"},
     {"id": "P6-tooling", "type": "tool", "priority": 3, "attempts": 0, "depends_on": [], "status": "ready", "spec": "Static-RE-Phase0.md P6"},
-    {"id": "P7-synthesis", "type": "synthesis", "priority": 4, "attempts": 0, "depends_on": ["P2-remine-collision-data", "P3-verify-projectile-entities", "P4-B12-trampoline-sweep", "P5-B14-chrb-catalog"], "status": "blocked_dep", "spec": "Static-RE-Phase0.md P7"}
+    {"id": "P7-synthesis", "type": "synthesis", "priority": 4, "attempts": 0, "depends_on": ["P2-remine-collision-data", "P3-verify-projectile-entities", "P4v-verify-guard-sp-gauges", "P5-B14-chrb-catalog"], "status": "blocked_dep", "spec": "Static-RE-Phase0.md P7 (deps amended: verify units must finish before synthesis)"}
   ],
   "subsystems": {
     "collision-data": {"status": "PARTIAL", "tracer_attempts": 1, "claims": {"confirmed": 3, "plausible": 6, "speculative": 4}, "note": "round 2 done at 281-file scale; refuted at scale: -32 sentinel, ct4-necessary, ct5->tier3 predictor framing, hitModifier constancy"},
     "projectile-entities": {"status": "PARTIAL", "tracer_attempts": 1, "claims": {"confirmed": 4, "plausible": 1, "speculative": 0}, "note": "3-lens verified: pool alloc/free + spawn dispatcher + ownership CONFIRMED; despawn fn capped PLAUSIBLE (projectile-vs-effect ambiguity); 9 open questions -> GDB cards"},
-    "guard-sp-gauges": {"status": "UNSTARTED", "tracer_attempts": 0, "claims": {"confirmed": 0, "plausible": 0, "speculative": 0}, "note": "critic spec B12"},
+    "guard-sp-gauges": {"status": "VERIFYING", "tracer_attempts": 1, "claims": {"confirmed": 0, "plausible": 0, "speculative": 0}, "note": "B12 traced: 14 claims, verify_evidence 0. Headline: NO second fixed gauge offset; guard/SP candidate = dynamic node list char+0x558 (nodes are self-contained Meters, max+0x16/cur+0x18); tooling blind spot found: xrefs-to misses bx-ip+inline-pool trampolines (feeds P6)"},
     "chrb-catalog": {"status": "UNSTARTED", "tracer_attempts": 0, "claims": {"confirmed": 0, "plausible": 0, "speculative": 0}, "note": "critic spec B14"}
   },
   "gates": {"G1": "pass", "G2": "pass", "G3": "pass", "G4": "pass", "G5": "pass"},
@@ -31,6 +32,7 @@
     {"iter": 0, "unit": "init", "result": "ok", "commit": "6b3f591", "note": "phase0 state created; gates re-run all pass; original-4 hashes baselined"},
     {"iter": 1, "unit": "P1-export-collisions", "result": "ok", "commit": "30a1bdc", "note": "281/281 exported via 'jus combat export-all-collisions' (src: extracted_chrbin/ChrBin.aar/chr/col, 74 *_b_* + 206 *_s_* + item); all parse; original 4 byte-identical; P2 unblocked"},
     {"iter": 2, "unit": "P2-remine-collision-data", "result": "ok", "commit": "", "note": "round2: 13 claims mined (miner deterministic, verified by me); 1-lens independent recomputation: 12 UPHELD 1 UNSURE; scored 3C/6P/4S. Round-1 breaks at scale: projectileId -32 sentinel (15 distinct values), ct4-necessity (real rule ct in {4,5}), ct5->tier3 (47.58% pooled), hitModifier non-constant (9/2047), isTerminator 0-36 per file"},
-    {"iter": 3, "unit": "P3-verify-projectile-entities", "result": "ok", "commit": "", "note": "3 lenses ran: disasm 5xUPHELD (verify_evidence exit 0), aliasing 4xUPHELD+1 UNSURE, data 5xUPHELD; scored 4 CONFIRMED / 1 PLAUSIBLE (idx4 despawn fn: projectile-vs-generic-effect not statically separable). Lens nits for synthesis: callee count 2 arm9/28 ov6 (not 30), dispatcher case idx 7 not 8, idx4 kill-condition (b) has suppression-bit gate"}
+    {"iter": 3, "unit": "P3-verify-projectile-entities", "result": "ok", "commit": "", "note": "3 lenses ran: disasm 5xUPHELD (verify_evidence exit 0), aliasing 4xUPHELD+1 UNSURE, data 5xUPHELD; scored 4 CONFIRMED / 1 PLAUSIBLE (idx4 despawn fn: projectile-vs-generic-effect not statically separable). Lens nits for synthesis: callee count 2 arm9/28 ov6 (not 30), dispatcher case idx 7 not 8, idx4 kill-condition (b) has suppression-bit gate"},
+    {"iter": 4, "unit": "P4-B12-trampoline-sweep", "result": "ok", "commit": "", "note": "14 claims (3C/10P/1S), verify_evidence 0 (148 segments). All 8 trampoline sites enumerated+traced; no alternate fixed base offset — guard/SP candidate is char+0x558 node list; only 1 str to +0x558 (zero-init) in whole DB, node insertion unfound; xrefs-to blind spot (bx ip + inline pool) documented. P4v enqueued; P7 deps amended to P4v"}
   ]
 }

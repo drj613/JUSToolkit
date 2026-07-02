@@ -1,5 +1,5 @@
 {
-  "iteration": 9,
+  "iteration": 10,
   "stage": "B_C_D",
   "queue": [
     {"id": "A1-env", "type": "tool", "priority": 1, "attempts": 1, "depends_on": [], "status": "done", "spec": "5.A1"},
@@ -24,7 +24,7 @@
     "jpower-indirect": {"status": "UNSTARTED", "tracer_attempts": 0, "claims": {"confirmed": 0, "plausible": 0, "speculative": 0}},
     "hitbox-priority": {"status": "TRACING", "tracer_attempts": 0, "claims": {"confirmed": 0, "plausible": 0, "speculative": 0}},
     "projectile-entities": {"status": "UNSTARTED", "tracer_attempts": 0, "claims": {"confirmed": 0, "plausible": 0, "speculative": 0}},
-    "physics-writers": {"status": "UNSTARTED", "tracer_attempts": 0, "claims": {"confirmed": 0, "plausible": 0, "speculative": 0}},
+    "physics-writers": {"status": "TRACING", "tracer_attempts": 0, "claims": {"confirmed": 0, "plausible": 0, "speculative": 0}},
     "hitstun-timers": {"status": "UNSTARTED", "tracer_attempts": 0, "claims": {"confirmed": 0, "plausible": 0, "speculative": 0}},
     "movement": {"status": "UNSTARTED", "tracer_attempts": 0, "claims": {"confirmed": 0, "plausible": 0, "speculative": 0}},
     "weight-hunt": {"status": "UNSTARTED", "tracer_attempts": 0, "claims": {"confirmed": 0, "plausible": 0, "speculative": 0}},
@@ -42,6 +42,7 @@
     {"iter": 6, "unit": "A6-gates", "result": "ok", "commit": "d6d8089", "note": "G1-G5 all pass, exit 0. G5: 12 insns at 0x020784FC, 5 data-processing incl cmp r1,r0,asr#16 + movle/movgt clamp pattern."},
     {"iter": 7, "unit": "A7-verify-evidence-tool", "result": "ok", "commit": "", "note": "7/7 selftest cases pass. Rejects: tampered operand, shifted addr, ambiguous overlay addr w/o provenance, uncited addresses, empty gdb_check on PLAUSIBLE/SPECULATIVE. STAGE A COMPLETE — tracers unlocked. Damage fn prologue: ldr r4,[r0,#0x56c]; ldrsh r2,[r4,#0x16]; mul r0,r2,r1."},
     {"iter": 8, "unit": "B1-damage-pipeline", "result": "launched", "commit": "1ea0581", "note": "Tracer subagent (sonnet) in flight. Will pipeline additional tracers next iterations, max 6 concurrent."},
-    {"iter": 9, "unit": "B3-hitbox-priority", "result": "launched", "commit": "", "note": "Tracer (sonnet) in flight. 2 concurrent (B1, B3)."}
+    {"iter": 9, "unit": "B3-hitbox-priority", "result": "launched", "commit": "4d47e29", "note": "Tracer (sonnet) in flight. 2 concurrent (B1, B3)."},
+    {"iter": 10, "unit": "B5-physics-writers", "result": "launched", "commit": "", "note": "Tracer (sonnet) in flight. 3 concurrent (B1, B3, B5)."}
   ]
 }

@@ -1,5 +1,5 @@
 {
-  "iteration": 21,
+  "iteration": 22,
   "stage": "B_C_D",
   "queue": [
     {"id": "A1-env", "type": "tool", "priority": 1, "attempts": 1, "depends_on": [], "status": "done", "spec": "5.A1"},
@@ -23,7 +23,7 @@
     {"id": "C7-verify-movement", "type": "verify", "priority": 2, "attempts": 0, "depends_on": ["B7-movement"], "status": "ready", "spec": "Stage C, findings movement.round1"},
     {"id": "B8-weight-hunt", "type": "tracer", "priority": 2, "attempts": 0, "depends_on": ["A6-gates", "A7-verify-evidence-tool", "B5-physics-writers"], "status": "blocked_dep", "spec": "5.B8"},
     {"id": "B9-collision-data-miner", "type": "tracer", "priority": 2, "attempts": 1, "depends_on": ["A6-gates", "A7-verify-evidence-tool"], "status": "done", "spec": "5.B9"},
-    {"id": "C9-verify-collision-data", "type": "verify", "priority": 3, "attempts": 0, "depends_on": ["B9-collision-data-miner"], "status": "ready", "spec": "Stage C adapted for data_only: single data-consistency+aliasing lens"}
+    {"id": "C9-verify-collision-data", "type": "verify", "priority": 3, "attempts": 1, "depends_on": ["B9-collision-data-miner"], "status": "done", "spec": "Stage C adapted for data_only: single data-consistency+aliasing lens"}
   ],
   "subsystems": {
     "damage-pipeline": {"status": "PARTIAL", "tracer_attempts": 1, "claims": {"confirmed": 4, "plausible": 3, "speculative": 2}},
@@ -34,7 +34,7 @@
     "hitstun-timers": {"status": "VERIFYING", "tracer_attempts": 1, "claims": {"confirmed": 4, "plausible": 0, "speculative": 2}},
     "movement": {"status": "VERIFYING", "tracer_attempts": 1, "claims": {"confirmed": 5, "plausible": 1, "speculative": 0}},
     "weight-hunt": {"status": "UNSTARTED", "tracer_attempts": 0, "claims": {"confirmed": 0, "plausible": 0, "speculative": 0}},
-    "collision-data": {"status": "VERIFYING", "tracer_attempts": 1, "claims": {"confirmed": 8, "plausible": 7, "speculative": 0}}
+    "collision-data": {"status": "PARTIAL", "tracer_attempts": 1, "claims": {"confirmed": 8, "plausible": 6, "speculative": 1}}
   },
   "gates": {"G1": "pass", "G2": "pass", "G3": "pass", "G4": "pass", "G5": "pass"},
   "dry_rounds": 0,
@@ -62,6 +62,7 @@
     {"iter": 18, "unit": "B6-hitstun-timers", "result": "ok", "commit": "", "note": "6 claims (4C/2S), 45 segments verified. +0x98-0xB4 same struct as +0x78/+0x88 via shared zero-init in ctor arm9 0x02053528. On-hit nonzero timer init NOT located. Leads: 0x0207D16C writes +0xa0 while setting +0x78 launched bit (SPEC); ov4 hints +0xa0/+0xa2 may be POSITION pair not timer (contradicts hypothesis — aliasing lens must weigh). Ruled out: ov0 settings struct, arm9 combo/juggle sub-record clusters. C6 verify enqueued."},
     {"iter": 19, "unit": "C1-verify-damage-pipeline", "result": "ok", "commit": "", "note": "3 lenses complete, scored: 4C/3P/2S (all 4 CONFIRMED survived 3x UPHELD; claim7 stays SPEC via UNSURE x2; claim8 2x REFUTED — reinterpreted: x1.20 is persistent low-gauge desperation buff = documented universal attack_boost, causally chained to 25% check). EXTRAS from lenses: div5 magic constants exist in pools (0x66666667 x3, 0xCCCCCCCD x1); jpower on-disk damage1 @ +0x0C; trampoline pool target byte-confirmed 0x02078488 (conflicts w/ a physics-writers reading — C3 must weigh). Gauge pair reused as generic Meter util (+0x558 list walker). damage-pipeline -> PARTIAL (formula sites still open)."},
     {"iter": 20, "unit": "B7-movement", "result": "ok", "commit": "", "note": "6 claims (5C/1P), 51 segments verified. statC SOLVED: record = *(0x0214BD80)+0x40 + charIndex*0x3C (battle resource mgr singleton); statA/B/C ldrh @ +8/+0xA/+0xC (matches 60B on-disk chr_b). ANCHOR DISPROVEN: 0x0208D4A0 is ASCII case-folding table, NOT chr_b identity map. PRIZE NOT FOUND: no statC inequality cmp-chain anywhere (only equality matcher 0x02077178 = koma stat requirements). Next angles: per-char dispatch tables char+8/+0x42; chr_b GetData vtable. C7 enqueued. Also: C2 lenses launched this iter (3x sonnet)."},
-    {"iter": 21, "unit": "C9-verify-collision-data", "result": "launched", "commit": "", "note": "Single combined lens (data-consistency+aliasing, independent recomputation required). 5 in flight (B2 + 3x C2 + C9)."}
+    {"iter": 21, "unit": "C9-verify-collision-data", "result": "launched", "commit": "", "note": "Single combined lens (data-consistency+aliasing, independent recomputation required). 5 in flight (B2 + 3x C2 + C9)."},
+    {"iter": 22, "unit": "C9-verify-collision-data", "result": "ok", "commit": "", "note": "15 verdicts: 12U/1R/1UNSURE/1caveat. Scored 8C/6P/1S. REFUTED claim4: knockback non-monotonicity = bl_b_01 pooling artifact (all-tier1 file, avg 21.05); excluding it knockback RISES with hitTier 8.78->12.11->15.00. collisionType3->tier1 inconsistent per-file (UNSURE); type5->tier3 robust. collision-data -> PARTIAL (70-char export gap)."}
   ]
 }

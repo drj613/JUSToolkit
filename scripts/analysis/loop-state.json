@@ -1,5 +1,5 @@
 {
-  "iteration": 33,
+  "iteration": 34,
   "stage": "B_C_D",
   "queue": [
     {"id": "A1-env", "type": "tool", "priority": 1, "attempts": 1, "depends_on": [], "status": "done", "spec": "5.A1"},
@@ -33,7 +33,7 @@
     "damage-pipeline": {"status": "PARTIAL", "tracer_attempts": 1, "claims": {"confirmed": 4, "plausible": 3, "speculative": 2}},
     "jpower-indirect": {"status": "PARTIAL", "tracer_attempts": 1, "claims": {"confirmed": 4, "plausible": 1, "speculative": 0}},
     "hitbox-priority": {"status": "TRACING", "tracer_attempts": 1, "claims": {"confirmed": 1, "plausible": 1, "speculative": 2}},
-    "projectile-entities": {"status": "UNSTARTED", "tracer_attempts": 0, "claims": {"confirmed": 0, "plausible": 0, "speculative": 0}},
+    "projectile-entities": {"status": "TRACING", "tracer_attempts": 0, "claims": {"confirmed": 0, "plausible": 0, "speculative": 0}},
     "physics-writers": {"status": "TRACING", "tracer_attempts": 1, "claims": {"confirmed": 1, "plausible": 1, "speculative": 3}},
     "hitstun-timers": {"status": "PARTIAL", "tracer_attempts": 1, "claims": {"confirmed": 4, "plausible": 0, "speculative": 2}},
     "movement": {"status": "PARTIAL", "tracer_attempts": 1, "claims": {"confirmed": 5, "plausible": 1, "speculative": 0}},
@@ -78,6 +78,7 @@
     {"iter": 30, "unit": "B8-weight-hunt", "result": "ok", "commit": "", "note": "6 claims (3C/2P/1S), 38 segments verified. Weight NOT located. CONFIRMED: hitstun scaling arithmetic duration/10 * [t+0x4c] * 2 + duration via div fn 0x0200D12C; index into table = acting obj +0x1e0 byte (transient hit-type/element tracker, write site unfound) — NOT per-character constant. New: chr_b getter ov5 0x0214E480 reads +0x0 (roster UI, not weight). Passive bitfield accessor found but move-ID-keyed. Next angles: ~85 unexamined chr_b singleton refs, +0x1e0 write site (GDB), charIndex-keyed bitfield callers. C8 enqueued."},
     {"iter": 31, "unit": "C7-verify-movement", "result": "ok", "commit": "", "note": "Scored 5C/1P (all held; 6U/6U/5U+1UNSURE). NUANCE from aliasing lens: chr_b lookup indexed by koma PassiveIndex (0-55) as raw slot, NOT CharId match — statA/B/C are passive-archetype stat block of slot=PassiveIndex. CharId==position in only 1/74 records. movement -> PARTIAL (walk-speed thresholds still unfound; statC consumption at battle time = open). C4 lenses launched this iter."},
     {"iter": 32, "unit": "C4-verify-jpower-indirect", "result": "ok", "commit": "", "note": "Scored 4C/1P (all held; lens extras: 311x304=exact jpower.bin size matching JPowerEntry.BlockSize; ALL 147 nonzero damage1 values are multiples of 5 — explains missing div idiom; ov5/ov6 mutually exclusive (shared window) so battle CANNOT read jpower blob live — must be copied pre-battle or damage precomputed; Thumb div-callsite gap hand-closed). jpower-indirect -> PARTIAL. C8 lenses launched this iter."},
-    {"iter": 33, "unit": "C8-verify-weight-hunt", "result": "ok", "commit": "", "note": "Scored 3C/2P/1S. Claim5 (passive bitfield) 2x REFUTED: call site actually hits a move-data cache lookup; real GetFlag at 0x0214D594 only referenced via ov1 indirect callback (disasm-db merged 2 routines — known bx<reg> boundary gap). [t+0x4c] NOT weight (sb+0x1e0 = transient hit-type; no static writes). KEY NEXT ANGLE (from docs via data lens): koma.bin PassiveIndex -> ~50-entry ARM9 passive table = Edajima knockback-resistance path — weight round-2 target. weight-hunt -> PARTIAL. Queue empty of B/C work -> D2 critic enqueued, D1 synthesis after."}
+    {"iter": 33, "unit": "C8-verify-weight-hunt", "result": "ok", "commit": "", "note": "Scored 3C/2P/1S. Claim5 (passive bitfield) 2x REFUTED: call site actually hits a move-data cache lookup; real GetFlag at 0x0214D594 only referenced via ov1 indirect callback (disasm-db merged 2 routines — known bx<reg> boundary gap). [t+0x4c] NOT weight (sb+0x1e0 = transient hit-type; no static writes). KEY NEXT ANGLE (from docs via data lens): koma.bin PassiveIndex -> ~50-entry ARM9 passive table = Edajima knockback-resistance path — weight round-2 target. weight-hunt -> PARTIAL. Queue empty of B/C work -> D2 critic enqueued, D1 synthesis after."},
+    {"iter": 34, "unit": "B4-projectile-entities", "result": "launched", "commit": "", "note": "GAP CAUGHT: B4 was ready since iter 7 but never launched (pipelining miss). Last UNSTARTED subsystem. Tracer launched with time-budget instruction. Critic next iteration (parallel)."}
   ]
 }

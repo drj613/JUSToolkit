@@ -1,12 +1,12 @@
 {
-  "iteration": 3,
+  "iteration": 4,
   "stage": "A",
   "queue": [
     {"id": "A1-env", "type": "tool", "priority": 1, "attempts": 1, "depends_on": [], "status": "done", "spec": "5.A1"},
     {"id": "A2-rom-loader", "type": "tool", "priority": 1, "attempts": 1, "depends_on": ["A1-env"], "status": "done", "spec": "5.A2"},
     {"id": "A3-disasm-db", "type": "tool", "priority": 1, "attempts": 1, "depends_on": ["A2-rom-loader"], "status": "done", "spec": "5.A3"},
-    {"id": "A4-xref-db", "type": "tool", "priority": 1, "attempts": 0, "depends_on": ["A3-disasm-db"], "status": "ready", "spec": "5.A4"},
-    {"id": "A5-query-cli", "type": "tool", "priority": 1, "attempts": 0, "depends_on": ["A4-xref-db"], "status": "blocked_dep", "spec": "5.A5"},
+    {"id": "A4-xref-db", "type": "tool", "priority": 1, "attempts": 1, "depends_on": ["A3-disasm-db"], "status": "done", "spec": "5.A4"},
+    {"id": "A5-query-cli", "type": "tool", "priority": 1, "attempts": 0, "depends_on": ["A4-xref-db"], "status": "ready", "spec": "5.A5"},
     {"id": "A6-gates", "type": "gate", "priority": 1, "attempts": 0, "depends_on": ["A5-query-cli"], "status": "blocked_dep", "spec": "5.A6"},
     {"id": "A7-verify-evidence-tool", "type": "tool", "priority": 1, "attempts": 0, "depends_on": ["A5-query-cli"], "status": "blocked_dep", "spec": "5.A7"},
     {"id": "B1-damage-pipeline", "type": "tracer", "priority": 2, "attempts": 0, "depends_on": ["A6-gates", "A7-verify-evidence-tool"], "status": "blocked_dep", "spec": "5.B1"},
@@ -36,6 +36,7 @@
   "log": [
     {"iter": 1, "unit": "A1-env", "result": "ok", "commit": "3675446", "note": "venv + capstone 5.0.7; loop moved to worktree after A1"},
     {"iter": 2, "unit": "A2-rom-loader", "result": "ok", "commit": "47c3d2a", "note": "15 regions (arm9 + 14 ov). Overlap groups: ov0-ov9 ALL @ 0x0214CD20 (10-way, per-character swap); ov10/ov11 @ 0x02172A60; ov12/ov13 @ 0x021AC1C0. ov9/ov13 32-byte stubs. No compression."},
-    {"iter": 3, "unit": "A3-disasm-db", "result": "ok", "commit": "", "note": "8712 fns (668 thumb), arm9=4043. 0x020784FC inside fn 0x020784E4 (size 84). ov6/ov8/ov10 natively Thumb — global blx-target seeding required. Known gap: bx <reg> epilogues not terminators. 3.8s runtime. Beads commit hook broken -> --no-verify."}
+    {"iter": 3, "unit": "A3-disasm-db", "result": "ok", "commit": "e746fb6", "note": "8712 fns (668 thumb), arm9=4043. 0x020784FC inside fn 0x020784E4 (size 84). ov6/ov8/ov10 natively Thumb — global blx-target seeding required. Known gap: bx <reg> epilogues not terminators. 3.8s runtime. Beads commit hook broken -> --no-verify."},
+    {"iter": 4, "unit": "A4-xref-db", "result": "ok", "commit": "", "note": "16648 literal_loads / 60259 imm_offsets / 69034 branches, 12MB xrefs.json, 4s build. Collision table 0x020924B0: 8 literal refs incl arm9 fn 0x02074780 + ov0/ov3 — first cross-overlay data consumers identified. +0x78: 442 hits, +0x98: 188 hits."}
   ]
 }

@@ -1,0 +1,37 @@
+{
+  "iteration": 0,
+  "stage": "A",
+  "queue": [
+    {"id": "A1-env", "type": "tool", "priority": 1, "attempts": 0, "depends_on": [], "status": "ready", "spec": "5.A1"},
+    {"id": "A2-rom-loader", "type": "tool", "priority": 1, "attempts": 0, "depends_on": ["A1-env"], "status": "blocked_dep", "spec": "5.A2"},
+    {"id": "A3-disasm-db", "type": "tool", "priority": 1, "attempts": 0, "depends_on": ["A2-rom-loader"], "status": "blocked_dep", "spec": "5.A3"},
+    {"id": "A4-xref-db", "type": "tool", "priority": 1, "attempts": 0, "depends_on": ["A3-disasm-db"], "status": "blocked_dep", "spec": "5.A4"},
+    {"id": "A5-query-cli", "type": "tool", "priority": 1, "attempts": 0, "depends_on": ["A4-xref-db"], "status": "blocked_dep", "spec": "5.A5"},
+    {"id": "A6-gates", "type": "gate", "priority": 1, "attempts": 0, "depends_on": ["A5-query-cli"], "status": "blocked_dep", "spec": "5.A6"},
+    {"id": "A7-verify-evidence-tool", "type": "tool", "priority": 1, "attempts": 0, "depends_on": ["A5-query-cli"], "status": "blocked_dep", "spec": "5.A7"},
+    {"id": "B1-damage-pipeline", "type": "tracer", "priority": 2, "attempts": 0, "depends_on": ["A6-gates", "A7-verify-evidence-tool"], "status": "blocked_dep", "spec": "5.B1"},
+    {"id": "B2-jpower-indirect", "type": "tracer", "priority": 2, "attempts": 0, "depends_on": ["A6-gates", "A7-verify-evidence-tool", "B1-damage-pipeline"], "status": "blocked_dep", "spec": "5.B2"},
+    {"id": "B3-hitbox-priority", "type": "tracer", "priority": 2, "attempts": 0, "depends_on": ["A6-gates", "A7-verify-evidence-tool"], "status": "blocked_dep", "spec": "5.B3"},
+    {"id": "B4-projectile-entities", "type": "tracer", "priority": 2, "attempts": 0, "depends_on": ["A6-gates", "A7-verify-evidence-tool"], "status": "blocked_dep", "spec": "5.B4"},
+    {"id": "B5-physics-writers", "type": "tracer", "priority": 2, "attempts": 0, "depends_on": ["A6-gates", "A7-verify-evidence-tool"], "status": "blocked_dep", "spec": "5.B5"},
+    {"id": "B6-hitstun-timers", "type": "tracer", "priority": 2, "attempts": 0, "depends_on": ["A6-gates", "A7-verify-evidence-tool"], "status": "blocked_dep", "spec": "5.B6"},
+    {"id": "B7-movement", "type": "tracer", "priority": 2, "attempts": 0, "depends_on": ["A6-gates", "A7-verify-evidence-tool"], "status": "blocked_dep", "spec": "5.B7"},
+    {"id": "B8-weight-hunt", "type": "tracer", "priority": 2, "attempts": 0, "depends_on": ["A6-gates", "A7-verify-evidence-tool", "B5-physics-writers"], "status": "blocked_dep", "spec": "5.B8"},
+    {"id": "B9-collision-data-miner", "type": "tracer", "priority": 2, "attempts": 0, "depends_on": ["A6-gates", "A7-verify-evidence-tool"], "status": "blocked_dep", "spec": "5.B9"}
+  ],
+  "subsystems": {
+    "damage-pipeline": {"status": "UNSTARTED", "tracer_attempts": 0, "claims": {"confirmed": 0, "plausible": 0, "speculative": 0}},
+    "jpower-indirect": {"status": "UNSTARTED", "tracer_attempts": 0, "claims": {"confirmed": 0, "plausible": 0, "speculative": 0}},
+    "hitbox-priority": {"status": "UNSTARTED", "tracer_attempts": 0, "claims": {"confirmed": 0, "plausible": 0, "speculative": 0}},
+    "projectile-entities": {"status": "UNSTARTED", "tracer_attempts": 0, "claims": {"confirmed": 0, "plausible": 0, "speculative": 0}},
+    "physics-writers": {"status": "UNSTARTED", "tracer_attempts": 0, "claims": {"confirmed": 0, "plausible": 0, "speculative": 0}},
+    "hitstun-timers": {"status": "UNSTARTED", "tracer_attempts": 0, "claims": {"confirmed": 0, "plausible": 0, "speculative": 0}},
+    "movement": {"status": "UNSTARTED", "tracer_attempts": 0, "claims": {"confirmed": 0, "plausible": 0, "speculative": 0}},
+    "weight-hunt": {"status": "UNSTARTED", "tracer_attempts": 0, "claims": {"confirmed": 0, "plausible": 0, "speculative": 0}},
+    "collision-data": {"status": "UNSTARTED", "tracer_attempts": 0, "claims": {"confirmed": 0, "plausible": 0, "speculative": 0}}
+  },
+  "gates": {"G1": "pending", "G2": "pending", "G3": "pending", "G4": "pending", "G5": "pending"},
+  "dry_rounds": 0,
+  "consecutive_failures": 0,
+  "log": []
+}

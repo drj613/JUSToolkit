@@ -1,5 +1,5 @@
 {
-  "iteration": 31,
+  "iteration": 32,
   "stage": "B_C_D",
   "queue": [
     {"id": "A1-env", "type": "tool", "priority": 1, "attempts": 1, "depends_on": [], "status": "done", "spec": "5.A1"},
@@ -12,7 +12,7 @@
     {"id": "B1-damage-pipeline", "type": "tracer", "priority": 2, "attempts": 1, "depends_on": ["A6-gates", "A7-verify-evidence-tool"], "status": "done", "spec": "5.B1"},
     {"id": "C1-verify-damage-pipeline", "type": "verify", "priority": 2, "attempts": 1, "depends_on": ["B1-damage-pipeline"], "status": "done", "spec": "Stage C, findings damage-pipeline.round1"},
     {"id": "B2-jpower-indirect", "type": "tracer", "priority": 2, "attempts": 1, "depends_on": ["A6-gates", "A7-verify-evidence-tool", "B1-damage-pipeline"], "status": "done", "spec": "5.B2"},
-    {"id": "C4-verify-jpower-indirect", "type": "verify", "priority": 2, "attempts": 0, "depends_on": ["B2-jpower-indirect"], "status": "ready", "spec": "Stage C, findings jpower-indirect.round1"},
+    {"id": "C4-verify-jpower-indirect", "type": "verify", "priority": 2, "attempts": 1, "depends_on": ["B2-jpower-indirect"], "status": "done", "spec": "Stage C, findings jpower-indirect.round1"},
     {"id": "B3-hitbox-priority", "type": "tracer", "priority": 2, "attempts": 1, "depends_on": ["A6-gates", "A7-verify-evidence-tool"], "status": "done", "spec": "5.B3"},
     {"id": "C2-verify-hitbox-priority", "type": "verify", "priority": 2, "attempts": 1, "depends_on": ["B3-hitbox-priority"], "status": "done", "spec": "Stage C, findings hitbox-priority.round1"},
     {"id": "B4-projectile-entities", "type": "tracer", "priority": 2, "attempts": 0, "depends_on": ["A6-gates", "A7-verify-evidence-tool"], "status": "ready", "spec": "5.B4"},
@@ -29,7 +29,7 @@
   ],
   "subsystems": {
     "damage-pipeline": {"status": "PARTIAL", "tracer_attempts": 1, "claims": {"confirmed": 4, "plausible": 3, "speculative": 2}},
-    "jpower-indirect": {"status": "VERIFYING", "tracer_attempts": 1, "claims": {"confirmed": 4, "plausible": 1, "speculative": 0}},
+    "jpower-indirect": {"status": "PARTIAL", "tracer_attempts": 1, "claims": {"confirmed": 4, "plausible": 1, "speculative": 0}},
     "hitbox-priority": {"status": "TRACING", "tracer_attempts": 1, "claims": {"confirmed": 1, "plausible": 1, "speculative": 2}},
     "projectile-entities": {"status": "UNSTARTED", "tracer_attempts": 0, "claims": {"confirmed": 0, "plausible": 0, "speculative": 0}},
     "physics-writers": {"status": "TRACING", "tracer_attempts": 1, "claims": {"confirmed": 1, "plausible": 1, "speculative": 3}},
@@ -74,6 +74,7 @@
     {"iter": 28, "unit": "C7-verify-movement", "result": "launched", "commit": "", "note": "3 lenses launched. C6 disasm lens returned 6/6 UPHELD meanwhile. 6 in flight = cap (2x C6, B8, 3x C7)."},
     {"iter": 29, "unit": "C6-verify-hitstun-timers", "result": "ok", "commit": "", "note": "Scored 4C/2S (unchanged counts, both SPEC leads refuted by aliasing lens on own bytes): 0x0207D16C +0xa0 write = per-hitbox slot index (source (sl->0x10)->0x30 + loop idx), orr 0x800000 touches +0x7A flags byte NOT +0x78 state; ov4 +0xa0/+0xa2 = distinct vtable-dispatched per-effect struct (coincidental offset reuse, 3rd instance this round). GDB truth stands: char+0xa0/+0xa2 decrementing timers, init site STILL UNFOUND. hitstun-timers -> PARTIAL."},
     {"iter": 30, "unit": "B8-weight-hunt", "result": "ok", "commit": "", "note": "6 claims (3C/2P/1S), 38 segments verified. Weight NOT located. CONFIRMED: hitstun scaling arithmetic duration/10 * [t+0x4c] * 2 + duration via div fn 0x0200D12C; index into table = acting obj +0x1e0 byte (transient hit-type/element tracker, write site unfound) — NOT per-character constant. New: chr_b getter ov5 0x0214E480 reads +0x0 (roster UI, not weight). Passive bitfield accessor found but move-ID-keyed. Next angles: ~85 unexamined chr_b singleton refs, +0x1e0 write site (GDB), charIndex-keyed bitfield callers. C8 enqueued."},
-    {"iter": 31, "unit": "C7-verify-movement", "result": "ok", "commit": "", "note": "Scored 5C/1P (all held; 6U/6U/5U+1UNSURE). NUANCE from aliasing lens: chr_b lookup indexed by koma PassiveIndex (0-55) as raw slot, NOT CharId match — statA/B/C are passive-archetype stat block of slot=PassiveIndex. CharId==position in only 1/74 records. movement -> PARTIAL (walk-speed thresholds still unfound; statC consumption at battle time = open). C4 lenses launched this iter."}
+    {"iter": 31, "unit": "C7-verify-movement", "result": "ok", "commit": "", "note": "Scored 5C/1P (all held; 6U/6U/5U+1UNSURE). NUANCE from aliasing lens: chr_b lookup indexed by koma PassiveIndex (0-55) as raw slot, NOT CharId match — statA/B/C are passive-archetype stat block of slot=PassiveIndex. CharId==position in only 1/74 records. movement -> PARTIAL (walk-speed thresholds still unfound; statC consumption at battle time = open). C4 lenses launched this iter."},
+    {"iter": 32, "unit": "C4-verify-jpower-indirect", "result": "ok", "commit": "", "note": "Scored 4C/1P (all held; lens extras: 311x304=exact jpower.bin size matching JPowerEntry.BlockSize; ALL 147 nonzero damage1 values are multiples of 5 — explains missing div idiom; ov5/ov6 mutually exclusive (shared window) so battle CANNOT read jpower blob live — must be copied pre-battle or damage precomputed; Thumb div-callsite gap hand-closed). jpower-indirect -> PARTIAL. C8 lenses launched this iter."}
   ]
 }

@@ -1,0 +1,32 @@
+{
+  "iteration": 0,
+  "stage": "B_C_D",
+  "queue": [
+    {"id": "P1-export-collisions", "type": "tool", "priority": 1, "attempts": 0, "depends_on": [], "status": "ready", "spec": "Static-RE-Phase0.md P1"},
+    {"id": "P2-remine-collision-data", "type": "tracer", "priority": 2, "attempts": 0, "depends_on": ["P1-export-collisions"], "status": "blocked_dep", "spec": "Static-RE-Phase0.md P2"},
+    {"id": "P3-verify-projectile-entities", "type": "verify", "priority": 2, "attempts": 0, "depends_on": [], "status": "ready", "spec": "Static-RE-Phase0.md P3"},
+    {"id": "P4-B12-trampoline-sweep", "type": "tracer", "priority": 2, "attempts": 0, "depends_on": [], "status": "ready", "spec": "Static-RE-Phase0.md P4 + critic.round1.json B12"},
+    {"id": "P5-B14-chrb-catalog", "type": "tracer", "priority": 2, "attempts": 0, "depends_on": [], "status": "ready", "spec": "Static-RE-Phase0.md P5 + critic.round1.json B14"},
+    {"id": "P6-tooling", "type": "tool", "priority": 3, "attempts": 0, "depends_on": [], "status": "ready", "spec": "Static-RE-Phase0.md P6"},
+    {"id": "P7-synthesis", "type": "synthesis", "priority": 4, "attempts": 0, "depends_on": ["P2-remine-collision-data", "P3-verify-projectile-entities", "P4-B12-trampoline-sweep", "P5-B14-chrb-catalog"], "status": "blocked_dep", "spec": "Static-RE-Phase0.md P7"}
+  ],
+  "subsystems": {
+    "collision-data": {"status": "TRACING", "tracer_attempts": 0, "claims": {"confirmed": 0, "plausible": 0, "speculative": 0}, "note": "round 2 at full-roster scale; round 1 scored exists"},
+    "projectile-entities": {"status": "VERIFYING", "tracer_attempts": 1, "claims": {"confirmed": 0, "plausible": 0, "speculative": 0}, "note": "round1 findings exist, lenses never ran"},
+    "guard-sp-gauges": {"status": "UNSTARTED", "tracer_attempts": 0, "claims": {"confirmed": 0, "plausible": 0, "speculative": 0}, "note": "critic spec B12"},
+    "chrb-catalog": {"status": "UNSTARTED", "tracer_attempts": 0, "claims": {"confirmed": 0, "plausible": 0, "speculative": 0}, "note": "critic spec B14"}
+  },
+  "gates": {"G1": "pass", "G2": "pass", "G3": "pass", "G4": "pass", "G5": "pass"},
+  "dry_rounds": 0,
+  "consecutive_failures": 0,
+  "iteration_cap": 30,
+  "baseline_original4_sha256": {
+    "bb_b_01_collision.json": "51d9834e9e900a8b619977b7cfe7457b862ab98890f06ac38af9ba9315128af6",
+    "bl_b_01_collision.json": "aaadf6ad967d444887f3d746f979a046a24a5e5921cdd2f9ead17f6b86315562",
+    "db_b_01_collision.json": "ae374cc927d90e4ab892afe9d2f9ce37a459ae398363e5ad0edd957b860954d8",
+    "ds_b_03_collision.json": "073cb8d52866bd59516ceac588a8ad48ffa988ad03dff982a9ab560bb535b49b"
+  },
+  "log": [
+    {"iter": 0, "unit": "init", "result": "ok", "commit": "", "note": "phase0 state created; gates re-run all pass; original-4 hashes baselined"}
+  ]
+}

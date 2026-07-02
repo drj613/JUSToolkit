@@ -1,9 +1,9 @@
 {
-  "iteration": 0,
+  "iteration": 1,
   "stage": "A",
   "queue": [
-    {"id": "A1-env", "type": "tool", "priority": 1, "attempts": 0, "depends_on": [], "status": "ready", "spec": "5.A1"},
-    {"id": "A2-rom-loader", "type": "tool", "priority": 1, "attempts": 0, "depends_on": ["A1-env"], "status": "blocked_dep", "spec": "5.A2"},
+    {"id": "A1-env", "type": "tool", "priority": 1, "attempts": 1, "depends_on": [], "status": "done", "spec": "5.A1"},
+    {"id": "A2-rom-loader", "type": "tool", "priority": 1, "attempts": 0, "depends_on": ["A1-env"], "status": "ready", "spec": "5.A2"},
     {"id": "A3-disasm-db", "type": "tool", "priority": 1, "attempts": 0, "depends_on": ["A2-rom-loader"], "status": "blocked_dep", "spec": "5.A3"},
     {"id": "A4-xref-db", "type": "tool", "priority": 1, "attempts": 0, "depends_on": ["A3-disasm-db"], "status": "blocked_dep", "spec": "5.A4"},
     {"id": "A5-query-cli", "type": "tool", "priority": 1, "attempts": 0, "depends_on": ["A4-xref-db"], "status": "blocked_dep", "spec": "5.A5"},

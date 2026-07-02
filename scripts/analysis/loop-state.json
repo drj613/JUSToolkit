@@ -1,6 +1,6 @@
 {
-  "iteration": 6,
-  "stage": "A",
+  "iteration": 7,
+  "stage": "B_C_D",
   "queue": [
     {"id": "A1-env", "type": "tool", "priority": 1, "attempts": 1, "depends_on": [], "status": "done", "spec": "5.A1"},
     {"id": "A2-rom-loader", "type": "tool", "priority": 1, "attempts": 1, "depends_on": ["A1-env"], "status": "done", "spec": "5.A2"},
@@ -8,16 +8,16 @@
     {"id": "A4-xref-db", "type": "tool", "priority": 1, "attempts": 1, "depends_on": ["A3-disasm-db"], "status": "done", "spec": "5.A4"},
     {"id": "A5-query-cli", "type": "tool", "priority": 1, "attempts": 1, "depends_on": ["A4-xref-db"], "status": "done", "spec": "5.A5"},
     {"id": "A6-gates", "type": "gate", "priority": 1, "attempts": 1, "depends_on": ["A5-query-cli"], "status": "done", "spec": "5.A6"},
-    {"id": "A7-verify-evidence-tool", "type": "tool", "priority": 1, "attempts": 0, "depends_on": ["A5-query-cli"], "status": "ready", "spec": "5.A7"},
-    {"id": "B1-damage-pipeline", "type": "tracer", "priority": 2, "attempts": 0, "depends_on": ["A6-gates", "A7-verify-evidence-tool"], "status": "blocked_dep", "spec": "5.B1"},
+    {"id": "A7-verify-evidence-tool", "type": "tool", "priority": 1, "attempts": 1, "depends_on": ["A5-query-cli"], "status": "done", "spec": "5.A7"},
+    {"id": "B1-damage-pipeline", "type": "tracer", "priority": 2, "attempts": 0, "depends_on": ["A6-gates", "A7-verify-evidence-tool"], "status": "ready", "spec": "5.B1"},
     {"id": "B2-jpower-indirect", "type": "tracer", "priority": 2, "attempts": 0, "depends_on": ["A6-gates", "A7-verify-evidence-tool", "B1-damage-pipeline"], "status": "blocked_dep", "spec": "5.B2"},
-    {"id": "B3-hitbox-priority", "type": "tracer", "priority": 2, "attempts": 0, "depends_on": ["A6-gates", "A7-verify-evidence-tool"], "status": "blocked_dep", "spec": "5.B3"},
-    {"id": "B4-projectile-entities", "type": "tracer", "priority": 2, "attempts": 0, "depends_on": ["A6-gates", "A7-verify-evidence-tool"], "status": "blocked_dep", "spec": "5.B4"},
-    {"id": "B5-physics-writers", "type": "tracer", "priority": 2, "attempts": 0, "depends_on": ["A6-gates", "A7-verify-evidence-tool"], "status": "blocked_dep", "spec": "5.B5"},
-    {"id": "B6-hitstun-timers", "type": "tracer", "priority": 2, "attempts": 0, "depends_on": ["A6-gates", "A7-verify-evidence-tool"], "status": "blocked_dep", "spec": "5.B6"},
-    {"id": "B7-movement", "type": "tracer", "priority": 2, "attempts": 0, "depends_on": ["A6-gates", "A7-verify-evidence-tool"], "status": "blocked_dep", "spec": "5.B7"},
+    {"id": "B3-hitbox-priority", "type": "tracer", "priority": 2, "attempts": 0, "depends_on": ["A6-gates", "A7-verify-evidence-tool"], "status": "ready", "spec": "5.B3"},
+    {"id": "B4-projectile-entities", "type": "tracer", "priority": 2, "attempts": 0, "depends_on": ["A6-gates", "A7-verify-evidence-tool"], "status": "ready", "spec": "5.B4"},
+    {"id": "B5-physics-writers", "type": "tracer", "priority": 2, "attempts": 0, "depends_on": ["A6-gates", "A7-verify-evidence-tool"], "status": "ready", "spec": "5.B5"},
+    {"id": "B6-hitstun-timers", "type": "tracer", "priority": 2, "attempts": 0, "depends_on": ["A6-gates", "A7-verify-evidence-tool"], "status": "ready", "spec": "5.B6"},
+    {"id": "B7-movement", "type": "tracer", "priority": 2, "attempts": 0, "depends_on": ["A6-gates", "A7-verify-evidence-tool"], "status": "ready", "spec": "5.B7"},
     {"id": "B8-weight-hunt", "type": "tracer", "priority": 2, "attempts": 0, "depends_on": ["A6-gates", "A7-verify-evidence-tool", "B5-physics-writers"], "status": "blocked_dep", "spec": "5.B8"},
-    {"id": "B9-collision-data-miner", "type": "tracer", "priority": 2, "attempts": 0, "depends_on": ["A6-gates", "A7-verify-evidence-tool"], "status": "blocked_dep", "spec": "5.B9"}
+    {"id": "B9-collision-data-miner", "type": "tracer", "priority": 2, "attempts": 0, "depends_on": ["A6-gates", "A7-verify-evidence-tool"], "status": "ready", "spec": "5.B9"}
   ],
   "subsystems": {
     "damage-pipeline": {"status": "UNSTARTED", "tracer_attempts": 0, "claims": {"confirmed": 0, "plausible": 0, "speculative": 0}},
@@ -39,6 +39,7 @@
     {"iter": 3, "unit": "A3-disasm-db", "result": "ok", "commit": "e746fb6", "note": "8712 fns (668 thumb), arm9=4043. 0x020784FC inside fn 0x020784E4 (size 84). ov6/ov8/ov10 natively Thumb — global blx-target seeding required. Known gap: bx <reg> epilogues not terminators. 3.8s runtime. Beads commit hook broken -> --no-verify."},
     {"iter": 4, "unit": "A4-xref-db", "result": "ok", "commit": "", "note": "16648 literal_loads / 60259 imm_offsets / 69034 branches, 12MB xrefs.json, 4s build. Collision table 0x020924B0: 8 literal refs incl arm9 fn 0x02074780 + ov0/ov3 — first cross-overlay data consumers identified. +0x78: 442 hits, +0x98: 188 hits."},
     {"iter": 5, "unit": "A5-query-cli", "result": "ok", "commit": "31f7f32", "note": "8 subcommands + pool-values extra; 10/10 smoke PASS. --overlay is per-subcommand only (argparse namespace-merge bug found+fixed). callers uses xrefs branches for cross-region blx."},
-    {"iter": 6, "unit": "A6-gates", "result": "ok", "commit": "", "note": "G1-G5 all pass, exit 0. G5: 12 insns at 0x020784FC, 5 data-processing incl cmp r1,r0,asr#16 + movle/movgt clamp pattern."}
+    {"iter": 6, "unit": "A6-gates", "result": "ok", "commit": "d6d8089", "note": "G1-G5 all pass, exit 0. G5: 12 insns at 0x020784FC, 5 data-processing incl cmp r1,r0,asr#16 + movle/movgt clamp pattern."},
+    {"iter": 7, "unit": "A7-verify-evidence-tool", "result": "ok", "commit": "", "note": "7/7 selftest cases pass. Rejects: tampered operand, shifted addr, ambiguous overlay addr w/o provenance, uncited addresses, empty gdb_check on PLAUSIBLE/SPECULATIVE. STAGE A COMPLETE — tracers unlocked. Damage fn prologue: ldr r4,[r0,#0x56c]; ldrsh r2,[r4,#0x16]; mul r0,r2,r1."}
   ]
 }

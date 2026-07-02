@@ -1,5 +1,5 @@
 {
-  "iteration": 18,
+  "iteration": 19,
   "stage": "B_C_D",
   "queue": [
     {"id": "A1-env", "type": "tool", "priority": 1, "attempts": 1, "depends_on": [], "status": "done", "spec": "5.A1"},
@@ -10,7 +10,7 @@
     {"id": "A6-gates", "type": "gate", "priority": 1, "attempts": 1, "depends_on": ["A5-query-cli"], "status": "done", "spec": "5.A6"},
     {"id": "A7-verify-evidence-tool", "type": "tool", "priority": 1, "attempts": 1, "depends_on": ["A5-query-cli"], "status": "done", "spec": "5.A7"},
     {"id": "B1-damage-pipeline", "type": "tracer", "priority": 2, "attempts": 1, "depends_on": ["A6-gates", "A7-verify-evidence-tool"], "status": "done", "spec": "5.B1"},
-    {"id": "C1-verify-damage-pipeline", "type": "verify", "priority": 2, "attempts": 0, "depends_on": ["B1-damage-pipeline"], "status": "ready", "spec": "Stage C, findings damage-pipeline.round1"},
+    {"id": "C1-verify-damage-pipeline", "type": "verify", "priority": 2, "attempts": 1, "depends_on": ["B1-damage-pipeline"], "status": "done", "spec": "Stage C, findings damage-pipeline.round1"},
     {"id": "B2-jpower-indirect", "type": "tracer", "priority": 2, "attempts": 0, "depends_on": ["A6-gates", "A7-verify-evidence-tool", "B1-damage-pipeline"], "status": "ready", "spec": "5.B2"},
     {"id": "B3-hitbox-priority", "type": "tracer", "priority": 2, "attempts": 1, "depends_on": ["A6-gates", "A7-verify-evidence-tool"], "status": "done", "spec": "5.B3"},
     {"id": "C2-verify-hitbox-priority", "type": "verify", "priority": 2, "attempts": 0, "depends_on": ["B3-hitbox-priority"], "status": "ready", "spec": "Stage C, findings hitbox-priority.round1"},
@@ -25,7 +25,7 @@
     {"id": "C9-verify-collision-data", "type": "verify", "priority": 3, "attempts": 0, "depends_on": ["B9-collision-data-miner"], "status": "ready", "spec": "Stage C adapted for data_only: single data-consistency+aliasing lens"}
   ],
   "subsystems": {
-    "damage-pipeline": {"status": "VERIFYING", "tracer_attempts": 1, "claims": {"confirmed": 4, "plausible": 3, "speculative": 2}},
+    "damage-pipeline": {"status": "PARTIAL", "tracer_attempts": 1, "claims": {"confirmed": 4, "plausible": 3, "speculative": 2}},
     "jpower-indirect": {"status": "TRACING", "tracer_attempts": 0, "claims": {"confirmed": 0, "plausible": 0, "speculative": 0}},
     "hitbox-priority": {"status": "VERIFYING", "tracer_attempts": 1, "claims": {"confirmed": 3, "plausible": 0, "speculative": 1}},
     "projectile-entities": {"status": "UNSTARTED", "tracer_attempts": 0, "claims": {"confirmed": 0, "plausible": 0, "speculative": 0}},
@@ -58,6 +58,7 @@
     {"iter": 15, "unit": "B5-physics-writers", "result": "ok", "commit": "", "note": "5 claims (1C/4P), 72 segments verified. Velocity/gravity NOT found. Hit-resolution fn ov6 0x02158B20 calls damage fn 0x020784E4; knockback-consumer candidates arm9 0x020783CC + 0x020781E4 read collision +0xE8/+0x130, write +0x56C-chain/+0x5C8 (HP-clamp-like, not velocity). KEY: +0x6A/0x6C hits often alias via folded +0x100 base (ov7 0x021619D8) — explains search-imm noise; ov6 0x021607C0 shows wrapper+0x6A = hit-priority/lockout tracker, NOT velocity. C3 verify enqueued."},
     {"iter": 16, "unit": "B9-collision-data-miner", "result": "ok", "commit": "", "note": "15 claims (8C/7P), miner script deterministic (2 runs identical, exit 0). hitTier = small closed range {0..3}, correlates w/ collisionType (type5->87.5% tier3), NOT monotonic w/ knockback — priority-like. No jpower join key in schema. GAP: 4/74 chars exported; CLI has ExportAllCollisions batch cmd (src/JUS.CLI/JUS/CombatCommands.cs) — candidate tool unit for critic. C9 verify enqueued."},
     {"iter": 17, "unit": "C1-verify-damage-pipeline", "result": "launched", "commit": "", "note": "3 lens subagents (disasm-correctness, aliasing, data-consistency) launched concurrently. 6 in flight = cap (B2,B6,B7 + 3 lenses)."},
-    {"iter": 18, "unit": "B6-hitstun-timers", "result": "ok", "commit": "", "note": "6 claims (4C/2S), 45 segments verified. +0x98-0xB4 same struct as +0x78/+0x88 via shared zero-init in ctor arm9 0x02053528. On-hit nonzero timer init NOT located. Leads: 0x0207D16C writes +0xa0 while setting +0x78 launched bit (SPEC); ov4 hints +0xa0/+0xa2 may be POSITION pair not timer (contradicts hypothesis — aliasing lens must weigh). Ruled out: ov0 settings struct, arm9 combo/juggle sub-record clusters. C6 verify enqueued."}
+    {"iter": 18, "unit": "B6-hitstun-timers", "result": "ok", "commit": "", "note": "6 claims (4C/2S), 45 segments verified. +0x98-0xB4 same struct as +0x78/+0x88 via shared zero-init in ctor arm9 0x02053528. On-hit nonzero timer init NOT located. Leads: 0x0207D16C writes +0xa0 while setting +0x78 launched bit (SPEC); ov4 hints +0xa0/+0xa2 may be POSITION pair not timer (contradicts hypothesis — aliasing lens must weigh). Ruled out: ov0 settings struct, arm9 combo/juggle sub-record clusters. C6 verify enqueued."},
+    {"iter": 19, "unit": "C1-verify-damage-pipeline", "result": "ok", "commit": "", "note": "3 lenses complete, scored: 4C/3P/2S (all 4 CONFIRMED survived 3x UPHELD; claim7 stays SPEC via UNSURE x2; claim8 2x REFUTED — reinterpreted: x1.20 is persistent low-gauge desperation buff = documented universal attack_boost, causally chained to 25% check). EXTRAS from lenses: div5 magic constants exist in pools (0x66666667 x3, 0xCCCCCCCD x1); jpower on-disk damage1 @ +0x0C; trampoline pool target byte-confirmed 0x02078488 (conflicts w/ a physics-writers reading — C3 must weigh). Gauge pair reused as generic Meter util (+0x558 list walker). damage-pipeline -> PARTIAL (formula sites still open)."}
   ]
 }

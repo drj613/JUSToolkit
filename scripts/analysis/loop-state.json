@@ -1,5 +1,5 @@
 {
-  "iteration": 20,
+  "iteration": 21,
   "stage": "B_C_D",
   "queue": [
     {"id": "A1-env", "type": "tool", "priority": 1, "attempts": 1, "depends_on": [], "status": "done", "spec": "5.A1"},
@@ -61,6 +61,7 @@
     {"iter": 17, "unit": "C1-verify-damage-pipeline", "result": "launched", "commit": "", "note": "3 lens subagents (disasm-correctness, aliasing, data-consistency) launched concurrently. 6 in flight = cap (B2,B6,B7 + 3 lenses)."},
     {"iter": 18, "unit": "B6-hitstun-timers", "result": "ok", "commit": "", "note": "6 claims (4C/2S), 45 segments verified. +0x98-0xB4 same struct as +0x78/+0x88 via shared zero-init in ctor arm9 0x02053528. On-hit nonzero timer init NOT located. Leads: 0x0207D16C writes +0xa0 while setting +0x78 launched bit (SPEC); ov4 hints +0xa0/+0xa2 may be POSITION pair not timer (contradicts hypothesis — aliasing lens must weigh). Ruled out: ov0 settings struct, arm9 combo/juggle sub-record clusters. C6 verify enqueued."},
     {"iter": 19, "unit": "C1-verify-damage-pipeline", "result": "ok", "commit": "", "note": "3 lenses complete, scored: 4C/3P/2S (all 4 CONFIRMED survived 3x UPHELD; claim7 stays SPEC via UNSURE x2; claim8 2x REFUTED — reinterpreted: x1.20 is persistent low-gauge desperation buff = documented universal attack_boost, causally chained to 25% check). EXTRAS from lenses: div5 magic constants exist in pools (0x66666667 x3, 0xCCCCCCCD x1); jpower on-disk damage1 @ +0x0C; trampoline pool target byte-confirmed 0x02078488 (conflicts w/ a physics-writers reading — C3 must weigh). Gauge pair reused as generic Meter util (+0x558 list walker). damage-pipeline -> PARTIAL (formula sites still open)."},
-    {"iter": 20, "unit": "B7-movement", "result": "ok", "commit": "", "note": "6 claims (5C/1P), 51 segments verified. statC SOLVED: record = *(0x0214BD80)+0x40 + charIndex*0x3C (battle resource mgr singleton); statA/B/C ldrh @ +8/+0xA/+0xC (matches 60B on-disk chr_b). ANCHOR DISPROVEN: 0x0208D4A0 is ASCII case-folding table, NOT chr_b identity map. PRIZE NOT FOUND: no statC inequality cmp-chain anywhere (only equality matcher 0x02077178 = koma stat requirements). Next angles: per-char dispatch tables char+8/+0x42; chr_b GetData vtable. C7 enqueued. Also: C2 lenses launched this iter (3x sonnet)."}
+    {"iter": 20, "unit": "B7-movement", "result": "ok", "commit": "", "note": "6 claims (5C/1P), 51 segments verified. statC SOLVED: record = *(0x0214BD80)+0x40 + charIndex*0x3C (battle resource mgr singleton); statA/B/C ldrh @ +8/+0xA/+0xC (matches 60B on-disk chr_b). ANCHOR DISPROVEN: 0x0208D4A0 is ASCII case-folding table, NOT chr_b identity map. PRIZE NOT FOUND: no statC inequality cmp-chain anywhere (only equality matcher 0x02077178 = koma stat requirements). Next angles: per-char dispatch tables char+8/+0x42; chr_b GetData vtable. C7 enqueued. Also: C2 lenses launched this iter (3x sonnet)."},
+    {"iter": 21, "unit": "C9-verify-collision-data", "result": "launched", "commit": "", "note": "Single combined lens (data-consistency+aliasing, independent recomputation required). 5 in flight (B2 + 3x C2 + C9)."}
   ]
 }

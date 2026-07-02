@@ -1,5 +1,5 @@
 {
-  "iteration": 23,
+  "iteration": 24,
   "stage": "B_C_D",
   "queue": [
     {"id": "A1-env", "type": "tool", "priority": 1, "attempts": 1, "depends_on": [], "status": "done", "spec": "5.A1"},
@@ -13,7 +13,7 @@
     {"id": "C1-verify-damage-pipeline", "type": "verify", "priority": 2, "attempts": 1, "depends_on": ["B1-damage-pipeline"], "status": "done", "spec": "Stage C, findings damage-pipeline.round1"},
     {"id": "B2-jpower-indirect", "type": "tracer", "priority": 2, "attempts": 0, "depends_on": ["A6-gates", "A7-verify-evidence-tool", "B1-damage-pipeline"], "status": "ready", "spec": "5.B2"},
     {"id": "B3-hitbox-priority", "type": "tracer", "priority": 2, "attempts": 1, "depends_on": ["A6-gates", "A7-verify-evidence-tool"], "status": "done", "spec": "5.B3"},
-    {"id": "C2-verify-hitbox-priority", "type": "verify", "priority": 2, "attempts": 0, "depends_on": ["B3-hitbox-priority"], "status": "ready", "spec": "Stage C, findings hitbox-priority.round1"},
+    {"id": "C2-verify-hitbox-priority", "type": "verify", "priority": 2, "attempts": 1, "depends_on": ["B3-hitbox-priority"], "status": "done", "spec": "Stage C, findings hitbox-priority.round1"},
     {"id": "B4-projectile-entities", "type": "tracer", "priority": 2, "attempts": 0, "depends_on": ["A6-gates", "A7-verify-evidence-tool"], "status": "ready", "spec": "5.B4"},
     {"id": "B5-physics-writers", "type": "tracer", "priority": 2, "attempts": 1, "depends_on": ["A6-gates", "A7-verify-evidence-tool"], "status": "done", "spec": "5.B5"},
     {"id": "C3-verify-physics-writers", "type": "verify", "priority": 2, "attempts": 0, "depends_on": ["B5-physics-writers"], "status": "ready", "spec": "Stage C, findings physics-writers.round1"},
@@ -28,7 +28,7 @@
   "subsystems": {
     "damage-pipeline": {"status": "PARTIAL", "tracer_attempts": 1, "claims": {"confirmed": 4, "plausible": 3, "speculative": 2}},
     "jpower-indirect": {"status": "TRACING", "tracer_attempts": 0, "claims": {"confirmed": 0, "plausible": 0, "speculative": 0}},
-    "hitbox-priority": {"status": "VERIFYING", "tracer_attempts": 1, "claims": {"confirmed": 3, "plausible": 0, "speculative": 1}},
+    "hitbox-priority": {"status": "TRACING", "tracer_attempts": 1, "claims": {"confirmed": 1, "plausible": 1, "speculative": 2}},
     "projectile-entities": {"status": "UNSTARTED", "tracer_attempts": 0, "claims": {"confirmed": 0, "plausible": 0, "speculative": 0}},
     "physics-writers": {"status": "VERIFYING", "tracer_attempts": 1, "claims": {"confirmed": 1, "plausible": 4, "speculative": 0}},
     "hitstun-timers": {"status": "VERIFYING", "tracer_attempts": 1, "claims": {"confirmed": 4, "plausible": 0, "speculative": 2}},
@@ -64,6 +64,7 @@
     {"iter": 20, "unit": "B7-movement", "result": "ok", "commit": "", "note": "6 claims (5C/1P), 51 segments verified. statC SOLVED: record = *(0x0214BD80)+0x40 + charIndex*0x3C (battle resource mgr singleton); statA/B/C ldrh @ +8/+0xA/+0xC (matches 60B on-disk chr_b). ANCHOR DISPROVEN: 0x0208D4A0 is ASCII case-folding table, NOT chr_b identity map. PRIZE NOT FOUND: no statC inequality cmp-chain anywhere (only equality matcher 0x02077178 = koma stat requirements). Next angles: per-char dispatch tables char+8/+0x42; chr_b GetData vtable. C7 enqueued. Also: C2 lenses launched this iter (3x sonnet)."},
     {"iter": 21, "unit": "C9-verify-collision-data", "result": "launched", "commit": "", "note": "Single combined lens (data-consistency+aliasing, independent recomputation required). 5 in flight (B2 + 3x C2 + C9)."},
     {"iter": 22, "unit": "C9-verify-collision-data", "result": "ok", "commit": "", "note": "15 verdicts: 12U/1R/1UNSURE/1caveat. Scored 8C/6P/1S. REFUTED claim4: knockback non-monotonicity = bl_b_01 pooling artifact (all-tier1 file, avg 21.05); excluding it knockback RISES with hitTier 8.78->12.11->15.00. collisionType3->tier1 inconsistent per-file (UNSURE); type5->tier3 robust. collision-data -> PARTIAL (70-char export gap)."},
-    {"iter": 23, "unit": "C3-verify-physics-writers", "result": "launched", "commit": "", "note": "3 lenses launched. 5 in flight (B2, C2-aliasing, 3x C3). Cross-check passed to lenses: 0x020783D8 pool = 0x02078488 byte-confirmed."}
+    {"iter": 23, "unit": "C3-verify-physics-writers", "result": "launched", "commit": "", "note": "3 lenses launched. 5 in flight (B2, C2-aliasing, 3x C3). Cross-check passed to lenses: 0x020783D8 pool = 0x02078488 byte-confirmed."},
+    {"iter": 24, "unit": "C2-verify-hitbox-priority", "result": "ok", "commit": "", "note": "Scored 1C/1P/2S (was 3C/1S). Claim2 (class-id bits 14-19) DEMOTED: chr_b classId 256-684 exceeds 6 bits + tracer arithmetic error. Claim1 DEMOTED to PLAUSIBLE: c.aar suffix = SPRITE archive convention (bl_b_01c.aar per ARM9-Research-Guide.md:30), ov0 consumer = ending/credits subsystem — table consumers are NOT collision-key builders. Only solid: 74-entry {char* id, packed word} table shape @ 0x020924B0. hitbox-priority BACK TO TRACING — round 2 needs entirely new angle (find actual CollisionEntry parser, not this table)."}
   ]
 }

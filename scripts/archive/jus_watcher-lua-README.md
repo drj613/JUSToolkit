@@ -11,7 +11,7 @@ RAM monitoring script for DeSmuME emulator.
 1. Download DeSmuME for Windows (ensure it has Lua support)
 2. Open DeSmuME and load the JUS ROM
 3. Go to **Tools → Lua Scripting → New Lua Script Window**
-4. Click **Browse** and select `jus_watcher.lua`
+4. Click **Browse** and select `jus_watcher.lua` (in this archive directory)
 5. Click **Run**
 
 ## Features

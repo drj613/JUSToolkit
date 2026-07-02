@@ -23,3 +23,10 @@ launchSettings.json
 *.dig
 *.bin
 jus_files/
+
+# Static RE loop tooling (docs/design/Static-RE-Orchestration.md)
+scripts/analysis/.venv/
+
+# Beads transient state
+.beads/.br_history/
+.beads/.write.lock

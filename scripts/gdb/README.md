@@ -86,7 +86,6 @@ The emulator will pause. Use `continue` to resume.
 | `jus-status`       | Show current battle state (HP, timer, special)  |
 | `jus-check-hp`     | Show HP for you and opponent (active + deck)    |
 | `jus-find-hp <n>`  | Search memory for HP value (to find addresses)  |
-| `jus-probe-offline`| Probe alternative pointers for offline/training |
 | `jus-addresses`    | List all known memory addresses                 |
 | `jus-read-char N`  | Read player N's character state struct          |
 
@@ -535,8 +534,6 @@ The working pointer chain for offline/training mode is:
 | -------------------------------- | ---------------------------------------- |
 | `jus-read-char-offline`          | Read char state using working pointer chain |
 | `jus-snapshot-offline <name>`    | Take snapshot using working pointer chain |
-| `jus-probe-offline`              | Probe all alternative pointers (for debugging) |
-| `jus-read-char-at <addr>`        | Read character struct from direct address |
 | `jus-snapshot-at <name> <addr>`  | Take snapshot from direct address        |
 
 **Example workflow for offline mode:**
@@ -570,7 +567,6 @@ The intermediate structure at `alt_state_base` contains:
 | ------------------------------ | ---------------------------------------- |
 | `jus-read-opponent`            | Read opponent state using pointer chain  |
 | `jus-snapshot-opponent <name>` | Take opponent snapshot                   |
-| `jus-probe-opponent`           | Search for opponent pointer (debugging)  |
 
 **Example workflow for analyzing opponent:**
 ```gdb
@@ -649,4 +645,4 @@ specific HP values in memory.
 
 - `docs/design/ARM9-Analysis-Pipeline.md` - Full analysis pipeline documentation
 - `docs/research/Cheat-Code-Analysis.md` - Memory addresses from cheat codes
-- `scripts/desmume/jus_watcher.lua` - Alternative for Windows/DeSmuME users
+- `scripts/archive/jus_watcher.lua` - Archived alternative for Windows/DeSmuME users (superseded by this GDB watcher)

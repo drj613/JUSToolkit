@@ -1,5 +1,5 @@
 {
-  "iteration": 13,
+  "iteration": 14,
   "stage": "B_C_D",
   "queue": [
     {"id": "A1-env", "type": "tool", "priority": 1, "attempts": 1, "depends_on": [], "status": "done", "spec": "5.A1"},
@@ -22,7 +22,7 @@
   ],
   "subsystems": {
     "damage-pipeline": {"status": "VERIFYING", "tracer_attempts": 1, "claims": {"confirmed": 4, "plausible": 3, "speculative": 2}},
-    "jpower-indirect": {"status": "UNSTARTED", "tracer_attempts": 0, "claims": {"confirmed": 0, "plausible": 0, "speculative": 0}},
+    "jpower-indirect": {"status": "TRACING", "tracer_attempts": 0, "claims": {"confirmed": 0, "plausible": 0, "speculative": 0}},
     "hitbox-priority": {"status": "TRACING", "tracer_attempts": 0, "claims": {"confirmed": 0, "plausible": 0, "speculative": 0}},
     "projectile-entities": {"status": "UNSTARTED", "tracer_attempts": 0, "claims": {"confirmed": 0, "plausible": 0, "speculative": 0}},
     "physics-writers": {"status": "TRACING", "tracer_attempts": 0, "claims": {"confirmed": 0, "plausible": 0, "speculative": 0}},
@@ -48,6 +48,7 @@
     {"iter": 11, "unit": "B6-hitstun-timers", "result": "launched", "commit": "9351948", "note": "Tracer (sonnet) in flight. 4 concurrent (B1, B3, B5, B6)."},
     {"iter": 12, "unit": "B7-movement", "result": "launched", "commit": "b5cb349", "note": "Tracer (sonnet) in flight. 5 concurrent. Primary quarry: statC walk-speed tier thresholds (JUS-n3p)."},
     {"iter": 13, "unit": "B9-collision-data-miner", "result": "launched", "commit": "", "note": "Data-only miner launched. COVERAGE GAP: only 4/74 collision JSONs exported (bb,bl,db,ds). Also this iter: B1 returned."},
-    {"iter": 13, "unit": "B1-damage-pipeline", "result": "ok", "commit": "", "note": "9 claims (4C/3P/2S), 83 segments verified, exit 0. REFRAME: 0x020784FC is a 25%-of-max gauge threshold check on [char+0x56c] gauge (+0x16 max, +0x18 current), NOT the damage formula. Damage application via trampoline 0x020783CC -> 0x02078488 (clamped accumulator). Div5/tier/nature sites UNFOUND (round-2 quarry). C1 verify enqueued; B2 unblocked."}
+    {"iter": 13, "unit": "B1-damage-pipeline", "result": "ok", "commit": "", "note": "9 claims (4C/3P/2S), 83 segments verified, exit 0. REFRAME: 0x020784FC is a 25%-of-max gauge threshold check on [char+0x56c] gauge (+0x16 max, +0x18 current), NOT the damage formula. Damage application via trampoline 0x020783CC -> 0x02078488 (clamped accumulator). Div5/tier/nature sites UNFOUND (round-2 quarry). C1 verify enqueued; B2 unblocked."},
+    {"iter": 14, "unit": "B2-jpower-indirect", "result": "launched", "commit": "", "note": "Tracer (sonnet) in flight — highest-value target (JUS-9lp.1, blocks 64/74 chars). 6 concurrent (B2,B3,B5,B6,B7,B9) = cap."}
   ]
 }

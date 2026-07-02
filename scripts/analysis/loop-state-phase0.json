@@ -1,9 +1,9 @@
 {
-  "iteration": 1,
+  "iteration": 2,
   "stage": "B_C_D",
   "queue": [
     {"id": "P1-export-collisions", "type": "tool", "priority": 1, "attempts": 1, "depends_on": [], "status": "done", "spec": "Static-RE-Phase0.md P1"},
-    {"id": "P2-remine-collision-data", "type": "tracer", "priority": 2, "attempts": 0, "depends_on": ["P1-export-collisions"], "status": "ready", "spec": "Static-RE-Phase0.md P2"},
+    {"id": "P2-remine-collision-data", "type": "tracer", "priority": 2, "attempts": 1, "depends_on": ["P1-export-collisions"], "status": "done", "spec": "Static-RE-Phase0.md P2"},
     {"id": "P3-verify-projectile-entities", "type": "verify", "priority": 2, "attempts": 0, "depends_on": [], "status": "ready", "spec": "Static-RE-Phase0.md P3"},
     {"id": "P4-B12-trampoline-sweep", "type": "tracer", "priority": 2, "attempts": 0, "depends_on": [], "status": "ready", "spec": "Static-RE-Phase0.md P4 + critic.round1.json B12"},
     {"id": "P5-B14-chrb-catalog", "type": "tracer", "priority": 2, "attempts": 0, "depends_on": [], "status": "ready", "spec": "Static-RE-Phase0.md P5 + critic.round1.json B14"},
@@ -11,7 +11,7 @@
     {"id": "P7-synthesis", "type": "synthesis", "priority": 4, "attempts": 0, "depends_on": ["P2-remine-collision-data", "P3-verify-projectile-entities", "P4-B12-trampoline-sweep", "P5-B14-chrb-catalog"], "status": "blocked_dep", "spec": "Static-RE-Phase0.md P7"}
   ],
   "subsystems": {
-    "collision-data": {"status": "TRACING", "tracer_attempts": 0, "claims": {"confirmed": 0, "plausible": 0, "speculative": 0}, "note": "round 2 at full-roster scale; round 1 scored exists"},
+    "collision-data": {"status": "PARTIAL", "tracer_attempts": 1, "claims": {"confirmed": 3, "plausible": 6, "speculative": 4}, "note": "round 2 done at 281-file scale; refuted at scale: -32 sentinel, ct4-necessary, ct5->tier3 predictor framing, hitModifier constancy"},
     "projectile-entities": {"status": "VERIFYING", "tracer_attempts": 1, "claims": {"confirmed": 0, "plausible": 0, "speculative": 0}, "note": "round1 findings exist, lenses never ran"},
     "guard-sp-gauges": {"status": "UNSTARTED", "tracer_attempts": 0, "claims": {"confirmed": 0, "plausible": 0, "speculative": 0}, "note": "critic spec B12"},
     "chrb-catalog": {"status": "UNSTARTED", "tracer_attempts": 0, "claims": {"confirmed": 0, "plausible": 0, "speculative": 0}, "note": "critic spec B14"}
@@ -19,6 +19,7 @@
   "gates": {"G1": "pass", "G2": "pass", "G3": "pass", "G4": "pass", "G5": "pass"},
   "dry_rounds": 0,
   "consecutive_failures": 0,
+  "triage_note": "Another session drops NEW untracked files into this worktree (e.g. scripts/analysis/ramdiff.py) but never modifies existing ones. Untracked files NOT produced by this loop: leave alone, never commit, never delete. Only commit loop-owned paths: loop-state-phase0.json, docs/research/*, loop-report-phase0.md, P6 tooling edits.",
   "iteration_cap": 30,
   "baseline_original4_sha256": {
     "bb_b_01_collision.json": "51d9834e9e900a8b619977b7cfe7457b862ab98890f06ac38af9ba9315128af6",
@@ -28,6 +29,7 @@
   },
   "log": [
     {"iter": 0, "unit": "init", "result": "ok", "commit": "6b3f591", "note": "phase0 state created; gates re-run all pass; original-4 hashes baselined"},
-    {"iter": 1, "unit": "P1-export-collisions", "result": "ok", "commit": "", "note": "281/281 exported via 'jus combat export-all-collisions' (src: extracted_chrbin/ChrBin.aar/chr/col, 74 *_b_* + 206 *_s_* + item); all parse; original 4 byte-identical; P2 unblocked"}
+    {"iter": 1, "unit": "P1-export-collisions", "result": "ok", "commit": "30a1bdc", "note": "281/281 exported via 'jus combat export-all-collisions' (src: extracted_chrbin/ChrBin.aar/chr/col, 74 *_b_* + 206 *_s_* + item); all parse; original 4 byte-identical; P2 unblocked"},
+    {"iter": 2, "unit": "P2-remine-collision-data", "result": "ok", "commit": "", "note": "round2: 13 claims mined (miner deterministic, verified by me); 1-lens independent recomputation: 12 UPHELD 1 UNSURE; scored 3C/6P/4S. Round-1 breaks at scale: projectileId -32 sentinel (15 distinct values), ct4-necessity (real rule ct in {4,5}), ct5->tier3 (47.58% pooled), hitModifier non-constant (9/2047), isTerminator 0-36 per file"}
   ]
 }

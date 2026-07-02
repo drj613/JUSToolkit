@@ -5,6 +5,69 @@ structures.
 
 ---
 
+## 2026-07-02 — Static RE Campaign (Battle-Engine-Map)
+
+A static reverse-engineering campaign mapped 9 battle-engine subsystems
+directly from `arm9.bin` + overlay disassembly (no emulator/GDB execution),
+with every claim machine-verified against the disassembly database and run
+through three adversarial verification lenses. Full detail, per-claim
+confidence labels, refuted-hypotheses lists, and open questions live in
+**[docs/research/Battle-Engine-Map.md](Battle-Engine-Map.md)**; every
+`PLAUSIBLE`/`SPECULATIVE` claim has a one-breakpoint validation card in
+**[docs/research/GDB-Validation-Queue.md](GDB-Validation-Queue.md)**.
+
+**Subsystem statuses:** damage-pipeline, jpower-indirect, projectile-entities,
+hitstun-timers, movement, weight-hunt, and collision-data are `PARTIAL`;
+hitbox-priority and physics-writers are `PARTIAL` but flagged in loop-state as
+still `TRACING` (least-resolved of the nine — see their sections in the Map
+for why). None reached `EXHAUSTED`.
+
+**Headline CONFIRMED discoveries this campaign:**
+
+- **Gauge system** — `char+0x56c` is a generic clamp-accumulator gauge
+  (`+0x16` max / `+0x18` current), with accessors `0x02078488`
+  (`ApplyDeltaToCurrent`) and `0x020784B8` (`GrowMax`, capped `0x4000`). The
+  GDB seed anchor `0x020784FC` is this gauge's "is current ≤ 25% of max"
+  desperation check, **not** the per-hit damage formula. The previously
+  unexplained ×1.20 scale at `0x02158DC4` is now read as the documented
+  universal `attack_boost`, causally gated by that same 25%-gauge check
+  (its old "nature ×1.5" label is refuted). See
+  [Battle-Engine-Map.md § damage-pipeline](Battle-Engine-Map.md#subsystem-damage-pipeline)
+  and [§ Cross-Cutting Structures](Battle-Engine-Map.md#cross-cutting-structures).
+- **chr_b record access confirmed** — `*(0x0214BD80)+0x40`, stride `0x3C`,
+  statA/B/C at record `+8`/`+0xA`/`+0xC`, indexed by the koma's `PassiveIndex`
+  (a nuance: not confirmed identical to chr_b's own on-disk `CharId`). See
+  [§ movement](Battle-Engine-Map.md#subsystem-movement).
+- **jpower loading is ov5-only** — `jpower.bin` is opened and indexed
+  (304-byte stride, exact `311×304` file-size match) exclusively inside the
+  `ov5` menu/Jump-Galaxy overlay; since `ov5`/`ov6` share an overlay window
+  and are mutually exclusive, the live battle overlay cannot read this blob
+  directly. All 147 nonzero `damage1` values are multiples of 5 — the likely
+  reason no runtime ÷5 instruction was ever found near combat code. See
+  [§ jpower-indirect](Battle-Engine-Map.md#subsystem-jpower-indirect).
+- **Entity pool** — global pooled-entity allocator/free pair
+  (`0x020834D4`/`0x02083648`) with a 3-anchor free/active/pending list
+  manager, confirmed for projectile spawn/despawn. See
+  [§ projectile-entities](Battle-Engine-Map.md#subsystem-projectile-entities)
+  *(note: that section's evidence is machine-verified but adversarial-lens
+  verification is still pending)*.
+- **Hitstun scaling formula** — `ov6 0x02158ED0`:
+  `newDuration = floor(duration/10) × [table+0x4c] × 2 + duration`. The table
+  index is a transient per-object hit-type/element byte
+  (`object+0x1e0`), **not** a per-character weight constant — this closes off
+  weight-hunt's primary lead as a dead end. See
+  [§ weight-hunt](Battle-Engine-Map.md#subsystem-weight-hunt).
+- **Refuted anchors** (previously load-bearing addresses, now corrected):
+  `0x020784FC` is a gauge-threshold check, not the damage formula;
+  `0x020924B0` is a char-ID ASCII string table, not a collision-blob pointer
+  table (see the correction note on this same claim further down this
+  document); `0x0208D4A0` is a plain ASCII case-folding table, unrelated to
+  chr_b; no inlined or subroutine-based ÷5 division idiom exists anywhere in
+  the ROM near combat code. See each subsystem's "Refuted hypotheses"
+  subsection in the Map for full detail.
+
+---
+
 ## ✓ CONFIRMED (High Confidence)
 
 ### Damage Calculation Formula
@@ -100,6 +163,18 @@ Naruto and Luffy with different resistances).
 
 **Source:** ARM9.bin offset 0x0924B0 contains pointer table to collision file
 names in exact chr_b.bin order.
+
+> **[CORRECTED 2026-07-02]:** Static disassembly of `0x020924B0` shows this is
+> an 8-byte-stride table of `{ASCII char-ID C-string, packed word}` records
+> (74 entries), consumed at load time to build a resource key — **not** a
+> table of raw collision-file pointers. The one traced consumer of the
+> string half was found building a sprite-archive (`.aar`)/ending-credits key,
+> not a collision-file path; no code path from this table to collision-file
+> loading was confirmed. The file-name-order correspondence documented below
+> may still hold empirically, but the *mechanism* ("pointer table to
+> collision file names") is disproven. See
+> [Battle-Engine-Map.md § hitbox-priority](Battle-Engine-Map.md#subsystem-hitbox-priority)
+> for full detail and refuted-hypotheses.
 
 **Complete mapping:** See docs/research/chr_b-Complete-Mapping.md
 

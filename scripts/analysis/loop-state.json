@@ -1,6 +1,6 @@
 {
-  "iteration": 37,
-  "stage": "B_C_D",
+  "iteration": 38,
+  "stage": "WINDDOWN",
   "queue": [
     {"id": "A1-env", "type": "tool", "priority": 1, "attempts": 1, "depends_on": [], "status": "done", "spec": "5.A1"},
     {"id": "A2-rom-loader", "type": "tool", "priority": 1, "attempts": 1, "depends_on": ["A1-env"], "status": "done", "spec": "5.A2"},
@@ -25,7 +25,7 @@
     {"id": "B8-weight-hunt", "type": "tracer", "priority": 2, "attempts": 1, "depends_on": ["A6-gates", "A7-verify-evidence-tool", "B5-physics-writers"], "status": "done", "spec": "5.B8"},
     {"id": "C8-verify-weight-hunt", "type": "verify", "priority": 2, "attempts": 1, "depends_on": ["B8-weight-hunt"], "status": "done", "spec": "Stage C, findings weight-hunt.round1"},
     {"id": "D2-critic", "type": "critic", "priority": 3, "attempts": 1, "depends_on": [], "status": "done", "spec": "5.D2"},
-    {"id": "D1-synthesis", "type": "synthesis", "priority": 1, "attempts": 0, "depends_on": ["D2-critic"], "status": "ready", "spec": "5.D1"},
+    {"id": "D1-synthesis", "type": "synthesis", "priority": 1, "attempts": 1, "depends_on": ["D2-critic"], "status": "done", "spec": "5.D1"},
     {"id": "B10-register-provenance-callgraph", "type": "tracer", "priority": 2, "attempts": 0, "depends_on": [], "status": "ready", "spec": "critic.round1 next_tracer_specs[0] — next campaign"},
     {"id": "B11-moveinfo-populate-trace", "type": "tracer", "priority": 2, "attempts": 0, "depends_on": [], "status": "ready", "spec": "critic.round1 next_tracer_specs[1] — next campaign"},
     {"id": "B12-trampoline-sibling-sweep", "type": "tracer", "priority": 2, "attempts": 0, "depends_on": [], "status": "ready", "spec": "critic.round1 next_tracer_specs[2] — next campaign"},
@@ -89,6 +89,7 @@
     {"iter": 34, "unit": "B4-projectile-entities", "result": "launched", "commit": "", "note": "GAP CAUGHT: B4 was ready since iter 7 but never launched (pipelining miss). Last UNSTARTED subsystem. Tracer launched with time-budget instruction. Critic next iteration (parallel)."},
     {"iter": 35, "unit": "D2-critic", "result": "launched", "commit": "", "note": "Critic subagent launched (gap analysis + next-campaign tracer specs). 2 in flight (B4, D2)."},
     {"iter": 36, "unit": "D2-critic", "result": "ok", "commit": "", "note": "7 gaps (guard, SP gauge, throws, support koma, switch, combo scaling, ring-out[possibly nonexistent]), 7 tracer specs B10-B16 enqueued (won't run this campaign — iter cap), 5 GDB-first recs, 5 tooling gaps (incl ExportAllCollisions batch). dry_rounds stays 0 (new units generated). D1 synthesis next; B4 still in flight."},
-    {"iter": 37, "unit": "B4-projectile-entities", "result": "ok", "commit": "", "note": "5 claims, 68 segments verified exit 0. Entity pool: alloc arm9 0x020834D4 (freelist mgr+0x14, active list +0xc, pending +0x1c), free 0x02083648. Spawn: ov6 dispatcher 0x021574CC case-8 -> 0x02168CF4 -> allocator. Ownership: wrapper+0xc stores attacker MoveInfo ptr (char+0x1a8). Kill block ov6 0x0216C958: 4 triggers incl 32-frame age counter. Switch-persistence unresolved. WIND-DOWN: lens verify skipped -> all claims capped PLAUSIBLE in synthesis, flagged pending. D1 synthesis launched this iter."}
+    {"iter": 37, "unit": "B4-projectile-entities", "result": "ok", "commit": "", "note": "5 claims, 68 segments verified exit 0. Entity pool: alloc arm9 0x020834D4 (freelist mgr+0x14, active list +0xc, pending +0x1c), free 0x02083648. Spawn: ov6 dispatcher 0x021574CC case-8 -> 0x02168CF4 -> allocator. Ownership: wrapper+0xc stores attacker MoveInfo ptr (char+0x1a8). Kill block ov6 0x0216C958: 4 triggers incl 32-frame age counter. Switch-persistence unresolved. WIND-DOWN: lens verify skipped -> all claims capped PLAUSIBLE in synthesis, flagged pending. D1 synthesis launched this iter."},
+    {"iter": 38, "unit": "D1-synthesis", "result": "ok", "commit": "", "note": "3 deliverables verified: Battle-Engine-Map.md (12 sections: primer + 9 subsystems + cross-cutting + next-campaign; 46 claims), GDB-Validation-Queue.md (31 cards, 8 sessions, ~210 min human time), Research-Status.md updated w/ dated section + CORRECTED note on 0x0924B0. Stage -> WINDDOWN. Morning report next, then STOP."}
   ]
 }

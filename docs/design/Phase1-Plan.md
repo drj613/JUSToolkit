@@ -1,9 +1,12 @@
 # Phase 1 Plan — Live GDB Discovery Session (pending Phase 0)
 
-Status: WAITING on the Phase-0 loop (`docs/design/Static-RE-Phase0.md`,
-report will land at `scripts/analysis/loop-report-phase0.md`). Do not
-write the Phase-1 guide until that report exists — P7 regenerates the GDB
-queue and P4/P5 may replace several breakpoint addresses below.
+Status: DONE (2026-07-02). Phase 0 completed
+(`scripts/analysis/loop-report-phase0.md`) and the guide was generated:
+**`docs/research/Phase1-GDB-Guide.md`** (+ `scripts/gdb/phase1_macros.gdb`).
+The guide supersedes the block addresses below where Phase-0 revised them
+(notably: the `+0x558`/`+0x56c` dispute is the new top target, and all
+"watchpoint" blocks were redesigned around melonDS's missing hardware
+watchpoints). This file remains as the planning record.
 
 ## Context
 

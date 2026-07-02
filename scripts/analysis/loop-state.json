@@ -1,5 +1,5 @@
 {
-  "iteration": 36,
+  "iteration": 37,
   "stage": "B_C_D",
   "queue": [
     {"id": "A1-env", "type": "tool", "priority": 1, "attempts": 1, "depends_on": [], "status": "done", "spec": "5.A1"},
@@ -15,7 +15,7 @@
     {"id": "C4-verify-jpower-indirect", "type": "verify", "priority": 2, "attempts": 1, "depends_on": ["B2-jpower-indirect"], "status": "done", "spec": "Stage C, findings jpower-indirect.round1"},
     {"id": "B3-hitbox-priority", "type": "tracer", "priority": 2, "attempts": 1, "depends_on": ["A6-gates", "A7-verify-evidence-tool"], "status": "done", "spec": "5.B3"},
     {"id": "C2-verify-hitbox-priority", "type": "verify", "priority": 2, "attempts": 1, "depends_on": ["B3-hitbox-priority"], "status": "done", "spec": "Stage C, findings hitbox-priority.round1"},
-    {"id": "B4-projectile-entities", "type": "tracer", "priority": 2, "attempts": 0, "depends_on": ["A6-gates", "A7-verify-evidence-tool"], "status": "ready", "spec": "5.B4"},
+    {"id": "B4-projectile-entities", "type": "tracer", "priority": 2, "attempts": 1, "depends_on": ["A6-gates", "A7-verify-evidence-tool"], "status": "done", "spec": "5.B4"},
     {"id": "B5-physics-writers", "type": "tracer", "priority": 2, "attempts": 1, "depends_on": ["A6-gates", "A7-verify-evidence-tool"], "status": "done", "spec": "5.B5"},
     {"id": "C3-verify-physics-writers", "type": "verify", "priority": 2, "attempts": 1, "depends_on": ["B5-physics-writers"], "status": "done", "spec": "Stage C, findings physics-writers.round1"},
     {"id": "B6-hitstun-timers", "type": "tracer", "priority": 2, "attempts": 1, "depends_on": ["A6-gates", "A7-verify-evidence-tool"], "status": "done", "spec": "5.B6"},
@@ -40,7 +40,7 @@
     "damage-pipeline": {"status": "PARTIAL", "tracer_attempts": 1, "claims": {"confirmed": 4, "plausible": 3, "speculative": 2}},
     "jpower-indirect": {"status": "PARTIAL", "tracer_attempts": 1, "claims": {"confirmed": 4, "plausible": 1, "speculative": 0}},
     "hitbox-priority": {"status": "TRACING", "tracer_attempts": 1, "claims": {"confirmed": 1, "plausible": 1, "speculative": 2}},
-    "projectile-entities": {"status": "TRACING", "tracer_attempts": 0, "claims": {"confirmed": 0, "plausible": 0, "speculative": 0}},
+    "projectile-entities": {"status": "PARTIAL", "tracer_attempts": 1, "claims": {"confirmed": 0, "plausible": 5, "speculative": 0}},
     "physics-writers": {"status": "TRACING", "tracer_attempts": 1, "claims": {"confirmed": 1, "plausible": 1, "speculative": 3}},
     "hitstun-timers": {"status": "PARTIAL", "tracer_attempts": 1, "claims": {"confirmed": 4, "plausible": 0, "speculative": 2}},
     "movement": {"status": "PARTIAL", "tracer_attempts": 1, "claims": {"confirmed": 5, "plausible": 1, "speculative": 0}},
@@ -88,6 +88,7 @@
     {"iter": 33, "unit": "C8-verify-weight-hunt", "result": "ok", "commit": "", "note": "Scored 3C/2P/1S. Claim5 (passive bitfield) 2x REFUTED: call site actually hits a move-data cache lookup; real GetFlag at 0x0214D594 only referenced via ov1 indirect callback (disasm-db merged 2 routines — known bx<reg> boundary gap). [t+0x4c] NOT weight (sb+0x1e0 = transient hit-type; no static writes). KEY NEXT ANGLE (from docs via data lens): koma.bin PassiveIndex -> ~50-entry ARM9 passive table = Edajima knockback-resistance path — weight round-2 target. weight-hunt -> PARTIAL. Queue empty of B/C work -> D2 critic enqueued, D1 synthesis after."},
     {"iter": 34, "unit": "B4-projectile-entities", "result": "launched", "commit": "", "note": "GAP CAUGHT: B4 was ready since iter 7 but never launched (pipelining miss). Last UNSTARTED subsystem. Tracer launched with time-budget instruction. Critic next iteration (parallel)."},
     {"iter": 35, "unit": "D2-critic", "result": "launched", "commit": "", "note": "Critic subagent launched (gap analysis + next-campaign tracer specs). 2 in flight (B4, D2)."},
-    {"iter": 36, "unit": "D2-critic", "result": "ok", "commit": "", "note": "7 gaps (guard, SP gauge, throws, support koma, switch, combo scaling, ring-out[possibly nonexistent]), 7 tracer specs B10-B16 enqueued (won't run this campaign — iter cap), 5 GDB-first recs, 5 tooling gaps (incl ExportAllCollisions batch). dry_rounds stays 0 (new units generated). D1 synthesis next; B4 still in flight."}
+    {"iter": 36, "unit": "D2-critic", "result": "ok", "commit": "", "note": "7 gaps (guard, SP gauge, throws, support koma, switch, combo scaling, ring-out[possibly nonexistent]), 7 tracer specs B10-B16 enqueued (won't run this campaign — iter cap), 5 GDB-first recs, 5 tooling gaps (incl ExportAllCollisions batch). dry_rounds stays 0 (new units generated). D1 synthesis next; B4 still in flight."},
+    {"iter": 37, "unit": "B4-projectile-entities", "result": "ok", "commit": "", "note": "5 claims, 68 segments verified exit 0. Entity pool: alloc arm9 0x020834D4 (freelist mgr+0x14, active list +0xc, pending +0x1c), free 0x02083648. Spawn: ov6 dispatcher 0x021574CC case-8 -> 0x02168CF4 -> allocator. Ownership: wrapper+0xc stores attacker MoveInfo ptr (char+0x1a8). Kill block ov6 0x0216C958: 4 triggers incl 32-frame age counter. Switch-persistence unresolved. WIND-DOWN: lens verify skipped -> all claims capped PLAUSIBLE in synthesis, flagged pending. D1 synthesis launched this iter."}
   ]
 }

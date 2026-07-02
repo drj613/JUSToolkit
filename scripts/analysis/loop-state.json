@@ -1,5 +1,5 @@
 {
-  "iteration": 14,
+  "iteration": 15,
   "stage": "B_C_D",
   "queue": [
     {"id": "A1-env", "type": "tool", "priority": 1, "attempts": 1, "depends_on": [], "status": "done", "spec": "5.A1"},
@@ -12,9 +12,11 @@
     {"id": "B1-damage-pipeline", "type": "tracer", "priority": 2, "attempts": 1, "depends_on": ["A6-gates", "A7-verify-evidence-tool"], "status": "done", "spec": "5.B1"},
     {"id": "C1-verify-damage-pipeline", "type": "verify", "priority": 2, "attempts": 0, "depends_on": ["B1-damage-pipeline"], "status": "ready", "spec": "Stage C, findings damage-pipeline.round1"},
     {"id": "B2-jpower-indirect", "type": "tracer", "priority": 2, "attempts": 0, "depends_on": ["A6-gates", "A7-verify-evidence-tool", "B1-damage-pipeline"], "status": "ready", "spec": "5.B2"},
-    {"id": "B3-hitbox-priority", "type": "tracer", "priority": 2, "attempts": 0, "depends_on": ["A6-gates", "A7-verify-evidence-tool"], "status": "ready", "spec": "5.B3"},
+    {"id": "B3-hitbox-priority", "type": "tracer", "priority": 2, "attempts": 1, "depends_on": ["A6-gates", "A7-verify-evidence-tool"], "status": "done", "spec": "5.B3"},
+    {"id": "C2-verify-hitbox-priority", "type": "verify", "priority": 2, "attempts": 0, "depends_on": ["B3-hitbox-priority"], "status": "ready", "spec": "Stage C, findings hitbox-priority.round1"},
     {"id": "B4-projectile-entities", "type": "tracer", "priority": 2, "attempts": 0, "depends_on": ["A6-gates", "A7-verify-evidence-tool"], "status": "ready", "spec": "5.B4"},
-    {"id": "B5-physics-writers", "type": "tracer", "priority": 2, "attempts": 0, "depends_on": ["A6-gates", "A7-verify-evidence-tool"], "status": "ready", "spec": "5.B5"},
+    {"id": "B5-physics-writers", "type": "tracer", "priority": 2, "attempts": 1, "depends_on": ["A6-gates", "A7-verify-evidence-tool"], "status": "done", "spec": "5.B5"},
+    {"id": "C3-verify-physics-writers", "type": "verify", "priority": 2, "attempts": 0, "depends_on": ["B5-physics-writers"], "status": "ready", "spec": "Stage C, findings physics-writers.round1"},
     {"id": "B6-hitstun-timers", "type": "tracer", "priority": 2, "attempts": 0, "depends_on": ["A6-gates", "A7-verify-evidence-tool"], "status": "ready", "spec": "5.B6"},
     {"id": "B7-movement", "type": "tracer", "priority": 2, "attempts": 0, "depends_on": ["A6-gates", "A7-verify-evidence-tool"], "status": "ready", "spec": "5.B7"},
     {"id": "B8-weight-hunt", "type": "tracer", "priority": 2, "attempts": 0, "depends_on": ["A6-gates", "A7-verify-evidence-tool", "B5-physics-writers"], "status": "blocked_dep", "spec": "5.B8"},
@@ -23,9 +25,9 @@
   "subsystems": {
     "damage-pipeline": {"status": "VERIFYING", "tracer_attempts": 1, "claims": {"confirmed": 4, "plausible": 3, "speculative": 2}},
     "jpower-indirect": {"status": "TRACING", "tracer_attempts": 0, "claims": {"confirmed": 0, "plausible": 0, "speculative": 0}},
-    "hitbox-priority": {"status": "TRACING", "tracer_attempts": 0, "claims": {"confirmed": 0, "plausible": 0, "speculative": 0}},
+    "hitbox-priority": {"status": "VERIFYING", "tracer_attempts": 1, "claims": {"confirmed": 3, "plausible": 0, "speculative": 1}},
     "projectile-entities": {"status": "UNSTARTED", "tracer_attempts": 0, "claims": {"confirmed": 0, "plausible": 0, "speculative": 0}},
-    "physics-writers": {"status": "TRACING", "tracer_attempts": 0, "claims": {"confirmed": 0, "plausible": 0, "speculative": 0}},
+    "physics-writers": {"status": "VERIFYING", "tracer_attempts": 1, "claims": {"confirmed": 1, "plausible": 4, "speculative": 0}},
     "hitstun-timers": {"status": "TRACING", "tracer_attempts": 0, "claims": {"confirmed": 0, "plausible": 0, "speculative": 0}},
     "movement": {"status": "TRACING", "tracer_attempts": 0, "claims": {"confirmed": 0, "plausible": 0, "speculative": 0}},
     "weight-hunt": {"status": "UNSTARTED", "tracer_attempts": 0, "claims": {"confirmed": 0, "plausible": 0, "speculative": 0}},
@@ -49,6 +51,8 @@
     {"iter": 12, "unit": "B7-movement", "result": "launched", "commit": "b5cb349", "note": "Tracer (sonnet) in flight. 5 concurrent. Primary quarry: statC walk-speed tier thresholds (JUS-n3p)."},
     {"iter": 13, "unit": "B9-collision-data-miner", "result": "launched", "commit": "", "note": "Data-only miner launched. COVERAGE GAP: only 4/74 collision JSONs exported (bb,bl,db,ds). Also this iter: B1 returned."},
     {"iter": 13, "unit": "B1-damage-pipeline", "result": "ok", "commit": "", "note": "9 claims (4C/3P/2S), 83 segments verified, exit 0. REFRAME: 0x020784FC is a 25%-of-max gauge threshold check on [char+0x56c] gauge (+0x16 max, +0x18 current), NOT the damage formula. Damage application via trampoline 0x020783CC -> 0x02078488 (clamped accumulator). Div5/tier/nature sites UNFOUND (round-2 quarry). C1 verify enqueued; B2 unblocked."},
-    {"iter": 14, "unit": "B2-jpower-indirect", "result": "launched", "commit": "", "note": "Tracer (sonnet) in flight — highest-value target (JUS-9lp.1, blocks 64/74 chars). 6 concurrent (B2,B3,B5,B6,B7,B9) = cap."}
+    {"iter": 14, "unit": "B2-jpower-indirect", "result": "launched", "commit": "bc99e69", "note": "Tracer (sonnet) in flight — highest-value target (JUS-9lp.1, blocks 64/74 chars). 6 concurrent (B2,B3,B5,B6,B7,B9) = cap."},
+    {"iter": 15, "unit": "B3-hitbox-priority", "result": "ok", "commit": "", "note": "4 claims (3C/1S), 25 segments verified. STRUCTURAL FIX: 0x020924B0 is NOT collision-entry array — it's 74-entry x 8-byte char-ID string table {char* id like 'db_b_01', packed word w/ class-id bits 14-19} used to build resource keys (fns 0x02074728 arm9, 0x0214EFAC ov0). No two-entity hitTier cmp found in ov0/3/4/5/6. Runtime CollisionEntry layout (20B; hitTier@0x10, hitProperties@0x11 per docs/formats/Combat-Formats.md) unverified vs disasm — round-2 quarry. C2 verify enqueued."},
+    {"iter": 15, "unit": "B5-physics-writers", "result": "ok", "commit": "", "note": "5 claims (1C/4P), 72 segments verified. Velocity/gravity NOT found. Hit-resolution fn ov6 0x02158B20 calls damage fn 0x020784E4; knockback-consumer candidates arm9 0x020783CC + 0x020781E4 read collision +0xE8/+0x130, write +0x56C-chain/+0x5C8 (HP-clamp-like, not velocity). KEY: +0x6A/0x6C hits often alias via folded +0x100 base (ov7 0x021619D8) — explains search-imm noise; ov6 0x021607C0 shows wrapper+0x6A = hit-priority/lockout tracker, NOT velocity. C3 verify enqueued."}
   ]
 }

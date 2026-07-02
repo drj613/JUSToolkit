@@ -1,5 +1,5 @@
 {
-  "iteration": 25,
+  "iteration": 26,
   "stage": "B_C_D",
   "queue": [
     {"id": "A1-env", "type": "tool", "priority": 1, "attempts": 1, "depends_on": [], "status": "done", "spec": "5.A1"},
@@ -33,7 +33,7 @@
     "physics-writers": {"status": "TRACING", "tracer_attempts": 1, "claims": {"confirmed": 1, "plausible": 1, "speculative": 3}},
     "hitstun-timers": {"status": "VERIFYING", "tracer_attempts": 1, "claims": {"confirmed": 4, "plausible": 0, "speculative": 2}},
     "movement": {"status": "VERIFYING", "tracer_attempts": 1, "claims": {"confirmed": 5, "plausible": 1, "speculative": 0}},
-    "weight-hunt": {"status": "UNSTARTED", "tracer_attempts": 0, "claims": {"confirmed": 0, "plausible": 0, "speculative": 0}},
+    "weight-hunt": {"status": "TRACING", "tracer_attempts": 0, "claims": {"confirmed": 0, "plausible": 0, "speculative": 0}},
     "collision-data": {"status": "PARTIAL", "tracer_attempts": 1, "claims": {"confirmed": 8, "plausible": 6, "speculative": 1}}
   },
   "gates": {"G1": "pass", "G2": "pass", "G3": "pass", "G4": "pass", "G5": "pass"},
@@ -66,6 +66,7 @@
     {"iter": 22, "unit": "C9-verify-collision-data", "result": "ok", "commit": "", "note": "15 verdicts: 12U/1R/1UNSURE/1caveat. Scored 8C/6P/1S. REFUTED claim4: knockback non-monotonicity = bl_b_01 pooling artifact (all-tier1 file, avg 21.05); excluding it knockback RISES with hitTier 8.78->12.11->15.00. collisionType3->tier1 inconsistent per-file (UNSURE); type5->tier3 robust. collision-data -> PARTIAL (70-char export gap)."},
     {"iter": 23, "unit": "C3-verify-physics-writers", "result": "launched", "commit": "", "note": "3 lenses launched. 5 in flight (B2, C2-aliasing, 3x C3). Cross-check passed to lenses: 0x020783D8 pool = 0x02078488 byte-confirmed."},
     {"iter": 24, "unit": "C2-verify-hitbox-priority", "result": "ok", "commit": "", "note": "Scored 1C/1P/2S (was 3C/1S). Claim2 (class-id bits 14-19) DEMOTED: chr_b classId 256-684 exceeds 6 bits + tracer arithmetic error. Claim1 DEMOTED to PLAUSIBLE: c.aar suffix = SPRITE archive convention (bl_b_01c.aar per ARM9-Research-Guide.md:30), ov0 consumer = ending/credits subsystem — table consumers are NOT collision-key builders. Only solid: 74-entry {char* id, packed word} table shape @ 0x020924B0. hitbox-priority BACK TO TRACING — round 2 needs entirely new angle (find actual CollisionEntry parser, not this table)."},
-    {"iter": 25, "unit": "C3-verify-physics-writers", "result": "ok", "commit": "", "note": "Scored 1C/1P/3S (was 1C/4P). Claims 0/2/3 demoted (2x REFUTED each): +0xE8/+0x130 are on a >=0x174B scratch workspace [[sl+0x1a8]+0x10] not collision entry; trampoline tail-jump misread (goes to 0x02078488 gauge clamp); +0x6A comparator is on [sl+0x1a4] hit-tally obj w/ saturating counters +0x36/+0x68. LEAD from aliasing lens: 0x02158ED0 = status-effect-slot mgr (2-slot @ sl+0x7c, 0x18B records) computes HITSTUN DURATION via div fn 0x200d12c + per-attack-type table [t+0x4c]; siblings +0x4e/+0x50 = knockback-magnitude-table candidates. physics-writers -> TRACING (round 2: chase that table). B8 unblocked (was missed at iter 15). C6 lenses launched iter 24."}
+    {"iter": 25, "unit": "C3-verify-physics-writers", "result": "ok", "commit": "", "note": "Scored 1C/1P/3S (was 1C/4P). Claims 0/2/3 demoted (2x REFUTED each): +0xE8/+0x130 are on a >=0x174B scratch workspace [[sl+0x1a8]+0x10] not collision entry; trampoline tail-jump misread (goes to 0x02078488 gauge clamp); +0x6A comparator is on [sl+0x1a4] hit-tally obj w/ saturating counters +0x36/+0x68. LEAD from aliasing lens: 0x02158ED0 = status-effect-slot mgr (2-slot @ sl+0x7c, 0x18B records) computes HITSTUN DURATION via div fn 0x200d12c + per-attack-type table [t+0x4c]; siblings +0x4e/+0x50 = knockback-magnitude-table candidates. physics-writers -> TRACING (round 2: chase that table). B8 unblocked (was missed at iter 15). C6 lenses launched iter 24."},
+    {"iter": 26, "unit": "B8-weight-hunt", "result": "launched", "commit": "", "note": "Tracer (sonnet) launched w/ fresh leads: 0x02158ED0 table dataflow, unexamined chr_b record offsets, arm9_tables.json 74-entry candidates, passive dispatch hunt. 5 in flight (B2, 3x C6, B8)."}
   ]
 }

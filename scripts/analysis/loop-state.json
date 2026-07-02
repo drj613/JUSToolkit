@@ -1,5 +1,5 @@
 {
-  "iteration": 7,
+  "iteration": 8,
   "stage": "B_C_D",
   "queue": [
     {"id": "A1-env", "type": "tool", "priority": 1, "attempts": 1, "depends_on": [], "status": "done", "spec": "5.A1"},
@@ -20,7 +20,7 @@
     {"id": "B9-collision-data-miner", "type": "tracer", "priority": 2, "attempts": 0, "depends_on": ["A6-gates", "A7-verify-evidence-tool"], "status": "ready", "spec": "5.B9"}
   ],
   "subsystems": {
-    "damage-pipeline": {"status": "UNSTARTED", "tracer_attempts": 0, "claims": {"confirmed": 0, "plausible": 0, "speculative": 0}},
+    "damage-pipeline": {"status": "TRACING", "tracer_attempts": 0, "claims": {"confirmed": 0, "plausible": 0, "speculative": 0}},
     "jpower-indirect": {"status": "UNSTARTED", "tracer_attempts": 0, "claims": {"confirmed": 0, "plausible": 0, "speculative": 0}},
     "hitbox-priority": {"status": "UNSTARTED", "tracer_attempts": 0, "claims": {"confirmed": 0, "plausible": 0, "speculative": 0}},
     "projectile-entities": {"status": "UNSTARTED", "tracer_attempts": 0, "claims": {"confirmed": 0, "plausible": 0, "speculative": 0}},
@@ -40,6 +40,7 @@
     {"iter": 4, "unit": "A4-xref-db", "result": "ok", "commit": "", "note": "16648 literal_loads / 60259 imm_offsets / 69034 branches, 12MB xrefs.json, 4s build. Collision table 0x020924B0: 8 literal refs incl arm9 fn 0x02074780 + ov0/ov3 — first cross-overlay data consumers identified. +0x78: 442 hits, +0x98: 188 hits."},
     {"iter": 5, "unit": "A5-query-cli", "result": "ok", "commit": "31f7f32", "note": "8 subcommands + pool-values extra; 10/10 smoke PASS. --overlay is per-subcommand only (argparse namespace-merge bug found+fixed). callers uses xrefs branches for cross-region blx."},
     {"iter": 6, "unit": "A6-gates", "result": "ok", "commit": "d6d8089", "note": "G1-G5 all pass, exit 0. G5: 12 insns at 0x020784FC, 5 data-processing incl cmp r1,r0,asr#16 + movle/movgt clamp pattern."},
-    {"iter": 7, "unit": "A7-verify-evidence-tool", "result": "ok", "commit": "", "note": "7/7 selftest cases pass. Rejects: tampered operand, shifted addr, ambiguous overlay addr w/o provenance, uncited addresses, empty gdb_check on PLAUSIBLE/SPECULATIVE. STAGE A COMPLETE — tracers unlocked. Damage fn prologue: ldr r4,[r0,#0x56c]; ldrsh r2,[r4,#0x16]; mul r0,r2,r1."}
+    {"iter": 7, "unit": "A7-verify-evidence-tool", "result": "ok", "commit": "", "note": "7/7 selftest cases pass. Rejects: tampered operand, shifted addr, ambiguous overlay addr w/o provenance, uncited addresses, empty gdb_check on PLAUSIBLE/SPECULATIVE. STAGE A COMPLETE — tracers unlocked. Damage fn prologue: ldr r4,[r0,#0x56c]; ldrsh r2,[r4,#0x16]; mul r0,r2,r1."},
+    {"iter": 8, "unit": "B1-damage-pipeline", "result": "launched", "commit": "", "note": "Tracer subagent (sonnet) in flight. Will pipeline additional tracers next iterations, max 6 concurrent."}
   ]
 }

@@ -68,7 +68,104 @@ for why). None reached `EXHAUSTED`.
 
 ---
 
+## 2026-07-02 — Phase-0 Gap-Closing Loop (addendum)
+
+A follow-up loop (`docs/design/Static-RE-Phase0.md`) closed every
+"verification pending"/never-traced gap the campaign above left open, without
+any emulator/GDB execution. Full detail in the same
+**[Battle-Engine-Map.md](Battle-Engine-Map.md)** (new/updated sections) and
+**[GDB-Validation-Queue.md](GDB-Validation-Queue.md)** (regenerated).
+
+- **Collision data re-mined at full-roster scale (round 2):** coverage went
+  from 4/74 (5.4%) to 281/281 files (74 battle + 206 support + 1 item). This
+  **broke several round-1 findings at scale**, not just weakened them: the
+  `projectileId=-32` "fixed sentinel" hypothesis is refuted (15 distinct
+  nonzero values in battle files, 25 in support); the `collisionType=4`
+  necessary-for-`projectileId` framing is refuted (the real rule is
+  `collisionType ∈ {4,5}`, 97.87% coverage); the `collisionType=5→hitTier=3`
+  and `collisionType=3→hitTier=1` correlations both weaken to near-coin-flip;
+  and round 1's own CONFIRMED_STATIC "`hitModifier` constant at 0" claim is
+  overturned (9/2047 entries are nonzero). See
+  [§ collision-data](Battle-Engine-Map.md#subsystem-collision-data).
+- **projectile-entities fully verified:** the prior campaign's "adversarial
+  lens verification pending" caveat is resolved — 4/5 claims are now
+  CONFIRMED_STATIC (entity-pool alloc/free, spawn dispatch, spawn+ownership
+  including a second character-struct back-pointer at wrapper`+0x18`); the
+  despawn function is capped PLAUSIBLE (cannot be statically proven
+  projectile-specific vs. a shared spawned-effect routine). See
+  [§ projectile-entities](Battle-Engine-Map.md#subsystem-projectile-entities).
+- **Guard/SP gauge coverage (new, spec B12):** no second *fixed* character-struct
+  offset analogous to `+0x56c` (HP) was found; the leading guard/SP candidate
+  is a dynamically-linked Meter-node list at `char+0x558`. A previously
+  invisible sibling **drain** trampoline (`0x020783B8`) was discovered
+  adjacent to the known HP trampoline — a concrete demonstration that
+  `xrefs-to`/`pool-values` cannot see `bx ip`-style indirect jumps. See
+  [§ guard-sp-gauges](Battle-Engine-Map.md#subsystem-guard-sp-gauges).
+- **chr_b singleton reframed (new, spec B14):** `0x0214BD80` is a "battle
+  resource manager" singleton owning ~15 tables/resources, of which chr_b's
+  own record array is one; all 97 ROM-wide xref hits (not the ~87 previously
+  estimated) are now classified, and the complete 60-byte record map is
+  built, including a confirmed schema mismatch (`CharId`+`Flags` are 5
+  independent ability-ID bytes, not a `charId` byte + a `flags` u32). Whether
+  the `+0x558` per-technique node feeding this cache is the *same* object
+  `charPtr+0x56c` points to for hit-resolution is the campaign's **top open
+  dispute** — the two adversarial lenses disagree, and it is deliberately left
+  unresolved pending one GDB breakpoint (queue card #1). See
+  [§ chrb-catalog](Battle-Engine-Map.md#subsystem-chrb-catalog).
+
+---
+
 ## ✓ CONFIRMED (High Confidence)
+
+### chr_b Runtime Access — Battle Resource Manager Singleton
+
+**Confirmed 2026-07-02 (Phase-0, spec B14):** `*(0x0214BD80)` is a "battle
+resource manager" singleton, not a chr_b-specific pointer — chr_b's own
+60-byte-record array (manager`+0x40`, stride `0x3C`) is one of roughly 15
+tables/resources the same singleton owns (koma, kshape, chr_s, an
+ability/passive-effect lookup table, several still-unidentified fixed-size
+tables, a match-config sub-struct). All 97 ROM-wide references to the
+singleton are classified (only 13 touch chr_b's own array). The complete
+record map is built, confirming `statA`/`statB`/`statC` (`+8`/`+0xA`/`+0xC`),
+`BattleParams` (`+0x24`, read **live** by the Battle-AI overlay `ov11` — the
+only confirmed live, uncached chr_b read at battle time), and `TextIds`
+(`+0x30`, character name + 5 per-technique names). One confirmed schema
+mismatch against the exported `chr_b.json`: on-disk `CharId`+`Flags`
+(`+3..+7`) are consumed as **5 independent ability-ID bytes**, never as a
+combined `charId` byte + `flags` u32. See
+[Battle-Engine-Map.md § chrb-catalog](Battle-Engine-Map.md#subsystem-chrb-catalog).
+
+**Not yet settled:** whether chr_b's `CombatStatN` value, cached into a
+per-technique struct at setup time, is the same struct ov6's hit-resolution
+code later reads via `charPtr+0x56c` — see the Map's "TOP OPEN DISPUTE"
+subsection (one GDB breakpoint away from resolution).
+
+### Entity Pool (Projectiles / Spawned Hitbox-Effects)
+
+**Confirmed 2026-07-02 (3-lens verified, Phase-0):** a global pooled-entity
+allocator/destructor pair (`0x020834D4`/`0x02083648`) with a 3-anchor
+free/active/pending list manager (singleton at RAM literal `0x0214BE14`)
+backs projectile and other spawned-hitbox/effect entities. Spawn is
+dispatched from a 13-way ov6 event switch (`0x021574CC`) through an
+ownership-wrapper allocator (`0x02168CF4`) that records **two** back-pointers
+to the attacking character: the MoveInfo pointer at wrapper`+0xc` and the
+raw character-struct pointer at wrapper`+0x18`. See
+[§ projectile-entities](Battle-Engine-Map.md#subsystem-projectile-entities).
+
+### Collision Data at Full-Roster Scale
+
+**Confirmed 2026-07-02 (round 2, 281/281 files, Phase-0):** the collision
+(23-field) and jpower (20-field) schemas still share zero field names at
+full scale; `damageFlags==0` occurs on 46.86% of battle entries (a near
+coin-flip, not the 57.1% "majority" round 1's 4-file sample suggested); and
+`hitModifier` is **not** constant at 0 (9/2047 entries are nonzero,
+corroborated across the item and support populations too) — this directly
+overturns round 1's own CONFIRMED_STATIC claim to the contrary. Several other
+round-1 correlations (the `-32` `projectileId` sentinel, `collisionType=4`
+necessity, `collisionType=5→hitTier=3`/`3→hitTier=1` skews) did **not**
+survive full-roster scale and are now SPECULATIVE — see
+[§ collision-data](Battle-Engine-Map.md#subsystem-collision-data) for the
+complete round-2 table.
 
 ### Damage Calculation Formula
 
@@ -387,7 +484,8 @@ remains unknown and must be tracked separately.
 
 ### battleParams Field Meaning
 
-12 bytes in chr_b.bin with unknown purpose.
+12 bytes in chr_b.bin with unknown *value* meaning (per-field semantics still
+undecoded), but its *consumer* is now identified.
 
 **Known:**
 
@@ -396,8 +494,18 @@ remains unknown and must be tracked separately.
 - Values range from 0-100 typically
 - Nami and Franky have identical values despite opposite properties
 
-**Speculation:** Could be stat modifiers, hitstun resistance, or other combat
-parameters.
+> **[UPDATED 2026-07-02, Phase-0 spec B14]:** `BattleParams` (chr_b record
+> offset `+0x24`) is read **live** (not cached) exclusively by the
+> Battle-AI overlay `ov11`, via two getters read with two *different* element
+> sizes (`ushort[6]` for the first 8 bytes, `byte[]` for the last 4) — the
+> first getter builds a per-technique "availability" bitmask, the second a
+> per-slot AI range/facing table used in threshold comparisons. This is the
+> only chr_b field confirmed read live at battle time; everything else
+> chr_b-derived that reaches battle code is cached at technique-setup instead
+> (see `Battle-Engine-Map.md` § chrb-catalog). The exact per-byte stat
+> meaning is still undecoded — "stat modifiers / hitstun resistance" remains
+> speculation — but "used by CPU decision-making, not a cosmetic/UI field" is
+> now confirmed.
 
 ---
 

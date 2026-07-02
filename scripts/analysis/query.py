@@ -28,9 +28,10 @@ Design contract (read this before changing output formatting):
     order) so re-running the exact same query string-matches the exact same
     output byte-for-byte -- this is required because a verifier agent
     re-runs the query to confirm quoted evidence.
-  - Listing subcommands (callers, callees, xrefs-to, search-imm, pool-values,
-    strings) print a leading "# N ..." summary/count line, then N data lines
-    (lines never start with "#", so grepping data lines is `grep -v '^#'`).
+  - Listing subcommands (callers, callees, xrefs-to, search-imm,
+    search-op-imm, pool-values, strings) print a leading "# N ..."
+    summary/count line, then N data lines (lines never start with "#", so
+    grepping data lines is `grep -v '^#'`).
   - `disasm` is the one exception: its stdout is the verbatim listing-file
     text with **no** added header (any resolution context goes to stderr),
     because its whole job is byte-for-byte passthrough of already-provenance-
@@ -45,6 +46,7 @@ CLI:
     query.py callees <addr> [--overlay N]
     query.py xrefs-to <addr>
     query.py search-imm <val> [--all]
+    query.py search-op-imm <val> [--mnemonic M] [--all]
     query.py disasm <addr> <n> [--overlay N]
     query.py strings <region> [--all]
     query.py pool-values <addr-lo> <addr-hi>
@@ -86,6 +88,7 @@ _ANCHOR_DAMAGE_FUNC = 0x020784E4  # push {r4, lr} prologue, GDB-proven
 _ANCHOR_DAMAGE_INNER = 0x020784FC  # ldrsh inside the function above
 _ANCHOR_COLLISION_TABLE = 0x020924B0  # collision_file_pointer_table (arm9)
 _ANCHOR_OVERLAP_BASE = 0x0214CD20  # ov0-ov9 shared RAM base
+_ANCHOR_MOV_IMM = 0x02078520  # arm9 "mov r0, #0x3c", GDB-proven present
 
 # --------------------------------------------------------------------------
 # Address / immediate parsing
@@ -473,6 +476,128 @@ def cmd_search_imm(args: argparse.Namespace) -> int:
 
 
 # --------------------------------------------------------------------------
+# search-op-imm
+# --------------------------------------------------------------------------
+
+# ARM condition-code mnemonic suffixes (same 17 suffixes xref_db.py's
+# _COND_CODES tracks; duplicated here, not imported, to keep this reader CLI
+# free of any dependency on the builder modules).
+_COND_CODES = {
+    "eq", "ne", "cs", "hs", "cc", "lo", "mi", "pl",
+    "vs", "vc", "hi", "ls", "ge", "lt", "gt", "le", "al",
+}
+
+# The 12 data-processing mnemonics this subcommand searches, any condition
+# code. The eight in _DP_BASES_WITH_S also have an optional flag-setting "S"
+# infix (mnemonic order is always <base><S><cond>, e.g. "addseq"); the four
+# compare/test mnemonics in _DP_BASES_NO_S always implicitly set flags and
+# have no separate "S" form.
+_DP_BASES_NO_S = ("cmp", "cmn", "tst", "teq")
+_DP_BASES_WITH_S = ("mov", "mvn", "and", "orr", "eor", "add", "sub", "rsb")
+_DP_MNEMONICS = _DP_BASES_NO_S + _DP_BASES_WITH_S
+
+# A disasm listing line: "0xAAAAAAAA: <hexbytes>  <mnemonic> <operands>".
+_DP_LINE_RE = re.compile(r"^0x([0-9A-F]{8}): [0-9a-f]+  (\S+)\s+(.*)$")
+# A final comma-separated operand that is a bare immediate, e.g. "#0x3c" or
+# "#0" -- deliberately excludes shifted-register operands like "lsl #2"
+# (whose last comma-field is "lsl #2", not just "#2") so register-shifted
+# instructions never masquerade as immediate ones.
+_DP_IMM_OPERAND_RE = re.compile(r"^#(-?(?:0x[0-9a-fA-F]+|[0-9]+))$")
+
+
+def _normalize_dp_mnem(mnem: str) -> str | None:
+    """Strip an ARM condition-code suffix (and, for the eight mnemonics that
+    support one, an optional flag-setting "S" infix) from a data-processing
+    mnemonic and return one of the 12 canonical bases in _DP_MNEMONICS, or
+    None if `mnem` isn't one of them. Exact-length-matched (never a bare
+    prefix test) so lookalikes such as "movw"/"movt" (Thumb-2 wide-immediate
+    moves -- a different instruction family, out of scope here) never match.
+    """
+    for base in _DP_BASES_NO_S:
+        if mnem == base:
+            return base
+        if mnem.startswith(base) and mnem[len(base):] in _COND_CODES:
+            return base
+    for base in _DP_BASES_WITH_S:
+        if not mnem.startswith(base):
+            continue
+        rest = mnem[len(base):]
+        if rest == "" or rest in _COND_CODES:
+            return base
+        if rest.startswith("s") and (rest[1:] == "" or rest[1:] in _COND_CODES):
+            return base
+    return None
+
+
+def _iter_disasm_files() -> list[Path]:
+    """Every per-region listing file under DISASM_DIR, sorted by provenance
+    name (plain lexicographic -- the same convention used everywhere else in
+    this file that sorts a set of provenance names, e.g. print_resolution_error).
+    """
+    return sorted(DISASM_DIR.glob("*.txt"), key=lambda p: p.stem)
+
+
+def cmd_search_op_imm(args: argparse.Namespace) -> int:
+    val = args.val
+
+    want_mnem = None
+    if args.mnemonic is not None:
+        want_mnem = args.mnemonic.strip().lower()
+        if want_mnem not in _DP_MNEMONICS:
+            print(
+                f"error: unknown --mnemonic {args.mnemonic!r}; expected one of: "
+                + ", ".join(_DP_MNEMONICS),
+                file=sys.stderr,
+            )
+            return 2
+
+    if not DISASM_DIR.is_dir():
+        print(
+            f"error: {DISASM_DIR} not found -- run disasm_db.py first to build it",
+            file=sys.stderr,
+        )
+        return 2
+
+    hits: list[tuple[str, int, str]] = []  # (provenance, addr, formatted line)
+    for path in _iter_disasm_files():
+        prov = path.stem
+        for line in path.read_text().splitlines():
+            m = _DP_LINE_RE.match(line)
+            if not m:
+                continue
+            addr_hex, mnem_raw, rest = m.groups()
+            base_mnem = _normalize_dp_mnem(mnem_raw.lower())
+            if base_mnem is None:
+                continue
+            if want_mnem is not None and base_mnem != want_mnem:
+                continue
+            last_op = rest.rsplit(",", 1)[-1].strip()
+            om = _DP_IMM_OPERAND_RE.match(last_op)
+            if om is None:
+                continue
+            if parse_int(om.group(1)) != val:
+                continue
+            addr = int(addr_hex, 16)
+            hits.append((prov, addr, f"0x{addr:08X} ({prov}) {mnem_raw} {rest}"))
+
+    hits.sort(key=lambda t: (t[0], t[1]))
+
+    total = len(hits)
+    shown = hits if args.all else hits[:SEARCH_IMM_CAP]
+    capped = (not args.all) and total > SEARCH_IMM_CAP
+    mnem_note = f" mnemonic=={want_mnem}" if want_mnem else ""
+    print(
+        f"# {total} hit(s) for op-imm == {val}{mnem_note}"
+        + (f" (showing first {SEARCH_IMM_CAP}, use --all for the rest)" if capped else "")
+    )
+    for _prov, _addr, text in shown:
+        print(text)
+    if capped:
+        print(f"... {total - SEARCH_IMM_CAP} more (use --all)")
+    return 0
+
+
+# --------------------------------------------------------------------------
 # disasm
 # --------------------------------------------------------------------------
 
@@ -684,6 +809,7 @@ SEED ANCHORS used throughout this --help text (all independently verified):
   0x{_ANCHOR_DAMAGE_INNER:08X}  an instruction inside that same function
   0x{_ANCHOR_COLLISION_TABLE:08X}  collision_file_pointer_table (arm9), 8 literal refs
   0x{_ANCHOR_OVERLAP_BASE:08X}  ov0-ov9 shared base (overlay-ambiguity demo)
+  0x{_ANCHOR_MOV_IMM:08X}  arm9 "mov r0, #0x3c" (search-op-imm demo)
 
 Run `query.py --selftest` to verify this installation end-to-end.
 """
@@ -838,6 +964,46 @@ def build_arg_parser() -> argparse.ArgumentParser:
     p_search_imm.add_argument("--all", action="store_true", help=f"Show every hit instead of capping at {SEARCH_IMM_CAP}.")
     p_search_imm.set_defaults(handler=cmd_search_imm)
 
+    p_search_op_imm = subparsers.add_parser(
+        "search-op-imm",
+        description=(
+            "Find every data-processing instruction (cmp/cmn/tst/teq/mov/"
+            "mvn/and/orr/eor/add/sub/rsb, any condition code, and for the "
+            "eight that support it the flag-setting 'S' form) anywhere in "
+            "the ROM whose #immediate operand equals VAL -- the way to "
+            "answer 'who compares/moves/masks against constant K', which "
+            "search-imm cannot see (search-imm only covers load/store "
+            "base+offset immediates, not data-processing operands). Scans "
+            "the pre-built disasm/<provenance>.txt listings directly rather "
+            "than xrefs.json. Output is capped at "
+            f"{SEARCH_IMM_CAP} lines by default; pass --all to see every hit."
+        ),
+        epilog=(
+            "Example:\n"
+            "  query.py search-op-imm 0x3c\n"
+            "  -> a '# N hit(s) ...' summary line including:\n"
+            f"     0x{_ANCHOR_MOV_IMM:08X} (arm9) mov r0, #0x3c\n"
+            "  query.py search-op-imm 0x3c --mnemonic cmp   # only cmp hits\n"
+            "  query.py search-op-imm 0x3c --all            # every hit, no cap"
+        ),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        help="Find data-processing instructions with a given #immediate operand.",
+    )
+    p_search_op_imm.add_argument(
+        "val", type=_imm_type, help="Immediate value to match (0x-hex or decimal, may be negative)."
+    )
+    p_search_op_imm.add_argument(
+        "--mnemonic",
+        default=None,
+        metavar="M",
+        help="Only match this base mnemonic, e.g. 'cmp' (condition code/'S' suffix ignored). "
+        "One of: " + ", ".join(_DP_MNEMONICS) + ".",
+    )
+    p_search_op_imm.add_argument(
+        "--all", action="store_true", help=f"Show every hit instead of capping at {SEARCH_IMM_CAP}."
+    )
+    p_search_op_imm.set_defaults(handler=cmd_search_op_imm)
+
     p_disasm = subparsers.add_parser(
         "disasm",
         parents=[overlay_parent],
@@ -984,6 +1150,11 @@ def run_selftest() -> bool:
     ok = code == 0 and n >= 400
     check(f"e. search-imm 0x78 -> {n} hit(s) reported (exit={code})", ok)
 
+    # e2. search-op-imm 0x3c -> finds "mov r0, #0x3c" at 0x02078520
+    code, out, _err = _invoke(["search-op-imm", "0x3c"])
+    ok = code == 0 and f"0x{_ANCHOR_MOV_IMM:08X} (arm9) mov r0, #0x3c" in out
+    check(f"e2. search-op-imm 0x3c -> finds mov r0, #0x3c at 0x{_ANCHOR_MOV_IMM:08X} (exit={code})", ok)
+
     # f. disasm 0x020784E4 10 -> 10 lines, first line starts "0x020784E4:"
     code, out, _err = _invoke(["disasm", f"0x{_ANCHOR_DAMAGE_FUNC:08X}", "10"])
     lines = out.splitlines()
@@ -1029,6 +1200,7 @@ def run_selftest() -> bool:
         ["callees", "--help"],
         ["xrefs-to", "--help"],
         ["search-imm", "--help"],
+        ["search-op-imm", "--help"],
         ["disasm", "--help"],
         ["strings", "--help"],
         ["pool-values", "--help"],

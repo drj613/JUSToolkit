@@ -1,5 +1,5 @@
 {
-  "iteration": 7,
+  "iteration": 8,
   "stage": "B_C_D",
   "queue": [
     {"id": "P1-export-collisions", "type": "tool", "priority": 1, "attempts": 1, "depends_on": [], "status": "done", "spec": "Static-RE-Phase0.md P1"},
@@ -9,7 +9,7 @@
     {"id": "P4v-verify-guard-sp-gauges", "type": "verify", "priority": 2, "attempts": 1, "depends_on": ["P4-B12-trampoline-sweep"], "status": "done", "spec": "3 lenses on guard-sp-gauges.round1.json, standard scoring"},
     {"id": "P5-B14-chrb-catalog", "type": "tracer", "priority": 2, "attempts": 1, "depends_on": [], "status": "done", "spec": "Static-RE-Phase0.md P5 + critic.round1.json B14"},
     {"id": "P5v-verify-chrb-catalog", "type": "verify", "priority": 2, "attempts": 1, "depends_on": ["P5-B14-chrb-catalog"], "status": "done", "spec": "3 lenses on chrb-catalog.round1.json, standard scoring"},
-    {"id": "P6-tooling", "type": "tool", "priority": 3, "attempts": 0, "depends_on": [], "status": "ready", "spec": "Static-RE-Phase0.md P6"},
+    {"id": "P6-tooling", "type": "tool", "priority": 3, "attempts": 1, "depends_on": [], "status": "done", "spec": "Static-RE-Phase0.md P6 ((c) skipped: DB regen risky pre-synthesis)"},
     {"id": "P7-synthesis", "type": "synthesis", "priority": 4, "attempts": 0, "depends_on": ["P2-remine-collision-data", "P3-verify-projectile-entities", "P4v-verify-guard-sp-gauges", "P5v-verify-chrb-catalog"], "status": "blocked_dep", "spec": "Static-RE-Phase0.md P7 (deps amended: verify units must finish before synthesis)"}
   ],
   "subsystems": {
@@ -37,6 +37,7 @@
     {"iter": 4, "unit": "P4-B12-trampoline-sweep", "result": "ok", "commit": "", "note": "14 claims (3C/10P/1S), verify_evidence 0 (148 segments). All 8 trampoline sites enumerated+traced; no alternate fixed base offset — guard/SP candidate is char+0x558 node list; only 1 str to +0x558 (zero-init) in whole DB, node insertion unfound; xrefs-to blind spot (bx ip + inline pool) documented. P4v enqueued; P7 deps amended to P4v"},
     {"iter": 5, "unit": "P4v-verify-guard-sp-gauges", "result": "ok", "commit": "", "note": "3 lenses: disasm 14xUPHELD, aliasing 11U/2R/1UNSURE, data 12U/2UNSURE; scored 2C/11P/1S. Aliasing lens found NEW drain trampoline 0x020783B8 (bl from 0x0215AC70) proving blind-spot mechanism; synthesis must add it + GDB card for delta-source magnitude (claim3) and SP deck-shared question (claim9)"},
     {"iter": 6, "unit": "P5-B14-chrb-catalog", "result": "ok", "commit": "", "note": "16 claims (15C/1P), verify_evidence 0; 97/97 catalog rows cross-checked against xrefs-to by orchestrator. Singleton reframe + cache-at-load confirmed for combat stats; ov11 AI reads BattleParams live. P5v enqueued; P7 deps amended to P5v"},
-    {"iter": 7, "unit": "P5v-verify-chrb-catalog", "result": "ok", "commit": "", "note": "3 lenses: disasm 11U/3R/2UNSURE, aliasing 16U, data 15U/1UNSURE; scored 10C/6P. LENS DISPUTE (top GDB card): is +0x558 technique-node the same object as +0x56c gauge? aliasing says yes via 0x02077E70, disasm says no via caller enumeration — claims 2/10/15 capped PLAUSIBLE. Catalog errata: 2 rows of fn 0x0207698C dropped +0x1800 term (real offsets manager+0x18D4/+0x18DC). Data lens: independent chr_b.bin reparse 74/74 records exact via claimed offset map"}
+    {"iter": 7, "unit": "P5v-verify-chrb-catalog", "result": "ok", "commit": "", "note": "3 lenses: disasm 11U/3R/2UNSURE, aliasing 16U, data 15U/1UNSURE; scored 10C/6P. LENS DISPUTE (top GDB card): is +0x558 technique-node the same object as +0x56c gauge? aliasing says yes via 0x02077E70, disasm says no via caller enumeration — claims 2/10/15 capped PLAUSIBLE. Catalog errata: 2 rows of fn 0x0207698C dropped +0x1800 term (real offsets manager+0x18D4/+0x18DC). Data lens: independent chr_b.bin reparse 74/74 records exact via claimed offset map"},
+    {"iter": 8, "unit": "P6-tooling", "result": "ok", "commit": "", "note": "(a) search-op-imm added to query.py (+175/-3), deterministic, in selftest; (b) arm9_tables_ram.json written (842 rows, offsets+scan_range translated, _meta documents fields); 3 xrefs-to smoke tests clean (0 hits each — unverified candidates); (c) SKIPPED: disasm_db regen would invalidate frozen evidence DBs pre-synthesis. Orchestrator re-ran AC: determinism ok, selftest 0, gates 0"}
   ]
 }

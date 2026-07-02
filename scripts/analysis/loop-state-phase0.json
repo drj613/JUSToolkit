@@ -1,9 +1,9 @@
 {
-  "iteration": 0,
+  "iteration": 1,
   "stage": "B_C_D",
   "queue": [
-    {"id": "P1-export-collisions", "type": "tool", "priority": 1, "attempts": 0, "depends_on": [], "status": "ready", "spec": "Static-RE-Phase0.md P1"},
-    {"id": "P2-remine-collision-data", "type": "tracer", "priority": 2, "attempts": 0, "depends_on": ["P1-export-collisions"], "status": "blocked_dep", "spec": "Static-RE-Phase0.md P2"},
+    {"id": "P1-export-collisions", "type": "tool", "priority": 1, "attempts": 1, "depends_on": [], "status": "done", "spec": "Static-RE-Phase0.md P1"},
+    {"id": "P2-remine-collision-data", "type": "tracer", "priority": 2, "attempts": 0, "depends_on": ["P1-export-collisions"], "status": "ready", "spec": "Static-RE-Phase0.md P2"},
     {"id": "P3-verify-projectile-entities", "type": "verify", "priority": 2, "attempts": 0, "depends_on": [], "status": "ready", "spec": "Static-RE-Phase0.md P3"},
     {"id": "P4-B12-trampoline-sweep", "type": "tracer", "priority": 2, "attempts": 0, "depends_on": [], "status": "ready", "spec": "Static-RE-Phase0.md P4 + critic.round1.json B12"},
     {"id": "P5-B14-chrb-catalog", "type": "tracer", "priority": 2, "attempts": 0, "depends_on": [], "status": "ready", "spec": "Static-RE-Phase0.md P5 + critic.round1.json B14"},
@@ -27,6 +27,7 @@
     "ds_b_03_collision.json": "073cb8d52866bd59516ceac588a8ad48ffa988ad03dff982a9ab560bb535b49b"
   },
   "log": [
-    {"iter": 0, "unit": "init", "result": "ok", "commit": "", "note": "phase0 state created; gates re-run all pass; original-4 hashes baselined"}
+    {"iter": 0, "unit": "init", "result": "ok", "commit": "6b3f591", "note": "phase0 state created; gates re-run all pass; original-4 hashes baselined"},
+    {"iter": 1, "unit": "P1-export-collisions", "result": "ok", "commit": "", "note": "281/281 exported via 'jus combat export-all-collisions' (src: extracted_chrbin/ChrBin.aar/chr/col, 74 *_b_* + 206 *_s_* + item); all parse; original 4 byte-identical; P2 unblocked"}
   ]
 }

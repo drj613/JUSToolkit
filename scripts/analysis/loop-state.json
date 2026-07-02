@@ -1,6 +1,6 @@
 {
-  "iteration": 38,
-  "stage": "WINDDOWN",
+  "iteration": 39,
+  "stage": "DONE",
   "queue": [
     {"id": "A1-env", "type": "tool", "priority": 1, "attempts": 1, "depends_on": [], "status": "done", "spec": "5.A1"},
     {"id": "A2-rom-loader", "type": "tool", "priority": 1, "attempts": 1, "depends_on": ["A1-env"], "status": "done", "spec": "5.A2"},
@@ -90,6 +90,7 @@
     {"iter": 35, "unit": "D2-critic", "result": "launched", "commit": "", "note": "Critic subagent launched (gap analysis + next-campaign tracer specs). 2 in flight (B4, D2)."},
     {"iter": 36, "unit": "D2-critic", "result": "ok", "commit": "", "note": "7 gaps (guard, SP gauge, throws, support koma, switch, combo scaling, ring-out[possibly nonexistent]), 7 tracer specs B10-B16 enqueued (won't run this campaign — iter cap), 5 GDB-first recs, 5 tooling gaps (incl ExportAllCollisions batch). dry_rounds stays 0 (new units generated). D1 synthesis next; B4 still in flight."},
     {"iter": 37, "unit": "B4-projectile-entities", "result": "ok", "commit": "", "note": "5 claims, 68 segments verified exit 0. Entity pool: alloc arm9 0x020834D4 (freelist mgr+0x14, active list +0xc, pending +0x1c), free 0x02083648. Spawn: ov6 dispatcher 0x021574CC case-8 -> 0x02168CF4 -> allocator. Ownership: wrapper+0xc stores attacker MoveInfo ptr (char+0x1a8). Kill block ov6 0x0216C958: 4 triggers incl 32-frame age counter. Switch-persistence unresolved. WIND-DOWN: lens verify skipped -> all claims capped PLAUSIBLE in synthesis, flagged pending. D1 synthesis launched this iter."},
-    {"iter": 38, "unit": "D1-synthesis", "result": "ok", "commit": "", "note": "3 deliverables verified: Battle-Engine-Map.md (12 sections: primer + 9 subsystems + cross-cutting + next-campaign; 46 claims), GDB-Validation-Queue.md (31 cards, 8 sessions, ~210 min human time), Research-Status.md updated w/ dated section + CORRECTED note on 0x0924B0. Stage -> WINDDOWN. Morning report next, then STOP."}
+    {"iter": 38, "unit": "D1-synthesis", "result": "ok", "commit": "", "note": "3 deliverables verified: Battle-Engine-Map.md (12 sections: primer + 9 subsystems + cross-cutting + next-campaign; 46 claims), GDB-Validation-Queue.md (31 cards, 8 sessions, ~210 min human time), Research-Status.md updated w/ dated section + CORRECTED note on 0x0924B0. Stage -> WINDDOWN. Morning report next, then STOP."},
+    {"iter": 39, "unit": "morning-report", "result": "ok", "commit": "", "note": "loop-report.md written. Outcome CAP-STOP (wind-down at 39/40). Loop ends — no further wakeups."}
   ]
 }

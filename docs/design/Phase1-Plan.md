@@ -64,6 +64,43 @@ Start-to-finish guide with these sections:
    `docs/research/GDB-Validation-Queue.md` (post-Phase-0 regeneration),
    grouped into whichever discovery block's session they can piggyback on.
 
+## Session capture kit (what makes the live Claude session effective)
+
+Full RAM dumps ARE useful — as files for tooling, never pasted into chat.
+NDS main RAM is 4 MiB (`0x02000000`–`0x02400000`); in GDB:
+`dump binary memory <file>.bin 0x02000000 0x02400000`.
+
+1. **Churn mask first** (kills the noise problem): two dumps of the SAME
+   paused idle state → `scripts/analysis/ramdiff.py baseline idle1.bin
+   idle2.bin -o mask.json`. Everything that differs (framecounters, sound
+   DMA, RNG) is masked out of all later diffs.
+2. **Differential pairs around events**: pre/post a single hit, idle vs
+   jumping, pre/mid combo → `ramdiff.py diff pre.bin post.bin --mask
+   mask.json` → short, pasteable list of changed addresses with
+   u8/u16/u32/s16/Q12 interpretations. This is the primary velocity/HP/
+   timer field-finder.
+3. **Sidecar context per dump** — each snapshot needs: `info registers`,
+   the `0x023D2A74` chain dereferenced (`ramdiff.py chain <dump>
+   0x023D2A74 0x0 ...` works offline on the dump), characters on screen,
+   visible HP, what just happened. The Phase-1 guide will ship a GDB
+   `snap <label>` macro automating dump+sidecar (macro file to be written
+   at guide-generation time, once Phase-0 addresses are final).
+4. **Planted known values**: use moves with documented `damage1` (Goku
+   kit) so expected computed values are searchable:
+   `ramdiff.py find post.bin --u16 8 --near <charptr> --radius 0x8000`.
+5. **Savestates at key moments** (melonDS): savestate immediately before a
+   hit = replayable experiment; rerun the identical frames with different
+   watchpoints. Single biggest quality multiplier.
+6. **Per-breakpoint capture discipline**: on every stop —
+   `info registers` + `x/16wx $sp` + `disas $pc-0x20,$pc+0x20`, appended
+   to a per-block transcript file under `jus_files/analysis/gdb/session1/`.
+7. **Skip VRAM/OAM** — combat logic lives in main RAM; graphics memory is
+   noise for this campaign.
+
+Tooling status: `scripts/analysis/ramdiff.py` exists and self-tests
+(baseline/diff/find/chain/selftest). The `snap` GDB macro file and the
+live-helper companion prompt are generated with the Phase-1 guide.
+
 ## Human prep (independent of Phase 0)
 
 - `brew install melonds arm-none-eabi-gdb` (or per `scripts/gdb/README.md`

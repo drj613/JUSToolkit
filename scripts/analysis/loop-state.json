@@ -1,5 +1,5 @@
 {
-  "iteration": 10,
+  "iteration": 11,
   "stage": "B_C_D",
   "queue": [
     {"id": "A1-env", "type": "tool", "priority": 1, "attempts": 1, "depends_on": [], "status": "done", "spec": "5.A1"},
@@ -25,7 +25,7 @@
     "hitbox-priority": {"status": "TRACING", "tracer_attempts": 0, "claims": {"confirmed": 0, "plausible": 0, "speculative": 0}},
     "projectile-entities": {"status": "UNSTARTED", "tracer_attempts": 0, "claims": {"confirmed": 0, "plausible": 0, "speculative": 0}},
     "physics-writers": {"status": "TRACING", "tracer_attempts": 0, "claims": {"confirmed": 0, "plausible": 0, "speculative": 0}},
-    "hitstun-timers": {"status": "UNSTARTED", "tracer_attempts": 0, "claims": {"confirmed": 0, "plausible": 0, "speculative": 0}},
+    "hitstun-timers": {"status": "TRACING", "tracer_attempts": 0, "claims": {"confirmed": 0, "plausible": 0, "speculative": 0}},
     "movement": {"status": "UNSTARTED", "tracer_attempts": 0, "claims": {"confirmed": 0, "plausible": 0, "speculative": 0}},
     "weight-hunt": {"status": "UNSTARTED", "tracer_attempts": 0, "claims": {"confirmed": 0, "plausible": 0, "speculative": 0}},
     "collision-data": {"status": "UNSTARTED", "tracer_attempts": 0, "claims": {"confirmed": 0, "plausible": 0, "speculative": 0}}
@@ -43,6 +43,7 @@
     {"iter": 7, "unit": "A7-verify-evidence-tool", "result": "ok", "commit": "", "note": "7/7 selftest cases pass. Rejects: tampered operand, shifted addr, ambiguous overlay addr w/o provenance, uncited addresses, empty gdb_check on PLAUSIBLE/SPECULATIVE. STAGE A COMPLETE — tracers unlocked. Damage fn prologue: ldr r4,[r0,#0x56c]; ldrsh r2,[r4,#0x16]; mul r0,r2,r1."},
     {"iter": 8, "unit": "B1-damage-pipeline", "result": "launched", "commit": "1ea0581", "note": "Tracer subagent (sonnet) in flight. Will pipeline additional tracers next iterations, max 6 concurrent."},
     {"iter": 9, "unit": "B3-hitbox-priority", "result": "launched", "commit": "4d47e29", "note": "Tracer (sonnet) in flight. 2 concurrent (B1, B3)."},
-    {"iter": 10, "unit": "B5-physics-writers", "result": "launched", "commit": "", "note": "Tracer (sonnet) in flight. 3 concurrent (B1, B3, B5)."}
+    {"iter": 10, "unit": "B5-physics-writers", "result": "launched", "commit": "f50fce9", "note": "Tracer (sonnet) in flight. 3 concurrent (B1, B3, B5)."},
+    {"iter": 11, "unit": "B6-hitstun-timers", "result": "launched", "commit": "", "note": "Tracer (sonnet) in flight. 4 concurrent (B1, B3, B5, B6)."}
   ]
 }

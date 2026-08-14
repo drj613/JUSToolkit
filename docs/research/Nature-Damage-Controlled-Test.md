@@ -81,6 +81,38 @@ Poking after load can't answer it. Either:
 - find where nature is read during character setup and check whether any scale
   factor is derived from it.
 
+## Follow-up: three corrections to how far the determinism claim reaches
+
+A later attempt to reuse this savestate for a GDB run failed, and the failure is
+informative.
+
+**1. Determinism holds within one emulator session — not across a relaunch.**
+The three identical runs above all happened in a single emulator process. Loading
+the *same savestate file* after a fresh launch produced **zero** hits, and the
+HUD showed a different active character than expected. So the correct claim is:
+*reloading a savestate within a session reproduces exactly.* Cross-launch
+reproducibility is **not** established, and the earlier wording overreached.
+
+**2. Max HP changes during a battle.** Slot 0's max HP read `160.0` early on and
+`176.0` later — `+16`, i.e. two more `+8` sources. Since
+`max = chr_b[idx][size-4] + 8 × sources`, the `sources` term is **dynamic during
+play**, not fixed at battle start. That fits `0x020784B8` (add-to-max, clamp at
+`0x4000`) being called when a source activates mid-fight. Anything comparing max
+HP across time has to account for this.
+
+**3. "Slot 0 is the active character" was an assumption, and it doesn't hold.**
+The HUD showed a different fighter while slot 0's `chr_b` index was unchanged, so
+the four slots are the **deck**, and which one is currently out is tracked
+elsewhere. Earlier labels of "P active" in these notes rest on Goku happening to
+be both slot 0 and the active fighter at the time. A scan for a byte that singles
+out one slot turned up candidates at struct `+0x0F` and `+0x47`, but the
+slot↔active mapping is **not** established and should not be assumed.
+
+The GDB run itself was inconclusive rather than negative: with the auto-heal off
+and no hit landing, the breakpoint had nothing to discriminate. Zero applies is
+consistent both with "melee bypasses the function" and with "no damage happened",
+so it is not evidence for either.
+
 ## Reproducing
 
 ```bash

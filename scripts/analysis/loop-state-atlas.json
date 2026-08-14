@@ -1,9 +1,9 @@
 {
-  "iteration": 9,
+  "iteration": 10,
   "phase": "koma",
-  "current_task": "K2g-aar-archives-and-compacted-table",
+  "current_task": "K2h-settle-nature-override-rule",
   "queue": [
-    "K2g-aar-archives-and-compacted-table",
+    "K2h-settle-nature-override-rule",
     "K3-koma-runtime",
     "K4-design-brief",
     "C1-overlay-map",
@@ -21,7 +21,8 @@
     "K2c-nature-exclusions-and-57-descriptions",
     "K2d-hp-per-size-candidate",
     "K2e-HP-fully-solved-F1-closed",
-    "K2f-overlays-extracted-nature-exhaustively-excluded"
+    "K2f-overlays-extracted-nature-exhaustively-excluded",
+    "K2g-nature-narrowed-to-override-rule"
   ],
   "stuck": {},
   "required_reading_for_koma_tasks": [
@@ -79,7 +80,7 @@
     "L/R sticker bindings are per-deck fields not yet located in RAM",
     "Is HP computed as size*k at runtime, or tabulated per panel? Naruto 4-koma=144=4*36; if size*k then size5=180, size6=216, size7=252, size8=288. One reading settles it."
   ],
-  "notes": "Iteration 9: extracted all 14 ARM9 overlays (11 never examined before - a ~1.4MB blind spot) with a new tool, then exhaustively REFUTED the per-koma-indexed nature table across arm9 + 26 bin files + 14 overlays in 3 encodings. Reframed the hunt: Deck-System.md implies panel nature is deck-bonus-only, not a combat property, so the .aar archives and deckmake overlay are the right targets. Also propagated the harness session s session-local-address warning into all harness cards. | Follow-up: the compacted-578 variant is refuted too (rolling-histogram rerun). Nature is not a koma-indexed table under ANY of the models tested.",
+  "notes": "Iteration 10: nature narrowed to a single unknown. Model P1d = base nature (chr_b/chr_s offset 0x00, both exactly 3-valued) overridden on the 26 panels whose koma flags bit 0x10 is clear - which is precisely why no per-koma table exists. Also identified chr_b +0x2C..+0x2E as percentage thresholds (all multiples of 5, feeding the disassembled max*pct/100), ruled out the +0x24 halfword array, and independently confirmed the 0x4000 HP cap as 224+32=256.",
   "last_wake": "2026-08-14",
   "wakeup_default_seconds": 1800,
   "consecutive_no_progress_wakes": 0,
@@ -263,5 +264,23 @@
   "ADDRESSES_ARE_SESSION_LOCAL": "CRITICAL: absolute battle addresses shift between sessions - harness saw the player array at 0x021DF1D4 in one battle and 0x021DF1B4 in another (0x20 shift, same deck). Fails SILENTLY: the stale address returned 62072 from an unrelated array whose neighbours decremented by a tidy 48. Always discover via scripts/emu/find_battle_structs.py. Slot structure (portable): HP u16 +0x00, ability count +0x02, ability IDs +0x03, chr_b index +0x29, slot stride 0x50. Human-Testing-Queue.md header updated with this warning.",
   "leader_vs_active_still_open": "Harness tried 3 routes, all dead ends: (1) touching the in-battle koma grid never switches the active chr_b index (touch injection itself verified working), (2) poking HP to 0 cannot force a KO because training regen outruns the death check, (3) J Arena index 2 is local wireless multiplayer not vs-CPU - ランキング (index 0) is the vs-CPU ladder and is the right target. \"+8 on the active character\" now reproduces across two sessions.",
   "nature_P1c_REFUTED": "The compacted 578-entry model (non-helpers only, koma-index order) is ALSO refuted: 578-byte windows with exactly 3-4 distinct values each appearing >=80 times, u8 encoding, across all 26 bin/ files + 14 overlays + arm9.bin. Zero candidates.",
-  "PERF_NOTE": "Sliding-window scans over these files: use a ROLLING HISTOGRAM (add entering byte, drop leaving byte) for O(n). The naive O(offsets x window) version got killed before finishing; the rolling version completes in seconds."
+  "PERF_NOTE": "Sliding-window scans over these files: use a ROLLING HISTOGRAM (add entering byte, drop leaving byte) for O(n). The naive O(offsets x window) version got killed before finishing; the rolling version completes in seconds.",
+  "nature_P1d_PLAUSIBLE": {
+    "model": "panel nature = character BASE nature (chr_b/chr_s offset 0x00), OVERRIDDEN on panels whose koma.bin flags byte 0xB has bit 0x10 CLEAR",
+    "why_it_explains_the_refutations": "Only 26 panels need an override; the other 864 inherit from the character. That is exactly why no per-koma nature table exists anywhere (P1b/P1c exhaustively refuted).",
+    "base_nature_candidate": "chr_b.bin offset 0x00 = {0:35, 1:22, 2:17} (74 entries); chr_s.bin offset 0x00 = {0:63, 1:67, 2:63} (193 entries). Both exactly 3-valued = 力/知/笑 with なし excluded (helpers have no entry in either file). Support split is near-perfectly even. Naruto chr_b[20], 九尾 chr_b[24] and 悟空 chr_b[0] all read 0 and all three are 力 characters, consistent with 0=力 but 3 same-value samples cannot prove the mapping.",
+    "alt_flag_CONFIRMED_MEANING": "koma.bin byte 0xB bit 0x10 CLEAR marks the ALTERNATE of a same-size pair. 26 panels total (flags 0x00 x9, 0x01 x3, 0x20 x11, 0x21 x2, 0x42 x1); 25 of 26 pair with a same-character same-size sibling; 25 of the 33 duplicated-size groups have exactly ONE member alt-flagged. Naruto 笑 size-4 = koma record 501 is alt-flagged, its 力 sibling 500 is not.",
+    "THE_ONE_MISSING_PIECE": "What the override RESOLVES TO. Naruto base=0 and his alternate shows 笑. If 0=力,1=知,2=笑 then that is base+2 mod 3, but one sample cannot separate \"+2 mod 3\" from \"always 笑\" from \"a 26-entry lookup\".",
+    "cheapest_test": "ONE data point from a character whose base nature is NOT 力. If a 知 character alternate is 力, the rule is base+2 mod 3 (each nature alternates to the one it loses to). If every alternate is 笑 regardless of base, it is a constant. 22 battle characters read 1 at offset 0x00 and 17 read 2 - those are the discriminating ones."
+  },
+  "chr_b_record_map": {
+    "0x00": "PLAUSIBLE base nature (3 values)",
+    "0x10/0x14/0x18/0x1C/0x20": "CONFIRMED per-size max HP (u8, sizes 4-8), displayed units, all multiples of 8",
+    "0x24 halfword array": "NOT nature - 16-38 distinct per slot, values up to 12337, look like packed move/animation IDs",
+    "0x2C/0x2D/0x2E": "CONFIRMED percentage thresholds - every value a multiple of 5, ranges 25..100 / 0..40 / 0..30, feeding the max*pct/100 routine the harness disassembled. Almost certainly low-HP triggers for 底力 / 闘争心.",
+    "0x2F": "2-value flag {0:70, 1:4}",
+    "0x41": "chr_b index within the RUNTIME battle struct (not the file record) per harness disasm"
+  },
+  "HP_CAP_CONFIRMED": "Engine clamps max HP to 0x4000 at 0x020784B8. 0x4000/64 = 256 displayed. My table max base HP = 224, plus max bonus +32 = 256 EXACTLY. Three independently derived numbers (harness 1/64 scale, my table max, my 4x8 stacking model) meet on one hardcoded constant.",
+  "battle_code_scope": "Harness matched each uncompressed overlay against live RAM: ov06 IS the battle overlay (100% over 154688 bytes), ov11 likewise at 0x02172A60. Everything else in the shared window is 3-7%. So combat = arm9.bin + ov06 only. Caveats: ov13 100% is meaningless (32 bytes) and the 0x021AC1C0 window is unresolved (ov12 at 59.6%)."
 }

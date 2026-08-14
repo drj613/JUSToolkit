@@ -1,9 +1,9 @@
 {
-  "iteration": 19,
+  "iteration": 20,
   "phase": "combat",
-  "current_task": "C6-damage-record-format-at-8-ARM-sites",
+  "current_task": "C6b-callers-of-the-damage-dispatcher",
   "queue": [
-    "C6-damage-record-format-at-8-ARM-sites",
+    "C6b-callers-of-the-damage-dispatcher",
     "C4-physics-writers-round2",
     "C5-gdb-queue-triage",
     "K3-koma-runtime (deferred)"
@@ -25,7 +25,8 @@
     "C2-function-denominator",
     "C0-nature-in-battle",
     "C3-hitbox-priority-round2",
-    "C3b-chr_b-join-verified"
+    "C3b-chr_b-join-verified",
+    "C6-damage-delta-PARTIAL"
   ],
   "stuck": {},
   "required_reading_for_koma_tasks": [
@@ -83,7 +84,7 @@
     "L/R sticker bindings are per-deck fields not yet located in RAM",
     "Is HP computed as size*k at runtime, or tabulated per panel? Naruto 4-koma=144=4*36; if size*k then size5=180, size6=216, size7=252, size8=288. One reading settles it."
   ],
-  "notes": "Iteration 19 (interrupt): VERIFIED the chr_b->name join the peer flagged as a risk (self-consistency across 74 entries plus two live RAM identifications) - the join holds, and their apparent discrepancy is explained by their own slot!=active finding. Recorded three of their corrections: determinism is within-session only, max HP is DYNAMIC during a fight, and a battle slot is a deck slot not the active fighter. Their GDB run was inconclusive (no hit landed). Reprioritised C6 - tabulate the damage record format statically - ahead of C4, since it is what they asked for and it sidesteps their positioning blocker.",
+  "notes": "Iteration 20: peer CONFIRMED resistance is FLAT -2, not multiplicative, using the two-move design (difference constant, ratio not). External validation: 6.000 matches what the owner reported independently before any tooling existed. My C6 is PARTIAL and honestly so - the 8 ARM sites are dispatcher cases that receive the delta as a function ARGUMENT (mov r4,r3), so no table is reachable at that level; the next attempt starts at the dispatcher callers. Also checked for a per-character defence field in chr_b and found none (weakly supporting ability 0x09 as the -2 source), and backed out of an over-fit reading of the chr_b +0x30 ID block.",
   "last_wake": "2026-08-14",
   "wakeup_default_seconds": 1800,
   "consecutive_no_progress_wakes": 0,
@@ -473,5 +474,24 @@
     "2. Identify the record stride and the file/table it comes from.",
     "3. If it is a file table, tabulate move damage offline the way HP was done - no emulator needed, and it turns the peer role from discovery to verification.",
     "NOTE: their blocker is that they cannot reliably make a specific move land on a specific target, so breakpoint runs are lottery tickets until that is scripted. Static tabulation sidesteps it entirely."
-  ]
+  ],
+  "RESISTANCE_IS_FLAT": {
+    "verdict": "CONFIRMED by the peer with the two-move design we specified. The reduction is FLAT (-2), NOT a multiplier.",
+    "data": "Same attacker (Goku chr_b[0]), same buttons, two moves. B: 6.000 unresisted vs 4.000 on Luffy. DOWN+B: 5.000 vs 3.000. Difference constant at -2.0; ratio NOT constant (0.6667 vs 0.6000). A multiplier preserves the ratio; a flat subtraction preserves the difference.",
+    "unresisted_target": "chr_b index 70 = コマレッド (Koma Red, a mascot). Empty ability array (count read, not assumed). Its four ID slots are all zero. Base HP 104; the peer read 112.0, i.e. one +8 source active.",
+    "external_validation": "6.000 is exactly what the OWNER independently reported a punch doing - validating the whole chain (HP scale, address derivation, dip-minimum reading) against a human observation predating the tooling.",
+    "consequence_for_the_queue_formula": "damage = damage1/5 + (tier-2) having an ADDITIVE term now looks LESS suspicious. Still worth re-deriving against u16, but the additive shape matches.",
+    "NOT_established": "That the -2 comes specifically from ability 0x09. The two targets are DIFFERENT CHARACTERS and could differ in a per-character defence value. Blunt resistance is likely, not proven. The clean test (one target with and without the ability) is impossible from runtime since resistance resolves at load.",
+    "cross_session_caveat": "The 4.000/3.000 came from an earlier battle than the 6.000/5.000. Same attacker and moves, but reproducibility is only established within a session."
+  },
+  "I_CHECKED_FOR_A_DEFENCE_FIELD": "Compared chr_b[70] (ability-free) against chr_b[12] (Luffy) across all 60 bytes. Four fields differ by exactly 2 (0x31, 0x33, 0x35, 0x37) but they are the HIGH BYTES of u16 values at 0x30/0x32/0x34/0x36, not standalone stats - read as u16 they are 536,537,538,539 for Luffy and 0,0,0,0 for コマレッド. No other column looks like a flat defence. This WEAKLY supports attributing the -2 to ability 0x09 rather than a per-character stat - weakly, because absence of an obvious field is not proof and I compared only two records.",
+  "C6_PARTIAL": {
+    "output": "docs/research/findings/c6-damage-delta-partial.md",
+    "what_the_8_ARM_sites_are": "Cases in ONE dispatcher, all identical: ldr r0,[r5,#0x1B4] (target pointer); mov r1,r4 (delta); bl 0x020783CC; b <switch exit>. So r5+0x1B4 is the target and r4 is the delta, set up BEFORE the switch rather than per-case.",
+    "WHY_IT_IS_A_DEAD_END_HERE": "Every write to r4 in the enclosing function: ldr r4,[r0,#0x8] at 0x0215795C, ldr r4,[r0,#0x18] at 0x021579EC, and mov r4,r3 at 0x02157A4C. The last means THE DELTA IS A FUNCTION ARGUMENT - the dispatcher receives an already-computed number and routes it. So move damage is NOT tabulated at these sites and C6 as scoped CANNOT produce a table. The value is computed by this dispatcher CALLER, one level up.",
+    "the_record_read_is_elsewhere": "The peer ldrsh r1,[r1,#4] observation must be at one of the six sites I did not decode, not these two.",
+    "VERIFICATION_TARGET": "Goku B = 6.000 (384 raw), DOWN+B = 5.000 (320 raw) against an ability-free target. UP+B is a MULTI-HIT string (1.0, 2.0, 1.0, 1.0), so any table must distinguish per-hit values from string totals - several records or a repeat count. Damage is authored in DISPLAYED units (apply sites do lsl #6), so a real table should hold literal 6 and 5.",
+    "OVER_FIT_I_BACKED_OUT_OF": "The four u16s at chr_b +0x30..+0x36 looked like base+0,1,2,3 (Naruto 362-365, Luffy 536-539). Across all 74: only 15 sequential, 8 all-zero, 51 NEITHER (Goku is 337,0,338,0). So they are four independent IDs that happen to be contiguous for some characters. Failed to match the non-zero count to owned panel sizes. Recorded as an unresolved field, not a pattern."
+  },
+  "peer_positioning_solved": "What unblocked their measurement, neither clever: (1) use the PASSIVE CPU (COM設定 なにもしない, the training default) so positions are fixed - they had been fighting the 戦う AI wandering for rounds, and the DEFAULT was the better experiment; (2) SWEEP the approach distance instead of reasoning about it - 0/20 frames too far, 40/60/80/100 all landed 2 hits at 6.000 each, 140/180/240 walked past facing away. Wide window, identical damage, so no frame-perfect timing needed. Sweeping nine values took four minutes after rounds of trying to deduce it."
 }

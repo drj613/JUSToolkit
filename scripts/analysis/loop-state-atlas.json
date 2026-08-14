@@ -1,5 +1,5 @@
 {
-  "iteration": 2,
+  "iteration": 3,
   "phase": "koma",
   "current_task": "K2-koma-format",
   "queue": [
@@ -12,11 +12,16 @@
     "C4-physics-writers-round2",
     "C5-gdb-queue-triage"
   ],
-  "done": ["K1-koma-data-survey", "K1b-observed-behavior-capture"],
+  "done": [
+    "K1-koma-data-survey",
+    "K1b-observed-behavior-capture",
+    "K1c-helper-passives-catalog"
+  ],
   "stuck": {},
   "required_reading_for_koma_tasks": [
     "docs/research/Koma-System-Observed-Behavior.md",
-    "docs/design/Koma-Deckbuilder-UX-Spec.md"
+    "docs/design/Koma-Deckbuilder-UX-Spec.md",
+    "docs/research/Helper-Passives-Catalog.md"
   ],
   "k1_results": {
     "output": "docs/research/findings/koma-data-survey.md",
@@ -41,12 +46,14 @@
   },
   "k2_predictions_to_check": [
     "P1 nature = field with exactly 4 distinct values across 890 records; candidates 0x6,0x7,0xA,0xB or low bits of 0x2",
-    "P2 all size==1 records share one constant nature value (joint constraint, identifies size AND nature together)",
+    "P2 REVISED: passive-ID field on size-1 records holds values in 0x01-0x30 (48 slots), not ~42 distinct. Find a byte whose values all land in 1..48. Candidates 0x6,0x7,0xA,0xB.",
     "P3 type is derived not stored; a 3-value field is a cached type, check against size",
     "P4 size = field with 8 distinct values, but may not be stored at all (derivable from kshape geometry)",
     "P5 kshape.bin 1.6KB / 0x14 = ~81 shapes total => hand-picked set (all free polyominoes 1-8 would be 533). PREDICT KShapeGroupId@0x8 ~= size, KShapeElementId@0x9 ~= shape within size. If true, size comes free from 0x8.",
     "P6 Koma.NameTable 43 entries ~= ~40 series emblems in series filter => nameIdx@0x4 is SERIES index, nameNum@0x5 is character slot within series. Retires the 'letters=1 -> Eyeshield 21?' question mark.",
-    "P7 3 relationships per battle panel does NOT fit in 6 unknown bytes => separate table; piece.bin (35KB, unopened) is prime suspect"
+    "P7 3 relationships per battle panel does NOT fit in 6 unknown bytes => separate table; piece.bin (35KB, unopened) is prime suspect",
+    "P8 helper-panel count in koma.bin should be >=~304 (owner list says \"identified\", may be incomplete)",
+    "P9 static passive ID in koma.bin may NOT share numbering with the RAM ability array at 0x021DF1D7 - check, do not assume"
   ],
   "k2_plan": [
     "1. Read DtxCommands.KShapeSprites, settle kshape.bin, test P5 first (shrinks the search)",
@@ -57,16 +64,48 @@
   ],
   "naruto_reference_table": "size/type/nature: 1 Helper なし | 2 Support 笑 | 3 Support 力 | 4 Battle 力 (vertical bar) | 4 Battle 笑 | 5 Battle 力 | 6 Battle 力 | 7 Battle 力 ナルト（九尾） | 8 Battle 力 ナルト（九尾）. Relationships: 自来也/我愛羅/サクラ. Any decode must reproduce this exactly.",
   "open_questions": [
-    "What helper direction mechanically does",
-    "Nature triangle magnitude (damage/defence numbers)",
-    "Relationship HP bonus value; whether all 3 stack",
-    "HP readout showed 144 alone then 144/152 after L sticker placed - two numbers, meaning unknown",
+    "Nature triangle magnitude - owner guesses ~1.5x but UNSURE (SPECULATIVE)",
+    "Whether the +8 relationship bonus stacks across all 3 (expect base/base+24, or base/base+32 with Leader)",
+    "Whether passive magnitudes are per-passive constants or per-character",
+    "Whether a helper's facing hits one adjacent battle char or a whole row/column",
+    "6 ability IDs still genuinely unidentified",
     "Deck-level nature bonuses / '+1 SP helpers affect whole deck' - no formula ever found",
     "Whether unlocks gate shapes as well as characters and sizes",
     "L/R sticker bindings are per-deck fields not yet located in RAM"
   ],
-  "notes": "Iteration 2: user supplied live-play context mid-loop. Wrote both requested formats (design-session UX spec + loop-context observed-behavior doc), stored all 25 screenshots in-repo, updated charter with required-reading section and 30-min pacing. opus-4-6 edit pass ran on both docs; verification clean (zero hex/image-ref/Japanese-glyph/table loss).",
+  "notes": "Iteration 3: owner supplied the full helper-passive taxonomy mid-loop. Wrote Helper-Passives-Catalog.md (42 categories, ~304 chars) and merged it with the pre-existing numeric ability ID table in Cheat-Code-Analysis.md - that merge confirmed prediction P3 and filled 4 previously-Unknown IDs. Also resolved the 144/152 HP question and the helper-direction question. opus-4-6 edit pass ran on both docs; verification clean (42/42 category-count pairs identical, zero hex/image/glyph loss, spot-checked 12 rare character names).",
   "last_wake": "2026-08-14",
   "wakeup_default_seconds": 1800,
-  "consecutive_no_progress_wakes": 0
+  "consecutive_no_progress_wakes": 0,
+  "k1c_helper_passives": {
+    "output": "docs/research/Helper-Passives-Catalog.md",
+    "source": "owner-supplied play knowledge: 42 passive categories, ~304 named helper characters",
+    "mechanic": "every 1-cell helper carries exactly ONE passive; the facing direction set at placement picks WHICH BATTLE CHARACTER receives it. Helpers are directional buff emitters.",
+    "merged_with": "docs/research/Cheat-Code-Analysis.md already had numeric ability IDs 0x01-0x30 (RAM array at 0x021DF1D6+, count max 0x21=33 active). 38 named there + owner 42 => 4 previously-Unknown IDs now have effects; 6 Unknown IDs still unidentified.",
+    "prediction_confirmed": "P3 (immunity passives contiguous) CONFIRMED: 0x19-0x22, all ten, no gaps.",
+    "newly_resolvable_unknown_ids": {
+      "cat23 health regen": "0x13-0x15 or 0x17-0x18 (SPECULATIVE)",
+      "cat24 increase max HP": "0x13-0x15 or 0x17-0x18 (SPECULATIVE)",
+      "cat27 +1 max SP gauge": "0x13-0x15 or 0x17-0x18 (SPECULATIVE)",
+      "cat40 SP regen on field": "0x24 or 0x25 (SPECULATIVE)"
+    },
+    "still_unknown_ids": [
+      "0x0B",
+      "0x0C",
+      "0x11",
+      "and 3 of 0x13/0x14/0x15/0x17/0x18/0x24/0x25"
+    ]
+  },
+  "confirmed_constants": {
+    "leader_sticker_hp": "+8 HP",
+    "relationship_adjacency_hp": "+8 HP (same constant as Leader)",
+    "lr_stickers": "NO bonus - only make panel shoulder-callable (activate battle char / dream attack if active / summon support)",
+    "nature_damage_multiplier": "~1.5x per owner but UNSURE - SPECULATIVE",
+    "hp_readout_144_152": "RESOLVED: base HP / effective HP after deck bonuses. 144+8(leader)=152."
+  },
+  "combat_phase_spillover": [
+    "status-effect enum = 10 values, contiguous IDs 0x19-0x22 (Shock/Freeze/Burn/Confusion/Poison/Judgment/Paralysis/Blindness/Speed-Down/Battle+Support Seal). Likely an immunity BITMASK on character state struct.",
+    "damage is classed by attack type: punch/kick, special, blade (3 separate reduction passives). Tie to DamageFlags-Character-Classification.md.",
+    "+8 is a shared HP constant applied by both Leader and relationship bonus - try query.py search-imm 8 scoped to deck/HP init"
+  ]
 }

@@ -1,0 +1,5 @@
+{"fork_commit": "c26edf0e0d75364823856c9272a103fe39e03999",
+ "patches": "none;",
+ "app_path": "/Users/djdjo/src/melonDS-lua/build/melonDS.app/Contents/MacOS/melonDS",
+ "cmake_prefix_path": "/opt/homebrew/opt/qt;/opt/homebrew/opt/libarchive;/opt/homebrew/opt/lua@5.4",
+ "built_at": "2026-08-14T15:06:32Z"}

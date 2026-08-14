@@ -73,3 +73,29 @@ This clears up a loose end from iteration 7. I'd seen "high bytes of `1, 4, 5, 1
 Four copied fields remain unidentified: `chr_b[0x01]`/`[0x02]` → battle `+0x11`/`+0x10`, and per-size `+0x12`/`+0x13` → battle `+0x14`/`+0x15`. There's also a per-size **halfword** array at `chr_b[0x32]` (stride 2) → battle `+0x30`, which I hadn't seen before.
 
 `0x02077C0C` has **zero direct callers** across arm9 and all 14 overlays — it's dispatched through a pointer table like the other constructors. The caller supplying the koma record at `+0x34` isn't statically reachable.
+
+## Refinement (same day): the regen field is uniformly 1
+
+I wrote above that the unexplained "u16 high bytes of `1, 4, 5, 16, 20, 22`" from iteration 7 were the
+regen-rate field. Half right, and worth stating precisely.
+
+Restricted to the sizes each character **actually owns** (174 records), the regen field is
+`{1: 174}` — **uniformly 1, no exceptions.** So the odd values `4, 5, 16, 20, 22` came from **filler
+slots** for sizes the character doesn't have, not from real regen values. The field identification
+holds; my account of the odd values did not.
+
+That also means the init's `moveq r3,#0x4` default-to-4 branch **never fires for a real panel**, and
+the harness session's live measurement of rate `1` is the universal value rather than one sample.
+
+## The iteration-20 over-fit, now explained
+
+In iteration 20 I noticed four u16s at `chr_b +0x30`/`+0x32`/`+0x34`/`+0x36` that looked like a
+per-character base plus 0,1,2,3 (Naruto `362,363,364,365`), backed out because only 15 of 74 were
+sequential, and left it as "four independent IDs, not a pattern".
+
+K3 explains it: `chr_b[0x30]` is a single halfword, and `chr_b[0x32]` is a **per-size array at stride
+2**. So they were never four parallel fields — one standalone ID followed by a per-size array, read
+through the wrong frame. Goku's `337, 0, 338, 0` is that array with filler in the slots he doesn't own.
+
+Same shape of error as the physics window: reading an array through the wrong stride makes it look like
+a set of unrelated fields.

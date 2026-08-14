@@ -1,7 +1,7 @@
 {
-  "iteration": 31,
+  "iteration": 32,
   "phase": "combat",
-  "current_task": "C6h-or-K4b: awaiting either the Ghidra decision or harness frame bisection",
+  "current_task": "awaiting the Ghidra decision or harness bisection; otherwise self-generated",
   "queue": [
     "C6h-bisect-frame-for-0x134-writer (harness-side)",
     "D0.3-ghidra-import (BLOCKED: needs user go-ahead)",
@@ -34,7 +34,8 @@
     "C5-gdb-queue-triage",
     "C6g-damage-field-confirmed-writer-unreachable",
     "D0.3-attempted-ghidra-blocked",
-    "K3-koma-runtime"
+    "K3-koma-runtime",
+    "K3b-consolidate-struct-map"
   ],
   "stuck": {},
   "required_reading_for_koma_tasks": [
@@ -92,7 +93,7 @@
     "L/R sticker bindings are per-deck fields not yet located in RAM",
     "Is HP computed as size*k at runtime, or tabulated per panel? Naruto 4-koma=144=4*36; if size*k then size5=180, size6=216, size7=252, size8=288. One reading settles it."
   ],
-  "notes": "Iteration 31: K3 done and it was the most productive static wake in a while. Read the character-init function 0x02077C0C and extracted the complete chr_b -> battle-struct copy map. Confirmed the charter *(0x0214BD80)+0x40 stride-0x3C lookup in instructions, and found the deck->battle link: battle +0x34 is a pointer to the koma record, whose kshapeGroup drives per-size indexing. My stride-4 HP array is CONFIRMED by an lsl #2 I had previously missed - but the same shift shows the block is five 4-BYTE RECORDS, not lone bytes, which retires the unexplained \"high bytes 1,4,5,16,20,22\" loose end from iteration 7 (they were the regen-rate field). Also linked two independently-derived facts: chr_b[0x00] base nature and runtime +0x13 nature.",
+  "notes": "Iteration 32: consolidated the K3 copy map into Character-State-Struct.md, filling a region that doc lists as Unknown. Two strong candidates fell out of the value distributions: chr_b[0x02] (values 2..6) matches the (tier-2) term in the existing damage formula, and chr_b[0x01] (3 values, mostly 2) looks like weight class given the game has heavyweight/lightweight abilities. Also CORRECTED my own last-wake explanation - regen is uniformly 1 over owned sizes and the odd values were filler - and finally EXPLAINED the iteration-20 over-fit: those \"four sequential IDs\" are one halfword plus a per-size stride-2 array, the same wrong-stride error as the physics window.",
   "last_wake": "2026-08-14",
   "wakeup_default_seconds": 1800,
   "consecutive_no_progress_wakes": 0,
@@ -621,5 +622,14 @@
     "two_independent_findings_linked": "(1) chr_b[0x00] = base nature (my distribution argument) and nature at runtime +0x13 (harness memory watch) - this instruction is the LINK between those two facts and neither was derived from it. (2) regen at +0x49 (harness watch) is written here at init from a per-size field with a hardcoded default of 4.",
     "still_unknown": "Four copied fields have no known meaning: chr_b[0x01]/[0x02] -> +0x11/+0x10, and per-size +0x12/+0x13 -> +0x14/+0x15. Plus a per-size HALFWORD array at chr_b[0x32] (stride 2) feeding +0x30, which I had not previously identified at all.",
     "caller_unreachable": "0x02077C0C has ZERO direct callers across arm9 and all 14 overlays - dispatched through a pointer table like the other constructors, so whoever supplies the koma record at +0x34 is not statically reachable."
+  },
+  "K3b_CONSOLIDATION": {
+    "output": "docs/research/Character-State-Struct.md consolidated; findings/k3-chr_b-to-battle-copy.md refined",
+    "what": "Merged the K3 copy map into Character-State-Struct.md, filling part of the 0x0000-0x003F region that doc lists as \"Unknown\" plus two fields in the 0x0040-0x0069 gap.",
+    "TWO_STRONG_CANDIDATES": "chr_b[0x02] -> battle +0x10 holds 5 values 2..6, which under the existing damage formula term (tier-2) gives 0..4 - a strong candidate for the \"tier\" in floor(damage1/5)+(tier-2). And chr_b[0x01] -> battle +0x11 holds 3 values {1:11, 2:56, 3:7}, a strong candidate for WEIGHT CLASS since the game has 重量級 heavyweight (ability 0x17) and 軽量級 lightweight (0x18). Both PLAUSIBLE.",
+    "regen_is_uniformly_1": "CORRECTION to my last-wake claim. Restricted to owned sizes (174 records) the regen field is {1:174} - uniformly 1, no exceptions. The odd values 4,5,16,20,22 I attributed to it came from FILLER slots for unowned sizes. The field ID holds; my account of the odd values did not. Also means the init moveq r3,#0x4 default never fires for a real panel, and the harness live rate of 1 is universal.",
+    "iteration20_overfit_EXPLAINED": "The four u16s at chr_b +0x30/+0x32/+0x34/+0x36 that looked like base+0,1,2,3 are actually chr_b[0x30] (a single halfword) followed by a PER-SIZE ARRAY at chr_b[0x32] stride 2. Never four parallel fields - one standalone ID plus an array, read through the wrong frame. Goku 337,0,338,0 is that array with filler in unowned slots. SAME SHAPE OF ERROR as the physics window: reading an array through the wrong stride makes it look like unrelated fields.",
+    "doc_errors_annotated": "Character-State-Struct.md cites 0x021DF1D5 as \"Player 1 HP\" - that is the HIGH BYTE of a u16 (the 1/4-scale reading) AND a session-local address. Annotated with the correction and a pointer to find_battle_structs.py. Also added a struct-identity caveat: that doc derives from GDB on 0x021E2A7C+ (wifi mode) while my table is static from the init function; plausibly the same type, not proven - same as Battle-Engine-Map open question B10.",
+    "still_unknown": "per-size record +0x2/+0x3 -> battle +0x14/+0x15 (3 values {0,1,2} each), chr_b[0x30] -> +0x2E, and the per-size halfword array -> +0x30."
   }
 }

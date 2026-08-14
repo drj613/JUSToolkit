@@ -128,3 +128,38 @@ So find `r6` by structure instead. Having located an `E`, scan RAM for words equ
 A candidate satisfying "`+0x1B4` equals a known `E`" **and** "`+0x1A8` is a plausible RAM pointer" is
 almost certainly right — the two-field agreement is the check, in the same spirit as the
 four-consecutive-slots signature that pinned the character array.
+
+## The writer is still unfound — my scan hit an offset collision (2026-08-14)
+
+The harness session located `r6` using the structural recipe above (player `0x022286E0`, opponent
+`0x0224E1E0`, both with `+0x14` bit 0 set; accumulators `0x0220FBD4` / `0x0220FD5C`, sitting `0x188`
+apart — regular per-entity spacing). The chain fully resolves. Watching the accumulator per frame
+gave **0 on all 220 frames, including the exact frames HP dropped by 384 raw.**
+
+Not refuted, for their reason: a once-per-frame sample cannot see a value written and consumed inside
+the same frame. The reads returned `0` rather than `None`, so the watch was genuine.
+
+I tried to settle it statically by finding the writer. **That failed, and the failure is instructive.**
+
+Scanning every binary for ARM word stores to `+0x140`/`+0x144` gave 36 sites, with exactly two in
+ov6: `0x02161C54` and `0x02161C60`, adjacent and mirroring the flush pair. That looked conclusive. It
+isn't — the surrounding code writes to `+0x11C`, `+0x120`, `+0x124`, `+0x128`, `+0x12C`, `+0x134`,
+`+0x138`, `+0x13C`, `+0x140`, `+0x144`, `+0x148` from a literal pool whose values are
+`0x0207E664`, `0x0207F050`, `0x0207E864`, `0x0207F2CC`, `0x0207E018` — **all arm9 code addresses,
+each starting with a `push` prologue.** It's a **vtable initialiser**, on a different object type
+that happens to have a field at the same offset.
+
+The flush genuinely reads *data*, confirmed independently: `0x02078488` does
+`ldrsh r2,[r0,#0x18]` then `adds r1,r1,r2` then `strh r1,[r0,#0x18]`, so `r1` is a numeric delta and
+cannot be a pointer.
+
+**So: the accumulator holds a delta, and its writer is not findable by offset scan.** Same mistake I
+made in C3 with `strh [Rn,#0x18]` — scanning by offset without constraining the object type. Twice
+now, so it's worth stating as a rule: **an offset-only scan over these binaries is not evidence about
+a specific struct.** `+0x140` and `+0x18` are both commonplace.
+
+### The decisive experiment
+
+Breakpoint **`0x0215A308`** (`ldr r1,[r0,#0x140]`) and log `r1`. That captures the value at the
+moment of consumption, immune to sub-frame timing. `r1 == -384` during a landed punch confirms the
+melee hypothesis; only-zero-or-positive refutes it.

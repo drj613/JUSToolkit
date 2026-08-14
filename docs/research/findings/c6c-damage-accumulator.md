@@ -81,3 +81,50 @@ If it stays zero through a hit that visibly reduces HP, melee takes a different 
 - **1 ARM** — the accumulator flush
 
 None is melee-specific. The accumulator is what reconciles that with the fact that melee damage exists.
+
+## Correction: which object owns +0x1A8 / +0x1B4 (added 2026-08-14)
+
+The harness session tried to watch the accumulator and got null everywhere. The cause is a level
+error in how I described the chain, so here it is precisely.
+
+`0x020783CC` is a two-instruction thunk:
+
+```asm
+0x020783CC  ldr r12,[pc,#0x4]     ; r12 = 0x02078488
+0x020783D0  ldr r0,[r0,#0x56C]    ; r0 = [entity + 0x56C] = char struct
+0x020783D4  bx  r12
+0x020783D8  .word 0x02078488
+```
+
+and `0x02078488` takes the **char struct** (`ldrsh r2,[r0,#0x18]` = current HP). So:
+
+```
+r6 --+0x1B4--> E (entity) --+0x56C--> char struct --+0x18--> current HP
+r6 --+0x1A8--> obj --+0x10--> obj2 --+0x140--> pending HP delta
+```
+
+**`+0x1A8` and `+0x1B4` belong to `r6`, which is one level ABOVE the entity.** Their scan found `E`
+candidates correctly (locations pointing at the char struct, minus `0x56C`) and then read `+0x1A8`
+off `E` — the wrong object, which is why every read was `0`.
+
+### How to reach r6
+
+`r6` is simply the first argument: `0x02159EF8` opens `push {...}` / `mov r6,r0`.
+
+But **`0x02159EF8` has zero direct `BL`/`BLX` callers** across arm9 and all 14 overlays, so it's
+invoked through a function-pointer table — consistent with a state-machine dispatcher. There's no
+call site to read the argument from.
+
+So find `r6` by structure instead. Having located an `E`, scan RAM for words equal to `E` and take
+`r6 = location − 0x1B4`. Confirm the candidate against `r6`'s other fields:
+
+| offset | contents |
+|---|---|
+| `+0x14` | halfword flags; the function's first act is `ldrh r0,[r6,#0x14]` then `tst r0,#1` |
+| `+0x1A0` | pointer |
+| `+0x1A8` | pointer → `+0x10` → `+0x140` accumulator |
+| `+0x1B4` | pointer to the entity `E` |
+
+A candidate satisfying "`+0x1B4` equals a known `E`" **and** "`+0x1A8` is a plausible RAM pointer" is
+almost certainly right — the two-field agreement is the check, in the same spirit as the
+four-consecutive-slots signature that pinned the character array.

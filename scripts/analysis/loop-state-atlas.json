@@ -1,5 +1,5 @@
 {
-  "iteration": 22,
+  "iteration": 23,
   "phase": "combat",
   "current_task": "C6d-find-the-writer-of-accumulator-+0x140",
   "queue": [
@@ -86,7 +86,7 @@
     "L/R sticker bindings are per-deck fields not yet located in RAM",
     "Is HP computed as size*k at runtime, or tabulated per panel? Naruto 4-koma=144=4*36; if size*k then size5=180, size6=216, size7=252, size8=288. One reading settles it."
   ],
-  "notes": "Iteration 22: C6c classified ALL 14 HP-apply callers and found the likely melee mechanism - a PENDING-DAMAGE ACCUMULATOR at [char+0x1A8]->+0x10->+0x140, flushed per dispatcher pass inside 0x02159EF8, with +0x144 the SP twin. That reconciles the harness finding that deltas always arrive pre-computed. Crucially 0x02159EF8 is the same function Battle-Engine-Map claim 4 flagged as the clash-resolution neighborhood, so a three-round-old SPECULATIVE claim now has a concrete mechanism inside it (still speculative - the writer is unfound). Also identified 0x020781E4 as the SP-apply sibling (19 callers, paired with HP applies) and enumerated the 5-member thin script-wrapper family.",
+  "notes": "Iteration 23 (interrupt): the peer accumulator watch returned null, and the cause was MY level error - I said +0x1A8/+0x1B4 hang off the entity when they hang off r6, one level above. Confirmed the real chain statically by decoding the 0x020783CC thunk. Also found that 0x02159EF8 has ZERO direct callers (invoked via a function-pointer table), so r6 cannot be read from a call site - gave them a structural signature to find it instead (+0x14 flags halfword, +0x1A0, +0x1A8, +0x1B4->E). Their damage baseline re-verified in a fresh session.",
   "last_wake": "2026-08-14",
   "wakeup_default_seconds": 1800,
   "consecutive_no_progress_wakes": 0,
@@ -524,5 +524,8 @@
     "thin_wrapper_family": "Five siblings, all (context,node) -> signed halfword at node->[4]->[4] -> apply: 0x02159260 lsl#6 displayed -> HP; 0x02159280 raw -> (unresolved); 0x021592A0 lsl#6 displayed -> 0x020783DC the ALL-LIVING-CHARACTERS variant; 0x021592C0 raw -> HP; 0x021592DC raw -> SP. So the script VM has separate opcodes for HP/SP, displayed/raw, single/all. The value is SIGNED so one opcode covers damage and healing.",
     "SP_APPLY_IDENTIFIED": "0x020781E4 is the SP-apply sibling of 0x020783CC. 19 call sites, and they sit IMMEDIATELY AFTER HP-apply sites (0x02157DD0 after 0x02157DC0, 0x021582D4 after 0x021582C4, 0x02158BCC after 0x02158BC0, 0x0215A334 after 0x0215A318) - handlers apply an HP delta and an SP delta as a pair."
   },
-  "WATCH_TARGET_FOR_HARNESS": "[character + 0x1A8] -> +0x10 -> +0x140 as a WORD, watched per frame. On a landed melee hit it should go non-zero for one frame then return to zero as the dispatcher consumes it. Much better than breakpointing the shared apply function because it isolates melee from the heal spam and the script opcodes. If it stays zero through a hit that visibly reduces HP, this is refuted."
+  "WATCH_TARGET_FOR_HARNESS": "[character + 0x1A8] -> +0x10 -> +0x140 as a WORD, watched per frame. On a landed melee hit it should go non-zero for one frame then return to zero as the dispatcher consumes it. Much better than breakpointing the shared apply function because it isolates melee from the heal spam and the script opcodes. If it stays zero through a hit that visibly reduces HP, this is refuted.",
+  "ACCUMULATOR_LEVEL_CORRECTION": "The peer could not resolve +0x1A8 (null everywhere) because of a LEVEL ERROR in how I described the chain. Confirmed statically: 0x020783CC is a 2-instruction thunk - ldr r12,[pc,#4] (=0x02078488); ldr r0,[r0,#0x56C]; bx r12 - and 0x02078488 takes the CHAR STRUCT (ldrsh r2,[r0,#0x18]). So the real chain is: r6 --+0x1B4--> E (entity) --+0x56C--> char struct --+0x18--> HP, while r6 --+0x1A8--> obj --+0x10--> obj2 --+0x140--> pending HP delta. +0x1A8 and +0x1B4 belong to r6, ONE LEVEL ABOVE the entity. Their E candidates were correct; they read +0x1A8 off E instead of off r6.",
+  "HOW_TO_FIND_r6": "r6 is the first argument (0x02159EF8 opens push{...}; mov r6,r0). BUT 0x02159EF8 has ZERO direct BL/BLX callers across arm9 and all 14 overlays, so it is invoked through a function-pointer table (consistent with a state-machine dispatcher) - there is no call site to read the argument from. Find it by STRUCTURE: locate an E, scan RAM for words equal to E, take r6 = location - 0x1B4, then confirm against r6 other fields: +0x14 halfword flags (the function first act is ldrh r0,[r6,#0x14]; tst r0,#1), +0x1A0 pointer, +0x1A8 pointer to the accumulator chain, +0x1B4 pointer to E. Two-field agreement is the check.",
+  "damage_reverified": "The peer re-verified the flat-damage baseline in a FRESH session: opponent HP 7168 -> 6784 = 384 raw = 6.000 displayed, twice, then healing back in exact +128 steps (6784/6912/7040/7168). That partially closes the cross-session caveat on the flat -2 result, and re-confirms the rate-1 -> +128/frame arithmetic."
 }

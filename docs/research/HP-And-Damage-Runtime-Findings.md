@@ -152,6 +152,45 @@ size — the HP ladder 16..20 seen above could just as easily be per-character b
 HP rather than a size ladder. What is solid is the falsification: 152 and 180 are
 far apart, so a single size-5 reading decides it.
 
+## 2c. The ability array is informational — damage does not read it
+
+Tested with `scripts/emu/experiments/resistance_probe.py`. **Result: negative,
+and well controlled.**
+
+Luffy carries `0x09` (blunt resistance UP). Rewriting his array to remove it and
+decrementing the count changed damage by **nothing at all**:
+
+| move | with `0x09` | `0x09` removed |
+|---|---|---|
+| B | 4.000 | 4.000 |
+| DOWN+B | 3.000 | 3.000 |
+
+The reverse direction agrees. Goku's array is `[7, 15]` (no resistance); adding
+`0x09` to give `[7, 15, 9]` left incoming damage at exactly **8.000**, measured
+twice.
+
+Three controls make this a real result rather than a failed poke:
+
+1. **`poke` demonstrably reaches memory.** Writing Luffy's HP to 8192 read back
+   as a lower value immediately, then training-regen restored it to 9728. So
+   writes land.
+2. **The edit persists.** The stripped array still read `[25, 12, 14]` after 3
+   seconds and after further attacks. The game does *not* rewrite it, so the
+   modification was live at the moment each hit landed.
+3. **Both directions tested** — removing from a resistant target and adding to a
+   non-resistant one.
+
+**Conclusion:** the array at `hp_addr+0x03` is a *source list* — good for reading
+which abilities a character has, useless for changing behavior. Resistance and
+weakness are applied from precomputed state established when the character
+loads, not looked up per hit.
+
+Two consequences. Any "poke an ability ID and observe the effect" plan is dead —
+it cannot work through this array. And the 4.000 figure still can't be labelled
+resisted-or-not from runtime evidence alone: either resistance is baked in
+elsewhere, or Goku's B is not blunt and `0x09` never applied to it. Static
+disassembly of the damage path is the way to separate those.
+
 ## 3. Training mode heals to full — read damage per frame, not before/after
 
 In Training, HP snaps back to full within a few frames of any hit: it steps up

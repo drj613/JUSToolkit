@@ -41,6 +41,19 @@ def images():
     return out
 
 
+def window_of(target, imgs):
+    """Which overlays' address windows contain `target`."""
+    out = []
+    for name, base, path in imgs:
+        try:
+            size = os.path.getsize(path)
+        except OSError:
+            continue
+        if base <= target < base + size:
+            out.append(name)
+    return out
+
+
 def bl_callers(target, imgs):
     hits = []
     for name, base, path in imgs:
@@ -76,9 +89,23 @@ def main(argv):
     imgs = images()
     for t in targets:
         hits = bl_callers(t, imgs)
-        print("0x%08X: %d BL caller(s)" % (t, len(hits)))
+        owners = window_of(t, imgs)
+        print("0x%08X: %d BL caller(s)   [address lives in: %s]"
+              % (t, len(hits), ", ".join(owners) or "?"))
+        # If the target address falls inside a window shared by several
+        # overlays, the address alone does not identify code: in each overlay's
+        # mode that address holds *that* overlay's bytes. So a BL found in
+        # overlay A "targeting" it is only a real call if A is the overlay that
+        # actually owns the target -- and we cannot tell which that is from the
+        # files. Flag every such hit rather than presenting it as fact.
+        shared = len([o for o in owners if o != "arm9"]) > 1
+        if shared:
+            print("    NOTE: %d overlays share this address window, so BL hits "
+                  "below may be coincidences -- confirm the resident overlay."
+                  % len([o for o in owners if o != "arm9"]))
         for name, pc in hits:
-            print("    %-6s 0x%08X" % (name, pc))
+            note = "   <-- ambiguous (shared window)" if shared and name != "arm9" else ""
+            print("    %-6s 0x%08X%s" % (name, pc, note))
         if not hits:
             print("    (none -- may be called indirectly, or unused)")
         if want_data:

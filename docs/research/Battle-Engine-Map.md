@@ -113,7 +113,22 @@ end-to-end. No claim in this document is unverified as of this update; see
 
 ## Subsystem: hitbox-priority
 
-**Status:** PARTIAL *(loop-state: TRACING — most-refuted subsystem this round; needs a fresh round-2 angle before promotion)*
+**Status:** PARTIAL *(loop-state: TRACING — most-refuted subsystem; round-2 angle DELIVERED, see below)*
+
+> ### Round-2 finding (2026-08-14): the three failed rounds searched a broken listing
+>
+> `jus_files/analysis/disasm/ov6.txt` decodes the whole battle overlay as **ARM**, and large Thumb
+> regions come out as garbage (`0x02151300` reads as `stmvs sb, {r0, fp, sp, lr}`). Because ARM
+> decoding steps 4 bytes, odd-halfword addresses are **absent from the file entirely** — 4 of the 5
+> Thumb HP-apply call sites don't appear in it at all. `functions.json` labels only **18 of ov6's
+> 752 functions** as Thumb.
+>
+> That is a sufficient explanation for both open questions below — "no two-entity comparison found
+> anywhere" and B11's "damage-formula site unfound across 3 rounds". **Neither is evidence the code
+> is absent.** New tool `scripts/decomp/thumb_dis.py` (validated against two independently-known
+> sites) makes the region readable. Full write-up: `findings/c3-hitbox-priority-round2.md`.
+>
+> This removes a false constraint; it does **not** promote any claim below.
 
 | # | Claim | Key addresses | Confidence |
 |---|-------|---------------|------------|

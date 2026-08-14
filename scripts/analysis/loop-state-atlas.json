@@ -1,11 +1,11 @@
 {
-  "iteration": 16,
+  "iteration": 17,
   "phase": "combat",
-  "current_task": "C3-hitbox-priority-round2",
+  "current_task": "C4-physics-writers-round2",
   "queue": [
-    "C3-hitbox-priority-round2",
     "C4-physics-writers-round2",
     "C5-gdb-queue-triage",
+    "C6-trace-delta-producers-at-8-ARM-sites",
     "K3-koma-runtime (deferred)"
   ],
   "done": [
@@ -23,7 +23,8 @@
     "K4-design-brief",
     "C1-overlay-map",
     "C2-function-denominator",
-    "C0-nature-in-battle"
+    "C0-nature-in-battle",
+    "C3-hitbox-priority-round2"
   ],
   "stuck": {},
   "required_reading_for_koma_tasks": [
@@ -81,7 +82,7 @@
     "L/R sticker bindings are per-deck fields not yet located in RAM",
     "Is HP computed as size*k at runtime, or tabulated per panel? Naruto 4-koma=144=4*36; if size*k then size5=180, size6=216, size7=252, size8=288. One reading settles it."
   ],
-  "notes": "Iteration 16: C0 done. The reinstated nature lead is RESOLVED but is NOT the multiplier - the battle nature check picks a sprite archive (_b.aar variant). Chasing it paid off anyway: my Thumb-aware caller scan found SIX previously-unknown Thumb callers of the HP-apply function (14 total, not 8), validated exactly against the peer live GDB lr, and identified their auto-heal site. The five others are the melee-damage lead. Also CONFIRMED THE NATURE TRIANGLE AND ENUM FROM INSTRUCTIONS at 0x02160944 - a counter, not a multiplier. New tool scripts/decomp/find_callers.py fixes the C2 connectivity blind spot.",
+  "notes": "Iteration 17: C3 done, and the answer was a tooling fix rather than a hypothesis. The committed ov6 disassembly mis-decodes Thumb as garbage ARM and omits odd-halfword addresses entirely, which is a sufficient explanation for the most-refuted subsystem failing three rounds. Built and validated scripts/decomp/thumb_dis.py. Read all 6 Thumb HP-apply sites: every one is a HEAL, which refutes my own C0 melee suggestion and strengthens the peer bypass reading. Also recorded a failed over-broad scan so it is not repeated.",
   "last_wake": "2026-08-14",
   "wakeup_default_seconds": 1800,
   "consecutive_no_progress_wakes": 0,
@@ -426,5 +427,22 @@
   ],
   "training_menu": "Peer found an in-battle training menu (START during a deck-maker test battle): row1 COM設定 なにもしない/戦う (defaults to DO NOTHING), row2 自動回復 ON/OFF (the auto-heal), row3 相手の属性 力/知/笑 (SETS THE OPPONENT NATURE), row4 back to editor, row5 retry. A cycles a value. Row 3 is a direct lever for the nature-damage question - fix everything else, cycle the three natures, measure damage 3x. WARNING: while the menu is open ALL bridge input goes to the menu, not the battle, so plans report ok:true while every attack misses - and RIGHT presses may silently change menu values.",
   "regen_confirmed": "My regen tip confirmed twice: struct +0x49 (= hp_addr +0x31) read 1, and poking it to 0 stopped healing dead. Cleaner route is the menu 自動回復 OFF, which makes damage cumulative (verified 10240 -> 8704 from two hits, held). Subtlety: menu OFF leaves +0x49 still reading 1, so the setting gates whether the regen ROUTINE RUNS rather than zeroing the rate - two mechanisms, same observable. Arithmetic closes: rate 1 -> 1*2=2 displayed -> *64 = 128 raw, matching the +128 deltas.",
-  "first_clean_damage": "With auto-heal off the CPU landed 768 raw = 12.000 displayed, twice identically - the first uncontaminated cumulative damage figure from the harness."
+  "first_clean_damage": "With auto-heal off the CPU landed 768 raw = 12.000 displayed, twice identically - the first uncontaminated cumulative damage figure from the harness.",
+  "C3_ROOT_CAUSE": {
+    "output": "docs/research/findings/c3-hitbox-priority-round2.md; Battle-Engine-Map.md hitbox-priority section annotated",
+    "FINDING": "The round-2 angle is a TOOLING FIX, not a new hypothesis. jus_files/analysis/disasm/ov6.txt decodes the whole battle overlay as ARM; Thumb regions come out as garbage (0x02151300 = \"stmvs sb, {r0, fp, sp, lr}\"). Because ARM decoding steps 4 bytes, odd-halfword addresses are ABSENT from the file - 4 of the 5 Thumb HP-apply sites do not appear at all. functions.json labels only 18 of ov6 752 functions as Thumb.",
+    "explains": "Sufficient explanation for both long-standing entries: B11 \"damage-formula site unfound across 3 rounds\" and \"no two-entity hitTier/hitProperties comparison found anywhere in ov0/ov3/ov4/ov5/ov6\". NEITHER is evidence the code is absent. Removes a false constraint; does NOT promote any claim.",
+    "new_tool": "scripts/decomp/thumb_dis.py - Thumb-16 + BL/BLX pair, prints .hw for unrecognised halfwords rather than guessing. Validated on 0x021540AA (blx 0x02078CB8 + cmp r0,#0) and 0x02150DD8 (matches the GDB lr 0x02150DDD)."
+  },
+  "ALL_6_THUMB_SITES_ARE_HEALS": {
+    "deltas": "0x02150DD8 mov r1,#0x80 = 128 (+2.0); 0x021513D8 and 0x021513EE and 0x02151636 mov r1,#1 lsl #14 = 16384 (+256.0, exceeds the 0x4000 clamp so a FULL HEAL); 0x021514E6 and 0x021515B2 mov r1,#0x80 = 128.",
+    "consequence": "All 14 callers of 0x020783CC accounted for: 6 Thumb heals + 8 ARM script-effect sites that take an already-computed delta. So MELEE DAMAGE DOES NOT USE THIS FUNCTION AT ALL. This REFUTES my own C0 suggestion that melee hides in the unidentified Thumb sites, and STRENGTHENS the peer melee-bypass reading.",
+    "triple_confirmation": "The +128 at 0x02150DD6 is a HARDCODED IMMEDIATE - so the peer GDB lr, their 14736 observed +128 deltas, and the literal in the instruction all agree."
+  },
+  "FAILED_APPROACH_recorded": "Scanned every binary for direct strh Rd,[Rn,#0x18] (HP write bypassing the apply function): 226 sites across arm9 + 12 overlays, 22 in ov6 alone. USELESS as posed - +0x18 is a commonplace offset and nothing constrains the base register to a character struct. To make it discriminating, filter on CONTEXT: a real HP write should sit near a read of +0x16 (max HP) for clamping. Recorded so nobody repeats it in this form.",
+  "next_angles_ranked": [
+    "1. Trace the PRODUCERS of the delta at the 8 ARM script-effect sites - resistance and any nature multiplier are upstream. This is campaign item B11 with a corrected search space.",
+    "2. Re-run the hitbox-priority searches WITH Thumb decoding - the three failed rounds now have a plausible reason to have failed, so the previously-searched space is worth revisiting for a two-entity comparison.",
+    "3. Filter the 226 +0x18 writers by proximity to a +0x16 read."
+  ]
 }

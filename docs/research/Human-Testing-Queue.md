@@ -267,10 +267,23 @@ Added by the Atlas static-RE loop for the melonDS harness session. Format agreed
 session: one section per card, hypotheses must be separable **by a number**, and the card
 supplies addresses + discriminator while the harness supplies inputs.
 
-Address facts these cards rely on (from the harness session, verified against a running
-emulator): **HP is u16 little-endian in 1/64 units** — read 2 bytes, not 1. Player active HP
-`0x021DF1D4`, opponent active `0x021DF7F0`, opponent deck slot 1 `0x021DF840`. Deck-slot stride
-`+0x50`, player→opponent `+0x61C`. Note the ability-count byte at `0x021DF1D6` sits immediately
+> ### ⚠️ Absolute addresses in these cards are SESSION-LOCAL. Discover them, don't hardcode.
+>
+> The harness session found the player character array at `0x021DF1D4` in one battle and
+> `0x021DF1B4` in another — **a `0x20` shift** with the same deck. This fails silently: reading the
+> stale address returned `62072` from an unrelated array whose neighbouring slots decremented by a
+> tidy 48, which looks exactly like a real struct.
+>
+> **Always locate the array first** with `scripts/emu/find_battle_structs.py`, which scans for the
+> repeating-group signature (four consecutive `0x50`-byte slots, each with HP a multiple of 64, a
+> small ability count, and a `chr_b` index < 74, cross-checked against `chr_b.bin`). A single slot
+> matches ~1167 times in 4 MB; the group of four is unique. Treat `+0x61C` (player→opponent) as
+> per-session too.
+
+Structure these cards rely on (verified against a running emulator). **HP is u16 little-endian in
+1/64 units** — read 2 bytes, not 1. Within a slot: HP at `+0x00`, ability count at `+0x02`,
+ability IDs from `+0x03`, `chr_b` index at `+0x29`. Deck-slot stride `+0x50`. The addresses below
+are the *recorded* ones from one session — re-discover before use. Note the ability-count byte at `0x021DF1D6` sits immediately
 after the HP u16, so HP and the ability list are adjacent fields in the same struct.
 
 Known reference values: Naruto 4-koma = `9216` raw = `144.0`. Goku = `10240` = `160.0`.

@@ -1,9 +1,9 @@
 {
-  "iteration": 8,
+  "iteration": 9,
   "phase": "koma",
-  "current_task": "K2f-nature-glyph-disassembly",
+  "current_task": "K2g-aar-archives-and-compacted-table",
   "queue": [
-    "K2f-nature-glyph-disassembly",
+    "K2g-aar-archives-and-compacted-table",
     "K3-koma-runtime",
     "K4-design-brief",
     "C1-overlay-map",
@@ -20,7 +20,8 @@
     "K2b-abilities-all-57-named",
     "K2c-nature-exclusions-and-57-descriptions",
     "K2d-hp-per-size-candidate",
-    "K2e-HP-fully-solved-F1-closed"
+    "K2e-HP-fully-solved-F1-closed",
+    "K2f-overlays-extracted-nature-exhaustively-excluded"
   ],
   "stuck": {},
   "required_reading_for_koma_tasks": [
@@ -78,7 +79,7 @@
     "L/R sticker bindings are per-deck fields not yet located in RAM",
     "Is HP computed as size*k at runtime, or tabulated per panel? Naruto 4-koma=144=4*36; if size*k then size5=180, size6=216, size7=252, size8=288. One reading settles it."
   ],
-  "notes": "Iteration 8: HP FULLY SOLVED and card F1 closed. My iteration-7 chr_b hypothesis (A) confirmed by the harness against 6 RAM slots; my 160 prediction beat their 152. Generated all 74 characters full HP curves offline by joining chr_b.bin to koma.bin abilityId and komatxt.bin names - 174 of 370 slots are meaningful, which explains the earlier non-monotonicity. Also recorded their controlled negative: the runtime ability array is not read at damage time, retiring the poke method entirely. Next: nature glyph-path disassembly (nature is the last big unknown).",
+  "notes": "Iteration 9: extracted all 14 ARM9 overlays (11 never examined before - a ~1.4MB blind spot) with a new tool, then exhaustively REFUTED the per-koma-indexed nature table across arm9 + 26 bin files + 14 overlays in 3 encodings. Reframed the hunt: Deck-System.md implies panel nature is deck-bonus-only, not a combat property, so the .aar archives and deckmake overlay are the right targets. Also propagated the harness session s session-local-address warning into all harness cards.",
   "last_wake": "2026-08-14",
   "wakeup_default_seconds": 1800,
   "consecutive_no_progress_wakes": 0,
@@ -243,5 +244,23 @@
       "These are MAX HP. Damage arithmetic uses 1/64 raw units but stored HP carries no fraction."
     ]
   },
-  "RETIRED_METHOD": "Poking ability IDs does NOT work. Harness ran a controlled negative: removing 0x09 from Luffy and adding 0x09 to Goku both left damage exactly unchanged, with three controls (poke provably reaches memory, edit persists across attacks, both directions tested). The runtime ability array is a READ-ONLY SOURCE LIST; resistance is precomputed at character load. So card E1 could never have worked by poking - closing it statically was the only route. \"Write an ID and observe\" is retired for all future cards."
+  "RETIRED_METHOD": "Poking ability IDs does NOT work. Harness ran a controlled negative: removing 0x09 from Luffy and adding 0x09 to Goku both left damage exactly unchanged, with three controls (poke provably reaches memory, edit persists across attacks, both directions tested). The runtime ability array is a READ-ONLY SOURCE LIST; resistance is precomputed at character load. So card E1 could never have worked by poking - closing it statically was the only route. \"Write an ID and observe\" is retired for all future cards.",
+  "overlays": {
+    "new_tool": "scripts/analysis/extract_overlays.py (read-only on ROM, writes jus_files/overlays/)",
+    "BLIND_SPOT_CLOSED": "ROM header declares 14 ARM9 overlays; only ov0/ov1/ov2 had ever been disassembled and NONE had been extracted as binaries. scripts/extract_arm9.py only pulls arm9/arm7. So every prior value search was blind to ~1.4MB.",
+    "all_uncompressed": "compress flag 0 on all 14, so file_offset = runtime_addr - ram_address works as for arm9",
+    "CRITICAL_FOR_WATCHPOINTS": "ov00-ov09 ALL load at 0x0214CD20 - mutually exclusive, one per game mode. A RAM address in that window means different things in different modes. ov10/ov11 at 0x02172A60, ov12/ov13 at 0x021AC1C0.",
+    "manifest": "jus_files/overlays/overlays.json"
+  },
+  "nature_P1b_REFUTED": "Nature is NOT a per-koma-indexed table anywhere in the ROM binaries. Exhaustive: every byte offset, 3 encodings (u8 / nibble / 2-bit), across arm9.bin + all 26 bin/ files + all 14 overlays. Zero candidates. Constraint used: all 312 helper indices must share one value (owner: helpers are always なし) AND the 578 non-helpers must hold >=3 other values each appearing >=50 times.",
+  "nature_REFRAME": "Deck-System.md says nature variants REUSE the same battle data and specials still use the base nature. So panel nature is NOT a combat property - it is deck-building only, used for deck bonuses. That means it need not sit near chr_b/chr_s at all, and only has to exist where the deck editor + deck-bonus calc run: the deckmake overlay data, or inside the .aar archives that only that mode loads.",
+  "nature_remaining_ranked": [
+    "1. Inside the .aar archives - InfoDeck.aar (570KB, ~130 entries) is the koma-browser data with a working parser (Binary2InfoDeckDeck); its NON-STRING fields have never been examined. Also deckmake.aar, Deck.aar.",
+    "2. The deckmake overlay static data (now extractable, overlay not yet identified)",
+    "3. Computed at load time - harness proved resistance is precomputed at character load; nature may be too, in which case no table exists and only load-path disassembly finds it."
+  ],
+  "METHOD_NOTE": "THE GROUP IS THE SIGNATURE, NOT THE ELEMENT. My first nature scan used Naruto 9-panel nature pattern -> 224 candidates, all noise (in 2-bit data only 4 values exist so a 9-element equality pattern matches constantly). The 312-way invariant dropped it to zero. Harness hit the identical lesson in RAM: a single 0x50 slot matched 1167 times in 4MB, four consecutive slots at stride 0x50 was unique. A wide invariant beats a clever pattern.",
+  "ADDRESSES_ARE_SESSION_LOCAL": "CRITICAL: absolute battle addresses shift between sessions - harness saw the player array at 0x021DF1D4 in one battle and 0x021DF1B4 in another (0x20 shift, same deck). Fails SILENTLY: the stale address returned 62072 from an unrelated array whose neighbours decremented by a tidy 48. Always discover via scripts/emu/find_battle_structs.py. Slot structure (portable): HP u16 +0x00, ability count +0x02, ability IDs +0x03, chr_b index +0x29, slot stride 0x50. Human-Testing-Queue.md header updated with this warning.",
+  "still_running": "A compacted-578-entry-table variant scan (supports+battles only, koma-index order) was still running at end of iteration 9. Record its result next wake. Expect 2-bit hits to be noise; only u8 is discriminating.",
+  "leader_vs_active_still_open": "Harness tried 3 routes, all dead ends: (1) touching the in-battle koma grid never switches the active chr_b index (touch injection itself verified working), (2) poking HP to 0 cannot force a KO because training regen outruns the death check, (3) J Arena index 2 is local wireless multiplayer not vs-CPU - ランキング (index 0) is the vs-CPU ladder and is the right target. \"+8 on the active character\" now reproduces across two sessions."
 }

@@ -1,5 +1,24 @@
 # C5 — the damage field is +0x134, and it was in the queue all along
 
+> ### ⚠️ DAMAGE NUMBERS CORRECTED 2026-08-14 — earlier figures were net of one heal frame
+>
+> Every damage figure recorded before this note was **net of one frame of the +2.0 training auto-heal**,
+> which fires in the same frame as the hit. The pending-damage field `+0x134` reads **512** (8.000) on a
+> hit whose observed dip was **384** (6.000). Confirmed three ways: the field value, `r4 = 512` at the
+> load, and `r1 = 512` at the drain call — then re-measured with 自動回復 **OFF**, giving 512 raw per
+> hit cumulatively.
+>
+> Corrected targets: **B = 8.000**, **DOWN+B = 7.000** (measured), **X = 4.000** (inferred as
+> `listed + 2.0`, not measured). Multi-hit strings need per-hit accounting nobody has done.
+>
+> **The flat −2 resistance result survives intact** — a constant offset on both sides cancels in a
+> difference, which is why the two-move design was robust to an error neither session had spotted.
+>
+> **One claim is weakened:** the owner's independent "a punch does 6" matches the **net** figure, not
+> raw move damage — they were also watching training mode with the heal on. It still validates the HP
+> scale, address derivation and dip-reading; it does not independently confirm raw move damage.
+
+
 Loop-Atlas iteration 28. Static. **The stuck damage thread is unstuck** — thanks to a note the previous campaign left in `GDB-Validation-Queue.md`.
 
 ## Two trampolines, and I only ever traced one

@@ -467,8 +467,9 @@ watched — see `findings/c5-damage-field-0x134.md`.
 - Alternative if the watch masks a same-frame write/consume: breakpoint **`0x0215AC08`**
   (`ldr r4,[r1,#0x134]`) and log `r4`; or `0x0215AC70` and log `r1`.
 - Setup: the deterministic `fight_cfg` savestate, `自動回復 OFF`, the known 6.000 punch.
-- Discriminator: **A** if it reads **+384** (positive — the trampoline negates) on the landed hit.
-  **B** for zero throughout.
+- Discriminator: **A** if it reads a positive magnitude on the landed hit. **CONFIRMED 2026-08-14: it
+  reads 512** (8.000) one frame before each HP drop, with `+0x138`/`+0x140`/`+0x144` all zero. Note
+  512, not the 384 I first predicted — the observed dip was net of one +2.0 auto-heal frame.
 - Log unconditionally, not just non-zero. Your own rule from the last run.
 
 The object holds a family of pending deltas, so watching all four at once would map the set in one go:

@@ -1,11 +1,11 @@
 {
-  "iteration": 28,
+  "iteration": 29,
   "phase": "combat",
-  "current_task": "C6g-verify-0x134-and-trace-its-writer",
+  "current_task": "D0.3-ghidra-import",
   "queue": [
-    "C6g-verify-0x134-and-trace-its-writer",
-    "D0.3-ghidra-import",
-    "K3-koma-runtime (deferred)"
+    "D0.3-ghidra-import (unblocks the damage writer)",
+    "K3-koma-runtime (deferred)",
+    "C6h-bisect-frame-for-0x134-writer (harness-side)"
   ],
   "done": [
     "K1-koma-data-survey",
@@ -31,7 +31,8 @@
     "C6e-accumulator-refuted-hp-writer-set-enumerated",
     "C6f-restore-functions-refuted",
     "C4-physics-writers-round2",
-    "C5-gdb-queue-triage"
+    "C5-gdb-queue-triage",
+    "C6g-damage-field-confirmed-writer-unreachable"
   ],
   "stuck": {},
   "required_reading_for_koma_tasks": [
@@ -89,7 +90,7 @@
     "L/R sticker bindings are per-deck fields not yet located in RAM",
     "Is HP computed as size*k at runtime, or tabulated per panel? Naruto 4-koma=144=4*36; if size*k then size5=180, size6=216, size7=252, size8=288. One reading settles it."
   ],
-  "notes": "Iteration 28: C5 triage UNSTUCK the damage thread, and the credit belongs to the queue itself. Card 3 note recorded a sibling DRAIN trampoline at 0x020783B8 that negates its delta - so damage passes a POSITIVE magnitude and never touches the plain trampoline whose 14 callers I exhaustively classified. The drain has 2 callers; one loads its magnitude from +0x134 off the SAME chain as the +0x140 heal field the harness watched. My accumulator hypothesis was right in shape and wrong by 12 bytes. Lesson recorded: I read the conclusions doc and skipped the loose-ends doc for five iterations.",
+  "notes": "Iteration 29: +0x134 CONFIRMED as the pending-damage field by live watch (512 on exactly the frame before each drop, three siblings zero). Its WRITER is unreachable by offset-based static analysis - four techniques exhausted and now precisely named, leaving 100 register-offset stores whose offsets live in registers. Route is D0.3 Ghidra (data-flow) or harness-side frame bisection. Also propagated a systematic correction: every damage figure was net of one +2.0 heal frame, so true B = 8.000 not 6.000. The flat -2 survives (offsets cancel in a difference), but my repetition of \"the owner independent 6 validates the chain\" is weakened - it matches the NET figure under the same conditions.",
   "last_wake": "2026-08-14",
   "wakeup_default_seconds": 1800,
   "consecutive_no_progress_wakes": 0,
@@ -581,5 +582,17 @@
     ],
     "advanced_not_settled": "Card 12 - 0x02159EF8 does contain concrete mechanism (the +0x134/+0x138/+0x140/+0x144 pending-delta family) but no two-entity comparison found in it.",
     "new_live_card": "CARD D1b in Human-Testing-Queue.md - watch [char+0x1A8]->+0x10->+0x134, expect +384 on a landed 6.000 hit. One number."
-  }
+  },
+  "DAMAGE_FIELD_CONFIRMED": {
+    "live_evidence": "The harness watched all four sibling fields: +0x134 reads 512 on exactly the frame BEFORE each HP drop (f=77 and f=129), and +0x138/+0x140/+0x144 stay 0 throughout. Field map confirmed: +0x134 pending HP damage, +0x138 pending SP drain, +0x140 pending HP heal, +0x144 pending SP add.",
+    "writer_UNREACHABLE": "Four distinct static searches, all negative: (1) ARM word stores to +0x134/+0x138 across all binaries = 18 sites, only 2 in ov6 and both are the vtable initialiser at 0x02161C1C/0x02161C2C on a different object; (2) folded base add-then-store landing at +0x134 = ZERO (the physics-writers claim-5 pitfall does not apply here); (3) any data-processing instruction with immediate 0x134/0x138 = ZERO in ov6 and ZERO in arm9; (4) lsl rX,rY,#6 (the displayed->raw signature) followed by a store of that register = ZERO in ov6. What remains is 100 register-offset stores in ov6 where the offset lives in a register and cannot be recovered from the instruction. FOURTH distinct technique to fail on this question - but unlike earlier rounds I can now NAME the excluded forms rather than saying \"not found\".",
+    "route_forward": "Tier-2 D0.3 headless Ghidra provides exactly the missing capability - data-flow analysis resolves register-offset stores by tracking what the offset register held. Cheap alternative belongs to the harness: +0x134 goes non-zero one frame before the drop, so BISECTING that frame names the writer in a logarithmic number of runs."
+  },
+  "DAMAGE_NUMBERS_CORRECTED": {
+    "the_error": "EVERY damage figure recorded before 2026-08-14 was NET OF ONE FRAME of the +2.0 training auto-heal, which fires in the same frame as the hit. The pending field reads 512 (8.000) on a hit whose observed dip was 384 (6.000). Confirmed three ways: the field value, r4=512 at the load, r1=512 at the drain call, then re-measured with 自動回復 OFF giving 512 raw per hit cumulatively.",
+    "corrected_targets": "B = 8.000 (measured), DOWN+B = 7.000 (measured), X = 4.000 (INFERRED as listed+2.0, not measured). Multi-hit strings need per-hit accounting nobody has done.",
+    "flat_minus_2_SURVIVES": "A constant offset on both sides cancels in a difference, which is exactly why the two-move design was robust to an error neither session spotted. Differences still exactly -2.0; ratios still non-constant.",
+    "MY_CLAIM_WEAKENED": "I repeated that the owner independent \"a punch does 6\" validated the whole measurement chain. It matches the NET figure - the owner was also watching training mode with the heal on. It still validates the HP scale, address derivation and dip-reading method; it does NOT independently confirm raw move damage. An external check is only as strong as the conditions it shares with your own measurement."
+  },
+  "LOOSE_ENDS_RULE": "Both sessions independently made the same mistake this phase: citing GDB-Validation-Queue.md / scripts/gdb/README.md in planning and never reading them, while chasing exactly the thing those documents recorded. RULE: READ THE LOOSE-ENDS DOCUMENT BEFORE THE CONCLUSIONS DOCUMENT. Conclusions say what is settled; loose ends say what someone already tried, which is what actually saves time."
 }

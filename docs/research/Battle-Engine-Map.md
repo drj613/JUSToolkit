@@ -182,7 +182,27 @@ None of the 5 claims were outright REFUTED by any lens. Claim 5's downgrade is a
 
 ## Subsystem: physics-writers
 
-**Status:** PARTIAL *(loop-state: TRACING — velocity/gravity/decay NOT found this round; the least-resolved subsystem in the campaign)*
+**Status:** PARTIAL *(loop-state: TRACING — round-2 angle DELIVERED, see below; velocity/gravity/decay still not isolated)*
+
+> ### Round-2 finding (2026-08-14): the region is an ARRAY, not a set of velocity fields
+>
+> ov11 `0x0217E4A0` writes three **identical** 5-field groups on one base register at **stride `0xC`**:
+> records at `+0x58`, `+0x64`, `+0x70`, each laid out `+0x0` word, `+0x4` half, `+0x6` half,
+> `+0x8` half, `+0xA` byte, from the same source registers in the same order.
+>
+> **All six GDB-observed "physics" offsets fall inside it** — `+0x6A` = record 1 field `+0x6`,
+> `+0x6C` = rec 1 `+0x8`, `+0x72` = rec 2 `+0x2`, `+0x74` = rec 2 `+0x4`, `+0x7A` = rec 2 `+0xA`,
+> `+0x7C` = **record 3** `+0x0` (so there are ≥4 records). The 2026-02-03 session read them as three
+> 16-bit pairs at 8-byte spacing; they are different fields of different records at 12-byte spacing.
+> The observation was real, the framing wasn't.
+>
+> **This explains the round-1 failure better than the tool gaps do:** there is no single "X/Y velocity
+> offset" to find. Likewise the `+0x98`–`0xBA` "timer region" (`+0x98`, `+0xA0`, `+0xA8`, `+0xB0`,
+> `+0xB8`) is **stride 8** — a second array, of 8-byte records.
+>
+> Layout is CONFIRMED_STATIC; that it's the same struct GDB observed is PLAUSIBLE; **what the records
+> mean is unknown** and deliberately not guessed — naming them velocity fields is what produced four
+> demoted claims in round 1. Full write-up: `findings/c4-physics-is-an-array.md`.
 
 | # | Claim | Key addresses | Confidence |
 |---|-------|---------------|------------|

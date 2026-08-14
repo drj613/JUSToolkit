@@ -1,11 +1,10 @@
 {
-  "iteration": 26,
+  "iteration": 27,
   "phase": "combat",
-  "current_task": "C4-physics-writers-round2",
+  "current_task": "C5-gdb-queue-triage",
   "queue": [
-    "C4-physics-writers-round2",
     "C5-gdb-queue-triage",
-    "D0.3-ghidra-import (unblocks the stuck thread)",
+    "D0.3-ghidra-import (unblocks the stuck damage thread)",
     "K3-koma-runtime (deferred)"
   ],
   "done": [
@@ -30,7 +29,8 @@
     "C6b-poison-burn-opcodes",
     "C6c-all-callers-classified-accumulator-found",
     "C6e-accumulator-refuted-hp-writer-set-enumerated",
-    "C6f-restore-functions-refuted"
+    "C6f-restore-functions-refuted",
+    "C4-physics-writers-round2"
   ],
   "stuck": {
     "melee-damage-producer": {
@@ -102,7 +102,7 @@
     "L/R sticker bindings are per-deck fields not yet located in RAM",
     "Is HP computed as size*k at runtime, or tabulated per panel? Naruto 4-koma=144=4*36; if size*k then size5=180, size6=216, size7=252, size8=288. One reading settles it."
   ],
-  "notes": "Iteration 26: the restore-function lead is refuted (boolean flags and a 100% percentage, not damage amounts). Fixed a real tool bug - shared overlay load addresses create phantom cross-overlay callers, now warned. Per the charter stuck rule, MARKED THE MELEE DAMAGE PRODUCER STUCK after two consecutive no-progress wakes, with a dated note in Research-Status.md recording what is established, what is refuted, why the blocker is tooling rather than reasoning, and the ranked options (pointer-table scan, then Ghidra D0.3). Holding the codex second opinion since codex already hung for an hour on this exact path. Moving to C4 physics-writers.",
+  "notes": "Iteration 27: C4 delivered the round-2 angle physics-writers needed, and it is a structural correction rather than a new search. The +0x6A-0xBA \"physics window\" is an ARRAY of 12-byte records at +0x58/+0x64/+0x70 (>=4 records), proven by ov11 0x0217E4A0 writing three identical 5-field groups at stride 0xC. All six GDB-observed offsets map into it, so the 2026-02-03 observation was right but its 8-byte-pair framing was wrong - and there is no single velocity offset to find, which explains round 1 failing. The +0x98-0xBA timer region is a second array at stride 8. Also recorded a 65-hit inconclusive co-occurrence test (base r13 = stack) as the fourth instance of offset-collision noise.",
   "last_wake": "2026-08-14",
   "wakeup_default_seconds": 1800,
   "consecutive_no_progress_wakes": 0,
@@ -565,5 +565,14 @@
   "harness_method_note": "Their first breakpoint attempt logged only NON-ZERO values and produced empty output - indistinguishable from \"the breakpoint never fired\". They burned a second GDB connection adding an unconditional first-8-hits log purely to prove reachability. Rule: on any negative-result instrument, VERIFY REACHABILITY SEPARATELY FROM THE PAYLOAD.",
   "verification_targets_standing": "B = 6, forward+B = 5, down+B = 5, X = 2 displayed against an ability-free target; each -2 flat against a blunt-resister. up+B and Y are multi-hit strings.",
   "restore_functions_refuted": "All 9 ov6 callers of 0x02078660 pass BOOLEAN flags (r1/r2 only ever 0 or 1), and the one caller of 0x020785B8 passes r1=0x64 = 100 against a function body containing mov r4,#0x64 - so it is \"set HP to N percent\" called at 100%, a full restore. Neither carries damage.",
-  "TOOL_FIX_phantom_callers": "find_callers.py reported ov4 0x02159BB8 -> 0x02157A44, which is a PHANTOM: ov4 and ov6 both load at 0x0214CD20 and are mutually exclusive, so ov4 code calling that address is calling its OWN code. The tool now warns whenever a shared window exists. Impact on earlier results is small (arm9 targets are unaffected since arm9 is always resident) but it would have produced a wrong conclusion here. Real callers after discarding it: 0x02158B20 <- 0x02156E94, 0x0215807C <- 0x02158070, and 0x02157A44 has NO direct ov6 caller (pointer table)."
+  "TOOL_FIX_phantom_callers": "find_callers.py reported ov4 0x02159BB8 -> 0x02157A44, which is a PHANTOM: ov4 and ov6 both load at 0x0214CD20 and are mutually exclusive, so ov4 code calling that address is calling its OWN code. The tool now warns whenever a shared window exists. Impact on earlier results is small (arm9 targets are unaffected since arm9 is always resident) but it would have produced a wrong conclusion here. Real callers after discarding it: 0x02158B20 <- 0x02156E94, 0x0215807C <- 0x02158070, and 0x02157A44 has NO direct ov6 caller (pointer table).",
+  "C4_PHYSICS_IS_AN_ARRAY": {
+    "output": "docs/research/findings/c4-physics-is-an-array.md; Battle-Engine-Map.md physics section annotated",
+    "FINDING": "ov11 (battle AI) function 0x0217E4A0 writes THREE IDENTICAL 5-field groups on base r5 at stride 0xC: records at +0x58, +0x64, +0x70, each laid out +0x0 word, +0x4 half, +0x6 half, +0x8 half, +0xA byte, from the same source registers (r12, r2, r1, r3, r11) in the same order. That is an array, not three coincidences.",
+    "ALL_GDB_OFFSETS_FALL_INSIDE": "+0x6A = record1 field +0x6; +0x6C = rec1 +0x8; +0x72 = rec2 +0x2; +0x74 = rec2 +0x4; +0x7A = rec2 +0xA; +0x7C = RECORD 3 +0x0 (so >=4 records). The 2026-02-03 GDB session read them as three 16-bit PAIRS at 8-byte spacing; they are different fields of different records at 12-byte spacing. The observation was real, the framing was not.",
+    "why_round1_failed": "There is no single X/Y velocity offset to find. That explains the failure better than the documented tool gaps (though those are real - search-imm genuinely cannot see register-indexed stores).",
+    "second_array": "The +0x98-0xBA \"timer region\" offsets (+0x98, +0xA0, +0xA8, +0xB0, +0xB8) are STRIDE 8 - a second array, of 8-byte records. The session even guessed \"32-bit values read as 16-bit?\", the right instinct aimed at the wrong structure.",
+    "confidence": "CONFIRMED_STATIC that +0x58..+0x7A is three 12-byte records with that layout. PLAUSIBLE that it is the same struct GDB observed (all six observed offsets land inside, but r5 identity not proven). UNKNOWN what the records mean - the ov11 function writes the SAME values to all three, so it is initialising/broadcasting, which reveals layout not meaning. Candidates: per-limb hitbox state, a position/velocity history ring, per-hit records. DELIBERATELY NOT naming them velocity fields - that guess produced four demoted claims in round 1."
+  },
+  "INCONCLUSIVE_TEST_recorded": "Before that, I tried to prove the physics and HP offsets share a struct by finding a function touching both on the same base register. Function-scoped, PC-relative excluded: 65 hits, many with base r13 (the STACK POINTER - locals, not a struct). Useless, and the FOURTH time this session the same failure: +0x18, +0x6C, +0x78 are commonplace so co-occurrence proves nothing. What worked was the opposite move - not \"do these offsets co-occur?\" but \"do these offsets have STRUCTURE?\". Stride-12 repetition is self-evidencing in a way co-occurrence never is."
 }

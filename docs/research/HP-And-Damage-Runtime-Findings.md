@@ -130,7 +130,56 @@ the measured 1.250 hit are produced by the damage path, not read from a table.
 152, 8 = 8 × {20, 17, 18, 16, 19, 1}. This lines up with the `Ｊ魂最大値＋`
 ability granting `+8` per stacked source — 8 looks like the game's HP quantum.
 
-### This falsifies "HP = size × 36" without an experiment
+### RESOLVED: HP is table data, and my formula below was wrong
+
+Keep reading — everything from "This falsifies" to the end of this section is
+**superseded**. The quantum argument was right; the replacement formula was not.
+
+Max HP comes from a per-character, per-size table in `chr_b.bin`, plus the `+8`
+bonus. The battle struct carries the table index at **`hp_addr + 0x29`**:
+
+`max_HP = chr_b[index][size − 4] + 8 × (active Ｊ魂+ sources)`
+
+`chr_b.bin` is 74 × 60 bytes, and each record holds five u8 HP values at
+`0x10, 0x14, 0x18, 0x1C, 0x20`. Five slots for the five battle panel sizes
+(4–8). All 370 of those bytes are multiples of 8, which is where the quantum
+comes from.
+
+Verified against six characters in one battle — every one exact:
+
+| slot | index @+0x29 | observed | `chr_b[i][0]` | delta | role |
+|---|---|---|---|---|---|
+| P active (Goku) | 0 | 160 | 152 | **+8** | active |
+| O active (Luffy) | 12 | 152 | 144 | **+8** | active |
+| O deck1 (Naruto) | 20 | 144 | 144 | 0 | bench |
+| P deck2 (Naruto) | 20 | 144 | 144 | 0 | bench |
+| P deck1 | 35 | 136 | 136 | 0 | bench |
+| P deck3 | 41 | 128 | 128 | 0 | bench |
+
+The two `+8` rows are exactly the two **active** characters, and the four
+zero-delta rows are the bench. That is the leader bonus, visible as data.
+
+Also note the two Naruto slots share index 20 *and* HP — same index, same HP, as
+a table model requires.
+
+**Naruto's ladder, `chr_b[20]` = `[144, 160, 176, 144, 144]`:**
+
+| size | displayed | raw |
+|---|---|---|
+| 4 | 144 | 9216 (observed ✓) |
+| 5 | **160** | **10240** |
+| 6 | 176 | 11264 |
+| 7/8 | 144 | filler — sizes 7–8 use a second record (ナルト（九尾）) |
+
+So the size-5 answer is **160 / raw 10240**, not the 152 predicted below.
+
+**Caveats.** The `+8` is confirmed as attaching to the *active* characters, but
+this battle can't separate "is the leader" from "is currently active" — both
+actives had exactly one source. And the slot→size mapping rests on the
+structural argument (5 slots, 5 battle sizes) plus one anchor (Naruto size 4 =
+144); sizes 5–8 are not yet directly observed in RAM.
+
+### ~~This falsifies "HP = size × 36" without an experiment~~ (superseded)
 
 The proposed discriminator for the HP-scaling question was that 4-koma Naruto
 reads 144, so `144 = 4 × 36` and size-5 should read **180**.

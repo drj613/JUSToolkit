@@ -277,8 +277,16 @@ supplies addresses + discriminator while the harness supplies inputs.
 > **Always locate the array first** with `scripts/emu/find_battle_structs.py`, which scans for the
 > repeating-group signature (four consecutive `0x50`-byte slots, each with HP a multiple of 64, a
 > small ability count, and a `chr_b` index < 74, cross-checked against `chr_b.bin`). A single slot
-> matches ~1167 times in 4 MB; the group of four is unique. Treat `+0x61C` (player→opponent) as
-> per-session too.
+> matches ~1167 times in 4 MB; the group of four is unique.
+>
+> **CORRECTED 2026-08-14 — `+0x61C` is valid.** An earlier revision of this warning said not to
+> trust the player→opponent offset. That was wrong: it had been applied to a stale base from a
+> different session. A GDB breakpoint gave both structs directly — player `0x021df19c`, opponent
+> `0x021df7b8`, difference exactly `0x61C` — and struct `+0x18` = HP confirmed live. The scanner's
+> base equals `struct + 0x18`, so **max HP is at `scan_base - 2`**.
+>
+> Also corrected: in that savestate the opponent's HP was at **`0x021DF7D0`**, not `0x021DF7F0`.
+> Watching the latter reads unrelated memory, which is what made opponent-side watches look flat.
 
 Structure these cards rely on (verified against a running emulator). **HP is u16 little-endian in
 1/64 units** — read 2 bytes, not 1. Within a slot: HP at `+0x00`, ability count at `+0x02`,
@@ -366,7 +374,7 @@ ambiguity currently open on the Goku→Luffy `4.000` measurement. Worth testing 
 
 - Hypotheses: **A** = advantage is multiplicative ~1.5× (owner's guess, SPECULATIVE).
   **B** = additive. **C** = neither; advantage affects something other than raw damage.
-- Watch: `name=hp_target addr=0x021DF7F0 len=2` (per-frame; damage = baseline − min dip)
+- Watch: `name=hp_target addr=<discover> len=2` (one session read `0x021DF7D0`; **not** `0x021DF7F0`, which is unrelated memory) (per-frame; damage = baseline − min dip)
 - Setup: same attacker, same single move, two targets that differ **only** in nature relative to
   the attacker — one neutral matchup, one advantaged matchup. Natures: 力 Power beats 知
   Knowledge beats 笑 Laughter beats 力 Power; なし Neutral is outside the triangle, which makes a

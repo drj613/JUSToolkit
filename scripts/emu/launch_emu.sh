@@ -22,8 +22,11 @@ KEEP_IPC=0
 # heartbeats and racing for the command inbox, which looks like a bridge bug.
 bash "$SCRIPT_DIR/stop_emu.sh" || exit 1
 
+# Clear transient IPC state, but NEVER states/ -- savestates are expensive to
+# recreate (a full scripted boot-to-battle) and are the whole point of being
+# able to resume an experiment. `--keep-ipc` additionally preserves runs/.
 if [ "$KEEP_IPC" = 0 ]; then
-  rm -rf "$IPC_DIR"
+  rm -rf "$IPC_DIR/cmd" "$IPC_DIR/ack" "$IPC_DIR/runs"
 fi
 mkdir -p "$IPC_DIR"/{cmd,ack,runs,states}
 rm -f "$IPC_DIR"/heartbeat.json "$IPC_DIR"/cmd/inbox.lua \

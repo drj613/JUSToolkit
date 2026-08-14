@@ -25,6 +25,8 @@ import subprocess
 import sys
 import time
 
+import find_battle_structs
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 PLAYER_HP = 0x021DF1D4
 OPP_HP = 0x021DF7F0
@@ -69,7 +71,8 @@ def in_battle():
         with open("/tmp/jus_boot_ram.bin", "rb") as f:
             ram = f.read()
         hits = find_battle_structs.scan(ram, find_battle_structs.valid_hp_values())
-    except Exception:
+    except Exception as exc:
+        print("    (struct scan failed: %s)" % exc)
         return None
     if not hits:
         return None
@@ -121,18 +124,24 @@ def main():
         print("  %-14s %-8s (tail %d)" % (name, "+".join(buttons), tail))
         press(name, buttons, tail)
 
+    base = None
     for attempt in range(10):
-        if in_battle():
+        base = in_battle()
+        if base:
             break
         time.sleep(1)
     else:
-        print("NOT in a battle -- HP addresses don't look valid. Screenshot the "
-              "window to see which screen it stalled on.")
+        print("NOT in a battle -- no character array found by signature scan. "
+              "Screenshot the window to see which screen it stalled on.")
         return 1
 
-    p, o = peek(PLAYER_HP, 2), peek(OPP_HP, 2)
-    print("\nin battle: player HP %d (%.1f), opponent HP %d (%.1f)"
-          % (p, p / 64.0, o, o / 64.0))
+    # Report from the DISCOVERED base, not the module constants -- those are
+    # only the values from one historical session.
+    cur = peek(base, 2)
+    print("\nin battle: player array at 0x%08X, active current HP %d (%.1f), "
+          "max HP %d (%.1f), chr_b index %d"
+          % (base, cur, cur / 64.0, peek(base - 2, 2), peek(base - 2, 2) / 64.0,
+             peek(base + 0x29, 1)))
     print("saving savestate %r ..." % slot)
     print(cli("state", "save", slot).strip())
     return 0

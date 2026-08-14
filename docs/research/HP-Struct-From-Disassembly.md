@@ -107,7 +107,7 @@ caller-supplied value.
 The table pointer is reached via `[[0x0214BD80] + 0x40]`. Note `0x0214BD80` sits
 just *below* `0x0214CD20`, the address ten overlays share, so it is in the
 always-resident region and safe to reference. See
-`Overlay-Residency-In-Battle.md`.
+`Overlay-Residency-By-Mode.md`.
 
 ## HP initialization proves the ×64 scale in code
 

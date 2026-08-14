@@ -47,6 +47,36 @@ respectively is not something a wrong guess produces.
   the running game has since modified" — but it's also consistent with something
   else being loaded there. Don't rely on either reading.
 
+## Deck editor: ov01 — and it resolves the ov12 ambiguity
+
+Same method, RAM dumped while sitting inside the deck editor
+(デッキメイク → deck select → deck 1):
+
+| overlay | load address | size | match |
+|---|---|---|---|
+| **ov01** | `0x0214CD20` | 135,456 | **99.8%** ← resident |
+| ov00, ov02–ov08 | `0x0214CD20` | — | 2.6–6.5% |
+| **ov10** | `0x02172A60` | 215,264 | **100.0%** ← resident |
+| ov11 | `0x02172A60` | 61,440 | 3.4% |
+| **ov12** | `0x021AC1C0` | 167,776 | **100.0%** ← resident |
+| ov09, ov13 | — | 32 | 12.5% (meaningless, 32 bytes) |
+
+So the resident set is mode-dependent in **two** windows:
+
+| mode | `0x0214CD20` | `0x02172A60` | `0x021AC1C0` |
+|---|---|---|---|
+| battle | ov06 | ov11 | ov12 |
+| deck editor | ov01 | ov10 | ov12 |
+
+**This resolves the ov12 question left open above.** ov12 reads 100% in the deck
+editor and only 59.6% during battle — so ov12 *is* resident in both, and the
+battle figure was runtime mutation of its writable data, not a different overlay.
+The earlier "ambiguous" reading was measurement noise from a busy combat scene,
+which is a useful caution: **compare in the quietest mode available.**
+
+`ov01` is the overlay to disassemble for deck-editor logic (panel nature
+resolution, deck bonus calculation).
+
 ## Practical consequence
 
 **Battle code lives in `arm9.bin` and `ov06`.** Anyone searching for combat

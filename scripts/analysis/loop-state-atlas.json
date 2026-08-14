@@ -1,9 +1,8 @@
 {
-  "iteration": 15,
+  "iteration": 16,
   "phase": "combat",
-  "current_task": "C0-nature-in-battle-0x021540AA",
+  "current_task": "C3-hitbox-priority-round2",
   "queue": [
-    "C0-nature-in-battle-0x021540AA",
     "C3-hitbox-priority-round2",
     "C4-physics-writers-round2",
     "C5-gdb-queue-triage",
@@ -23,7 +22,8 @@
     "K2h-NATURE-SOLVED",
     "K4-design-brief",
     "C1-overlay-map",
-    "C2-function-denominator"
+    "C2-function-denominator",
+    "C0-nature-in-battle"
   ],
   "stuck": {},
   "required_reading_for_koma_tasks": [
@@ -81,7 +81,7 @@
     "L/R sticker bindings are per-deck fields not yet located in RAM",
     "Is HP computed as size*k at runtime, or tabulated per panel? Naruto 4-koma=144=4*36; if size*k then size5=180, size6=216, size7=252, size8=288. One reading settles it."
   ],
-  "notes": "Iteration 15 (interrupt): peer RETRACTED the refutation of my combat-phase nature lead. Their find_callers.py decoded only ARM BL and missed Thumb BL/BLX, manufacturing a false \"zero callers in ov06\". Nature IS read in battle - 0x021540AA in ov06 calls the predicate in Thumb via blx and consumes the result. Lead reinstated as C0, jumping the queue ahead of C3. Recorded the three-way epistemic note (my premise was invalid, my conclusion was right anyway, and the refutation was also wrong - do not collapse that into \"my reasoning was fine\"). Also corrected: +0x61C IS valid (earlier warning was a stale base), opponent HP is at 0x021DF7D0 not 0x021DF7F0, and the harness cards were fixed accordingly.",
+  "notes": "Iteration 16: C0 done. The reinstated nature lead is RESOLVED but is NOT the multiplier - the battle nature check picks a sprite archive (_b.aar variant). Chasing it paid off anyway: my Thumb-aware caller scan found SIX previously-unknown Thumb callers of the HP-apply function (14 total, not 8), validated exactly against the peer live GDB lr, and identified their auto-heal site. The five others are the melee-damage lead. Also CONFIRMED THE NATURE TRIANGLE AND ENUM FROM INSTRUCTIONS at 0x02160944 - a counter, not a multiplier. New tool scripts/decomp/find_callers.py fixes the C2 connectivity blind spot.",
   "last_wake": "2026-08-14",
   "wakeup_default_seconds": 1800,
   "consecutive_no_progress_wakes": 0,
@@ -363,7 +363,7 @@
   },
   "combat_phase_entry_points": {
     "scope": "combat code = arm9.bin + overlay ov06 ONLY (byte-verified resident). bl 0x020783CC appears 8x in ov06, 0x in arm9.bin.",
-    "nature_in_combat": "*** LIVE AGAIN — TOP LEAD *** (un-refuted 2026-08-14). Nature IS read in the battle overlay. The peer caller at 0x021540AA in ov06 calls 0x02078CB8 (nature predicate) in THUMB via blx, and the very next instruction is cmp r0,#0 so the boolean is consumed. Context: r5 is a character-ish base; byte at +0x40 is checked first, and [r5,#0x34] is passed to the predicate. Best remaining candidate for the nature/resistance multiplier.",
+    "nature_in_combat": "RESOLVED, and it is NOT the multiplier. 0x021540AA (ov06, Thumb) calls the nature predicate 0x02078CB8 purely to choose an ASSET FILENAME: predicate true -> \"battle/chr/??_?_??_b.aar\" with VRAM allowance 0x005F2000; false -> \"battle/chr/??_?_??.aar\" with 0x005F1000. So a panel with an explicit nature override loads the _b sprite archive - correct for the alternate-nature variants having different art. No damage arithmetic at the site. This is the ONLY use of the predicate in ov06 (confirmed by my own Thumb-aware scan). See docs/research/findings/c0-nature-in-battle.md",
     "damage_apply": "0x02078488 core (HP = clamp(current+delta,0,max)); public entry 0x020783CC; list variant 0x020783DC. 8 call sites in ov06 listed in state. Delta arrives ALREADY COMPUTED, so resistance is upstream - trace the producers of r1.",
     "hp_writers": "0x02078474 (max*pct/100), 0x02078778 (halve), 0x02078604 (smulbb multiplicative - relevant to 底力)",
     "method_note": "Static value search finds TABLES. It cannot find FUNCTIONS. Reach for disassembly sooner in this phase - the koma sprint lost several iterations to that lesson.",
@@ -373,7 +373,13 @@
     "sub_integer_damage_discriminator": "The measured 1.250 damage = 80 raw is NOT a multiple of 64, so it did NOT come through a lsl #6 handler. At least one damage path produces a genuine sub-integer value. Useful discriminator for locating that path.",
     "THREE_WAY_EPISTEMIC_NOTE": "Worth keeping straight, because two separate things were wrong and they cancelled: (1) MY PREMISE WAS INVALID - \"the function is in arm9.bin, therefore it runs in this mode\" is not valid reasoning; arm9 is always-resident and mode-agnostic, and only the caller identifies the mode. (2) MY CONCLUSION WAS NONETHELESS CORRECT - nature really is read in ov06. (3) THE REFUTATION WAS ALSO WRONG - it rested on a BL decoder that handled only ARM (0xEB) and missed Thumb BL/BLX, so it manufactured a confident \"zero callers in ov06\". Do not collapse this into \"my reasoning was fine after all\". The reasoning was bad and the answer was lucky. Both facts stay on the record.",
     "LESSON_absence_claims": "An ABSENCE claim silently inherits every gap in the method behind it. \"Zero callers\" is only as strong as the decoder is complete - and an absence is exactly the kind of claim a teammate propagates without re-verifying. What exposed the gap was a live GDB breakpoint capturing lr = 0x02150ddd: bit 0 set means the caller was THUMB. Treat all pre-fc56df9 caller counts from the peer as ARM-only until re-run.",
-    "damage_bypass_SUGGESTIVE_NOT_PROVEN": "Across 14736 breakpoint hits on the HP-apply function 0x02078488, EVERY delta was +128 (+2.0 displayed) from one Thumb caller - the training auto-heal, once per character per frame. ZERO negative deltas. BUT the peer could not confirm a melee hit landed during that window (the constant per-frame heal pins HP at max, so a damage dip is invisible), so this is SUGGESTIVE that melee damage bypasses 0x02078488, not proof."
+    "damage_bypass_SUGGESTIVE_NOT_PROVEN": "Across 14736 breakpoint hits on the HP-apply function 0x02078488, EVERY delta was +128 (+2.0 displayed) from one Thumb caller - the training auto-heal, once per character per frame. ZERO negative deltas. BUT the peer could not confirm a melee hit landed during that window (the constant per-frame heal pins HP at max, so a damage dip is invisible), so this is SUGGESTIVE that melee damage bypasses 0x02078488, not proof.",
+    "HP_APPLY_HAS_14_CALLERS_NOT_8": "My Thumb-aware scan found SIX Thumb blx callers of 0x020783CC that the earlier ARM-only list missed: 0x02150DD8, 0x021513D8, 0x021513EE, 0x021514E6, 0x021515B2, 0x02151636 - plus the 8 known ARM sites. All 14 in ov06, none elsewhere. VALIDATED AGAINST HARDWARE: the peer GDB captured lr = 0x02150ddd, and my thumb-blx at 0x02150DD8 has return address 0x02150DDC | 1 = 0x02150DDD. Exact match, so 0x02150DD8 is the training auto-heal caller they hit 14736 times.",
+    "melee_damage_lead": "The FIVE remaining new Thumb sites (0x021513D8, 0x021513EE, 0x021514E6, 0x021515B2, 0x02151636) are the best candidates for melee damage. The peer 14736-hit observation saw deltas from only ONE caller and suggested melee bypasses 0x02078488; a simpler explanation is that melee comes through one of these five previously-unknown sites and none fired because no melee hit landed in that window.",
+    "TRIANGLE_CONFIRMED_IN_CODE": "0x02160944-0x021609B8 (ov06, ARM) loops over characters comparing nature at runtime struct +0x13 via chain [r2]->+0x118->+0x56C. Pairs tested: (mine 0, theirs 2), (mine 1, theirs 0), (mine 2, theirs 1) - i.e. every pair is \"theirs beats mine\" under Power>Knowledge>Laughter>Power. This CONFIRMS FROM INSTRUCTIONS both the enum mapping 0=力/1=知/2=笑 and the triangle direction. It accumulates a COUNT into [r7,#0x60], so it is a counter not a multiplier. Likely consumer: the SP-gain passive \"increase SP vs opposing nature\" (owner category 36), a deck-level nature bonus, or an AI heuristic. Whoever reads [r7,#0x60] settles it.",
+    "nature_read_sites_unexamined": "Nature is read at 10 sites in ov06 via struct +0x13. Two clusters explained; still unexamined: 0x021548F4, 0x0215DD7C, 0x0215F594, 0x02160260, 0x02163DFC, 0x021672D8",
+    "new_tool": "scripts/decomp/find_callers.py - cross-binary caller scan handling ARM BL and Thumb BL/BLX, validated against the live GDB lr observation. Fixes the connectivity blind spot from C2.",
+    "THUMB_WARNING": "ov6.txt mis-decodes Thumb regions and all of C0 evidence is in Thumb code. Read raw overlay bytes, not the text listing. TWO separate wrong conclusions this session came from tools that silently handled only ARM."
   },
   "ov05_mode_UNIDENTIFIED": "CONFLICT: the nature resolver 0x0214E480 prologue bytes appear in overlay 05 ONLY (peer verified), but the peer measured ov01 resident on the deck-editor screen at 99.8% with ov05 at only 6.5%. Both cannot be the deck editor, so WHICH MODE LOADS ov05 is unidentified. Candidate: the koma browser / database screen (InfoDeck.aar is the koma-browser asset archive). Peer offered to dump RAM in whatever screen I can name.",
   "disasm_naming_CONFIRMED": "ov6.txt really is overlay 6 - peer checked bytes at 0x02157DC0 against extracted arm9_ov06.bin and they match. So disasm filenames DO map to overlay IDs.",
@@ -417,5 +423,8 @@
     "3. Follow the branch taken when the predicate returns true vs false - a nature multiplier would appear as a multiply/shift on a damage or stat value in one arm.",
     "4. Cross-check against the 8 known ov6 damage sites; if the nature branch feeds any of them, that is the resistance/multiplier path the peer cannot find from the delta side.",
     "NOTE: ov6.txt disassembly is ARM-oriented; this site is THUMB, so the existing listing may mis-decode it. Verify against ov06.bin bytes directly."
-  ]
+  ],
+  "training_menu": "Peer found an in-battle training menu (START during a deck-maker test battle): row1 COM設定 なにもしない/戦う (defaults to DO NOTHING), row2 自動回復 ON/OFF (the auto-heal), row3 相手の属性 力/知/笑 (SETS THE OPPONENT NATURE), row4 back to editor, row5 retry. A cycles a value. Row 3 is a direct lever for the nature-damage question - fix everything else, cycle the three natures, measure damage 3x. WARNING: while the menu is open ALL bridge input goes to the menu, not the battle, so plans report ok:true while every attack misses - and RIGHT presses may silently change menu values.",
+  "regen_confirmed": "My regen tip confirmed twice: struct +0x49 (= hp_addr +0x31) read 1, and poking it to 0 stopped healing dead. Cleaner route is the menu 自動回復 OFF, which makes damage cumulative (verified 10240 -> 8704 from two hits, held). Subtlety: menu OFF leaves +0x49 still reading 1, so the setting gates whether the regen ROUTINE RUNS rather than zeroing the rate - two mechanisms, same observable. Arithmetic closes: rate 1 -> 1*2=2 displayed -> *64 = 128 raw, matching the +128 deltas.",
+  "first_clean_damage": "With auto-heal off the CPU landed 768 raw = 12.000 displayed, twice identically - the first uncontaminated cumulative damage figure from the harness."
 }

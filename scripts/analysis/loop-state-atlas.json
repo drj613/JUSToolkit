@@ -1,14 +1,13 @@
 {
-  "iteration": 12,
+  "iteration": 13,
   "phase": "combat",
-  "current_task": "C1-overlay-map",
+  "current_task": "C2-function-denominator",
   "queue": [
-    "C1-overlay-map",
     "C2-function-denominator",
     "C3-hitbox-priority-round2",
     "C4-physics-writers-round2",
     "C5-gdb-queue-triage",
-    "K3-koma-runtime (deferred, low value now)"
+    "K3-koma-runtime (deferred)"
   ],
   "done": [
     "K1-koma-data-survey",
@@ -22,7 +21,8 @@
     "K2f-overlays-extracted-nature-exhaustively-excluded",
     "K2g-nature-narrowed-to-override-rule",
     "K2h-NATURE-SOLVED",
-    "K4-design-brief"
+    "K4-design-brief",
+    "C1-overlay-map"
   ],
   "stuck": {},
   "required_reading_for_koma_tasks": [
@@ -362,9 +362,38 @@
   },
   "combat_phase_entry_points": {
     "scope": "combat code = arm9.bin + overlay ov06 ONLY (byte-verified resident). bl 0x020783CC appears 8x in ov06, 0x in arm9.bin.",
-    "nature_in_combat": "0x02078CB8 is a pure \"has explicit nature?\" predicate living in the BATTLE engine - likely home for the nature matchup multiplier. Top lead.",
+    "nature_in_combat": "*** REFUTED 2026-08-14 — DO NOT PURSUE. *** My inference was \"0x02078CB8 is a nature predicate and it is in arm9.bin, therefore nature is read during combat.\" The premise is WRONG: arm9.bin is the ALWAYS-RESIDENT image and contains code for EVERY mode, so being in arm9 says nothing about which mode runs a function - only the caller does. Peer wrote scripts/find_callers.py (decodes ARM BL encoding across arm9 + all 14 overlays) and found: 0x02078CB8 has exactly 1 BL caller (ov05 at 0x02156C70), 0x0214E480 has 2 (both ov05), ZERO in ov06, and zero function-pointer references anywhere. Nature is resolved only while ov05 is resident, never in the battle overlay. Consistent with the predicate taking a koma record (+0xB flags) rather than a battle character struct.",
     "damage_apply": "0x02078488 core (HP = clamp(current+delta,0,max)); public entry 0x020783CC; list variant 0x020783DC. 8 call sites in ov06 listed in state. Delta arrives ALREADY COMPUTED, so resistance is upstream - trace the producers of r1.",
     "hp_writers": "0x02078474 (max*pct/100), 0x02078778 (halve), 0x02078604 (smulbb multiplicative - relevant to 底力)",
-    "method_note": "Static value search finds TABLES. It cannot find FUNCTIONS. Reach for disassembly sooner in this phase - the koma sprint lost several iterations to that lesson."
+    "method_note": "Static value search finds TABLES. It cannot find FUNCTIONS. Reach for disassembly sooner in this phase - the koma sprint lost several iterations to that lesson.",
+    "MY_ERROR_4": "\"In arm9.bin\" does NOT mean \"runs in this mode\". arm9 is always-resident and mode-agnostic; only the CALLER identifies the mode. Use scripts/find_callers.py (peer) BEFORE assuming a function participates in a phase.",
+    "METHOD_LESSON_SHARPENED": "Value-space search cannot find a computation, AND text-grep cannot find an ABSENCE. \"Zero callers\" is only meaningful once you have the COMPLETE binary set - grepping the 9 dumped disasm files would have missed it, and overlays sharing a load address make \"which file is this in?\" ambiguous. The absence of a caller is as informative as the presence of one.",
+    "damage_dispatcher": "All 8 ov06 sites are handlers in a script-effect dispatcher shaped: ldr r1,[r1,#4] (effect record); ldrsh r1,[r1,#4] (signed halfword data parameter); lsl r1,r1,#6 (x64, displayed->raw); bl 0x020783CC. So damage values are AUTHORED IN DISPLAYED UNITS and scaled at the last moment. A sibling at 0x02159290 uses lsl #8 into a different stat - a family of \"apply data parameter to stat X\" handlers. NONE of the 8 contains resistance math; it is upstream in hit resolution, still not found.",
+    "sub_integer_damage_discriminator": "The measured 1.250 damage = 80 raw is NOT a multiple of 64, so it did NOT come through a lsl #6 handler. At least one damage path produces a genuine sub-integer value. Useful discriminator for locating that path."
+  },
+  "ov05_mode_UNIDENTIFIED": "CONFLICT: the nature resolver 0x0214E480 prologue bytes appear in overlay 05 ONLY (peer verified), but the peer measured ov01 resident on the deck-editor screen at 99.8% with ov05 at only 6.5%. Both cannot be the deck editor, so WHICH MODE LOADS ov05 is unidentified. Candidate: the koma browser / database screen (InfoDeck.aar is the koma-browser asset archive). Peer offered to dump RAM in whatever screen I can name.",
+  "disasm_naming_CONFIRMED": "ov6.txt really is overlay 6 - peer checked bytes at 0x02157DC0 against extracted arm9_ov06.bin and they match. So disasm filenames DO map to overlay IDs.",
+  "OVERLAY_MAP": {
+    "tool": "scripts/decomp/overlay_map.py (Tier-2 D0.1). Reads the overlay table from the ROM header rather than ftc/y9.bin - equivalent and does not need the extracted filesystem.",
+    "output": "docs/research/Overlay-Map.md",
+    "method": "identify each overlay mode by counting references to ROM asset-directory names in its strings; cross-checked against the 5 residency measurements the harness made by byte-comparing overlays against live RAM",
+    "map": {
+      "ov00": "boot/title/opening/ending/options (ending x44, title x22)",
+      "ov01": "deck SELECT list + results (result x63, deckselect x38)",
+      "ov02": "J Galaxy story mode + demos (demo x61, jgalaxy x47)",
+      "ov03": "J Arena (JArena x66)",
+      "ov04": "J Quiz (jquiz x121)",
+      "ov05": "DECK MAKE - the editor itself - plus koma browser/database (database x50, deckmake x39, koma x24, input x22)",
+      "ov06": "BATTLE (battle x77)",
+      "ov07": "local wireless multiplayer (Commu x94)",
+      "ov08": "Nintendo WFC online (dwc x20)",
+      "ov09": "32-byte stub",
+      "ov10": "online, larger (dwc x15)",
+      "ov11": "BATTLE AI - only overlay referencing chr/ai/ai_param.bin",
+      "ov12": "shared support code (info/stage/item), resident in BOTH battle and deck screens",
+      "ov13": "32-byte stub"
+    },
+    "RESOLVES_ov01_ov05_CONFLICT": "ov05 references deckmake/database/koma/input (input = the kana keyboard for naming a deck); ov01 references deckselect/result. So ov01 is the deck LIST screen and ov05 is the EDITING screen. The harness measured ov01 because it stopped at the deck-select list; entering a deck for editing should load ov05. That is why the nature resolver at 0x0214E480 is in ov05 while their RAM dump showed ov01 - no contradiction.",
+    "combat_scope_refined": "Battle = arm9.bin + ov06 + ov11 (AI) + ov12 (shared support)."
   }
 }

@@ -105,6 +105,53 @@ artifact.
 Trying to force a character *swap* with DOWN+B didn't change who was active
 (opponent active HP stayed at Luffy's 152 baseline across 6 attempts).
 
+## 2b. Every max-HP value is a multiple of 8
+
+All eight deck slots, read as u16 in one pass:
+
+| slot | raw | displayed | ability IDs |
+|---|---|---|---|
+| P active (Goku) | 10240 | 160.0 | `[7, 15]` |
+| P deck1 | 8704 | 136.0 | `[47, 46, 35]` |
+| P deck2 | 9216 | 144.0 | `[2, 14, 15]` |
+| P deck3 | 8192 | 128.0 | `[3, 26, 46, 24, 10]` |
+| O active (Luffy) | 9728 | 152.0 | `[9, 25, 12, 14]` |
+| O deck1 (Naruto) | 9216 | 144.0 | `[2, 14, 15, 5]` |
+| O deck2 | 512 | 8.0 | `[]` |
+| O deck3 | 0 | 0.0 | `[]` |
+
+Two things fall out.
+
+**HP itself carries no fraction.** Every value is an exact multiple of 64 raw, so
+the 1/64 units exist for *damage*, not for storing HP. Sub-integer values like
+the measured 1.250 hit are produced by the damage path, not read from a table.
+
+**Every non-zero value is a multiple of 8 displayed HP:** 160, 136, 144, 128,
+152, 8 = 8 × {20, 17, 18, 16, 19, 1}. This lines up with the `Ｊ魂最大値＋`
+ability granting `+8` per stacked source — 8 looks like the game's HP quantum.
+
+### This falsifies "HP = size × 36" without an experiment
+
+The proposed discriminator for the HP-scaling question was that 4-koma Naruto
+reads 144, so `144 = 4 × 36` and size-5 should read **180**.
+
+But `180 / 8 = 22.5`. A size-5 panel at 180 would be the only non-multiple-of-8
+HP value observed, so **`size × 36` cannot be right** if the quantum holds.
+
+A `+8 per size step` rule fits the same anchor point and respects the quantum:
+
+`HP = 8 × (14 + size)` → size 4 = **144** ✓, size 5 = **152**, size 6 = 160,
+size 7 = 168, size 8 = 176.
+
+That also reproduces the reported 4-koma maximum of 176 (144 + 8×4 from leader
+plus three relationships), and matches "8-koma panels have the most HP."
+
+**Confidence:** the multiple-of-8 invariant rests on 6 non-zero samples, so it is
+strong but not proven. The `14 + size` constant is a *guess* fitted to one known
+size — the HP ladder 16..20 seen above could just as easily be per-character base
+HP rather than a size ladder. What is solid is the falsification: 152 and 180 are
+far apart, so a single size-5 reading decides it.
+
 ## 3. Training mode heals to full — read damage per frame, not before/after
 
 In Training, HP snaps back to full within a few frames of any hit: it steps up

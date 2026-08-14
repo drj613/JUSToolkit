@@ -12,11 +12,11 @@ Central tracking for all in-game tests that require human intervention.
 
 | Status      | Count |
 | ----------- | ----- |
-| PENDING     | 89    |
+| PENDING     | 94    |
 | IN PROGRESS | 0     |
 | COMPLETED   | 33    |
 
-**Last Updated:** 2026-02-02
+**Last Updated:** 2026-08-14 (+5 harness cards A1/F1/B1/E1/D1)
 
 > **Formula CONFIRMED:** `damage = damage1/5 + (tier-2)` - verified character
 > table in Research-Status.md (12 characters)
@@ -258,3 +258,156 @@ _All P0 tests completed!_
 - Tests for the same character should be batched when possible
 - Cross-reference results with jpower/collision data to verify formulas
 - When a test reveals unexpected results, flag for deeper investigation
+
+---
+
+# Harness Cards (machine-consumable)
+
+Added by the Atlas static-RE loop for the melonDS harness session. Format agreed with that
+session: one section per card, hypotheses must be separable **by a number**, and the card
+supplies addresses + discriminator while the harness supplies inputs.
+
+Address facts these cards rely on (from the harness session, verified against a running
+emulator): **HP is u16 little-endian in 1/64 units** — read 2 bytes, not 1. Player active HP
+`0x021DF1D4`, opponent active `0x021DF7F0`, opponent deck slot 1 `0x021DF840`. Deck-slot stride
+`+0x50`, player→opponent `+0x61C`. Note the ability-count byte at `0x021DF1D6` sits immediately
+after the HP u16, so HP and the ability list are adjacent fields in the same struct.
+
+Known reference values: Naruto 4-koma = `9216` raw = `144.0`. Goku = `10240` = `160.0`.
+Luffy = `9728` = `152.0`.
+
+---
+
+### CARD A1: Where is per-panel nature stored?
+
+Static analysis has **refuted** nature living in `koma.bin` (see
+`findings/koma-format-decoded.md`): Naruto's size-2 panel is 笑 Laughter and his size-3 is 力
+Power, yet both records are byte-identical in every field except image/shape/ordinal. So a
+per-panel source exists and I can't find it offline.
+
+This is a **diff experiment**, not a search.
+
+- Hypotheses: **A** = per-panel runtime struct holds nature (a byte/nibble differs between two
+  same-size, different-nature panels). **B** = nature is derived from something else entirely
+  and no runtime byte differs in the koma region.
+- Watch: `name=koma_holder addr=0x0228AA00 len=512` (region is `0x0228AA00`–`0x0228B000`, 1.5 KB
+  total — this exceeds the per-frame budget, so take it as **three one-shot dumps** of 512 B at
+  `0x0228AA00`, `0x0228AC00`, `0x0228AE00`, not a per-frame watch)
+- Watch: `name=leader_koma_ptr addr=0x020A4368 len=4` (documented as a pointer to the leader's
+  runtime koma data — deref and dump 128 B at the target too, if chains work)
+- Setup: two saved decks **identical in every way except** the Naruto battle panel: deck 1 uses
+  the 4-koma 力 Power variant, deck 2 uses the 4-koma 笑 Laughter variant. In `koma.bin` these
+  are records **500** (Power, shape elem 2) and **501** (Laughter, shape elem 0). Same leader,
+  same support, same helper, same grid positions.
+- Inputs: enter deck edit / deck select with deck 1 active, dump; switch to deck 2, dump.
+- Discriminator: **A** if the diff is small and localised (1–4 bytes differing at the same
+  offset within one koma record-sized stride). **B** if the only differences are the koma ID and
+  image ID. Report the differing offsets and values either way — a null result is still
+  publishable and I'll record it as a refutation.
+
+---
+
+### CARD F1: Is HP `size × k`, or tabulated per panel?
+
+Same missing table as A1, approached from the cheap side. Naruto's size-4, size-5 and size-6
+panels all share `abilityId = 20` (`koma.bin` byte `0x7`) yet have different HP, and `koma.bin`
+has no HP field.
+
+- Hypotheses: **A** = HP is computed as `size × k` with a per-character `k` (for Naruto
+  `k = 2304` raw = 36.0 displayed). **B** = HP is tabulated per panel, so values won't be clean
+  multiples.
+- Watch: `name=hp_slot1 addr=0x021DF840 len=2`
+- Setup: a deck whose slot-1 battle panel is **Naruto 5-koma** (`koma.bin` record **502**).
+  Then repeat with **6-koma** (record 503) if the first is ambiguous.
+- Inputs: none beyond reaching a battle with that deck. Read at rest, before any damage.
+- Discriminator: **A** if 5-koma reads exactly `11520` (`180.0`) and 6-koma reads `13824`
+  (`216.0`). **B** for any other value. A single reading decides it.
+- Note: read at rest. Training mode heals ~64 raw units every ~2 frames, so a value sampled
+  mid-recovery is meaningless.
+
+---
+
+### CARD B1: Nature damage multiplier
+
+Deliberately designed as **two matchups sharing one base move**, per the harness session's
+warning that a single number can't separate a multiplier from a flat subtraction when
+resistances are in play.
+
+Also relevant: this repo's `Human-Testing-Queue.md` already claims a **CONFIRMED** formula
+`damage = damage1/5 + (tier-2)`. That has an additive term, which may be exactly the ×2/3-vs-−2
+ambiguity currently open on the Goku→Luffy `4.000` measurement. Worth testing against.
+
+- Hypotheses: **A** = advantage is multiplicative ~1.5× (owner's guess, SPECULATIVE).
+  **B** = additive. **C** = neither; advantage affects something other than raw damage.
+- Watch: `name=hp_target addr=0x021DF7F0 len=2` (per-frame; damage = baseline − min dip)
+- Setup: same attacker, same single move, two targets that differ **only** in nature relative to
+  the attacker — one neutral matchup, one advantaged matchup. Natures: 力 Power beats 知
+  Knowledge beats 笑 Laughter beats 力 Power; なし Neutral is outside the triangle, which makes a
+  Neutral target the ideal baseline.
+- Inputs: turn to face the target (~12 frames of the opposite direction first — the harness
+  session lost a whole probe to walking past and whiffing), then the one move. Repeat ≥5× and
+  take the mode.
+- Discriminator: let `d_neutral` and `d_advantaged` be the measured dips. **A** if
+  `d_advantaged / d_neutral ≈ 1.5`. **B** if the difference is a constant across two different
+  base moves. Run it with a second base move of different magnitude — that's what separates
+  ratio from constant.
+
+---
+
+### CARD E1: Name the unnamed ability IDs — ✅ CLOSED STATICALLY 2026-08-14
+
+> **Do not run this card.** All 57 abilities were named offline from `ability.bin` +
+> `ability_t.bin`. See `findings/abilities-all-57-named.md` for the full table, including all
+> ten previously-Unknown IDs. Kept below for provenance.
+
+**Try the static route first — this card may be unnecessary.** I have just found
+`jus_files/ripped_jus_files/bin/ability.bin` (228 B = **57 entries × 4 bytes**) and
+`ability_t.bin` (3788 B, a text table). Entry format `(u8 group, u8 sub, s8 param, u8 pad)`:
+
+- indices 0–37 = group 0, sub `0x00`–`0x25` (38 entries)
+- indices 38–48 = group 1, sub `0x05`–`0x0F` (11 entries)
+- indices 49–56 = group 2, sub `0x00`–`0x07` (8 entries)
+- **params are nonzero only at index 52 (`+8`), 54 (`+1`), 55 (`+3`), 56 (`-3`)**
+
+Two things line up. `Cheat-Code-Analysis.md` lists ability IDs `0x01`–`0x30` with **10 marked
+Unknown**, and 48 − 10 = 38 named — the same count as group 0. And `koma.bin` helper `abilityId`
+values run 0..55 with 47 distinct, which fits indexing 0..56 but **not** a table that stops at
+`0x30`. So the cheat-code "ability ID" is probably the `ability.bin` **record index**, and
+indices 49–56 were simply never catalogued because the old table stopped short.
+
+The nonzero params are suggestive: index 54 `+1` matches "Increase Max Special Gauge **by 1**",
+and index 52 `+8` matches "Increase Max Health" — both of which are categories I had predicted
+sit in the Unknown slots. I'm decoding `ability_t.bin` now, which should name all 57 offline.
+
+If that fails, the runtime poke is the fallback:
+
+- Hypotheses: each unknown index maps to one of the 4 unclaimed owner categories — health
+  regen, increase max HP, +1 max SP gauge, SP regen while on field (see
+  `Helper-Passives-Catalog.md`).
+- Watch: `name=ability_count addr=0x021DF1D6 len=1`, `name=ability_ids addr=0x021DF1D7 len=20`
+- Watch: `name=hp_player addr=0x021DF1D4 len=2`
+- Setup: any training battle.
+- Inputs: write count=1 at `0x021DF1D6` and a single test ID at `0x021DF1D7`, then observe.
+- Discriminator: for the four candidate effects, HP-max and SP-max changes are directly readable
+  as numbers; the two regen effects show as HP/SP rising with no input. **Ten unknown IDs to
+  test:** `0x0B`, `0x0C`, `0x11`, `0x13`, `0x14`, `0x15`, `0x17`, `0x18`, `0x24`, `0x25`. My
+  narrowed guesses: `0x13`–`0x15` or `0x17`–`0x18` hold the three HP/SP stat boosts (that range
+  ends at `0x16` = Guard strength, so it's the stat-boost neighbourhood), and `0x24`/`0x25` hold
+  SP-regen-on-field (they sit immediately before the SP-trigger block `0x26`–`0x30`).
+
+---
+
+### CARD D1: Helper facing semantics
+
+Lowest priority — needs the most menu automation. Every 1-cell helper carries exactly one
+passive, and the facing set at placement picks which battle character receives it.
+
+- Hypotheses: **A** = the passive goes to the single adjacent panel in the faced direction.
+  **B** = it goes to every battle panel in that row/column.
+- Watch: `name=ability_count addr=0x021DF1D6 len=1`, `name=ability_ids addr=0x021DF1D7 len=20`
+- Setup: a deck with **two** battle panels in the same column, and one helper below both, facing
+  up. Use a helper whose passive is unmistakable in the ability list.
+- Inputs: none beyond entering battle and switching between the two battle characters.
+- Discriminator: **A** if only the nearer character's ability list contains the helper's ID.
+  **B** if both do. Bonus: two helpers facing the same target answers whether passives stack —
+  count duplicates in the ID array.

@@ -1,9 +1,9 @@
 {
-  "iteration": 4,
+  "iteration": 5,
   "phase": "koma",
-  "current_task": "K2b-find-nature-source",
+  "current_task": "K2c-locate-nature-and-HP-tables",
   "queue": [
-    "K2b-find-nature-source",
+    "K2c-locate-nature-and-HP-tables",
     "K3-koma-runtime",
     "K4-design-brief",
     "C1-overlay-map",
@@ -16,7 +16,8 @@
     "K1-koma-data-survey",
     "K1b-observed-behavior-capture",
     "K1c-helper-passives-catalog",
-    "K2-koma-format"
+    "K2-koma-format",
+    "K2b-abilities-all-57-named"
   ],
   "stuck": {},
   "required_reading_for_koma_tasks": [
@@ -74,7 +75,7 @@
     "L/R sticker bindings are per-deck fields not yet located in RAM",
     "Is HP computed as size*k at runtime, or tabulated per panel? Naruto 4-koma=144=4*36; if size*k then size5=180, size6=216, size7=252, size8=288. One reading settles it."
   ],
-  "notes": "Iteration 4: K2 DONE. Wrote scripts/analysis/dump_koma.py and fully decoded kshape.bin + 10 of 12 koma.bin bytes. P5 confirmed exactly (kshape group index == size-1, verified by counting footprint cells). Size needs no field. Key negative result: nature is NOT in koma.bin, proven by two Naruto panels with different natures and identical bytes. opus-4-6 edit pass ran; verification clean (59/59 table rows, all 9 prediction IDs, all hex, ASCII footprint diagrams, Japanese preserved). | Mid-loop owner update: relationship+Leader HP bonuses CONFIRMED to stack (+32 max, 4 sources x8). Base HP CONFIRMED to scale with panel size, which gives the nature hunt a second target: Naruto sizes 4/5/6 share abilityId 20 but differ in HP, so a per-panel stat table likely holds BOTH nature and HP.",
+  "notes": "Iteration 5: peer session delivered arm9.bin + the HP-is-u16-1/64-units correction. Wrote 5 harness cards, then closed one of them (E1) statically by finding ability.bin + ability_t.bin and naming all 57 abilities. Ｊ魂 = HP confirmed, which verifies the owner's \"j soul\" term and explains the +8 constant. All 10 previously-Unknown ability IDs named. My own slot-position guesses were refuted and recorded. opus-4-6 edit pass clean (69/69 rows, 59/59 distinct Japanese tokens, all hex).",
   "last_wake": "2026-08-14",
   "wakeup_default_seconds": 1800,
   "consecutive_no_progress_wakes": 0,
@@ -155,5 +156,43 @@
     "observation": "Naruto size-4/5/6 panels all share abilityId 20 (byte 0x7) yet have different HP, and koma.bin has no HP field.",
     "implication": "Same structural signature as the nature gap. Either HP is computed at runtime from base stats + size, OR there is a per-panel stat table keyed by koma index - which would also be the natural home for nature.",
     "why_it_matters": "Option 2 would resolve the nature gap and the HP gap with one discovery. Prioritise finding a per-panel table over hunting a nature byte."
-  }
+  },
+  "arm9_now_available": {
+    "path": "jus_files/arm9/arm9.bin (693KB) + arm7.bin + binaries.json",
+    "extractor": "scripts/extract_arm9.py (from peer session justoolkit-06)",
+    "mapping": "ARM9 is UNCOMPRESSED and maps 1:1 at 0x02000000, so file_offset = runtime_addr - 0x02000000. No BLZ step. ARM7 maps at 0x02380000. Verified by the peer against live emulator memory.",
+    "note": "jus_files/ is gitignored - files are local-disk only, re-run the extractor to regenerate.",
+    "koma_name_table": "runtime 0x0209E840 => file offset 0x9E840"
+  },
+  "HP_UNITS_CORRECTION": "HP is a u16 LITTLE-ENDIAN in 1/64 units. The \"1/4 scale byte\" in older docs is only the HIGH BYTE. Read 2 bytes at addr, not 1. Naruto 4-koma = 9216 raw = 144.0. Goku 10240 = 160.0. Luffy 9728 = 152.0. Anything reading one byte silently truncates - distrust prior sub-integer damage conclusions. Source: peer session, docs/research/HP-And-Damage-Runtime-Findings.md",
+  "k2b_results": {
+    "output": "docs/research/findings/abilities-all-57-named.md",
+    "new_files_found": "jus_files/ripped_jus_files/bin/ability.bin (228B = 57 x 4: u8 group, u8 sub, s8 param, u8 pad) and ability_t.bin (3788B = 57 x 12: three relative s32 string pointers Title/Desc1/Desc2, Shift-JIS). Index-parallel, both 57 entries. NEITHER was in the K1 survey.",
+    "pointer_gotcha": "ability_t.bin relative pointer base = offset OF the pointer field, NOT after it (src/JUS.Tool/Texts/JusText.cs:90 evaluates Stream.Position before ReadInt32 advances). Getting it wrong shifts every string 4 bytes and truncates 2 leading chars - looks like \"shared string tails\" rather than a bug.",
+    "HEADLINE": "index 52 = Ｊ魂最大値＋ (\"J-soul max value +\") with param +8. Ｊ魂 (J-soul) IS THE HP STAT - this verifies the owner's half-remembered \"j soul\" term. The +8 that Leader and relationship adjacency both grant is literally this table entry, which is why they share a constant and stack to +32. Index 53 = 必殺魂最大値＋ = the SP gauge.",
+    "id_space_resolved": "group0 (idx 0-37, sub 0x00-0x25) == cheat-code IDs 0x00-0x25 by NAME one-for-one. group1 (idx 38-48, sub 0x05-0x0F, 11 entries) == cheat IDs 0x26-0x30 (also 11). group2 (idx 49-56, 8 entries) was NEVER in the cheat table - which is exactly why koma.bin helper abilityId reaches 55 while that table stopped at 0x30. Prediction CONFIRMED.",
+    "all_10_unknowns_named": {
+      "0x0B": "打撃弱点 blunt WEAKNESS (takes MORE)",
+      "0x0C": "斬撃弱点 slash WEAKNESS",
+      "0x11": "浪費 waste",
+      "0x13": "大食い big eater",
+      "0x14": "機械 machine",
+      "0x15": "直撃 direct hit",
+      "0x17": "重量級 heavyweight",
+      "0x18": "軽量級 lightweight",
+      "0x24": "プラス効果無効 nullify enemy buffs",
+      "0x25": "必殺技無制限 unlimited specials"
+    },
+    "my_slot_guesses_REFUTED": "I predicted the owner's 4 unclaimed categories sat in 0x13-0x18 / 0x24-0x25. WRONG - all four are in group2: cat24=idx52 Ｊ魂最大値＋(+8), cat27=idx53 必殺魂最大値＋, cat23=idx54 自己回復(+1), cat40=idx55 闘争心(+3). The reasoning (stat boosts cluster near 0x16 Guard) was sound but assumed the ID space ended at 0x30.",
+    "deck_bonus_lead": "PLAUSIBLE: group2 idx 49-51 are 友情コマ/努力コマ/勝利コマ (friendship/effort/victory - Weekly Shonen Jump's three principles), the only abilities named \"koma\" rather than after an effect. Best lead yet for the long-unexplained \"+1 SP helpers affect the whole deck\" / nature deck-bonus note in Deck-System.md. Not proven.",
+    "negative_ability": "idx 56 = 必殺ゲージジワジワ減少 param -3: SP gauge DRAINS. So this table holds debuffs too."
+  },
+  "k2c_plan": [
+    "1. chr_b.bin is exactly 74 x 60 bytes (4440). I searched every 2-byte-aligned offset for 9216 and got NO clean hit => HP is NOT a plain u16 at a fixed chr_b offset. Try: nibble/packed encodings, per-size arrays, or a separate stat file.",
+    "2. Nature still unlocated - card A1 (runtime diff of two same-size different-nature panels) is the live route.",
+    "3. piece.bin (35183B) still undecoded - read its header rather than guessing a stride.",
+    "4. NEW: arm9.bin is now available locally, so ARM9-resident tables are finally searchable at file_offset = addr - 0x02000000.",
+    "5. Decode ability_t.bin Description1/Description2 if passive magnitudes are needed."
+  ],
+  "cards_written": "docs/research/Human-Testing-Queue.md gained 5 harness cards (A1 nature location, F1 HP scaling, B1 nature multiplier, E1 ability IDs, D1 helper facing) in the peer format. E1 is now marked CLOSED STATICALLY."
 }

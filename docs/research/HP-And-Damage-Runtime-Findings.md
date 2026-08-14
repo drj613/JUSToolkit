@@ -47,6 +47,34 @@ The same +0x50 slot stride and +0x61C player→opponent offset from
 | deck 2 | `0x021DF274` | `0x021DF890` |
 | deck 3 | `0x021DF2C4` | `0x021DF8E0` |
 
+### The struct layout around HP (confirmed live)
+
+Reading the bytes just past HP settles the 16-bit question from a second angle:
+
+| offset (opponent) | size | field |
+|---|---|---|
+| `0x021DF7F0` | u16 | HP, 1/64 units |
+| `0x021DF7F2` | u8 | ability count |
+| `0x021DF7F3`+ | u8[] | ability IDs |
+
+Live values: Luffy count = 4, IDs = `[9, 25, 12, 14]`. Goku (player, same
+layout at `0x021DF1D6` / `0x021DF1D7`) count = 2, IDs = `[7, 15]`.
+
+The ability count sitting immediately after a **two**-byte HP field is what makes
+the layout coherent. If HP were a single byte at `0x021DF7F1`, then
+`0x021DF7F0` would be an unexplained field wedged in front of it.
+
+Two of Luffy's IDs are decisive, against the ability table in
+`docs/research/findings/abilities-all-57-named.md`:
+
+- `0x09` = 打撃耐性ＵＰ, **blunt resistance UP**
+- `0x0C` = 斬撃弱点, **slash weakness**
+
+That independently confirms the owner's report that Luffy resists blunt and is
+weak to sharp — from RAM, not from play feel. It also means **the 4.000 blunt
+number below is a resisted value**, so it cannot be used as a base-damage
+baseline. Goku's `[7, 15]` contains neither, so he is a clean *attacker*.
+
 ## 2. Measured damage values
 
 All against the same savestate, so positions and decks are identical.
@@ -115,9 +143,13 @@ multiplier once position addresses are pinned down (see JUS-3am).
 ## 5. Open questions this raises
 
 1. **Is blunt resistance multiplicative (×2/3) or flat (−2)?** 4 vs 6 fits both.
-   Needs a second base-damage value against Luffy, or the same move against a
-   non-resisting target measured on this harness (the 6 is owner-reported, not
-   yet measured here).
+   Now known to be a genuinely resisted measurement: Luffy carries ability
+   `0x09` (blunt resistance UP). The clean experiment is the *same* Goku B press
+   against a target whose ability array contains neither `0x09` nor `0x0C` —
+   check the array at `+0x02`/`+0x03` from the target's HP before trusting any
+   baseline. `ability.bin` gives the resistance entries **no parameter**, so the
+   magnitude is not in that table; it is either hardcoded in the damage path or
+   in the ability description text.
 2. **Do resistances stack?** Owner expects sharp+special resistances to stack.
    Untested.
 3. **Why does DOWN+B hit a benched character for 1.250?** Splash? A support

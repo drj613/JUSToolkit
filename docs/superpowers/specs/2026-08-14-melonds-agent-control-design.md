@@ -298,13 +298,17 @@ is that it's the *same* point every frame:
 
 Runs land in `/tmp/jus_emu/runs/<name>-<cmdid>/` with the plan and
 `meta.json` copied alongside. `meta.json` records: fork commit + patch
-hashes, ROM/BIOS/firmware/save hashes, **melonDS config hash**
-(`melonDS.ini`), savestate slot + its build tag, plan hash, session
-epoch. Long free-running watch mode rotates logs at 100k lines.
+hashes, ROM/BIOS/firmware/save hashes, **melonDS config hash**, savestate
+slot + its sidecar metadata, plan hash, session epoch.
 
 **Savestate slots:** `slot name → /tmp/jus_emu/states/<name>.mln` plus a
-sidecar `<name>.meta.json` (build tag, ROM hash, created-at frame). Load
-refuses on build/ROM mismatch. Saves are write-temp-then-rename.
+sidecar `<name>.meta.json` (session, `framecount_at_save`, saved-at
+time). The sidecar's `framecount_at_save` is the authoritative settle
+signal for async loads: the load has completed when `emu.framecount()`
+returns that value (verified by spike S4; fallback if states don't
+restore the counter: extend the patch with a Qt-side completion flag).
+Load refuses when the sidecar is missing. Saves ack only after the state
+file's size is stable and the sidecar is written.
 
 ## 6. Error handling & failure modes
 
@@ -392,6 +396,8 @@ docs/superpowers/specs/2026-08-14-melonds-agent-control-design.md  # this doc
   revisit if menu automation needs pixel-diffing).
 - Migrating `jus_gdb_watcher.py` onto `jus_addresses.py` (follow-up).
 - Multi-client, multi-instance support; Windows/Linux bridges.
+- Free-running (idle-time) watch logging and log rotation; `set_watches`
+  only sets defaults for subsequent plans.
 
 ## 12. Risks
 

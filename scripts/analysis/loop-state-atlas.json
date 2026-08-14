@@ -66,15 +66,15 @@
   "naruto_reference_table": "size/type/nature: 1 Helper なし | 2 Support 笑 | 3 Support 力 | 4 Battle 力 (vertical bar) | 4 Battle 笑 | 5 Battle 力 | 6 Battle 力 | 7 Battle 力 ナルト（九尾） | 8 Battle 力 ナルト（九尾）. Relationships: 自来也/我愛羅/サクラ. Any decode must reproduce this exactly.",
   "open_questions": [
     "Nature triangle magnitude - owner guesses ~1.5x but UNSURE (SPECULATIVE)",
-    "Whether the +8 relationship bonus stacks across all 3 (expect base/base+24, or base/base+32 with Leader)",
     "Whether passive magnitudes are per-passive constants or per-character",
     "Whether a helper's facing hits one adjacent battle char or a whole row/column",
     "6 ability IDs still genuinely unidentified",
     "Deck-level nature bonuses / '+1 SP helpers affect whole deck' - no formula ever found",
     "Whether unlocks gate shapes as well as characters and sizes",
-    "L/R sticker bindings are per-deck fields not yet located in RAM"
+    "L/R sticker bindings are per-deck fields not yet located in RAM",
+    "Is HP computed as size*k at runtime, or tabulated per panel? Naruto 4-koma=144=4*36; if size*k then size5=180, size6=216, size7=252, size8=288. One reading settles it."
   ],
-  "notes": "Iteration 4: K2 DONE. Wrote scripts/analysis/dump_koma.py and fully decoded kshape.bin + 10 of 12 koma.bin bytes. P5 confirmed exactly (kshape group index == size-1, verified by counting footprint cells). Size needs no field. Key negative result: nature is NOT in koma.bin, proven by two Naruto panels with different natures and identical bytes. opus-4-6 edit pass ran; verification clean (59/59 table rows, all 9 prediction IDs, all hex, ASCII footprint diagrams, Japanese preserved).",
+  "notes": "Iteration 4: K2 DONE. Wrote scripts/analysis/dump_koma.py and fully decoded kshape.bin + 10 of 12 koma.bin bytes. P5 confirmed exactly (kshape group index == size-1, verified by counting footprint cells). Size needs no field. Key negative result: nature is NOT in koma.bin, proven by two Naruto panels with different natures and identical bytes. opus-4-6 edit pass ran; verification clean (59/59 table rows, all 9 prediction IDs, all hex, ASCII footprint diagrams, Japanese preserved). | Mid-loop owner update: relationship+Leader HP bonuses CONFIRMED to stack (+32 max, 4 sources x8). Base HP CONFIRMED to scale with panel size, which gives the nature hunt a second target: Naruto sizes 4/5/6 share abilityId 20 but differ in HP, so a per-panel stat table likely holds BOTH nature and HP.",
   "last_wake": "2026-08-14",
   "wakeup_default_seconds": 1800,
   "consecutive_no_progress_wakes": 0,
@@ -102,7 +102,9 @@
     "relationship_adjacency_hp": "+8 HP (same constant as Leader)",
     "lr_stickers": "NO bonus - only make panel shoulder-callable (activate battle char / dream attack if active / summon support)",
     "nature_damage_multiplier": "~1.5x per owner but UNSURE - SPECULATIVE",
-    "hp_readout_144_152": "RESOLVED: base HP / effective HP after deck bonuses. 144+8(leader)=152."
+    "hp_readout_144_152": "RESOLVED+CONFIRMED: base HP / effective HP after deck bonuses. Naruto 4-koma reads 144/176 at max (144+32).",
+    "relationship_stacking": "CONFIRMED (owner): bonuses STACK. Leader + all 3 relationships = +32 HP total. Four independent +8 sources, fully additive. effective = base + 8*(active sources), max 4.",
+    "hp_scales_with_size": "CONFIRMED (owner): base HP rises with panel size; 8-koma panels have the most HP in the game."
   },
   "combat_phase_spillover": [
     "status-effect enum = 10 values, contiguous IDs 0x19-0x22 (Shock/Freeze/Burn/Confusion/Poison/Judgment/Paralysis/Blindness/Speed-Down/Battle+Support Seal). Likely an immunity BITMASK on character state struct.",
@@ -148,5 +150,10 @@
     "3. identify unkA (0..8, <= size, loosely tracks shape bbox)",
     "4. If nature is in neither, look for a per-koma nature table in arm9 (not extracted locally - jus_files has no arm9.bin)"
   ],
-  "blocker_note": "jus_files has NO arm9.bin extracted - if nature turns out to live in ARM9 tables, that file must be obtained first."
+  "blocker_note": "jus_files has NO arm9.bin extracted - if nature turns out to live in ARM9 tables, that file must be obtained first.",
+  "hp_structural_lead": {
+    "observation": "Naruto size-4/5/6 panels all share abilityId 20 (byte 0x7) yet have different HP, and koma.bin has no HP field.",
+    "implication": "Same structural signature as the nature gap. Either HP is computed at runtime from base stats + size, OR there is a per-panel stat table keyed by koma index - which would also be the natural home for nature.",
+    "why_it_matters": "Option 2 would resolve the nature gap and the HP gap with one discovery. Prioritise finding a per-panel table over hunting a nature byte."
+  }
 }

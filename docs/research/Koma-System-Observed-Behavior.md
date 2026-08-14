@@ -73,9 +73,33 @@ Naruto's 3 relationships: 自来也 Jiraiya, 我愛羅 Gaara, サクラ Sakura. 
 ## Answered since first draft (owner-supplied, 2026-08-14)
 
 - **Helper direction — ANSWERED.** Every 1-cell helper carries exactly one passive, and the facing picks **which battle character receives it**. Helpers are directional buff emitters. Full taxonomy of 42 passives and ~304 characters: `Helper-Passives-Catalog.md`.
-- **`144/152` HP readout — ANSWERED.** Leader sticker grants **+8 HP**, and `144 + 8 = 152`. The readout is **base HP / effective HP after deck bonuses**. Relationship adjacency also grants **+8 HP**, same constant.
+- **`144/152` HP readout — ANSWERED and CONFIRMED.** Leader grants **+8 HP** and each relationship adjacency grants **+8 HP**. The readout is **base HP / effective HP after deck bonuses**. The owner has since stacked Leader plus all 3 relationships for **+32 total**, so the four sources are fully additive and this panel reads `144/176` at max. Formula: `effective = base + 8 × (active bonus sources)`, up to 4 sources.
+- **Base HP scales with panel size — CONFIRMED (owner).** Bigger panels of the same character have progressively more HP; 8-koma panels have the most in the game. See the prediction below, because this constrains where HP is stored.
 - **L/R stickers grant no bonus.** They only make a panel shoulder-callable: activate a battle character, fire its "dream attack" if already active, or summon a support. The earlier guess that the L sticker changed HP was wrong — the Leader sticker did.
 - **Status-effect enum — 10 values, contiguous IDs `0x19`–`0x22`**, already in `Cheat-Code-Analysis.md`: Shock, Freeze, Burn, Confusion, Poison, Judgment, Paralysis, Blindness, Speed-Down, Battle/Support Seal. Directly useful for the combat phase.
+
+## HP scaling — a second field the missing table must hold
+
+Size-scaled HP has the **same structural signature as nature**, and that's the useful part.
+
+From the decoded records (`findings/koma-format-decoded.md`), Naruto's size-4, size-5, and
+size-6 panels all share `abilityId = 20` at byte `0x7`. If `abilityId` were the only pointer to
+stat data, those three panels would have identical HP. They don't — HP rises with size. And
+`koma.bin` has no HP field.
+
+So either:
+
+1. **HP is computed at runtime** as a function of base stats and size, or
+2. **There's a per-panel stat table** keyed by koma index, which would also be the natural home
+   for nature — the other per-panel value that `koma.bin` doesn't store.
+
+Option 2 is the more interesting lead because it would resolve both gaps at once.
+
+**Falsifiable prediction (SPECULATIVE):** 4-koma Naruto has base HP `144`, and `144 = 4 × 36`.
+If HP is `size × k` with a per-character `k`, his size-5 panel reads `180`, size-6 reads `216`,
+size-7 `252`, size-8 `288`. Reading any single one of those numbers off the panel-info screen
+kills or confirms this in one observation. If the numbers don't fit a clean multiple, HP is
+tabulated per panel and option 2 wins.
 
 ## Open questions
 

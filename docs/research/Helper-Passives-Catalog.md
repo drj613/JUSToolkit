@@ -22,13 +22,17 @@ Two payoffs beyond the koma sprint:
 ## Confirmed numbers
 
 - **Leader sticker: +8 HP.**
-- **Relationship adjacency: +8 HP**, same magnitude as Leader.
+- **Relationship adjacency: +8 HP** each, same magnitude as Leader.
+- **The bonuses STACK, and cap at +32.** Owner confirmed: Leader plus all 3 relationships gives
+  **+32 HP** — so four independent +8 sources, all additive. CONFIRMED.
+- **Base HP scales with panel size.** Bigger panels of the same character have more HP, and
+  8-koma panels have the most in the game. CONFIRMED (owner).
 - **L / R stickers grant no bonus.** They only make a panel callable from the shoulder button: activate a battle character, fire that character's dream attack if already active, or summon a support.
 - **Nature advantage magnitude: ~1.5× damage — owner unsure, treat as SPECULATIVE.**
 
 ### This resolves the `144/152` HP readout
 
-An earlier session showed 4-koma Naruto at `144`, then `144/152` after sticker placement — logged as unexplained. With Leader = +8: **144 + 8 = 152**. The readout is **base HP / effective HP after deck bonuses**. Marking PLAUSIBLE-to-CONFIRMED on the arithmetic match — a second data point (a panel with Leader *plus* one relationship, expected `base / base+16`) would settle it.
+An earlier session showed 4-koma Naruto at `144`, then `144/152` after sticker placement — logged as unexplained. With Leader = +8: **144 + 8 = 152**. The readout is **base HP / effective HP after deck bonuses**. Now **CONFIRMED**: the owner stacked Leader plus all 3 relationships and got **+32**, i.e. `144/176` for this panel. Four +8 sources, fully additive, so the second number is base + 8 × (bonus sources active).
 
 ## Numeric ability IDs — merged with existing RE work
 

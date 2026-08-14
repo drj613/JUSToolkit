@@ -1,8 +1,9 @@
 {
-  "iteration": 7,
+  "iteration": 8,
   "phase": "koma",
-  "current_task": "K3-koma-runtime",
+  "current_task": "K2f-nature-glyph-disassembly",
   "queue": [
+    "K2f-nature-glyph-disassembly",
     "K3-koma-runtime",
     "K4-design-brief",
     "C1-overlay-map",
@@ -18,7 +19,8 @@
     "K2-koma-format",
     "K2b-abilities-all-57-named",
     "K2c-nature-exclusions-and-57-descriptions",
-    "K2d-hp-per-size-candidate"
+    "K2d-hp-per-size-candidate",
+    "K2e-HP-fully-solved-F1-closed"
   ],
   "stuck": {},
   "required_reading_for_koma_tasks": [
@@ -76,7 +78,7 @@
     "L/R sticker bindings are per-deck fields not yet located in RAM",
     "Is HP computed as size*k at runtime, or tabulated per panel? Naruto 4-koma=144=4*36; if size*k then size5=180, size6=216, size7=252, size8=288. One reading settles it."
   ],
-  "notes": "Iteration 7: harness falsified my size*36 HP guess (HP is quantised to 8 displayed units). Found a strong replacement candidate: five u8 slots in chr_b.bin at 0x10+4n whose 370 values are ALL multiples of 8, giving Naruto a clean +16 ladder 144/160/176/192/208 with 144 matching RAM exactly. But only 19/74 entries are monotonic, so field boundaries are probably not exactly where I drew them - logged PLAUSIBLE with the competing prediction (160 vs their 152) written into card F1 as the discriminator.",
+  "notes": "Iteration 8: HP FULLY SOLVED and card F1 closed. My iteration-7 chr_b hypothesis (A) confirmed by the harness against 6 RAM slots; my 160 prediction beat their 152. Generated all 74 characters full HP curves offline by joining chr_b.bin to koma.bin abilityId and komatxt.bin names - 174 of 370 slots are meaningful, which explains the earlier non-monotonicity. Also recorded their controlled negative: the runtime ability array is not read at damage time, retiring the poke method entirely. Next: nature glyph-path disassembly (nature is the last big unknown).",
   "last_wake": "2026-08-14",
   "wakeup_default_seconds": 1800,
   "consecutive_no_progress_wakes": 0,
@@ -227,5 +229,19 @@
     "naruto_ladder": "chr_b[20] = [144,160,176,144,144]; chr_b[24] (九尾) = [80,96,112,192,208]. Taking sizes 4/5/6 from entry20 slots 0/1/2 and sizes 7/8 from entry24 slots 3/4 gives 144,160,176,192,208 - a clean +16 ladder. 144 matches the harness RAM reading EXACTLY. Sizes 7-8 coming from a different chr_b entry also explains the komatxt rename to ナルト（九尾）, and 208 matches \"8-koma have the most HP\".",
     "WEAKNESS": "Only 19/74 entries are non-decreasing across the five slots (e.g. chr_b[66]=[104,64,152,64,224]). Either (A) slots are per-size HP but only the sizes a character owns are meaningful and the rest is filler, or (B) my stride-4 grouping is wrong and I am reading one byte from each of five different fields that happen to share the multiple-of-8 property. Reading these as u16 gives high bytes 1,4,5,16,20,22 (not constant), which favours B for the field boundaries. Confidence PLAUSIBLE, not confirmed.",
     "FALSIFIABLE": "Naruto size-5 panel (koma.bin record 502): mine says 160 (raw 10240), harness says 152 (raw 9728), my old guess said 180 (dead). One exact u16 read decides between two live hypotheses."
-  }
+  },
+  "HP_SOLVED": {
+    "output": "docs/research/findings/hp-all-74-characters.md",
+    "formula": "max_HP = chr_b[index][size-4] + 8 * (active Ｊ魂+ sources). index = koma.bin byte 0x7 (abilityId) for battle panels. Per-size array = five u8 slots at 0x10/0x14/0x18/0x1C/0x20 (stride 4) indexed by size-4. Battle sizes are 4-8 = exactly five slots.",
+    "verified": "Harness cross-checked 6 populated RAM deck slots against chr_b[index][0]: six for six, with +8 on exactly the two ACTIVE characters and 0 on the four benched. Battle struct carries the chr_b index at hp_addr + 0x29.",
+    "F1_ANSWER": "Naruto size-5 = 160 displayed = raw 10240. My iteration-7 prediction CONFIRMED. Both size*36 (180) and 8*(14+size) (152) REFUTED.",
+    "filler_resolved": "Iteration-7 reading (A) is CORRECT. Of 370 slots only 174 are meaningful (one per character+owned-size pair); the other 196 are filler, which is exactly why 55/74 entries looked non-monotonic. Example: chr_b[0] 悟空 owns sizes 4-5 = [152,168,168,168,168], and RAM showed Goku active at 160 = 152+8.",
+    "192_208_attribution": "Both true. chr_b[12] = [144,160,176,192,208] is a complete ladder for a character owning all five sizes. chr_b[24] = [80,96,112,192,208] and is reached ONLY by koma records 504/505 (both ナルト（九尾）, sizes 7-8), so its slots 3-4 really are Naruto size-7/8 HP. HP values are shared across characters so identical arrays are common.",
+    "caveats": [
+      "Cannot separate \"is leader\" from \"is currently active\" - both actives had exactly one +8 source. The +8 is confirmed, its trigger is not.",
+      "slot->size rests on the structural argument plus one observed anchor (Naruto size4=144); sizes 5-8 not yet observed in RAM.",
+      "These are MAX HP. Damage arithmetic uses 1/64 raw units but stored HP carries no fraction."
+    ]
+  },
+  "RETIRED_METHOD": "Poking ability IDs does NOT work. Harness ran a controlled negative: removing 0x09 from Luffy and adding 0x09 to Goku both left damage exactly unchanged, with three controls (poke provably reaches memory, edit persists across attacks, both directions tested). The runtime ability array is a READ-ONLY SOURCE LIST; resistance is precomputed at character load. So card E1 could never have worked by poking - closing it statically was the only route. \"Write an ID and observe\" is retired for all future cards."
 }

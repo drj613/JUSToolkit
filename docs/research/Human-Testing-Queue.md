@@ -307,7 +307,13 @@ This is a **diff experiment**, not a search.
 
 ---
 
-### CARD F1: Is HP `size × k`, or tabulated per panel?
+### CARD F1: Is HP `size × k`, or tabulated per panel? — ✅ CLOSED 2026-08-14
+
+> **Do not run this card.** Answer: **tabulated.** `max_HP = chr_b[index][size-4] + 8 × (active
+> Ｊ魂+ sources)`, where `index` is `koma.bin` byte `0x7`. Verified against 6 RAM slots by the
+> harness session, which also found the `chr_b` index at `hp_addr + 0x29`. All 74 characters'
+> full HP curves are now tabulated offline in `findings/hp-all-74-characters.md`.
+> Naruto size-5 = `160` (raw `10240`). Kept below for provenance.
 
 Same missing table as A1, approached from the cheap side. Naruto's size-4, size-5 and size-6
 panels all share `abilityId = 20` (`koma.bin` byte `0x7`) yet have different HP, and `koma.bin`
@@ -364,6 +370,12 @@ ambiguity currently open on the Goku→Luffy `4.000` measurement. Worth testing 
 
 ### CARD E1: Name the unnamed ability IDs — ✅ CLOSED STATICALLY 2026-08-14
 
+> **Also note:** the harness session later proved the runtime ability array is **not read at
+> damage time** (removing `0x09` from Luffy and adding it to Goku both changed nothing, with
+> three controls). So poking IDs could never have worked — the array is a read-only source list
+> and resistance is precomputed at character load. The "write an ID and observe" method is
+> retired for all cards.
+>
 > **Do not run this card.** All 57 abilities were named offline from `ability.bin` +
 > `ability_t.bin`. See `findings/abilities-all-57-named.md` for the full table, including all
 > ten previously-Unknown IDs. Kept below for provenance.

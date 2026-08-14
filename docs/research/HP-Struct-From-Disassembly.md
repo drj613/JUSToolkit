@@ -194,6 +194,72 @@ the emulator (~64 raw units per ~2 frames): if `[+0x49]` is 32, then `32 × 2 =
 (`0x02077C4C`), so it is per-character configuration, not a mode flag — the
 mode presumably selects the rate.
 
+## The 8 call sites are a script-effect dispatcher, not the melee path
+
+Traced with `scripts/find_callers.py`, which decodes the ARM `BL` encoding
+directly out of every extracted binary instead of grepping a partial text
+disassembly. It confirms exactly 8 callers of `0x020783CC`, all in ov06.
+
+Each is a small handler of the same shape:
+
+```asm
+0x02159264  ldr   r1, [r1, #4]     ; effect record
+0x0215926C  ldrsh r1, [r1, #4]     ; signed halfword parameter from data
+0x02159270  lsl   r1, r1, #6       ; x64  (displayed -> raw)
+0x02159274  bl    0x020783CC       ; apply
+```
+
+Two useful facts fall out:
+
+- **`lsl #6` here means damage/heal values are authored in *displayed* units** and
+  scaled to the 1/64 representation at the last moment. A sibling at
+  `0x02159290` uses `lsl #8` into a different stat, so this is a family of
+  "apply data parameter to stat X" handlers.
+- The measured **1.250** damage (80 raw) is *not* a multiple of 64, so it did
+  **not** come through a `lsl #6` handler. At least one damage path computes a
+  genuine sub-integer value.
+
+The remaining sites take their delta from a register supplied by the enclosing
+dispatcher (`0x02157DC0` sits in a switch with `b 0x02157f90` after each case) or
+from a config field (`0x0215A318`). **None of the 8 contains resistance math.**
+
+So the resistance magnitude lives upstream, in whatever resolves a hit into a
+damage value before invoking this dispatcher. Still not located — but the
+architecture is now mapped rather than guessed at.
+
+## Nature is NOT resolved during battle
+
+Worth recording because the opposite is an easy and tempting inference.
+
+The panel-nature predicate at `0x02078CB8`
+(`nib = (koma.flags[0xB] >> 4) & 0xF; return nib != 3`) sits in `arm9.bin`, and
+the nature resolver is at `0x0214E480`. An exhaustive BL scan over `arm9.bin`
+plus all 14 overlays gives:
+
+| function | callers |
+|---|---|
+| `0x02078CB8` nature predicate | **1**, in ov05 (`0x02156C70`) |
+| `0x0214E480` nature resolver | **2**, both in ov05 |
+| `0x020783CC` HP apply | 8, all in ov06 |
+
+**Zero callers in ov06.** Nature is resolved only while ov05 is resident, never
+in the battle overlay. There is also no function-pointer reference to either
+address anywhere, so it isn't reached indirectly.
+
+The general trap: **`arm9.bin` is the always-resident image and contains code
+for every mode.** A function being in `arm9.bin` says nothing about which mode
+runs it — only the caller does. `0x02078CB8` operates on a *koma record*
+(deck data), not on a battle character struct, which fits.
+
+Consequence: do not expect a nature multiplier in the damage path on the strength
+of that function's location. If the nature triangle affects damage, it has to
+surface some other way.
+
+Note also that the resolver at `0x0214E480` exists **only in overlay 05** — not
+in ov01, which is the overlay actually resident on the deck-editor screen
+(see `Overlay-Residency-By-Mode.md`). Which mode loads ov05 is still unidentified,
+so addresses in that window need the resident overlay named alongside them.
+
 ## Still open
 
 The **resistance magnitude** is not in these functions. `0x020784B8` and

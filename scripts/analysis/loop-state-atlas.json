@@ -1,5 +1,5 @@
 {
-  "iteration": 17,
+  "iteration": 18,
   "phase": "combat",
   "current_task": "C4-physics-writers-round2",
   "queue": [
@@ -82,7 +82,7 @@
     "L/R sticker bindings are per-deck fields not yet located in RAM",
     "Is HP computed as size*k at runtime, or tabulated per panel? Naruto 4-koma=144=4*36; if size*k then size5=180, size6=216, size7=252, size8=288. One reading settles it."
   ],
-  "notes": "Iteration 17: C3 done, and the answer was a tooling fix rather than a hypothesis. The committed ov6 disassembly mis-decodes Thumb as garbage ARM and omits odd-halfword addresses entirely, which is a sufficient explanation for the most-refuted subsystem failing three rounds. Built and validated scripts/decomp/thumb_dis.py. Read all 6 Thumb HP-apply sites: every one is a HEAL, which refutes my own C0 melee suggestion and strengthens the peer bypass reading. Also recorded a failed over-broad scan so it is not repeated.",
+  "notes": "Iteration 18 (interrupt): peer CONFIRMED nature does not scale damage via a controlled single-variable test on a now-deterministic savestate, agreeing with my static reading - two independent methods. Also CORRECTED MY OWN C3 OVERREACH: I claimed \"melee does not use the HP-apply function at all\" when I had only shown the 6 Thumb sites are heals; the 8 ARM script-effect sites can carry negative deltas and are the obvious candidate for the damage the peer measured. Recorded the x1.5 near-miss lesson: an appealing ratio between uncontrolled numbers is not a measurement.",
   "last_wake": "2026-08-14",
   "wakeup_default_seconds": 1800,
   "consecutive_no_progress_wakes": 0,
@@ -437,12 +437,21 @@
   "ALL_6_THUMB_SITES_ARE_HEALS": {
     "deltas": "0x02150DD8 mov r1,#0x80 = 128 (+2.0); 0x021513D8 and 0x021513EE and 0x02151636 mov r1,#1 lsl #14 = 16384 (+256.0, exceeds the 0x4000 clamp so a FULL HEAL); 0x021514E6 and 0x021515B2 mov r1,#0x80 = 128.",
     "consequence": "All 14 callers of 0x020783CC accounted for: 6 Thumb heals + 8 ARM script-effect sites that take an already-computed delta. So MELEE DAMAGE DOES NOT USE THIS FUNCTION AT ALL. This REFUTES my own C0 suggestion that melee hides in the unidentified Thumb sites, and STRENGTHENS the peer melee-bypass reading.",
-    "triple_confirmation": "The +128 at 0x02150DD6 is a HARDCODED IMMEDIATE - so the peer GDB lr, their 14736 observed +128 deltas, and the literal in the instruction all agree."
+    "triple_confirmation": "The +128 at 0x02150DD6 is a HARDCODED IMMEDIATE - so the peer GDB lr, their 14736 observed +128 deltas, and the literal in the instruction all agree.",
+    "MY_OVERREACH_CORRECTED": "I wrote \"melee damage does not use this function at all\". That is STRONGER THAN THE EVIDENCE. What I established: the 6 THUMB sites are all heals (confirmed by reading their delta immediates). The 8 ARM sites take an already-computed delta from script-effect records, and a delta from a data record can be NEGATIVE. Melee in a fighting game is usually data-driven too, so melee may well flow through those 8. The peer measured real damage of 192 and 2304 raw in a deterministic battle, so SOMETHING delivers damage and the 8 ARM handlers are the obvious candidate. CORRECTED: 6 Thumb callers are heals = CONFIRMED; whether melee uses the 8 ARM sites = UNTESTED. I should not have said the bypass reading was \"strengthened\"."
   },
   "FAILED_APPROACH_recorded": "Scanned every binary for direct strh Rd,[Rn,#0x18] (HP write bypassing the apply function): 226 sites across arm9 + 12 overlays, 22 in ov6 alone. USELESS as posed - +0x18 is a commonplace offset and nothing constrains the base register to a character struct. To make it discriminating, filter on CONTEXT: a real HP write should sit near a read of +0x16 (max HP) for clamping. Recorded so nobody repeats it in this form.",
   "next_angles_ranked": [
     "1. Trace the PRODUCERS of the delta at the 8 ARM script-effect sites - resistance and any nature multiplier are upstream. This is campaign item B11 with a corrected search space.",
     "2. Re-run the hitbox-priority searches WITH Thumb decoding - the three failed rounds now have a plausible reason to have failed, so the previously-searched space is worth revisiting for a two-entity comparison.",
     "3. Filter the 226 +0x18 writers by proximity to a +0x16 read."
-  ]
+  ],
+  "NATURE_DOES_NOT_SCALE_DAMAGE": {
+    "verdict": "CONFIRMED by two independent methods.",
+    "peer_controlled_test": "Deterministic savestate (COM設定 戦う, 自動回復 OFF) reproducing bit-identically 3/3 (hits 192, 2304 raw every time). Poked ONLY the opponent nature byte at runtime struct +0x13, verified it took, re-measured: nature 0 力 -> 192, 2304; nature 1 知 -> 192, 2304; nature 2 笑 -> 192, 2304. Identical to the raw unit, ratio 1.00.",
+    "my_static_agreement": "Matches my C0 reading that the only in-battle nature reader accumulates a COUNT into [r7,#0x60] rather than scaling anything, and that the other in-battle use merely selects a _b.aar sprite.",
+    "CAVEAT_ON_RECORD": "This proves the runtime byte is not consulted AT DAMAGE TIME. It does NOT rule out nature feeding a multiplier computed at CHARACTER LOAD - exactly the pattern already documented for resistances, where rewriting the ability array mid-battle also changed damage by exactly zero. A load-time path stays untested and poking cannot test it."
+  },
+  "LESSON_appealing_ratio": "The peer nearly reported a x1.5 nature multiplier: 12.000 incoming with opponent 力 vs 18.000 with 笑, and 18/12 = 1.5 matching the owner independent guess exactly. It was TWO DIFFERENT CPU ATTACKS, not one move under two natures - the determinism check exposed it when a reload produced 3.0 and 36.0, values absent from both earlier runs. LESSON: an appealing ratio between two UNCONTROLLED numbers is not a measurement, and a number that matches an independent guess deserves MORE scrutiny, not less. Same trap as my chr_s \"too clean to be noise\" 3-way split, which I resisted only because the abilityId sharing made it impossible.",
+  "harness_is_deterministic": "A savestate in a configured test battle now reproduces bit-identically (3/3, same hits in the same order). That is what makes single-variable tests trustworthy."
 }

@@ -89,6 +89,52 @@ def scan(ram, valid, min_good=3):
     return out
 
 
+def live_filter(hits, dump_a="/tmp/jus_live_a.bin", dump_b="/tmp/jus_live_b.bin",
+                settle_frames=180):
+    """Keep only candidates whose memory actually changes over time.
+
+    WARNING -- THIS IS A WEAK SIGNAL, NOT A FILTER. A validated positive case
+    (0x021DF1B4, which demonstrably yields real damage) shows **zero** changed
+    bytes while the player stands idle at full HP: nothing in the deck slots has
+    to move. Gating on liveness therefore rejects the correct answer. It is
+    reported as a diagnostic only. The reliable discriminator is functional --
+    run a known attack and see which candidate's +0x61C actually dips.
+
+    Original motivation, still valid: the signature alone produces false
+    positives. A
+    *stale copy* of a previous battle's array — left in memory after the battle
+    ended — matches all four slots, carries valid chr_b indices, HP values that
+    cross-check against chr_b, and even the correct +8 leader bonus. It scores
+    4/4 and is completely dead.
+
+    That fooled an `in_battle()` check into reporting success while the game sat
+    on the deck-select screen, and produced a "damage" reading of 7868 raw that
+    was identical for every input including no attack at all.
+
+    The discriminator is liveness: a battle's character array has timers and
+    counters ticking every frame, so its bytes change. A stale copy is frozen.
+    """
+    dump_ram(dump_a)
+    plan = {"name": "live_probe", "segments": [{"from": 0, "to": 0, "buttons": []}],
+            "tail_frames": settle_frames}
+    with open("/tmp/jus_live_plan.json", "w") as f:
+        json.dump(plan, f)
+    subprocess.run([sys.executable, os.path.join(HERE, "jusemu.py"), "run",
+                    "/tmp/jus_live_plan.json"], capture_output=True, text=True, cwd=HERE)
+    dump_ram(dump_b)
+    with open(dump_a, "rb") as f:
+        a = f.read()
+    with open(dump_b, "rb") as f:
+        b = f.read()
+    out = []
+    for addr, slots, good in hits:
+        off = addr - BASE
+        changed = sum(1 for i in range(4 * SLOT_STRIDE)
+                      if off + i < len(a) and a[off + i] != b[off + i])
+        out.append((addr, slots, good, changed))
+    return out
+
+
 def main():
     args = sys.argv[1:]
     ram_path = "/tmp/jus_ram.bin"
@@ -104,9 +150,25 @@ def main():
 
     valid = valid_hp_values()
     hits = scan(ram, valid)
-    print("%d candidate deck array(s)\n" % len(hits))
+    print("%d candidate deck array(s)" % len(hits))
+    live = None
+    if "--no-live" not in args:
+        print("verifying liveness (a stale copy scores 4/4 but is frozen) ...")
+        live = {a: ch for a, _, _, ch in live_filter(hits)}
+        alive = [a for a, ch in live.items() if ch > 0]
+        print("  %d of %d changed while idle (weak signal: an idle battle at\n"
+              "  full HP legitimately shows 0, so this does NOT rule a"
+              " candidate out)\n" % len(alive) if False else
+              "  %d of %d changed while idle -- WEAK signal only; an idle battle\n"
+              "  at full HP legitimately shows 0 changes, so this rules nothing out.\n"
+              % (len(alive), len(hits)))
+    else:
+        print()
     for addr, slots, good in sorted(hits, key=lambda h: -h[2]):
-        print("player array base 0x%08X  (%d/4 slots plausible)" % (addr, good))
+        tag = ""
+        if live is not None:
+            tag = "  (%d bytes changed while idle)" % live[addr]
+        print("player array base 0x%08X  (%d/4 slots plausible)%s" % (addr, good, tag))
         for i, s in enumerate(slots):
             print("   slot%d 0x%08X hp=%-6d %-7s idx=%-3d cnt=%-2d ids=%s"
                   % (i, addr + i * SLOT_STRIDE, s["hp"], s["displayed"],
@@ -116,9 +178,14 @@ def main():
         print()
     if hits:
         best = max(hits, key=lambda h: h[2])[0]
-        print("Use these for watches this session:")
+        print("Best-scoring candidate (VERIFY FUNCTIONALLY before trusting):")
         print("  player active HP  0x%08X (len 2)" % best)
         print("  chr_b index       0x%08X (len 1)" % (best + 0x29))
+        print("  opponent HP       0x%08X (len 2)" % (best + 0x61C))
+        print("\nFunctional check: land a known attack and confirm the opponent\n"
+              "address dips. A stale copy scores 4/4 and never moves -- one such\n"
+              "copy produced an identical bogus 7868 'damage' for every input,\n"
+              "including with no attack at all.")
     return 0
 
 

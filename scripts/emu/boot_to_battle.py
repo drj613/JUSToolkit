@@ -33,6 +33,7 @@ OPP_HP = 0x021DF7F0
 
 # J Arena menu order: ランキング, ミッショントライ, バトル, トレーニング
 ARENA_INDEX = {"ranking": 0, "battle": 2, "training": 3}
+DECK_INDEX = 0   # 0 = deck 1; set via --deck
 
 
 def cli(*args, check=True):
@@ -91,6 +92,8 @@ def main():
             slot = args[i + 1]
         elif a == "--no-launch":
             launch = False
+        elif a == "--deck" and i + 1 < len(args):
+            globals()["DECK_INDEX"] = int(args[i + 1]) - 1
     slot = slot or ("battle_" + mode)
 
     if launch:
@@ -115,6 +118,12 @@ def main():
         steps.append(("arena_down%d" % n, ["DOWN"], 40))
     steps += [
         ("choose_mode", ["A"], 300),
+    ]
+    # Pick a different deck to get a different attacker: the deck-select list
+    # starts on deck 1, so N DOWNs choose deck N+1.
+    for n in range(DECK_INDEX):
+        steps.append(("deck_down%d" % n, ["DOWN"], 40))
+    steps += [
         ("deck_select", ["A"], 300),
         ("stage_select", ["A"], 400),
         ("rule_start", ["START"], 600),   # "バトルスタート"

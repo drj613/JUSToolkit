@@ -1,9 +1,9 @@
 {
-  "iteration": 24,
+  "iteration": 25,
   "phase": "combat",
-  "current_task": "C6d-find-the-writer-of-accumulator-+0x140",
+  "current_task": "C6f-classify-the-9-ov6-callers-of-0x02078660",
   "queue": [
-    "C6d-find-the-writer-of-accumulator-+0x140",
+    "C6f-classify-the-9-ov6-callers-of-0x02078660",
     "C4-physics-writers-round2",
     "C5-gdb-queue-triage",
     "K3-koma-runtime (deferred)"
@@ -28,7 +28,8 @@
     "C3b-chr_b-join-verified",
     "C6-damage-delta-PARTIAL",
     "C6b-poison-burn-opcodes",
-    "C6c-all-callers-classified-accumulator-found"
+    "C6c-all-callers-classified-accumulator-found",
+    "C6e-accumulator-refuted-hp-writer-set-enumerated"
   ],
   "stuck": {},
   "required_reading_for_koma_tasks": [
@@ -86,7 +87,7 @@
     "L/R sticker bindings are per-deck fields not yet located in RAM",
     "Is HP computed as size*k at runtime, or tabulated per panel? Naruto 4-koma=144=4*36; if size*k then size5=180, size6=216, size7=252, size8=288. One reading settles it."
   ],
-  "notes": "Iteration 24 (interrupt): the peer found r6 with my structural recipe and the chain resolves, but the accumulator read 0 on all 220 frames including damage frames - not refuted, because a per-frame sample cannot see a within-frame write+consume. I tried to settle it statically and FAILED: my writer scan found 2 ov6 sites that looked perfect but are a VTABLE INITIALISER writing function pointers to a different object type sharing the offset. Confirmed independently that the flush does read data. Recorded the recurring rule: an offset-only scan is not evidence about a specific struct - second time this session. Endorsed their breakpoint on 0x0215A308 as the decisive test.",
+  "notes": "Iteration 25: my accumulator hypothesis is REFUTED by a clean breakpoint negative. The fallback constrained scan (same base register for the clamp read) cut 226 sites to 17 and showed there is NO melee HP writer in ov6 at all - its one hit is a field serialiser. That licenses a complete enumeration: all HP writes go through 8 arm9 functions, and 0x02078660 has NINE ov6 callers I had never examined. Both unexamined functions walk the +0x558 node list that Battle-Engine-Map already identified for the guard/SP subsystem. New lead, SPECULATIVE.",
   "last_wake": "2026-08-14",
   "wakeup_default_seconds": 1800,
   "consecutive_no_progress_wakes": 0,
@@ -535,5 +536,17 @@
     "flush_reads_data_CONFIRMED": "0x02078488 does ldrsh r2,[r0,#0x18]; adds r1,r1,r2; strh r1,[r0,#0x18] - so r1 is a numeric delta and cannot be a pointer. The accumulator genuinely holds data.",
     "RECURRING_MISTAKE": "An offset-only scan over these binaries is NOT evidence about a specific struct. Same error as C3 with strh [Rn,#0x18] (226 sites). Twice now. +0x140 and +0x18 are both commonplace offsets. Constrain by object type or by adjacent-field context, or do not claim.",
     "DECISIVE_EXPERIMENT": "Breakpoint 0x0215A308 (ldr r1,[r0,#0x140]) and log r1. Captures the value at consumption, immune to sub-frame timing. r1 == -384 during a landed punch CONFIRMS the melee hypothesis; only-zero-or-positive REFUTES it. I have told the peer to run exactly this and nothing else in that session."
-  }
+  },
+  "ACCUMULATOR_REFUTED": "MY HYPOTHESIS IS DEAD. Breakpoint at 0x0215A30C logged r1 = 0 on all 8 unconditional hits during a run with two confirmed 6.000 landed hits (opponent HP 7168->6784 at frames 78 and 130). The site is reached repeatedly and never carries damage. That closes the sub-frame gap the per-frame watch could not. Harness caveat kept: every observed flush had r0 = the PLAYER object and the opponent accumulator was never flushed at that site, so strictly it is \"the player accumulator is always empty here\" plus \"the opponent is never flushed here\". The accumulator exists and is flushed; melee does not fill it. Recorded with banners on c6c-damage-accumulator.md and Battle-Engine-Map.md.",
+  "HP_WRITER_SET_COMPLETE": {
+    "method": "Constrained scan: strh [rN,#0x18] requiring a ldrsh [SAME rN,#0x16] within +/-8 instructions (a real HP writer must read max HP to clamp). Requiring the SAME BASE REGISTER is what ties both accesses to one struct. 226 sites -> 17.",
+    "ov6_result": "Exactly ONE ov6 hit, 0x02160738, and it is a SERIALISER not damage - every field from +0xE to +0x1C goes through the same transform (bl 0x0200D12C signed / 0x0200D338 unsigned) with [r9+0x4E] as a mode byte. The \"clamp read\" my filter matched was just +0x16 taking its turn. SO THERE IS NO MELEE-SPECIFIC HP WRITER IN THE BATTLE OVERLAY.",
+    "the_8_functions": "All 17 constrained hits resolve to 8 arm9 functions: 0x020772E4 (0 ov6 callers), 0x02077768 (0), 0x02077C0C (0), 0x02077CB8 (0), 0x02077D40 (0, 6 write sites = the regen family), 0x02078428 (2), 0x020785B8 (1), 0x02078660 (NINE).",
+    "core_apply_is_a_mid_function_entry": "0x02078428 CONTAINS 0x02078488, so the core apply is a mid-function entry point, not a function start. That is why the thunk has 14 callers while the enclosing function has only 2.",
+    "THE_NEW_LEAD": "0x02078660 has 9 ov6 call sites never examined: 0x02150516, 0x02150592, 0x02150906 (Thumb), 0x02157D44, 0x0215AC4C, 0x0215CAA8, 0x0215CAF0, 0x0215CCE8, 0x0215CE40. Plus 0x020785B8 (multiplicative, smulbb) has one at 0x0215CBEC.",
+    "plus_0x558_list": "BOTH unexamined functions open ldr rX,[r0,#0x558] and walk a node list, checking a byte flag at node +0x40 and bit-testing a word at node +0x3C. The list-variant apply 0x020783DC also opens ldr r4,[r0,#0x558]. Battle-Engine-Map already names +0x558 as \"the Meter-node list, the leading candidate\" for guard/SP gauges (campaign item B12, DONE) - so this is a KNOWN structure used by HP-modifying code nobody had connected to it. A list walk is a plausible melee mechanism (a hitbox can strike several entities). SPECULATIVE - I have not read the 9 call sites, and a +0x558 walker with a divide-by-100 could equally be a meter routine, which is what B12 concluded."
+  },
+  "METHOD_NOTE_third_time": "Two of three scans this session produced confident false positives from OFFSET-ONLY matching (+0x18 -> 226 hits; +0x140 -> a vtable initialiser). The constrained version cut 226 to 17 and was STILL wrong about its single ov6 hit - but wrong in a way I could SEE, because 17 sites are readable and 226 are not. The lesson is not only \"constrain the scan\" but CONSTRAIN IT ENOUGH THAT YOU CAN READ EVERY HIT.",
+  "harness_method_note": "Their first breakpoint attempt logged only NON-ZERO values and produced empty output - indistinguishable from \"the breakpoint never fired\". They burned a second GDB connection adding an unconditional first-8-hits log purely to prove reachability. Rule: on any negative-result instrument, VERIFY REACHABILITY SEPARATELY FROM THE PAYLOAD.",
+  "verification_targets_standing": "B = 6, forward+B = 5, down+B = 5, X = 2 displayed against an ability-free target; each -2 flat against a blunt-resister. up+B and Y are multi-hit strings."
 }

@@ -1,5 +1,21 @@
 # C6c — all 8 ARM callers classified; pending-damage accumulator found
 
+> ### ⚠️ REFUTED 2026-08-14 — melee does NOT use this accumulator
+>
+> A breakpoint at `0x0215A30C` (right after `ldr r1,[r0,#0x140]`) logged 8 hits unconditionally in a
+> run with two confirmed **6.000** landed hits (opponent HP `7168 → 6784` at frames 78 and 130).
+> **`r1` was 0 every time.** The site is reached repeatedly and never carries damage. That closes the
+> sub-frame gap the per-frame watch couldn't: the breakpoint fires *at the flush*, whatever the timing.
+>
+> Caveat kept from the harness session: every observed flush had `r0` = the **player's** object, and
+> the opponent's accumulator was never flushed at this site — so strictly, "the player's accumulator
+> is always empty here" plus "the opponent's is never flushed here". Both point the same way, but
+> nobody watched the opponent's accumulator go empty.
+>
+> The accumulator is real and is flushed. **My claim that melee fills it is dead.** The rest of this
+> doc — the caller classification, the SP sibling, the script-wrapper family — stands.
+
+
 Loop-Atlas iteration 22. Static analysis of raw `ov06.bin`.
 
 All 14 callers of the HP-apply function are now classified. The likely melee path is an accumulator that stores pending damage until a per-frame flush consumes it.

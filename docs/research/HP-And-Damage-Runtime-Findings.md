@@ -240,6 +240,43 @@ resisted-or-not from runtime evidence alone: either resistance is baked in
 elsewhere, or Goku's B is not blunt and `0x09` never applied to it. Static
 disassembly of the damage path is the way to separate those.
 
+## 2d. WARNING: the absolute addresses move between battles
+
+Everything above is correct *for one battle session*. The addresses themselves
+are not.
+
+The **same deck** in two different training battles put the player character
+array at:
+
+| battle | player array base |
+|---|---|
+| the `training_luffy` savestate | `0x021DF1D4` |
+| a fresh boot, different stage | `0x021DF1B4` |
+
+A **0x20 shift**. Every absolute HP address in `scripts/gdb/README.md` and in
+this document is really "the address in the session it was recorded in."
+
+This is nastier than a plain wrong answer, because the neighbouring values look
+believable. Reading `0x021DF1D4` in the second battle returned `62072`
+(≈969 "HP") from an unrelated array, with the slots below it decrementing by 48
+each — tidy enough to look like a real structure.
+
+**Always locate the array, never hardcode it:**
+
+```bash
+python3 scripts/emu/find_battle_structs.py     # dumps RAM, prints the base
+```
+
+It scans for the real signature — **four consecutive 0x50-byte slots**, each
+with HP a multiple of 64, a small ability count, and a `chr_b` index < 74,
+cross-checked against the actual `chr_b.bin` HP values. Requiring the *group* is
+what makes it precise: single slots match **1167** times in 4MB (mostly inside
+ARM9 code, since "multiple of 64 followed by a small byte" is unremarkable),
+while the four-slot group is essentially unique.
+
+The `+0x61C` player→opponent offset should also be re-verified per session
+rather than trusted.
+
 ## 3. Training mode heals to full — read damage per frame, not before/after
 
 In Training, HP snaps back to full within a few frames of any hit: it steps up

@@ -1,5 +1,14 @@
 # HP Fully Solved — All 74 Battle Characters, Every Size (Card F1 Closed)
 
+> **Refinement (2026-08-14, from K3):** the `+0x10` block is an array of five **4-byte records**, not
+> five lone bytes at stride 4. The character-init function `0x02077C0C` computes
+> `chr_b_rec + (size-4)*4` (an `add ..,lsl #2`) and reads four fields from each record: `+0x0` max HP,
+> `+0x1` **regen rate** (defaulting to 4 if zero), `+0x2` and `+0x3` unknown. The HP column in the
+> table below is `+0x0` of each record and is unaffected — but the "u16 high bytes of 1, 4, 5, 16, 20,
+> 22" I couldn't explain in iteration 7 were the **regen-rate field**, not high bytes of anything.
+> See `findings/k3-chr_b-to-battle-copy.md`.
+
+
 > ### Two caveats added 2026-08-14
 >
 > **1. `sources` is dynamic during a fight.** The harness session watched one slot's max HP go from

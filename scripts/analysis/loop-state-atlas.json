@@ -1,11 +1,11 @@
 {
-  "iteration": 30,
+  "iteration": 31,
   "phase": "combat",
-  "current_task": "K3-koma-runtime",
+  "current_task": "C6h-or-K4b: awaiting either the Ghidra decision or harness frame bisection",
   "queue": [
-    "K3-koma-runtime",
     "C6h-bisect-frame-for-0x134-writer (harness-side)",
-    "D0.3-ghidra-import (BLOCKED: needs user go-ahead to install)"
+    "D0.3-ghidra-import (BLOCKED: needs user go-ahead)",
+    "self-generated: identify the 4 unknown copied fields"
   ],
   "done": [
     "K1-koma-data-survey",
@@ -33,7 +33,8 @@
     "C4-physics-writers-round2",
     "C5-gdb-queue-triage",
     "C6g-damage-field-confirmed-writer-unreachable",
-    "D0.3-attempted-ghidra-blocked"
+    "D0.3-attempted-ghidra-blocked",
+    "K3-koma-runtime"
   ],
   "stuck": {},
   "required_reading_for_koma_tasks": [
@@ -91,7 +92,7 @@
     "L/R sticker bindings are per-deck fields not yet located in RAM",
     "Is HP computed as size*k at runtime, or tabulated per panel? Naruto 4-koma=144=4*36; if size*k then size5=180, size6=216, size7=252, size8=288. One reading settles it."
   ],
-  "notes": "Iteration 30: a NEGATIVE wake, reported as one. D0.3 needs Ghidra, which is not installed, and I judged a large outward-facing install outside what the charter authorised - flagged for the user as the one combat-phase decision that needs a human. Built the narrow capability myself instead (intra-block constant propagation for register-offset stores); IT DOES NOT WORK - reports 0 where a cruder scan finds 14 - and I labelled the bug in the tool rather than shipping confident emptiness. Five static techniques have now failed on the +0x134 writer. Recommending harness-side frame bisection instead. Moving to K3 next since the combat threads are tooling-blocked.",
+  "notes": "Iteration 31: K3 done and it was the most productive static wake in a while. Read the character-init function 0x02077C0C and extracted the complete chr_b -> battle-struct copy map. Confirmed the charter *(0x0214BD80)+0x40 stride-0x3C lookup in instructions, and found the deck->battle link: battle +0x34 is a pointer to the koma record, whose kshapeGroup drives per-size indexing. My stride-4 HP array is CONFIRMED by an lsl #2 I had previously missed - but the same shift shows the block is five 4-BYTE RECORDS, not lone bytes, which retires the unexplained \"high bytes 1,4,5,16,20,22\" loose end from iteration 7 (they were the regen-rate field). Also linked two independently-derived facts: chr_b[0x00] base nature and runtime +0x13 nature.",
   "last_wake": "2026-08-14",
   "wakeup_default_seconds": 1800,
   "consecutive_no_progress_wakes": 0,
@@ -608,5 +609,17 @@
     "cruder_scan_also_useless": "Its 14 hits resolve to offset 0 (13x) and 0x10 (1x), with the zeros looking like a stale producer being matched. Neither approach finds anything at +0x134/+0x138.",
     "FIVE_TECHNIQUES_NOW": "immediate-offset stores (2 in ov6, both the vtable initialiser); folded base (0); any instruction with immediate 0x134/0x138 (0 in ov6, 0 in arm9); lsl #6 then store (0); register-offset with propagated constants (0 usable). The offset is computed in a way none of these capture - across blocks, from a loop variable, or loaded from memory.",
     "recommended_route": "HARNESS-SIDE FRAME BISECTION is likely to win: +0x134 is set one frame before the HP drop, so breaking at candidate points and checking whether the field is already non-zero names the writer in a logarithmic number of runs. No new tooling, and the field and frame are both known. I have spent two wakes proving the static route is exhausted."
+  },
+  "K3_RESULT": {
+    "output": "docs/research/findings/k3-chr_b-to-battle-copy.md; findings/hp-all-74-characters.md refined",
+    "the_function": "0x02077C0C is the character-init that copies chr_b data into the runtime battle struct.",
+    "chr_b_lookup_CONFIRMED_IN_CODE": "ldr r2,[0x0214BD80]; ldr r2,[r2,#0x0]; ldrb r4,[r1,#0x41] (chr_b index); ldr r12,[r2,#0x40] (table base); mov r2,#0x3C; mla r2,r4,r2,r12. So *(0x0214BD80)+0x40 with stride 0x3C - exactly as the charter described, now confirmed in instructions.",
+    "THE_DECK_TO_BATTLE_LINK": "Battle-struct +0x34 holds a POINTER TO THE PANEL koma.bin RECORD. Its +0x8 (kshapeGroup = size-1) drives every per-size lookup: sub r12,r3,#3 gives size-4, then add r3,r2,r12,lsl #2 and add r12,r2,r12,lsl #1 build two per-size bases (stride 4 and stride 2). That is the whole deck->battle path in three instructions.",
+    "MY_HP_ARRAY_CONFIRMED_AND_REFINED": "The lsl #2 settles the stride question - it IS 4, so the per-size HP array at +0x10 is right. I nearly mis-read this because my add decoder did not print shift fields; without the lsl #2 the code appears to say stride 1, which would make Naruto size-5 HP = 1. BUT the shift also shows my reading was TOO COARSE: +0x10 is an array of five 4-BYTE RECORDS and I had only identified the first byte of each. Record layout: +0x0 max HP (x64), +0x1 REGEN RATE (defaults to 4 if zero), +0x2 unknown, +0x3 unknown.",
+    "retires_a_loose_end": "In iteration 7 I noted that reading those slots as u16 gave \"high bytes of 1,4,5,16,20,22\" and could not explain it. Those were the REGEN-RATE field of each per-size record. The harness separately measured a live regen rate of 1 - a value from exactly that set.",
+    "full_copy_map": "chr_b[0x00] -> battle +0x13 (BASE NATURE); chr_b[0x01] signed -> +0x11; chr_b[0x02] signed -> +0x10; chr_b[0x10+(size-4)*4] x64 -> +0x16 and +0x18 (max HP, current=max); chr_b[0x11+(size-4)*4] -> +0x49 (regen, default 4); chr_b[0x12+(size-4)*4] -> +0x14; chr_b[0x13+(size-4)*4] -> +0x15; chr_b[0x30] halfword -> +0x2E; chr_b[0x32+(size-4)*2] -> +0x30.",
+    "two_independent_findings_linked": "(1) chr_b[0x00] = base nature (my distribution argument) and nature at runtime +0x13 (harness memory watch) - this instruction is the LINK between those two facts and neither was derived from it. (2) regen at +0x49 (harness watch) is written here at init from a per-size field with a hardcoded default of 4.",
+    "still_unknown": "Four copied fields have no known meaning: chr_b[0x01]/[0x02] -> +0x11/+0x10, and per-size +0x12/+0x13 -> +0x14/+0x15. Plus a per-size HALFWORD array at chr_b[0x32] (stride 2) feeding +0x30, which I had not previously identified at all.",
+    "caller_unreachable": "0x02077C0C has ZERO direct callers across arm9 and all 14 overlays - dispatched through a pointer table like the other constructors, so whoever supplies the koma record at +0x34 is not statically reachable."
   }
 }

@@ -22,6 +22,15 @@ Two goals, in this order of finish-ability:
    that can be settled statically. Cards that truly need a live debugger go to
    `Human-Testing-Queue.md` — this loop runs unattended and must NOT assume melonDS is up.
 
+## Required reading for any koma task
+
+`docs/research/Koma-System-Observed-Behavior.md` — ground truth from a live play session
+(25 screenshots in `docs/research/assets/koma-ui/`). Tier **OBSERVED**: it outranks
+CONFIRMED-from-disassembly for *behavior*, but says nothing about byte layout. It carries the
+falsifiable predictions K2 must check, including the nature enum (力/知/笑/なし) and the
+Naruto 4力-vs-4笑 test case. Designer-facing twin:
+`docs/design/Koma-Deckbuilder-UX-Spec.md`.
+
 ## Hard rules
 
 - **One task per wake.** Small, committable, verifiable. Commit message prefix `loop-atlas:`.
@@ -95,9 +104,9 @@ Seed queue (do in order unless blocked; append new tasks as they're discovered):
 
 ## Pacing and budget
 
-- Fallback delay 1800–3600s. Lean toward 3600s — this runs for days and usage matters more
-  than latency. If a wake's task is blocked on nothing and the next task is obvious, still
-  do only one task.
+- **Default fallback delay ~1800s (30 min).** That's the user's stated preference; don't drift
+  longer without a reason. If a wake's task is blocked on nothing and the next task is obvious,
+  still do only one task.
 - If two consecutive wakes make no progress on the same task, mark it `stuck`, bring in
   codex for a second opinion once, and if still stuck, skip it and note why in
   Research-Status.md.

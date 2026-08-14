@@ -1,5 +1,5 @@
 {
-  "iteration": 1,
+  "iteration": 2,
   "phase": "koma",
   "current_task": "K2-koma-format",
   "queue": [
@@ -12,22 +12,61 @@
     "C4-physics-writers-round2",
     "C5-gdb-queue-triage"
   ],
-  "done": ["K1-koma-data-survey"],
+  "done": ["K1-koma-data-survey", "K1b-observed-behavior-capture"],
   "stuck": {},
+  "required_reading_for_koma_tasks": [
+    "docs/research/Koma-System-Observed-Behavior.md",
+    "docs/design/Koma-Deckbuilder-UX-Spec.md"
+  ],
   "k1_results": {
     "output": "docs/research/findings/koma-data-survey.md",
-    "key_finding": "koma.bin = 890 records x 12 bytes, already parsed by src/JUS.Tool/Graphics/Converters/Binary2Koma.cs. 6 of 12 bytes named (ImageId u16 @0x0, nameIdx @0x4, nameNum @0x5, KShapeGroupId @0x8, KShapeElementId @0x9); 6 bytes still Unknown (0x2 u16, 0x6, 0x7, 0xA, 0xB). Size/cost/nature are NOT in named fields.",
-    "resolved": "Deck-System.md vs Koma-Research.md koma.bin contradiction: neither wrong, both incomplete. Code names 6 fields.",
-    "biggest_hole": "Nature/color system has ZERO evidence in any doc or code. May not live in koma.bin at all.",
-    "unexamined": ["bin/piece.bin (35KB)", "bin/kshape.bin exact layout (see DtxCommands.KShapeSprites)"]
+    "key_finding": "koma.bin = 890 records x 12 bytes, already parsed by src/JUS.Tool/Graphics/Converters/Binary2Koma.cs. Named: ImageId u16 @0x0, nameIdx @0x4, nameNum @0x5, KShapeGroupId @0x8, KShapeElementId @0x9. Unknown: 0x2 u16, 0x6, 0x7, 0xA, 0xB.",
+    "resolved": "Deck-System.md vs Koma-Research.md koma.bin contradiction: neither wrong, both incomplete."
   },
-  "k2_plan": [
-    "1. Read DtxCommands.KShapeSprites to settle real kshape.bin layout (cheap, likely gives shape+size)",
-    "2. Dump koma.bin unknown-byte value distributions across all 890 records; 4-8 distinct values = nature or size, ~74 distinct = character index",
-    "3. Cross-check 3+ chars from Deck-System.md; Naruto is best test case (2 natures, 2 shapes) since it isolates nature from shape",
-    "4. Only then open piece.bin"
+  "k1b_observed": {
+    "source": "live melonDS 1.1 play session walked by owner; 25 screenshots in docs/research/assets/koma-ui/",
+    "tier": "OBSERVED - outranks CONFIRMED-from-disasm for behavior, silent on byte layout",
+    "BIGGEST_HOLE_NOW_FILLED": "Nature system = 4-value enum: 力 Power / 知 Knowledge / 笑 Laughter / なし Neutral. Triangle: Power>Knowledge>Laughter>Power. Neutral outside. Natures are PER-PANEL not per-character.",
+    "other_facts": [
+      "Grid 4 rows x 5 cols = 20 cells; panels cost exactly their own area, no separate currency",
+      "Sizes 1-8. Type is DERIVED from size: Battle 4-8, Support 2-3, Helper 1",
+      "Legal deck requires >=1 battle, >=1 support, >=1 helper",
+      "Every 1-cell helper observed had nature なし",
+      "Battle panels each have exactly 3 relationship chars (あいしょう); adjacency = chime+sparkle+extra HP; owner recalls internal name approx 'j soul' (UNVERIFIED)",
+      "Most helpers require a facing (up/down/left/right) set after placement -> 2-bit per-placed-panel field in deck save",
+      "Stickers: Leader (battle only), L and R (battle or support) bind to shoulder buttons",
+      "Deck select shows per-deck B/S/H counters; 7 rows + NEW seen, consistent with 8 slots at 0x020AFEB4",
+      "Shape filter is two-stage (size first, then shapes); size 5 showed ~13 shapes (counted off screenshot, +/-1; free pentominoes = 12)"
+    ]
+  },
+  "k2_predictions_to_check": [
+    "P1 nature = field with exactly 4 distinct values across 890 records; candidates 0x6,0x7,0xA,0xB or low bits of 0x2",
+    "P2 all size==1 records share one constant nature value (joint constraint, identifies size AND nature together)",
+    "P3 type is derived not stored; a 3-value field is a cached type, check against size",
+    "P4 size = field with 8 distinct values, but may not be stored at all (derivable from kshape geometry)",
+    "P5 kshape.bin 1.6KB / 0x14 = ~81 shapes total => hand-picked set (all free polyominoes 1-8 would be 533). PREDICT KShapeGroupId@0x8 ~= size, KShapeElementId@0x9 ~= shape within size. If true, size comes free from 0x8.",
+    "P6 Koma.NameTable 43 entries ~= ~40 series emblems in series filter => nameIdx@0x4 is SERIES index, nameNum@0x5 is character slot within series. Retires the 'letters=1 -> Eyeshield 21?' question mark.",
+    "P7 3 relationships per battle panel does NOT fit in 6 unknown bytes => separate table; piece.bin (35KB, unopened) is prime suspect"
   ],
-  "notes": "Iteration 1 done. K1 complete via 3 parallel Explore subagents (disk survey, repo-code survey, docs fact-extraction). opus-4-6 edit pass ran and PASSED verification (zero hex values or paths dropped between DRAFT and EDITED).",
+  "k2_plan": [
+    "1. Read DtxCommands.KShapeSprites, settle kshape.bin, test P5 first (shrinks the search)",
+    "2. Dump all 890 records to JSON (no such tool exists; CLI only emits PNGs) and histogram every byte",
+    "3. Run the Naruto 4力/4笑 query: same size + same char, differing byte = nature (should crack P1 outright)",
+    "4. Cross-check with P2",
+    "5. Then open piece.bin for the relationships table"
+  ],
+  "naruto_reference_table": "size/type/nature: 1 Helper なし | 2 Support 笑 | 3 Support 力 | 4 Battle 力 (vertical bar) | 4 Battle 笑 | 5 Battle 力 | 6 Battle 力 | 7 Battle 力 ナルト（九尾） | 8 Battle 力 ナルト（九尾）. Relationships: 自来也/我愛羅/サクラ. Any decode must reproduce this exactly.",
+  "open_questions": [
+    "What helper direction mechanically does",
+    "Nature triangle magnitude (damage/defence numbers)",
+    "Relationship HP bonus value; whether all 3 stack",
+    "HP readout showed 144 alone then 144/152 after L sticker placed - two numbers, meaning unknown",
+    "Deck-level nature bonuses / '+1 SP helpers affect whole deck' - no formula ever found",
+    "Whether unlocks gate shapes as well as characters and sizes",
+    "L/R sticker bindings are per-deck fields not yet located in RAM"
+  ],
+  "notes": "Iteration 2: user supplied live-play context mid-loop. Wrote both requested formats (design-session UX spec + loop-context observed-behavior doc), stored all 25 screenshots in-repo, updated charter with required-reading section and 30-min pacing. opus-4-6 edit pass ran on both docs; verification clean (zero hex/image-ref/Japanese-glyph/table loss).",
   "last_wake": "2026-08-14",
+  "wakeup_default_seconds": 1800,
   "consecutive_no_progress_wakes": 0
 }

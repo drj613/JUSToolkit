@@ -1,0 +1,10 @@
+{
+  "name": "accept_walk_and_b",
+  "load_state": "training_goku",
+  "segments": [
+    {"from": 0, "to": 20, "buttons": ["RIGHT"]},
+    {"from": 25, "to": 27, "buttons": ["B"]}
+  ],
+  "tail_frames": 120,
+  "watches": ["hp_all", "player_struct", "opponent_struct"]
+}

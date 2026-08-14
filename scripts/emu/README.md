@@ -169,6 +169,48 @@ opponent leaves you facing away, and every button whiffs.
 
 ## Combined Lua+GDB workflow
 
+Partially exercised. Two findings, one good and one limiting.
+
+**The `paused` design works exactly as intended.** With `arm-none-eabi-gdb`
+attached and the core halted, `jusemu.py status` reported:
+
+```
+"state": "paused",  heartbeat.state: "plan_running",  framecount frozen
+```
+
+That is the designed behavior: the heartbeat goes stale while the emulator
+process stays alive, so the client infers `paused` rather than `dead`, and an
+in-flight plan reads as frozen rather than failed. A running plan survived the
+halt in exactly that state.
+
+**The GDB stub does not survive a disconnect.** The first `target remote
+localhost:3333` connects cleanly and `break *0x02078488` sets fine. After that
+session ends (or is killed), every later connection fails during the handshake:
+
+```
+Ignoring packet error, continuing...
+warning: unrecognized item "timeout" in "qSupported" response
+Remote replied unexpectedly to 'vMustReplyEmpty': timeout
+```
+
+and the emulator stays halted, so the bridge is stuck at `paused` forever. The
+only recovery found is relaunching the emulator.
+
+Practical rules:
+
+- **One GDB session per emulator launch.** Plan the whole debugging session
+  before attaching; you don't get a second attempt.
+- Attach *after* loading a savestate, not before.
+- Because the halt freezes `_Update()`, the bridge cannot drive input while the
+  core is stopped. Breakpoint commands must end in `continue` so the core keeps
+  running and the bridge stays alive; a blocking prompt deadlocks the pair.
+- Relaunch with `launch_emu.sh --keep-ipc` to recover without losing savestates.
+
+The unfinished experiment this was for: break at `0x02078488` (the HP-delta apply
+function), land a melee hit, and read `r1` (the delta) and `lr` (the caller) to
+identify which of the eight dispatcher sites melee damage uses. That would locate
+the resistance math, which static reading has not.
+
 Not yet exercised. The config already has the ARM9 stub on port 3333 with
 `BreakOnStartup=false` and the JIT off, so `target remote localhost:3333`
 should attach to a running bridge session. The expected rule until proven

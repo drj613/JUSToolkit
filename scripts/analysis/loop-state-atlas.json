@@ -1,9 +1,9 @@
 {
-  "iteration": 3,
+  "iteration": 4,
   "phase": "koma",
-  "current_task": "K2-koma-format",
+  "current_task": "K2b-find-nature-source",
   "queue": [
-    "K2-koma-format",
+    "K2b-find-nature-source",
     "K3-koma-runtime",
     "K4-design-brief",
     "C1-overlay-map",
@@ -15,7 +15,8 @@
   "done": [
     "K1-koma-data-survey",
     "K1b-observed-behavior-capture",
-    "K1c-helper-passives-catalog"
+    "K1c-helper-passives-catalog",
+    "K2-koma-format"
   ],
   "stuck": {},
   "required_reading_for_koma_tasks": [
@@ -73,7 +74,7 @@
     "Whether unlocks gate shapes as well as characters and sizes",
     "L/R sticker bindings are per-deck fields not yet located in RAM"
   ],
-  "notes": "Iteration 3: owner supplied the full helper-passive taxonomy mid-loop. Wrote Helper-Passives-Catalog.md (42 categories, ~304 chars) and merged it with the pre-existing numeric ability ID table in Cheat-Code-Analysis.md - that merge confirmed prediction P3 and filled 4 previously-Unknown IDs. Also resolved the 144/152 HP question and the helper-direction question. opus-4-6 edit pass ran on both docs; verification clean (42/42 category-count pairs identical, zero hex/image/glyph loss, spot-checked 12 rare character names).",
+  "notes": "Iteration 4: K2 DONE. Wrote scripts/analysis/dump_koma.py and fully decoded kshape.bin + 10 of 12 koma.bin bytes. P5 confirmed exactly (kshape group index == size-1, verified by counting footprint cells). Size needs no field. Key negative result: nature is NOT in koma.bin, proven by two Naruto panels with different natures and identical bytes. opus-4-6 edit pass ran; verification clean (59/59 table rows, all 9 prediction IDs, all hex, ASCII footprint diagrams, Japanese preserved).",
   "last_wake": "2026-08-14",
   "wakeup_default_seconds": 1800,
   "consecutive_no_progress_wakes": 0,
@@ -107,5 +108,45 @@
     "status-effect enum = 10 values, contiguous IDs 0x19-0x22 (Shock/Freeze/Burn/Confusion/Poison/Judgment/Paralysis/Blindness/Speed-Down/Battle+Support Seal). Likely an immunity BITMASK on character state struct.",
     "damage is classed by attack type: punch/kick, special, blade (3 separate reduction passives). Tie to DamageFlags-Character-Classification.md.",
     "+8 is a shared HP constant applied by both Leader and relationship bonus - try query.py search-imm 8 scoped to deck/HP init"
-  ]
+  ],
+  "k2_results": {
+    "output": "docs/research/findings/koma-format-decoded.md",
+    "new_tool": "scripts/analysis/dump_koma.py (field dump + histograms + kshape group breakdown)",
+    "kshape_bin": "1648 bytes = header 64B (int32 group[8] first-index = (0,1,3,9,21,35,49,62); int32 numElements[8] = (1,2,6,12,14,14,13,4) sum 66) + 66 entries x 24B. Entry = 20-byte occupancy array over a 5-wide x 4-tall grid (THE DECK GRID) + 4 ignored bytes. Lookup: 64 + (group[g]+elem)*24.",
+    "koma_record_MAP": {
+      "0x0 u16 ImageId": "CONFIRMED - 0..889, ALWAYS equals record index, fully redundant",
+      "0x2 u16 characterId": "CONFIRMED - 1..312, 312 distinct, each has exactly ONE 1-cell helper => 312 characters",
+      "0x4 u8 seriesIdx": "CONFIRMED - 1..42 into Koma.NameTable (src/JUS.Tool/Graphics/Koma.cs:33, from ARM9 0x0209E840). idx1=\"es\" Eyeshield21, idx23=\"db\" DragonBall, idx24=\"na\" Naruto",
+      "0x5 u8 panelOrdinal": "CONFIRMED - panel number WITHIN THE CHARACTER (0-based), NOT char-within-series. (seriesIdx,panelOrdinal) unique across all 890",
+      "0x6 u8 panelType": "CONFIRMED - 0=Battle 1=Support 2=Helper; perfectly determined by size, zero exceptions",
+      "0x7 u8 abilityId": "PLAUSIBLE - range depends on type: helper 47 distinct in 0..55, support 193 in 0..192, battle 74 in 0..73 (74 == chr_b.bin entry count, so battle indexes chr_b)",
+      "0x8 u8 KShapeGroupId": "CONFIRMED - SIZE = value + 1 (verified by counting nonzero footprint cells: group g always yields exactly g+1 cells)",
+      "0x9 u8 KShapeElementId": "CONFIRMED - which shape of that size",
+      "0xA u8 unkA": "UNIDENTIFIED - 0..8, always <= size; == bbox width 474/890, == bbox height 500/890, neither exact",
+      "0xB u8 flags": "PLAUSIBLE - bit 0x10 ~= \"primary variant\". Values 0x00,0x01,0x10,0x20,0x21,0x30,0x31,0x32,0x42. NOT nature."
+    },
+    "shapes_per_size": "available (1,2,6,12,14,14,13,4); used by koma.bin (1,2,6,12,13,14,12,4). Size 5 uses 13 -- EXACTLY matches the owner size-5 screenshot count of 13.",
+    "panels_per_size": "size1:312 size2:188 size3:184 size4:62 size5:61 size6:55 size7:16 size8:12",
+    "naruto_verified": "Naruto = characterId 184, seriesIdx 24 (\"na\"), 9 panels idx 497-505, sizes [1,2,3,4,4,5,6,7,8], matches owner reference table exactly. Sizes 7-8 switch abilityId 24 (vs 20 for 4-6) = the 九尾 label. Both size-4 panels share abilityId 20.",
+    "NEGATIVE_RESULT": "NATURE IS NOT IN koma.bin. Refutes P1. Proof: Naruto size-2 panel is 笑 Laughter and size-3 is 力 Power, yet both have byte-identical flags=0x30 and identical panelType. Two different natures, identical bytes => no koma.bin field encodes nature. Also not purely per-character (Naruto two size-4 panels differ in nature but share characterId 184).",
+    "piece_bin": "35183 bytes, ODD - no stride yields 890 records, so NOT a fixed-stride per-koma table. Variable-length or offset-indexed; needs a header read not a stride guess."
+  },
+  "predictions_status": {
+    "P1": "REFUTED - no nature field in koma.bin",
+    "P2": "CONFIRMED (helper ability space actually reaches 0x37, wider than the 0x30 in Cheat-Code-Analysis.md)",
+    "P3": "CONFIRMED - 0x6 is cached type, redundant with size",
+    "P4": "CONFIRMED as NOT STORED - size = 0x8 + 1",
+    "P5": "CONFIRMED exactly",
+    "P6": "HALF - 0x4 is series yes; 0x5 is panel ordinal not char-in-series",
+    "P7": "still open - piece.bin undecoded",
+    "P8": "CONFIRMED - 312 helpers, one per character (owner identified ~304 of 312)",
+    "P9": "still open"
+  },
+  "k2b_plan": [
+    "1. komatxt.bin (13362 bytes, count=firstInt32/0xC) - its per-entry Unk1/Unk2 int32 are unexamined and it IS per-koma by construction. Cheapest place for nature.",
+    "2. piece.bin - read the header properly, find the indexing scheme",
+    "3. identify unkA (0..8, <= size, loosely tracks shape bbox)",
+    "4. If nature is in neither, look for a per-koma nature table in arm9 (not extracted locally - jus_files has no arm9.bin)"
+  ],
+  "blocker_note": "jus_files has NO arm9.bin extracted - if nature turns out to live in ARM9 tables, that file must be obtained first."
 }

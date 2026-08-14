@@ -1,0 +1,12 @@
+{
+  "rom_path": "~/Documents/mine/rom/jus.nds",
+  "rom_sha256": "a9c9bf89e6d99548b7c87e822b217c3fb74ef25186535b06193a6fb73d0d6d27",
+  "save_path": "~/Documents/mine/rom/jus.sav",
+  "save_sha256": "f2a794a9dcc2f34be76682c2377315d5f45bc8eeb95f725478c5f2cc31edb83b",
+  "bios9_sha256": null,
+  "bios7_sha256": null,
+  "firmware_sha256": null,
+  "bios_note": "No external BIOS/firmware dumps on this machine. melonDS boots the ROM in DS mode with its built-in FreeBIOS, which works for JUS. Direct-boot means firmware state is not part of run reproducibility.",
+  "melonds_config_path": "~/Library/Preferences/melonDS/melonDS.toml",
+  "config_note": "Preferences, NOT Application Support -- the plan guessed wrong. Relevant keys already set: [Instance0.Gdb] Enabled=true ARM9 Port=3333, and [JIT] Enable=false (required: the GDB stub cannot run with the JIT recompiler)."
+}

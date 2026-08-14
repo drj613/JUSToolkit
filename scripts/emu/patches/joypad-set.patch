@@ -248,6 +248,46 @@ index 48567397..544b9899 100644
 +
  }
 \ No newline at end of file
+diff --git a/src/frontend/qt_sdl/lua/libs/LuaMemory.cpp b/src/frontend/qt_sdl/lua/libs/LuaMemory.cpp
+index e00d938f..a07f26dc 100644
+--- a/src/frontend/qt_sdl/lua/libs/LuaMemory.cpp
++++ b/src/frontend/qt_sdl/lua/libs/LuaMemory.cpp
+@@ -1,5 +1,6 @@
+ #include "lua/LuaMain.h"
+ #include "DSi.h"
++#include <type_traits>
+ 
+ std::vector<luaL_Reg> memoryFunctions;// list of registered lua_CFunctions for this library
+ LuaLibrary memoryLibrary("memory",&memoryFunctions);//adds "memory" to the list of luaLibraries
+@@ -443,7 +444,9 @@ struct s24
+ };
+ static_assert(sizeof(s24)==3);
+ 
+-template <typename T> constexpr bool isSigned = ((T)0 - 1 > 0);
++// NOTE: this was `((T)0 - 1 > 0)`, which is false for every 8/16-bit type
++// (integer promotion) and true for u32 -- i.e. inverted where it mattered.
++template <typename T> constexpr bool isSigned = std::is_signed<T>::value;
+ template <> constexpr bool isSigned<u24> = false;
+ template <> constexpr bool isSigned<s24> = true;
+ 
+@@ -458,11 +461,12 @@ template <typename T, bool Be=false> int Lua_ReadData(lua_State* L)
+ 	if (address<=domain.size-sizeof(T))
+ 		domain.read(bits,address,sizeof(T));
+ 	if (Be) byteswap(bits,sizeof(T));
+-	if (dummyIntType::isSigned<T>)
+-	{
+-		//if MSB is negative, set all 'unused' bytes in the s64 to 0xff 
+-		if((*(s8*)(bits))<0) memset(&value,0xff,(sizeof(s64)-sizeof(T)));
+-	}
++	// The bytes were read into the TOP of the s64, so on a little-endian host
++	// `value` is the real value shifted left by the unused byte count. Shift it
++	// back down: arithmetic for signed types (sign-extends), logical otherwise.
++	constexpr int unusedBits = (int)((sizeof(s64) - sizeof(T)) * 8);
++	if (dummyIntType::isSigned<T>) value = value >> unusedBits;
++	else value = (s64)((u64)value >> unusedBits);
+     lua_pushinteger(L, value);
+     return 1;
+ }
 diff --git a/src/frontend/qt_sdl/main.cpp b/src/frontend/qt_sdl/main.cpp
 index 810afad4..779faabf 100644
 --- a/src/frontend/qt_sdl/main.cpp

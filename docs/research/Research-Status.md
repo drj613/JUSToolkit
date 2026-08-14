@@ -808,3 +808,40 @@ extracted), and five harness cards in `Human-Testing-Queue.md` of which two clos
 engine, so nature is read during combat despite being a deck-building property — a likely home for
 the nature matchup multiplier. Combat code is `arm9.bin` + overlay ov06 only; `bl 0x020783CC`
 (the HP-delta apply) appears 8 times in ov06 and zero times in `arm9.bin`.
+
+## 2026-08-14 — Loop-Atlas: melee damage producer marked STUCK
+
+Five iterations of the combat phase went at "where does melee damage come from". The negatives are
+solid and worth keeping; the answer is not found, and I'm marking it rather than spending a third
+consecutive wake.
+
+**Established:** HP changes only via a store to `+0x18`, and every such store with clamp context is
+enumerated — 17 sites across 8 arm9 functions, plus one ov6 field serialiser that isn't a writer. The
+core apply `0x02078488` has 14 callers, all classified (6 Thumb heals, 2 status ticks, 2 script
+wrappers, 3 arg-passing dispatchers, 1 accumulator flush). Damage demonstrably happens —
+`7168 → 6784` = 384 raw = 6.000 displayed, reproducibly.
+
+**Refuted along the way:** the pending-damage accumulator at `[r6+0x1A8]->+0x10->+0x140` (breakpoint
+logged `r1 = 0` on every hit); `0x02078660`/`0x020785B8` as damage paths (they're HP/SP restore
+utilities taking boolean flags and a percentage).
+
+**The blocker is tooling, not reasoning.** The remaining candidates are the three arg-passing
+dispatchers, reached through pointer tables. Every technique available here — value search, offset
+scan, constrained offset scan, cross-binary caller enumeration — has been applied, and three of them
+produced confident false positives on the way. The next step needs indirect-call resolution:
+Tier-2 task **D0.3** (headless Ghidra import) is already specified and is exactly the missing
+capability. A pointer-table scanner would be the cheap version.
+
+Not spending the charter's codex second opinion: codex hung for an hour on this same damage path for
+the emulator-harness session, and the gap is tool capability rather than analysis.
+
+**Method lessons from this phase, all earned the hard way:**
+
+1. An offset-only scan over these binaries is not evidence about a specific struct. `+0x18` gave 226
+   hits; `+0x140` gave a vtable initialiser that mimicked the exact pattern I predicted.
+2. Constraining a scan isn't sufficient — constrain it enough to **read every hit**. 17 readable
+   sites caught an error that 226 would have hidden.
+3. A tool that only handles ARM will silently invent negatives. Two wrong conclusions came from that.
+4. Overlays sharing a load address create phantom cross-overlay callers. `find_callers.py` now warns.
+5. A coincidence that mirrors the structure you predicted is more dangerous than a random one,
+   because the resemblance itself feels like confirmation.

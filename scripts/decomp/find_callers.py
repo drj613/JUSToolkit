@@ -116,6 +116,23 @@ def main() -> int:
     if any(v == 0 for v in per_target.values()):
         print("\nNote: a zero here means no *direct* BL/BLX. The function could still be "
               "reached through a pointer table; this tool does not find indirect calls.")
+
+    # Overlays sharing a load address are mutually exclusive, so a "caller" in one
+    # overlay cannot really be calling code that lives in a different overlay at the
+    # same address -- it is calling its own code at that address. Flag those rows.
+    shared = {}
+    man = OVERLAY_DIR / "overlays.json"
+    if man.exists():
+        for e in json.loads(man.read_text()):
+            shared.setdefault(e["ram_address"], []).append(f"ov{e['id']}")
+    ambiguous = [addr for addr, names in shared.items() if len(names) > 1]
+    if ambiguous:
+        print("\nWARNING: overlays share load addresses "
+              + ", ".join(f"0x{a:08X} ({len(shared[a])} overlays)" for a in sorted(ambiguous))
+              + ".")
+        print("  If a target address falls in a shared window, only callers from the SAME")
+        print("  overlay are real. A caller reported in a different overlay at that address")
+        print("  is resolving to its own code, not to the target you named.")
     return 0
 
 

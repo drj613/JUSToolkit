@@ -1,11 +1,11 @@
 {
-  "iteration": 25,
+  "iteration": 26,
   "phase": "combat",
-  "current_task": "C6f-classify-the-9-ov6-callers-of-0x02078660",
+  "current_task": "C4-physics-writers-round2",
   "queue": [
-    "C6f-classify-the-9-ov6-callers-of-0x02078660",
     "C4-physics-writers-round2",
     "C5-gdb-queue-triage",
+    "D0.3-ghidra-import (unblocks the stuck thread)",
     "K3-koma-runtime (deferred)"
   ],
   "done": [
@@ -29,9 +29,24 @@
     "C6-damage-delta-PARTIAL",
     "C6b-poison-burn-opcodes",
     "C6c-all-callers-classified-accumulator-found",
-    "C6e-accumulator-refuted-hp-writer-set-enumerated"
+    "C6e-accumulator-refuted-hp-writer-set-enumerated",
+    "C6f-restore-functions-refuted"
   ],
-  "stuck": {},
+  "stuck": {
+    "melee-damage-producer": {
+      "marked": "2026-08-14, iteration 26, after C6e and C6f both produced no progress on this specific question",
+      "established": "HP changes only via a +0x18 store; all 17 clamp-context stores enumerated across 8 arm9 functions plus one ov6 serialiser. Core apply 0x02078488 has 14 callers, all classified. Damage demonstrably happens (7168->6784 = 384 raw = 6.000).",
+      "refuted": "the pending-damage accumulator (breakpoint logged r1=0 on every hit); 0x02078660 and 0x020785B8 as damage paths (HP/SP restore utilities taking boolean flags and a percentage 0x64).",
+      "remaining_candidates": "the 3 arg-passing dispatchers (0x02157A44, 0x0215807C, 0x02158B20) whose deltas arrive as function arguments and whose own callers are single or indirect via pointer tables.",
+      "WHY_STUCK": "The blocker is TOOLING, not reasoning. Every technique available - value search, offset scan, constrained offset scan, cross-binary caller enumeration - has been applied, and three produced confident false positives. The next step needs INDIRECT-CALL RESOLUTION.",
+      "next_options_ranked": [
+        "1. Scan for the pointer/dispatch tables (word-aligned runs of plausible ov6 code addresses) to recover the missing call edges - cheap version.",
+        "2. Tier-2 task D0.3 headless Ghidra import - already specified in Decomp-Tier2-Plan.md, and resolves indirect calls, which is exactly the gap.",
+        "3. A hardware watchpoint on the HP halfword - this GDB stub does not support it."
+      ],
+      "codex_second_opinion": "NOT spent. Charter allows one, but codex hung for an hour on this same damage path for the harness session, and the gap is tool capability rather than analysis."
+    }
+  },
   "required_reading_for_koma_tasks": [
     "docs/research/Koma-System-Observed-Behavior.md",
     "docs/design/Koma-Deckbuilder-UX-Spec.md",
@@ -87,7 +102,7 @@
     "L/R sticker bindings are per-deck fields not yet located in RAM",
     "Is HP computed as size*k at runtime, or tabulated per panel? Naruto 4-koma=144=4*36; if size*k then size5=180, size6=216, size7=252, size8=288. One reading settles it."
   ],
-  "notes": "Iteration 25: my accumulator hypothesis is REFUTED by a clean breakpoint negative. The fallback constrained scan (same base register for the clamp read) cut 226 sites to 17 and showed there is NO melee HP writer in ov6 at all - its one hit is a field serialiser. That licenses a complete enumeration: all HP writes go through 8 arm9 functions, and 0x02078660 has NINE ov6 callers I had never examined. Both unexamined functions walk the +0x558 node list that Battle-Engine-Map already identified for the guard/SP subsystem. New lead, SPECULATIVE.",
+  "notes": "Iteration 26: the restore-function lead is refuted (boolean flags and a 100% percentage, not damage amounts). Fixed a real tool bug - shared overlay load addresses create phantom cross-overlay callers, now warned. Per the charter stuck rule, MARKED THE MELEE DAMAGE PRODUCER STUCK after two consecutive no-progress wakes, with a dated note in Research-Status.md recording what is established, what is refuted, why the blocker is tooling rather than reasoning, and the ranked options (pointer-table scan, then Ghidra D0.3). Holding the codex second opinion since codex already hung for an hour on this exact path. Moving to C4 physics-writers.",
   "last_wake": "2026-08-14",
   "wakeup_default_seconds": 1800,
   "consecutive_no_progress_wakes": 0,
@@ -548,5 +563,7 @@
   },
   "METHOD_NOTE_third_time": "Two of three scans this session produced confident false positives from OFFSET-ONLY matching (+0x18 -> 226 hits; +0x140 -> a vtable initialiser). The constrained version cut 226 to 17 and was STILL wrong about its single ov6 hit - but wrong in a way I could SEE, because 17 sites are readable and 226 are not. The lesson is not only \"constrain the scan\" but CONSTRAIN IT ENOUGH THAT YOU CAN READ EVERY HIT.",
   "harness_method_note": "Their first breakpoint attempt logged only NON-ZERO values and produced empty output - indistinguishable from \"the breakpoint never fired\". They burned a second GDB connection adding an unconditional first-8-hits log purely to prove reachability. Rule: on any negative-result instrument, VERIFY REACHABILITY SEPARATELY FROM THE PAYLOAD.",
-  "verification_targets_standing": "B = 6, forward+B = 5, down+B = 5, X = 2 displayed against an ability-free target; each -2 flat against a blunt-resister. up+B and Y are multi-hit strings."
+  "verification_targets_standing": "B = 6, forward+B = 5, down+B = 5, X = 2 displayed against an ability-free target; each -2 flat against a blunt-resister. up+B and Y are multi-hit strings.",
+  "restore_functions_refuted": "All 9 ov6 callers of 0x02078660 pass BOOLEAN flags (r1/r2 only ever 0 or 1), and the one caller of 0x020785B8 passes r1=0x64 = 100 against a function body containing mov r4,#0x64 - so it is \"set HP to N percent\" called at 100%, a full restore. Neither carries damage.",
+  "TOOL_FIX_phantom_callers": "find_callers.py reported ov4 0x02159BB8 -> 0x02157A44, which is a PHANTOM: ov4 and ov6 both load at 0x0214CD20 and are mutually exclusive, so ov4 code calling that address is calling its OWN code. The tool now warns whenever a shared window exists. Impact on earlier results is small (arm9 targets are unaffected since arm9 is always resident) but it would have produced a wrong conclusion here. Real callers after discarding it: 0x02158B20 <- 0x02156E94, 0x0215807C <- 0x02158070, and 0x02157A44 has NO direct ov6 caller (pointer table)."
 }

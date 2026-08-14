@@ -1,9 +1,9 @@
 {
-  "iteration": 20,
+  "iteration": 21,
   "phase": "combat",
-  "current_task": "C6b-callers-of-the-damage-dispatcher",
+  "current_task": "C6c-classify-remaining-6-ARM-callers",
   "queue": [
-    "C6b-callers-of-the-damage-dispatcher",
+    "C6c-classify-remaining-6-ARM-callers",
     "C4-physics-writers-round2",
     "C5-gdb-queue-triage",
     "K3-koma-runtime (deferred)"
@@ -26,7 +26,8 @@
     "C0-nature-in-battle",
     "C3-hitbox-priority-round2",
     "C3b-chr_b-join-verified",
-    "C6-damage-delta-PARTIAL"
+    "C6-damage-delta-PARTIAL",
+    "C6b-poison-burn-opcodes"
   ],
   "stuck": {},
   "required_reading_for_koma_tasks": [
@@ -84,7 +85,7 @@
     "L/R sticker bindings are per-deck fields not yet located in RAM",
     "Is HP computed as size*k at runtime, or tabulated per panel? Naruto 4-koma=144=4*36; if size*k then size5=180, size6=216, size7=252, size8=288. One reading settles it."
   ],
-  "notes": "Iteration 20: peer CONFIRMED resistance is FLAT -2, not multiplicative, using the two-move design (difference constant, ratio not). External validation: 6.000 matches what the owner reported independently before any tooling existed. My C6 is PARTIAL and honestly so - the 8 ARM sites are dispatcher cases that receive the delta as a function ARGUMENT (mov r4,r3), so no table is reachable at that level; the next attempt starts at the dispatcher callers. Also checked for a per-character defence field in chr_b and found none (weakly supporting ability 0x09 as the -2 source), and backed out of an over-fit reading of the chr_b +0x30 ID block.",
+  "notes": "Iteration 21: C6b landed a clean result - the record-reading damage sites are POISON and BURN ticks. Found a script-opcode handler family in ov06 whose IDs are exactly the status enum 0x19-0x22, and the only two touching HP are burn and poison, the two damage-over-time statuses. Mapping was not fitted (the ID range came from much earlier work). So no melee damage among any of the 14 callers identified so far. Also recorded the peer full measured damage table (A is jump not attack; up+B and Y are multi-hit strings, which constrains any record format) and their x16-quantum retraction. Hunted for move scripts: chr/ has 250 per-character archives but they are SPRITE archives; location still unknown.",
   "last_wake": "2026-08-14",
   "wakeup_default_seconds": 1800,
   "consecutive_no_progress_wakes": 0,
@@ -493,5 +494,24 @@
     "VERIFICATION_TARGET": "Goku B = 6.000 (384 raw), DOWN+B = 5.000 (320 raw) against an ability-free target. UP+B is a MULTI-HIT string (1.0, 2.0, 1.0, 1.0), so any table must distinguish per-hit values from string totals - several records or a repeat count. Damage is authored in DISPLAYED units (apply sites do lsl #6), so a real table should hold literal 6 and 5.",
     "OVER_FIT_I_BACKED_OUT_OF": "The four u16s at chr_b +0x30..+0x36 looked like base+0,1,2,3 (Naruto 362-365, Luffy 536-539). Across all 74: only 15 sequential, 8 all-zero, 51 NEITHER (Goku is 337,0,338,0). So they are four independent IDs that happen to be contiguous for some characters. Failed to match the non-zero count to owned panel sizes. Recorded as an unresolved field, not a pattern."
   },
-  "peer_positioning_solved": "What unblocked their measurement, neither clever: (1) use the PASSIVE CPU (COM設定 なにもしない, the training default) so positions are fixed - they had been fighting the 戦う AI wandering for rounds, and the DEFAULT was the better experiment; (2) SWEEP the approach distance instead of reasoning about it - 0/20 frames too far, 40/60/80/100 all landed 2 hits at 6.000 each, 140/180/240 walked past facing away. Wide window, identical damage, so no frame-perfect timing needed. Sweeping nine values took four minutes after rounds of trying to deduce it."
+  "peer_positioning_solved": "What unblocked their measurement, neither clever: (1) use the PASSIVE CPU (COM設定 なにもしない, the training default) so positions are fixed - they had been fighting the 戦う AI wandering for rounds, and the DEFAULT was the better experiment; (2) SWEEP the approach distance instead of reasoning about it - 0/20 frames too far, 40/60/80/100 all landed 2 hits at 6.000 each, 140/180/240 walked past facing away. Wide window, identical damage, so no frame-perfect timing needed. Sweeping nine values took four minutes after rounds of trying to deduce it.",
+  "C6b_STATUS_OPCODES": {
+    "output": "docs/research/findings/c6b-poison-burn-opcodes.md",
+    "FINDING": "ov06 has a family of script-opcode handlers sharing the prologue push{...}; mov r2,#ID; ...; bl 0x0215986C (validator). Nine found, and their opcode IDs are EXACTLY the status-effect enum 0x19-0x22.",
+    "handlers": "0x19@0x02159694 shock, 0x1A@0x02159678 freeze, 0x1B@0x02159624 burn, 0x1C@0x02159538 confusion, 0x1D@0x02159500 poison, 0x1E@0x02159594 judgment, 0x1F@0x021594E4 paralysis, 0x20 NOT FOUND (blindness - different prologue shape), 0x21@0x02159578 speed-down, 0x22@0x02159608 seal",
+    "THE_KEY_RESULT": "Only TWO handlers touch HP: 0x1B (burn) and 0x1D (poison) - exactly the two damage-over-time statuses. So the record-reading \"damage\" sites are STATUS TICKS, not melee. The mapping was not fitted: 0x19-0x22 came from Cheat-Code-Analysis.md ability IDs much earlier, and the handler IDs landed in the same range independently.",
+    "one_ID_space": "Status effect N is applied by opcode N, and ability N grants immunity to status N. One ID space, both directions.",
+    "poison_handler_read": "ldr r1,[r4,#0x4] (node->[4] = effect record); ldr r0,[r5,#0x1B4] (target); ldrsh r1,[r1,#0x4] (delta = SIGNED halfword at record+4, so the same field can express a heal); bl 0x020783CC.",
+    "caller_tally": "6 Thumb = heals; 2 ARM = poison/burn ticks; 6 ARM still unclassified. NO MELEE DAMAGE among any caller identified so far.",
+    "not_established": "Two other sites read the same ldrsh ...,#4 shape (0x02159274, 0x021592D0) but sit in functions my prologue scan did not classify - possibly a sibling family (different target, or SP rather than HP). Not claimed."
+  },
+  "MEASURED_DAMAGE_TABLE": {
+    "source": "peer sweep, Goku vs コマレッド (chr_b[70], empty ability array), 4 attempts per row from an identical savestate",
+    "table": "B: 2 hits, 6.0 each (384 raw). forward+B: 2 hits, 5.0 (320). back+B: 2 hits, 6.0 (384) - same as B because pressing away TURNS the character rather than selecting a move. up+B: 6 hits, string 1.0/2.0/1.0/1.0/2.0 (64,128). down+B: 2 hits, 5.0 (320). X: 1 hit, 2.0 (128). down+X: 1 hit, 2.0. Y: 6 hits, string 2.0/2.0/4.0/2.0/2.0 (128,256). A and all A-variants, R, L, up+X: ZERO.",
+    "A_IS_JUMP": "Every A variant deals zero damage - A is JUMP, B is ATTACK. Settles the control mapping empirically; prior work had assumed it.",
+    "STRUCTURAL_CONSTRAINT_FOR_C6": "up+B and Y are MULTI-HIT STRINGS (6 dips from 4 attempts, small per-hit values). So a move-damage record cannot be one number per move - the format must express per-hit values plus a hit count, or use several records per move.",
+    "VERIFICATION_TARGETS": "Any recovered table must predict, for an unresisted target: B=6, forward+B=5, down+B=5, X=2, plus up+B and Y as strings. Against a blunt-resister each drops by exactly 2, flat."
+  },
+  "QUANTUM_CORRECTED": "The peer retracted \"damage is authored in quarter-HP units, scaled x16\". Every DIRECT hit is a multiple of 64 raw = a whole number of displayed HP (64,128,256,320,384). The single fractional observation (80 raw = 1.250) was damage to a BENCHED character, a different mechanic. So: direct-hit damage is WHOLE displayed HP; bench/splash is where the fraction appeared. Drop x16 as a record-format constraint - whole-displayed-HP is tighter anyway.",
+  "move_script_location_UNKNOWN": "Hunted for a move-damage table. jus_files/ripped_jus_files/chr/ holds 250 per-character archives named exactly like the char-ID strings in the 0x020924B0 table (Goku = db_b_01, with db_b_01c.aar plus size variants db_b_01_4c.aar / _5c.aar). BUT these are SPRITE archives - db_b_01_4c.aar contains db_b_01_4.dig (a DSIG image), and Battle-Engine-Map already documents \"c.aar\" as the sprite-archive suffix convention. So move scripts are NOT there. My hand-rolled ALAR header guess was also wrong (entry count read as 1 with garbage offsets) - USE THE EXISTING JUSToolkit ALAR PARSER in src/JUS.Tool rather than reversing the container by hand. Remaining candidates for move/effect script data: db_b_01c.aar (the non-size-suffixed 114k archive, may hold more than art), bin/jpower.bin (94KB, never examined, and docs/research/jpower-Mapping.md + jpower-Block-Pattern-Analysis.md already exist), or data embedded in ov06 itself."
 }

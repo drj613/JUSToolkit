@@ -1,5 +1,26 @@
 # Measured move damage: Goku vs an unresisted dummy
 
+> ## ⚠️ CORRECTION: every number below is NET of one frame of auto-heal
+>
+> These were measured with 自動回復 **ON**, so each dip is `true_damage − 128`
+> (one frame of the +2.0 displayed regen landing in the same frame as the hit).
+>
+> **Verified for neutral B:** the value handed to the HP drain is **512
+> (8.000)**, caught two independent ways — a breakpoint on the damage field's
+> consumer, and re-measuring with 自動回復 **OFF**, where HP falls a cumulative
+> `112.0 → 104.0 → 96.0`, i.e. **512 raw per hit**.
+>
+> So neutral B is **8.000**, not the 6.000 tabulated below.
+>
+> For the other single-hit moves the same mechanism applies, so true damage is
+> almost certainly `listed + 2.0` — but that is **inferred, not measured**, and
+> multi-hit strings need per-hit accounting. The table is left as recorded rather
+> than silently adjusted. Re-measure from a heal-off savestate to fix it properly.
+>
+> **What this does NOT change:** the flat −2 reduction. The heal offset is the
+> same constant on both sides of that comparison, so it cancels in the
+> difference. See `Damage-Reduction-Is-Flat.md`.
+
 Enumerated 2026-08-14 with `scripts/emu/experiments/move_damage_table.py`.
 Attacker Goku (`chr_b[0]`). Target **コマレッド** (`chr_b[70]`, 112.0 max HP,
 **empty ability array**) — no resistances or weaknesses, so these are baseline

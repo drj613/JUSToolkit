@@ -62,6 +62,32 @@ harness, was the blocker. What worked:
 Anything past ~140 frames walks *through* the opponent and ends up facing the
 wrong way, which is the failure that wasted several earlier runs.
 
+## The numbers are net of auto-heal — and the conclusion survives
+
+All four figures were measured with 自動回復 ON, so each is `true − 2.0` (one
+frame of regen landing with the hit). True values:
+
+| move | unresisted | Luffy | difference | ratio |
+|---|---|---|---|---|
+| B | **8.000** | 6.000 | **−2.0** | 0.750 |
+| DOWN+B | **7.000** | 5.000 | **−2.0** | 0.714 |
+
+The difference is still exactly −2.0 and the ratio is still not constant
+(0.750 vs 0.714), so **the reduction is flat, not multiplicative** — unchanged.
+A constant offset applied to both sides cancels in a difference, which is
+precisely why the two-move design was robust to a measurement error neither of
+us had spotted yet.
+
+The 8.000 figure is verified directly: a breakpoint shows **512** handed to the
+HP drain, and with the heal off HP falls 512 per hit cumulatively.
+
+**Restating the owner cross-check:** the owner's independently reported "6
+damage" matches the **net-of-regen** number, not true move damage — they were
+also observing training mode with the heal on. So the agreement is real and still
+validates the HP scale, address derivation and dip-reading, but it validates the
+*net* observation, not the raw move value. My earlier phrasing overstated what it
+confirmed.
+
 ## Bounding the claim honestly
 
 **Solid:** whatever reduces Luffy's incoming damage relative to this target is

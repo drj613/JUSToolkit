@@ -1,10 +1,10 @@
 {
-  "iteration": 27,
+  "iteration": 28,
   "phase": "combat",
-  "current_task": "C5-gdb-queue-triage",
+  "current_task": "C6g-verify-0x134-and-trace-its-writer",
   "queue": [
-    "C5-gdb-queue-triage",
-    "D0.3-ghidra-import (unblocks the stuck damage thread)",
+    "C6g-verify-0x134-and-trace-its-writer",
+    "D0.3-ghidra-import",
     "K3-koma-runtime (deferred)"
   ],
   "done": [
@@ -30,23 +30,10 @@
     "C6c-all-callers-classified-accumulator-found",
     "C6e-accumulator-refuted-hp-writer-set-enumerated",
     "C6f-restore-functions-refuted",
-    "C4-physics-writers-round2"
+    "C4-physics-writers-round2",
+    "C5-gdb-queue-triage"
   ],
-  "stuck": {
-    "melee-damage-producer": {
-      "marked": "2026-08-14, iteration 26, after C6e and C6f both produced no progress on this specific question",
-      "established": "HP changes only via a +0x18 store; all 17 clamp-context stores enumerated across 8 arm9 functions plus one ov6 serialiser. Core apply 0x02078488 has 14 callers, all classified. Damage demonstrably happens (7168->6784 = 384 raw = 6.000).",
-      "refuted": "the pending-damage accumulator (breakpoint logged r1=0 on every hit); 0x02078660 and 0x020785B8 as damage paths (HP/SP restore utilities taking boolean flags and a percentage 0x64).",
-      "remaining_candidates": "the 3 arg-passing dispatchers (0x02157A44, 0x0215807C, 0x02158B20) whose deltas arrive as function arguments and whose own callers are single or indirect via pointer tables.",
-      "WHY_STUCK": "The blocker is TOOLING, not reasoning. Every technique available - value search, offset scan, constrained offset scan, cross-binary caller enumeration - has been applied, and three produced confident false positives. The next step needs INDIRECT-CALL RESOLUTION.",
-      "next_options_ranked": [
-        "1. Scan for the pointer/dispatch tables (word-aligned runs of plausible ov6 code addresses) to recover the missing call edges - cheap version.",
-        "2. Tier-2 task D0.3 headless Ghidra import - already specified in Decomp-Tier2-Plan.md, and resolves indirect calls, which is exactly the gap.",
-        "3. A hardware watchpoint on the HP halfword - this GDB stub does not support it."
-      ],
-      "codex_second_opinion": "NOT spent. Charter allows one, but codex hung for an hour on this same damage path for the harness session, and the gap is tool capability rather than analysis."
-    }
-  },
+  "stuck": {},
   "required_reading_for_koma_tasks": [
     "docs/research/Koma-System-Observed-Behavior.md",
     "docs/design/Koma-Deckbuilder-UX-Spec.md",
@@ -102,7 +89,7 @@
     "L/R sticker bindings are per-deck fields not yet located in RAM",
     "Is HP computed as size*k at runtime, or tabulated per panel? Naruto 4-koma=144=4*36; if size*k then size5=180, size6=216, size7=252, size8=288. One reading settles it."
   ],
-  "notes": "Iteration 27: C4 delivered the round-2 angle physics-writers needed, and it is a structural correction rather than a new search. The +0x6A-0xBA \"physics window\" is an ARRAY of 12-byte records at +0x58/+0x64/+0x70 (>=4 records), proven by ov11 0x0217E4A0 writing three identical 5-field groups at stride 0xC. All six GDB-observed offsets map into it, so the 2026-02-03 observation was right but its 8-byte-pair framing was wrong - and there is no single velocity offset to find, which explains round 1 failing. The +0x98-0xBA timer region is a second array at stride 8. Also recorded a 65-hit inconclusive co-occurrence test (base r13 = stack) as the fourth instance of offset-collision noise.",
+  "notes": "Iteration 28: C5 triage UNSTUCK the damage thread, and the credit belongs to the queue itself. Card 3 note recorded a sibling DRAIN trampoline at 0x020783B8 that negates its delta - so damage passes a POSITIVE magnitude and never touches the plain trampoline whose 14 callers I exhaustively classified. The drain has 2 callers; one loads its magnitude from +0x134 off the SAME chain as the +0x140 heal field the harness watched. My accumulator hypothesis was right in shape and wrong by 12 bytes. Lesson recorded: I read the conclusions doc and skipped the loose-ends doc for five iterations.",
   "last_wake": "2026-08-14",
   "wakeup_default_seconds": 1800,
   "consecutive_no_progress_wakes": 0,
@@ -574,5 +561,25 @@
     "second_array": "The +0x98-0xBA \"timer region\" offsets (+0x98, +0xA0, +0xA8, +0xB0, +0xB8) are STRIDE 8 - a second array, of 8-byte records. The session even guessed \"32-bit values read as 16-bit?\", the right instinct aimed at the wrong structure.",
     "confidence": "CONFIRMED_STATIC that +0x58..+0x7A is three 12-byte records with that layout. PLAUSIBLE that it is the same struct GDB observed (all six observed offsets land inside, but r5 identity not proven). UNKNOWN what the records mean - the ov11 function writes the SAME values to all three, so it is initialising/broadcasting, which reveals layout not meaning. Candidates: per-limb hitbox state, a position/velocity history ring, per-hit records. DELIBERATELY NOT naming them velocity fields - that guess produced four demoted claims in round 1."
   },
-  "INCONCLUSIVE_TEST_recorded": "Before that, I tried to prove the physics and HP offsets share a struct by finding a function touching both on the same base register. Function-scoped, PC-relative excluded: 65 hits, many with base r13 (the STACK POINTER - locals, not a struct). Useless, and the FOURTH time this session the same failure: +0x18, +0x6C, +0x78 are commonplace so co-occurrence proves nothing. What worked was the opposite move - not \"do these offsets co-occur?\" but \"do these offsets have STRUCTURE?\". Stride-12 repetition is self-evidencing in a way co-occurrence never is."
+  "INCONCLUSIVE_TEST_recorded": "Before that, I tried to prove the physics and HP offsets share a struct by finding a function touching both on the same base register. Function-scoped, PC-relative excluded: 65 hits, many with base r13 (the STACK POINTER - locals, not a struct). Useless, and the FOURTH time this session the same failure: +0x18, +0x6C, +0x78 are commonplace so co-occurrence proves nothing. What worked was the opposite move - not \"do these offsets co-occur?\" but \"do these offsets have STRUCTURE?\". Stride-12 repetition is self-evidencing in a way co-occurrence never is.",
+  "DAMAGE_FIELD_FOUND": {
+    "output": "docs/research/findings/c5-damage-field-0x134.md; CARD D1b in Human-Testing-Queue.md",
+    "THE_MISS": "There are TWO trampolines into the HP apply. 0x020783CC is plain. 0x020783B8 is a DRAIN that does rsb r1,r1,#0x0 - it NEGATES the delta, so a caller subtracting HP passes a POSITIVE magnitude. I enumerated the 14 callers of the plain trampoline and correctly found only heals/status/dispatchers, because DAMAGE DOES NOT USE THAT TRAMPOLINE. The drain has only 2 callers and I never looked.",
+    "THE_FIELD": "0x0215AC70 calls the drain trampoline with r4 loaded at 0x0215AC08 from ldr r4,[r1,#0x134], where r1 = [r5+0x1A8] -> +0x10 - the SAME chain as the +0x140 heal field. So that object holds a family of pending deltas: +0x134 HP damage (positive, negated by the drain), +0x138 SP drain (negated by rsb), +0x140 HP heal (plain trampoline), +0x144 SP add.",
+    "why_the_peer_watch_read_zero": "They watched +0x140, which is the HEAL field. Damage was in +0x134 the whole time. My accumulator hypothesis was right in SHAPE and wrong by 12 BYTES.",
+    "other_drain_caller": "Thumb 0x021518D6 passes mov r1,#2; lsl r1,#10 = 2048 raw = 32.0 displayed - a fixed scripted drain, not variable damage.",
+    "confidence": "CONFIRMED_STATIC that 0x020783B8 negates, that 0x0215AC70 calls it, and that the magnitude comes from +0x134 off the same chain. PLAUSIBLE that this is the melee path specifically - it is the right shape, but I have been wrong about shape-being-sufficient once already and the value has not been observed."
+  },
+  "THE_REAL_LESSON": "I spent five wakes enumerating callers, scanning offsets and building tools, and the pointer I needed was written in docs/research/GDB-Validation-Queue.md by an earlier phase - card 3 note: \"a sibling DRAIN trampoline exists at 0x020783B8 (same +0x56c target, negates its delta)\". I NEVER READ THE QUEUE BEFORE STARTING THE HUNT. I read Battle-Engine-Map.md (the conclusions) and skipped the document listing what was known-but-unverified. The queue is where a prior campaign parked its LOOSE ENDS, which is exactly what a later campaign needs. Reading conclusions and skipping loose ends is how you re-derive work that was already done.",
+  "C5_triage": {
+    "settled_without_emulator": [
+      "Card 2 CONFIRMED (+0x16 max HP, +0x18 current HP; live + static)",
+      "Card 9 CONFIRMED (0x020783CC/0x02078488 is the HP clamp not a velocity writer)",
+      "Card 3 first half CONFIRMED statically (r0 via ldr r0,[r0,#0x56C]); the FORMULA half is NOT settled and needs re-deriving since resistance measured as a flat -2 and the queue formula predates the u16 correction",
+      "Card 10 REFRAMED (+0x6A is record 1 field +0x6 of a 12-byte array, not a standalone field)",
+      "Card 8 partly settled (0x020781E4 is the SP-apply sibling, 19 sites each following an HP apply - supports gauge-not-velocity)"
+    ],
+    "advanced_not_settled": "Card 12 - 0x02159EF8 does contain concrete mechanism (the +0x134/+0x138/+0x140/+0x144 pending-delta family) but no two-entity comparison found in it.",
+    "new_live_card": "CARD D1b in Human-Testing-Queue.md - watch [char+0x1A8]->+0x10->+0x134, expect +384 on a landed 6.000 hit. One number."
+  }
 }

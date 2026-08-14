@@ -452,3 +452,24 @@ passive, and the facing set at placement picks which battle character receives i
 - Discriminator: **A** if only the nearer character's ability list contains the helper's ID.
   **B** if both do. Bonus: two helpers facing the same target answers whether passives stack —
   count duplicates in the ID array.
+
+### CARD D1b: Is `+0x134` the pending-damage field? — HIGHEST VALUE, single number
+
+Supersedes the refuted accumulator card. Static work found a **second** HP trampoline at
+`0x020783B8` that negates its delta (`rsb r1,r1,#0x0`), so damage passes a **positive magnitude**.
+Its magnitude is loaded from `+0x134` off the same chain as the `+0x140` heal field you already
+watched — see `findings/c5-damage-field-0x134.md`.
+
+- Hypotheses: **A** = `+0x134` is the pending HP damage. **B** = it isn't, and damage arrives another
+  way again.
+- Watch: `name=dmg addr=<[character + 0x1A8] -> +0x10 -> +0x134> len=4` per frame. You already know
+  how to resolve this chain — it's identical to the `+0x140` one, one field earlier.
+- Alternative if the watch masks a same-frame write/consume: breakpoint **`0x0215AC08`**
+  (`ldr r4,[r1,#0x134]`) and log `r4`; or `0x0215AC70` and log `r1`.
+- Setup: the deterministic `fight_cfg` savestate, `自動回復 OFF`, the known 6.000 punch.
+- Discriminator: **A** if it reads **+384** (positive — the trampoline negates) on the landed hit.
+  **B** for zero throughout.
+- Log unconditionally, not just non-zero. Your own rule from the last run.
+
+The object holds a family of pending deltas, so watching all four at once would map the set in one go:
+`+0x134` HP damage, `+0x138` SP drain, `+0x140` HP heal, `+0x144` SP add.

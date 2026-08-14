@@ -26,6 +26,36 @@ data-only Session 8 — 7 collision-data re-export cards — is retired:
 Phase-0's round-2 re-mining already answered every one of those cards
 statically; see "Resolved by Phase-0" below.)
 
+
+> ### Triage 2026-08-14 (Loop-Atlas C5)
+>
+> **Card 3's parenthetical note was the most valuable line in this document.** Its aside that "a
+> sibling DRAIN trampoline exists at `0x020783B8` (same `+0x56c` target, negates its delta)" is
+> confirmed, and it unstuck a thread that had cost five loop iterations. Damage passes a *positive*
+> magnitude to the drain trampoline, which is why enumerating callers of the plain `0x020783CC`
+> found only heals and status ticks. See `findings/c5-damage-field-0x134.md`.
+>
+> **Cards now settled without an emulator:**
+> - **Card 2** — CONFIRMED. `+0x16` = max HP, `+0x18` = current HP, verified live by the harness
+>   session *and* statically (`0x02078488` does `ldrsh +0x18` / `adds` / `ldrsh +0x16` / `strh +0x18`,
+>   clamped at `0x4000` = 256 displayed).
+> - **Card 9** — CONFIRMED, same evidence. `0x020783CC`/`0x02078488` is the HP clamp, not a velocity
+>   writer.
+> - **Card 3, first half** — CONFIRMED statically: `0x020783CC` resolves `r0` via `ldr r0,[r0,#0x56C]`.
+>   The formula half is *not* settled and should be re-derived: the harness measured resistance as a
+>   **flat −2**, not a ratio, and the queue's `floor(damage1/5)+(tier-2)` predates the u16 HP
+>   correction.
+> - **Card 10** — REFRAMED. `+0x6A` is not a standalone field at all; it's record 1, field `+0x6` of a
+>   12-byte-strided array. See `findings/c4-physics-is-an-array.md`.
+> - **Card 8** — partly settled. `0x020781E4` is the **SP-apply sibling** of the HP apply (19 call
+>   sites, each immediately following an HP apply), which supports "a gauge, not velocity".
+>
+> **Card 12** advanced but not settled: `0x02159EF8` does contain concrete mechanism (the pending-delta
+> family at `+0x134`/`+0x138`/`+0x140`/`+0x144`), but no two-entity comparison has been found in it.
+>
+> The highest-value remaining live check is now in `Human-Testing-Queue.md` as **CARD D1b** — one
+> number, `+384`, on one landed hit.
+
 ---
 
 ## Session 1 — Live Hit-Landing (ov6, function `0x02158B20` and its direct callees)

@@ -151,6 +151,47 @@ frames**, so never diff before/after — log every frame and take the minimum of
 the dip. And **facing decides whether an attack connects**; walking past the
 opponent leaves you facing away, and every button whiffs.
 
+## The in-battle training menu (press START) — read this before measuring damage
+
+Pressing **START** during a deck-maker test battle opens an options menu that
+controls the three things that were previously fighting every damage measurement.
+Rows, top to bottom:
+
+| row | option | values seen | why it matters |
+|---|---|---|---|
+| 0 | テストプレイ再開 | — | resume (START also resumes) |
+| 1 | COM設定 | なにもしない / 戦う | **"do nothing" is the default** — the CPU never approaches or attacks |
+| 2 | 自動回復 | ON / OFF | **the auto-heal.** OFF makes damage cumulative |
+| 3 | 相手の属性 | 力 / 知 / 笑 | sets the **opponent's nature** — a direct lever for nature-triangle damage |
+| 4 | デッキメイク | — | back to the editor |
+| 5 | リトライ | — | restart the battle |
+
+Navigation: `DOWN`/`UP` to move, **`A` to cycle a value** (not LEFT/RIGHT — those
+do nothing), `START` to resume.
+
+Three consequences worth knowing:
+
+1. **`自動回復 OFF` is the fix for the auto-heal**, and it is cleaner than poking
+   memory. Verified: player HP went 10240 → 8704 from two hits and **stayed
+   there** for the rest of the run. Damage becomes cumulative and directly
+   readable. With it ON, HP is restored ~2.0 displayed per character per frame,
+   which pins HP at max and makes damage invisible to a per-frame watch.
+2. **`COM設定` defaults to なにもしない**, so an idle-and-wait measurement records
+   nothing through no fault of the harness. Set it to 戦う to get incoming hits.
+3. **If the menu is open, all bridge input goes to the menu, not the battle.**
+   This is a silent failure: plans complete with `ok: true` and every attack
+   reads as a miss. If several attack runs in a row report zero hits, screenshot
+   before debugging anything else.
+
+A first clean measurement with the heal off: the CPU landed **768 raw = 12.000
+displayed** twice, identical both times.
+
+The memory equivalent of the auto-heal is the regen rate at **`struct + 0x49`**
+(i.e. `hp_addr + 0x31`). Poking it to `0` also stops the healing — verified, HP
+held steady for 5 seconds. Note the menu toggle and that byte are not the same
+thing: turning 自動回復 OFF left the byte reading `1`, so the setting appears to
+gate whether the regen routine runs rather than zeroing the rate.
+
 ## Known issues
 
 - **A plan with `load_state` set stops the bridge.** Running a plan whose JSON

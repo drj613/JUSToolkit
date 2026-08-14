@@ -18,8 +18,9 @@ KEEP_IPC=0
 [ -x "$MELONDS" ] || { echo "no melonDS binary at $MELONDS (run build_melonds_lua.sh)"; exit 1; }
 [ -f "$ROM" ] || { echo "no ROM at $ROM"; exit 1; }
 
-pkill -if "melonDS.app/Contents/MacOS/melonDS" 2>/dev/null || true
-sleep 1
+# Always start from a clean slate: a leftover emulator keeps writing
+# heartbeats and racing for the command inbox, which looks like a bridge bug.
+bash "$SCRIPT_DIR/stop_emu.sh" || exit 1
 
 if [ "$KEEP_IPC" = 0 ]; then
   rm -rf "$IPC_DIR"

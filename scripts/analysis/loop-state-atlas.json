@@ -1,9 +1,9 @@
 {
-  "iteration": 21,
+  "iteration": 22,
   "phase": "combat",
-  "current_task": "C6c-classify-remaining-6-ARM-callers",
+  "current_task": "C6d-find-the-writer-of-accumulator-+0x140",
   "queue": [
-    "C6c-classify-remaining-6-ARM-callers",
+    "C6d-find-the-writer-of-accumulator-+0x140",
     "C4-physics-writers-round2",
     "C5-gdb-queue-triage",
     "K3-koma-runtime (deferred)"
@@ -27,7 +27,8 @@
     "C3-hitbox-priority-round2",
     "C3b-chr_b-join-verified",
     "C6-damage-delta-PARTIAL",
-    "C6b-poison-burn-opcodes"
+    "C6b-poison-burn-opcodes",
+    "C6c-all-callers-classified-accumulator-found"
   ],
   "stuck": {},
   "required_reading_for_koma_tasks": [
@@ -85,7 +86,7 @@
     "L/R sticker bindings are per-deck fields not yet located in RAM",
     "Is HP computed as size*k at runtime, or tabulated per panel? Naruto 4-koma=144=4*36; if size*k then size5=180, size6=216, size7=252, size8=288. One reading settles it."
   ],
-  "notes": "Iteration 21: C6b landed a clean result - the record-reading damage sites are POISON and BURN ticks. Found a script-opcode handler family in ov06 whose IDs are exactly the status enum 0x19-0x22, and the only two touching HP are burn and poison, the two damage-over-time statuses. Mapping was not fitted (the ID range came from much earlier work). So no melee damage among any of the 14 callers identified so far. Also recorded the peer full measured damage table (A is jump not attack; up+B and Y are multi-hit strings, which constrains any record format) and their x16-quantum retraction. Hunted for move scripts: chr/ has 250 per-character archives but they are SPRITE archives; location still unknown.",
+  "notes": "Iteration 22: C6c classified ALL 14 HP-apply callers and found the likely melee mechanism - a PENDING-DAMAGE ACCUMULATOR at [char+0x1A8]->+0x10->+0x140, flushed per dispatcher pass inside 0x02159EF8, with +0x144 the SP twin. That reconciles the harness finding that deltas always arrive pre-computed. Crucially 0x02159EF8 is the same function Battle-Engine-Map claim 4 flagged as the clash-resolution neighborhood, so a three-round-old SPECULATIVE claim now has a concrete mechanism inside it (still speculative - the writer is unfound). Also identified 0x020781E4 as the SP-apply sibling (19 callers, paired with HP applies) and enumerated the 5-member thin script-wrapper family.",
   "last_wake": "2026-08-14",
   "wakeup_default_seconds": 1800,
   "consecutive_no_progress_wakes": 0,
@@ -513,5 +514,15 @@
     "VERIFICATION_TARGETS": "Any recovered table must predict, for an unresisted target: B=6, forward+B=5, down+B=5, X=2, plus up+B and Y as strings. Against a blunt-resister each drops by exactly 2, flat."
   },
   "QUANTUM_CORRECTED": "The peer retracted \"damage is authored in quarter-HP units, scaled x16\". Every DIRECT hit is a multiple of 64 raw = a whole number of displayed HP (64,128,256,320,384). The single fractional observation (80 raw = 1.250) was damage to a BENCHED character, a different mechanic. So: direct-hit damage is WHOLE displayed HP; bench/splash is where the fraction appeared. Drop x16 as a record-format constraint - whole-displayed-HP is tighter anyway.",
-  "move_script_location_UNKNOWN": "Hunted for a move-damage table. jus_files/ripped_jus_files/chr/ holds 250 per-character archives named exactly like the char-ID strings in the 0x020924B0 table (Goku = db_b_01, with db_b_01c.aar plus size variants db_b_01_4c.aar / _5c.aar). BUT these are SPRITE archives - db_b_01_4c.aar contains db_b_01_4.dig (a DSIG image), and Battle-Engine-Map already documents \"c.aar\" as the sprite-archive suffix convention. So move scripts are NOT there. My hand-rolled ALAR header guess was also wrong (entry count read as 1 with garbage offsets) - USE THE EXISTING JUSToolkit ALAR PARSER in src/JUS.Tool rather than reversing the container by hand. Remaining candidates for move/effect script data: db_b_01c.aar (the non-size-suffixed 114k archive, may hold more than art), bin/jpower.bin (94KB, never examined, and docs/research/jpower-Mapping.md + jpower-Block-Pattern-Analysis.md already exist), or data embedded in ov06 itself."
+  "move_script_location_UNKNOWN": "Hunted for a move-damage table. jus_files/ripped_jus_files/chr/ holds 250 per-character archives named exactly like the char-ID strings in the 0x020924B0 table (Goku = db_b_01, with db_b_01c.aar plus size variants db_b_01_4c.aar / _5c.aar). BUT these are SPRITE archives - db_b_01_4c.aar contains db_b_01_4.dig (a DSIG image), and Battle-Engine-Map already documents \"c.aar\" as the sprite-archive suffix convention. So move scripts are NOT there. My hand-rolled ALAR header guess was also wrong (entry count read as 1 with garbage offsets) - USE THE EXISTING JUSToolkit ALAR PARSER in src/JUS.Tool rather than reversing the container by hand. Remaining candidates for move/effect script data: db_b_01c.aar (the non-size-suffixed 114k archive, may hold more than art), bin/jpower.bin (94KB, never examined, and docs/research/jpower-Mapping.md + jpower-Block-Pattern-Analysis.md already exist), or data embedded in ov06 itself.",
+  "C6c": {
+    "output": "docs/research/findings/c6c-damage-accumulator.md; Battle-Engine-Map.md claim 4 annotated",
+    "ALL_14_CALLERS_CLASSIFIED": "6 Thumb heals (regen +128, full heal 16384); 2 ARM status ticks (poison 0x1D, burn 0x1B, value from an effect record); 2 ARM thin script wrappers (displayed / raw units); 3 ARM larger dispatchers receiving the delta as a function argument; 1 ARM accumulator flush. NONE is a melee-specific site.",
+    "THE_ACCUMULATOR": "Inside the per-character state dispatcher 0x02159EF8: 0x0215A300 ldr r0,[r6,#0x1A8]; ldr r0,[r0,#0x10]; ldr r1,[r0,#0x140] (pending HP delta); cmp r1,#0; beq skip; ldr r0,[r6,#0x1B4] (target); bl 0x020783CC. Then the same shape for +0x144 -> 0x020781E4 (SP). So [char+0x1A8]->+0x10->+0x140 is a PENDING HP CHANGE flushed once per dispatcher pass and skipped when zero; +0x144 is the SP equivalent.",
+    "why_it_reconciles_everything": "It explains why the harness found the delta always arriving PRE-COMPUTED at the apply sites - it is read out of an accumulator something else filled in. Best candidate yet for the melee path.",
+    "hitbox_priority_link": "0x02159EF8 is exactly the function Battle-Engine-Map claim 4 flagged as \"architecturally the right neighborhood for clash resolution\" (SPECULATIVE, no two-entity comparison found). There is now a CONCRETE MECHANISM inside it. Claim 4 stays SPECULATIVE - the writer is not found - but it has something to hang on. Whoever writes +0x140 is the damage producer, and that write is where the flat -2 resistance must be applied.",
+    "thin_wrapper_family": "Five siblings, all (context,node) -> signed halfword at node->[4]->[4] -> apply: 0x02159260 lsl#6 displayed -> HP; 0x02159280 raw -> (unresolved); 0x021592A0 lsl#6 displayed -> 0x020783DC the ALL-LIVING-CHARACTERS variant; 0x021592C0 raw -> HP; 0x021592DC raw -> SP. So the script VM has separate opcodes for HP/SP, displayed/raw, single/all. The value is SIGNED so one opcode covers damage and healing.",
+    "SP_APPLY_IDENTIFIED": "0x020781E4 is the SP-apply sibling of 0x020783CC. 19 call sites, and they sit IMMEDIATELY AFTER HP-apply sites (0x02157DD0 after 0x02157DC0, 0x021582D4 after 0x021582C4, 0x02158BCC after 0x02158BC0, 0x0215A334 after 0x0215A318) - handlers apply an HP delta and an SP delta as a pair."
+  },
+  "WATCH_TARGET_FOR_HARNESS": "[character + 0x1A8] -> +0x10 -> +0x140 as a WORD, watched per frame. On a landed melee hit it should go non-zero for one frame then return to zero as the dispatcher consumes it. Much better than breakpointing the shared apply function because it isolates melee from the heal spam and the script opcodes. If it stays zero through a hit that visibly reduces HP, this is refuted."
 }

@@ -71,9 +71,19 @@ The 312-way invariant — *every* helper must hold the same value — dropped it
 
 The harness session found the same thing scanning RAM for the battle struct: a single 0x50-byte slot matched **1167** times in 4 MB, but requiring four consecutive slots at stride 0x50 made the hit unique. Same principle, opposite direction.
 
-## Still running
+## The compacted-table variant is refuted too
 
-A variant scan is in progress for a **compacted 578-entry table** (supports and battles only, in koma-index order), which the base-offset scan would miss because it assumes indices 0..889. The `u8` encoding will be discriminating; 2-bit-packed hits will mostly be noise for the reasons above.
+A follow-up scan tested a **compacted 578-entry table** (supports and battles only, in koma-index
+order) — a model the base-offset scan above would miss, since that one assumes indices `0..889`.
+Criteria: exactly 3–4 distinct values in a 578-byte window, each appearing ≥80 times. `u8`
+encoding only, since nibble and 2-bit are noise-dominated for the reason given above.
+
+Searched all 26 `bin/` files, all 14 overlays, and `arm9.bin`. **Zero candidates.** REFUTED.
+
+Implementation note: the first attempt was O(offsets × 578) in Python and got killed before
+finishing. A **rolling histogram** — add the entering byte, drop the leaving one — makes it O(n)
+and it completes in seconds. Worth reaching for on any sliding-window scan over these files.
+
 
 ## Predictions status
 
@@ -81,6 +91,7 @@ A variant scan is in progress for a **compacted 578-entry table** (supports and 
 |---|---|---|
 | P1 | Nature is a 4-value enum in `koma.bin` | **REFUTED** (iteration 4) |
 | P1b | Nature is a per-koma-indexed table somewhere in the ROM binaries | **REFUTED** — exhaustive, 3 encodings × every offset × arm9 + 26 bin files + 14 overlays |
+| P1c | Nature is a compacted 578-entry table (non-helpers only) | **REFUTED** — same corpus, `u8` encoding |
 
 ## Note for the harness session
 

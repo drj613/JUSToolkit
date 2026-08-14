@@ -30,7 +30,7 @@ PLAYER_HP = 0x021DF1D4
 OPP_HP = 0x021DF7F0
 
 # J Arena menu order: ランキング, ミッショントライ, バトル, トレーニング
-ARENA_INDEX = {"battle": 2, "training": 3}
+ARENA_INDEX = {"ranking": 0, "battle": 2, "training": 3}
 
 
 def cli(*args, check=True):
@@ -57,12 +57,23 @@ def press(name, buttons, tail):
 
 
 def in_battle():
-    """Battle HP values are non-zero multiples of 64 for both sides."""
+    """Locate the character array by signature -- do NOT test a fixed address.
+
+    The array base moves between battles (0x021DF1D4 in one, 0x021DF1B4 in
+    another), and a stale address reads believable garbage rather than failing,
+    so a hardcoded check reports 'not in battle' while a battle is plainly on
+    screen. Returns the base address, or None.
+    """
     try:
-        p, o = peek(PLAYER_HP, 2), peek(OPP_HP, 2)
+        find_battle_structs.dump_ram("/tmp/jus_boot_ram.bin")
+        with open("/tmp/jus_boot_ram.bin", "rb") as f:
+            ram = f.read()
+        hits = find_battle_structs.scan(ram, find_battle_structs.valid_hp_values())
     except Exception:
-        return False
-    return p > 0 and o > 0 and p % 64 == 0 and o % 64 == 0
+        return None
+    if not hits:
+        return None
+    return max(hits, key=lambda h: h[2])[0]
 
 
 def main():

@@ -1,11 +1,11 @@
 {
-  "iteration": 29,
+  "iteration": 30,
   "phase": "combat",
-  "current_task": "D0.3-ghidra-import",
+  "current_task": "K3-koma-runtime",
   "queue": [
-    "D0.3-ghidra-import (unblocks the damage writer)",
-    "K3-koma-runtime (deferred)",
-    "C6h-bisect-frame-for-0x134-writer (harness-side)"
+    "K3-koma-runtime",
+    "C6h-bisect-frame-for-0x134-writer (harness-side)",
+    "D0.3-ghidra-import (BLOCKED: needs user go-ahead to install)"
   ],
   "done": [
     "K1-koma-data-survey",
@@ -32,7 +32,8 @@
     "C6f-restore-functions-refuted",
     "C4-physics-writers-round2",
     "C5-gdb-queue-triage",
-    "C6g-damage-field-confirmed-writer-unreachable"
+    "C6g-damage-field-confirmed-writer-unreachable",
+    "D0.3-attempted-ghidra-blocked"
   ],
   "stuck": {},
   "required_reading_for_koma_tasks": [
@@ -90,7 +91,7 @@
     "L/R sticker bindings are per-deck fields not yet located in RAM",
     "Is HP computed as size*k at runtime, or tabulated per panel? Naruto 4-koma=144=4*36; if size*k then size5=180, size6=216, size7=252, size8=288. One reading settles it."
   ],
-  "notes": "Iteration 29: +0x134 CONFIRMED as the pending-damage field by live watch (512 on exactly the frame before each drop, three siblings zero). Its WRITER is unreachable by offset-based static analysis - four techniques exhausted and now precisely named, leaving 100 register-offset stores whose offsets live in registers. Route is D0.3 Ghidra (data-flow) or harness-side frame bisection. Also propagated a systematic correction: every damage figure was net of one +2.0 heal frame, so true B = 8.000 not 6.000. The flat -2 survives (offsets cancel in a difference), but my repetition of \"the owner independent 6 validates the chain\" is weakened - it matches the NET figure under the same conditions.",
+  "notes": "Iteration 30: a NEGATIVE wake, reported as one. D0.3 needs Ghidra, which is not installed, and I judged a large outward-facing install outside what the charter authorised - flagged for the user as the one combat-phase decision that needs a human. Built the narrow capability myself instead (intra-block constant propagation for register-offset stores); IT DOES NOT WORK - reports 0 where a cruder scan finds 14 - and I labelled the bug in the tool rather than shipping confident emptiness. Five static techniques have now failed on the +0x134 writer. Recommending harness-side frame bisection instead. Moving to K3 next since the combat threads are tooling-blocked.",
   "last_wake": "2026-08-14",
   "wakeup_default_seconds": 1800,
   "consecutive_no_progress_wakes": 0,
@@ -594,5 +595,18 @@
     "flat_minus_2_SURVIVES": "A constant offset on both sides cancels in a difference, which is exactly why the two-move design was robust to an error neither session spotted. Differences still exactly -2.0; ratios still non-constant.",
     "MY_CLAIM_WEAKENED": "I repeated that the owner independent \"a punch does 6\" validated the whole measurement chain. It matches the NET figure - the owner was also watching training mode with the heal on. It still validates the HP scale, address derivation and dip-reading method; it does NOT independently confirm raw move damage. An external check is only as strong as the conditions it shares with your own measurement."
   },
-  "LOOSE_ENDS_RULE": "Both sessions independently made the same mistake this phase: citing GDB-Validation-Queue.md / scripts/gdb/README.md in planning and never reading them, while chasing exactly the thing those documents recorded. RULE: READ THE LOOSE-ENDS DOCUMENT BEFORE THE CONCLUSIONS DOCUMENT. Conclusions say what is settled; loose ends say what someone already tried, which is what actually saves time."
+  "LOOSE_ENDS_RULE": "Both sessions independently made the same mistake this phase: citing GDB-Validation-Queue.md / scripts/gdb/README.md in planning and never reading them, while chasing exactly the thing those documents recorded. RULE: READ THE LOOSE-ENDS DOCUMENT BEFORE THE CONCLUSIONS DOCUMENT. Conclusions say what is settled; loose ends say what someone already tried, which is what actually saves time.",
+  "BLOCKED_NEEDS_USER": {
+    "what": "Tier-2 D0.3 opens with `brew install --cask ghidra`. Ghidra is NOT installed (analyzeHeadless not found, no /Applications/ghidra*, no cask).",
+    "why_I_did_not_install": "It is a large outward-facing download, and the loop charter names Tier-2 D0.1 and D0.2 as priorities, NOT D0.3 - so I do not read myself as authorised to add a heavyweight third-party dependency unattended. THIS IS THE ONE THING IN THE COMBAT PHASE THAT NEEDS A HUMAN DECISION.",
+    "what_it_would_unblock": "Real data-flow analysis, which resolves register-offset stores and is exactly the capability the +0x134 writer hunt needs."
+  },
+  "D0.3_attempt": {
+    "output": "docs/research/findings/d03-ghidra-blocked-and-a-failed-tool.md; scripts/decomp/resolve_reg_offsets.py (labelled buggy)",
+    "what_I_built_instead": "A narrow version of the needed capability: intra-block constant propagation to resolve str rD,[rN,rM] offsets.",
+    "IT_DOES_NOT_WORK": "On ov6 it reports 0 resolvable offsets while a cruder backward-scan (8 instructions back for mov rm,#imm) finds 14. My state-clearing is too aggressive (conditionals, branch targets, push/pop all wipe the map). I labelled the bug in the tool docstring rather than shipping a silent tool that returns plausible-looking emptiness - that failure mode has bitten this project four times.",
+    "cruder_scan_also_useless": "Its 14 hits resolve to offset 0 (13x) and 0x10 (1x), with the zeros looking like a stale producer being matched. Neither approach finds anything at +0x134/+0x138.",
+    "FIVE_TECHNIQUES_NOW": "immediate-offset stores (2 in ov6, both the vtable initialiser); folded base (0); any instruction with immediate 0x134/0x138 (0 in ov6, 0 in arm9); lsl #6 then store (0); register-offset with propagated constants (0 usable). The offset is computed in a way none of these capture - across blocks, from a loop variable, or loaded from memory.",
+    "recommended_route": "HARNESS-SIDE FRAME BISECTION is likely to win: +0x134 is set one frame before the HP drop, so breaking at candidate points and checking whether the field is already non-zero names the writer in a logarithmic number of runs. No new tooling, and the field and frame are both known. I have spent two wakes proving the static route is exhausted."
+  }
 }

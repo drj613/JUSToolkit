@@ -1,9 +1,8 @@
 {
-  "iteration": 13,
+  "iteration": 14,
   "phase": "combat",
-  "current_task": "C2-function-denominator",
+  "current_task": "C3-hitbox-priority-round2",
   "queue": [
-    "C2-function-denominator",
     "C3-hitbox-priority-round2",
     "C4-physics-writers-round2",
     "C5-gdb-queue-triage",
@@ -22,7 +21,8 @@
     "K2g-nature-narrowed-to-override-rule",
     "K2h-NATURE-SOLVED",
     "K4-design-brief",
-    "C1-overlay-map"
+    "C1-overlay-map",
+    "C2-function-denominator"
   ],
   "stuck": {},
   "required_reading_for_koma_tasks": [
@@ -80,7 +80,7 @@
     "L/R sticker bindings are per-deck fields not yet located in RAM",
     "Is HP computed as size*k at runtime, or tabulated per panel? Naruto 4-koma=144=4*36; if size*k then size5=180, size6=216, size7=252, size8=288. One reading settles it."
   ],
-  "notes": "Iteration 12: K4 design brief written and the KOMA SPRINT IS COMPLETE. Brief is designer-facing with a visual catalog of all 66 shapes. Dated progress note appended to Research-Status.md per charter. Phase flipped koma -> combat. Combat entry points recorded, with 0x02078CB8 (nature-in-battle predicate) as the top lead since it may hold the matchup multiplier.",
+  "notes": "Iteration 14: C2 / Tier-2 D0.2 done. 8712 functions with per-binary coverage. Deviated from the plan by attributing via provenance rather than address range (ten overlays share a load address). Found a CRITICAL limitation: functions.json has ZERO cross-binary caller edges, proven against ground truth (0x020783CC has 8 ov6 callers, none recorded, and it is not even listed as a function). So the combat denominator is a lower bound of 1622 and arm9 attribution is impossible with current data. Same blind spot as my earlier nature error. Baked the diagnostic into the tool so regeneration cannot lose it.",
   "last_wake": "2026-08-14",
   "wakeup_default_seconds": 1800,
   "consecutive_no_progress_wakes": 0,
@@ -395,5 +395,15 @@
     },
     "RESOLVES_ov01_ov05_CONFLICT": "ov05 references deckmake/database/koma/input (input = the kana keyboard for naming a deck); ov01 references deckselect/result. So ov01 is the deck LIST screen and ov05 is the EDITING screen. The harness measured ov01 because it stopped at the deck-select list; entering a deck for editing should load ov05. That is why the nature resolver at 0x0214E480 is in ov05 while their RAM dump showed ov01 - no contradiction.",
     "combat_scope_refined": "Battle = arm9.bin + ov06 + ov11 (AI) + ov12 (shared support)."
+  },
+  "DENOMINATOR": {
+    "tool": "scripts/decomp/denominator.py (Tier-2 D0.2); output appended to docs/research/Overlay-Map.md",
+    "deviation_from_plan": "The plan said bucket functions by ADDRESS RANGE. That cannot work: ten overlays load at 0x0214CD20, so range-bucketing would multiply-count every overlay function. functions.json already has a provenance field naming the source binary, so I attribute by provenance and use address ranges only as a consistency check (which passes - no function falls outside its claimed window).",
+    "total_functions": 8712,
+    "per_binary": "arm9 4043 (68.5% byte coverage), ov6 752 (80.3%), ov12 636 (38.4%), ov5 584 (83.0%), ov10 459 (20.5%), ov4 427 (84.5%), ov7 393 (56.8%), ov0 324 (89.2%), ov1 273 (38.8%), ov2 244 (89.6%), ov11 234 (94.5%), ov3 217 (86.1%), ov8 126 (7.2%). ov9/ov13 are 32-byte stubs, never disassembled.",
+    "coverage_note": "Low-coverage binaries (ov8 7.2%, ov10 20.5%, ov12 38.4%, ov1 38.8%) are presumably data-heavy - online code with big buffers, shared support, UI string tables.",
+    "COMBAT_DENOMINATOR": "battle-specific surface is AT LEAST 1622 functions (ov6 752 + ov11 234 + ov12 636) = ~19% of all identified functions. How much of arm9 4043 belongs to battle is UNKNOWN from this data - see the limitation below.",
+    "CRITICAL_LIMITATION": "The call graph in functions.json is INTRA-BINARY ONLY. Of 13809 caller edges, ZERO cross a binary boundary. Ground truth proving the gap: 0x020783CC (HP-delta apply) has 8 callers all in ov6 (harness verified by decoding BL across every binary), functions.json records none of them AND does not list that address as a function at all. Consequence: caller/callee data CANNOT establish which mode uses an arm9 function. This is the SAME blind spot that produced my \"in arm9 therefore runs in battle\" error. Any \"which mode calls this?\" question needs a cross-binary call graph built by decoding BL out of the binaries - not by grepping the text disassembly, which only covers the files someone dumped.",
+    "next_tool_worth_building": "A cross-binary call graph over arm9 + all 14 overlays would give the real combat denominator and fix the connectivity blind spot. The harness peer has scripts/find_callers.py which does this for a given address list; scaling it to all 8712 functions is the obvious follow-up."
   }
 }

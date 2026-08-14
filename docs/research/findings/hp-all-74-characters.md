@@ -1,5 +1,23 @@
 # HP Fully Solved — All 74 Battle Characters, Every Size (Card F1 Closed)
 
+> ### Two caveats added 2026-08-14
+>
+> **1. `sources` is dynamic during a fight.** The harness session watched one slot's max HP go from
+> `160.0` to `176.0` mid-battle — `+16`, i.e. two more `+8` sources coming online. So in
+> `max = chr_b[idx][size-4] + 8 × sources`, the bonus count is **not fixed at battle start**. That
+> fits `0x020784B8` (add-to-max, clamp `0x4000`) firing when a source activates. Any comparison of
+> max HP across time needs this caveat; the **base** table below is unaffected.
+>
+> **2. A battle slot is a deck slot, not "the active character".** The four slots hold the deck in
+> deck order, and which fighter is currently out is tracked elsewhere (candidate flags at struct
+> `+0x0F` / `+0x47`, mapping not established). Earlier notes labelling slot 0 as "P active" were
+> relying on that character happening to be both slot 0 and active when first measured.
+>
+> **The index→name join below is verified**, though — see `findings/chr_b-join-verified.md`. Two
+> live RAM identifications match it exactly: `chr_b[0]` = 悟空 with base `152` (observed `160` = +8)
+> and `chr_b[12]` = ルフィ with base `144` (observed `152` = +8).
+
+
 Loop-Atlas iteration 8. Static analysis, cross-validated against live RAM via melonDS harness.
 
 **HP is table data, not a formula.** Every character's HP at every size is readable offline from `chr_b.bin`. Card F1 is closed.

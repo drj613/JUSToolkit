@@ -1,11 +1,11 @@
 {
-  "iteration": 18,
+  "iteration": 19,
   "phase": "combat",
-  "current_task": "C4-physics-writers-round2",
+  "current_task": "C6-damage-record-format-at-8-ARM-sites",
   "queue": [
+    "C6-damage-record-format-at-8-ARM-sites",
     "C4-physics-writers-round2",
     "C5-gdb-queue-triage",
-    "C6-trace-delta-producers-at-8-ARM-sites",
     "K3-koma-runtime (deferred)"
   ],
   "done": [
@@ -24,7 +24,8 @@
     "C1-overlay-map",
     "C2-function-denominator",
     "C0-nature-in-battle",
-    "C3-hitbox-priority-round2"
+    "C3-hitbox-priority-round2",
+    "C3b-chr_b-join-verified"
   ],
   "stuck": {},
   "required_reading_for_koma_tasks": [
@@ -82,7 +83,7 @@
     "L/R sticker bindings are per-deck fields not yet located in RAM",
     "Is HP computed as size*k at runtime, or tabulated per panel? Naruto 4-koma=144=4*36; if size*k then size5=180, size6=216, size7=252, size8=288. One reading settles it."
   ],
-  "notes": "Iteration 18 (interrupt): peer CONFIRMED nature does not scale damage via a controlled single-variable test on a now-deterministic savestate, agreeing with my static reading - two independent methods. Also CORRECTED MY OWN C3 OVERREACH: I claimed \"melee does not use the HP-apply function at all\" when I had only shown the 6 Thumb sites are heals; the 8 ARM script-effect sites can carry negative deltas and are the obvious candidate for the damage the peer measured. Recorded the x1.5 near-miss lesson: an appealing ratio between uncontrolled numbers is not a measurement.",
+  "notes": "Iteration 19 (interrupt): VERIFIED the chr_b->name join the peer flagged as a risk (self-consistency across 74 entries plus two live RAM identifications) - the join holds, and their apparent discrepancy is explained by their own slot!=active finding. Recorded three of their corrections: determinism is within-session only, max HP is DYNAMIC during a fight, and a battle slot is a deck slot not the active fighter. Their GDB run was inconclusive (no hit landed). Reprioritised C6 - tabulate the damage record format statically - ahead of C4, since it is what they asked for and it sidesteps their positioning blocker.",
   "last_wake": "2026-08-14",
   "wakeup_default_seconds": 1800,
   "consecutive_no_progress_wakes": 0,
@@ -453,5 +454,24 @@
     "CAVEAT_ON_RECORD": "This proves the runtime byte is not consulted AT DAMAGE TIME. It does NOT rule out nature feeding a multiplier computed at CHARACTER LOAD - exactly the pattern already documented for resistances, where rewriting the ability array mid-battle also changed damage by exactly zero. A load-time path stays untested and poking cannot test it."
   },
   "LESSON_appealing_ratio": "The peer nearly reported a x1.5 nature multiplier: 12.000 incoming with opponent 力 vs 18.000 with 笑, and 18/12 = 1.5 matching the owner independent guess exactly. It was TWO DIFFERENT CPU ATTACKS, not one move under two natures - the determinism check exposed it when a reload produced 3.0 and 36.0, values absent from both earlier runs. LESSON: an appealing ratio between two UNCONTROLLED numbers is not a measurement, and a number that matches an independent guess deserves MORE scrutiny, not less. Same trap as my chr_s \"too clean to be noise\" 3-way split, which I resisted only because the abilityId sharing made it impossible.",
-  "harness_is_deterministic": "A savestate in a configured test battle now reproduces bit-identically (3/3, same hits in the same order). That is what makes single-variable tests trustworthy."
+  "harness_is_deterministic": "DOWNGRADED by the peer: reloading a savestate WITHIN a session reproduces bit-identically, but CROSS-LAUNCH reproducibility is NOT established - a fresh launch gave zero hits and a different active fighter in the HUD. I had recorded this as the determinism criterion being met; that was too strong.",
+  "JOIN_VERIFIED": {
+    "output": "docs/research/findings/chr_b-join-verified.md",
+    "checks": [
+      "Self-consistency: every chr_b index is reached by battle panels from EXACTLY ONE series - 0 of 74 span more than one. A scrambled join would mix series.",
+      "Two live RAM identifications match exactly: chr_b[0]=悟空 base 152 (observed 160=152+8), chr_b[12]=ルフィ base 144 (observed 152=144+8), chr_b[20]=ナルト base 144 (observed 144, benched).",
+      "The apparent discrepancy is explained by the peer OWN second finding (slot != active fighter), not by a bad join."
+    ],
+    "inapplicable_check": "battle-chars-passives.json gave ZERO name overlap - but it uses English uppercase romanisations while komatxt.bin is Japanese. Inapplicable, not negative. Joining those datasets would need a romanisation table that does not exist."
+  },
+  "MAX_HP_IS_DYNAMIC": "The peer watched one slot max HP go 160.0 -> 176.0 mid-battle (+16 = two more +8 sources coming online). So in max = chr_b[idx][size-4] + 8*sources, SOURCES IS DYNAMIC DURING PLAY, not fixed at battle start. Fits 0x020784B8 (add-to-max, clamp 0x4000) firing when a source activates. Any comparison of max HP across time needs this caveat; the BASE table is unaffected.",
+  "SLOT_IS_NOT_ACTIVE": "A battle slot is a DECK SLOT in deck order, NOT \"the active character\". Which fighter is out is tracked elsewhere (candidate flags at struct +0x0F / +0x47, mapping NOT established). Every earlier \"P active\" label rested on that character happening to be both slot 0 and active when first measured. Consequence: a fixed address reliably holds \"deck slot N\", never \"the active character\".",
+  "gdb_run_INCONCLUSIVE": "Breakpoint on 0x02078488 with 自動回復 OFF: zero applies, zero damage, because no hit landed. Explicitly NOT evidence for the bypass reading - zero applies is equally consistent with \"melee bypasses\" and \"no damage happened\". Recorded as a wasted connection, not a finding.",
+  "C6_plan": [
+    "Peer request and the cheapest remaining path: the 8 ARM script-effect handlers take their delta from a data record via ldrsh r1,[r1,#4], so THE RECORD FORMAT IS THE DAMAGE TABLE.",
+    "1. Decode the 8 ARM sites and find what produces r1 - the record pointer source.",
+    "2. Identify the record stride and the file/table it comes from.",
+    "3. If it is a file table, tabulate move damage offline the way HP was done - no emulator needed, and it turns the peer role from discovery to verification.",
+    "NOTE: their blocker is that they cannot reliably make a specific move land on a specific target, so breakpoint runs are lottery tickets until that is scripted. Static tabulation sidesteps it entirely."
+  ]
 }

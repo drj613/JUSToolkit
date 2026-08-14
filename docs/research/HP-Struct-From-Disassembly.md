@@ -308,3 +308,53 @@ The subtraction site — and whether blunt resistance is a multiply or a
 subtraction — has not been located yet. Battle code lives in `arm9.bin` **and
 overlay ov06** (154KB, confirmed resident during combat), so ov06 is the next
 place to look.
+
+## The pending-damage accumulator does NOT carry melee damage
+
+Tested 2026-08-14 with a GDB breakpoint. **Result: negative, and this time
+properly bounded.**
+
+The hypothesis was that melee damage reaches HP via a pending accumulator at
+`[r6+0x1A8] → +0x10 → +0x140`, flushed once per pass by the per-character state
+dispatcher and skipped when zero.
+
+`r6` was located structurally: scan RAM for a word equal to a known entity `E`,
+take `r6 = location − 0x1B4`, then require **both** that `r6+0x1B4` equals a known
+`E` **and** that `r6+0x1A8` is a valid RAM pointer. The `+0x14` halfword flag
+(which the dispatcher tests with `tst r0,#1`) picked exactly one candidate per
+side:
+
+| side | r6 | `+0x14` | accumulator |
+|---|---|---|---|
+| player | `0x022286E0` | `0x0001` | `0x0220FBD4` |
+| opponent | `0x0224E1E0` | `0x0001` | `0x0220FD5C` |
+
+The two accumulators sit `0x188` apart — regular per-entity spacing. A rejected
+candidate validates the filter: `0x0222865C` had `+0x14 = 0` and its
+"accumulator" held `0x021DF1EC`, a pointer where a delta belongs.
+
+**Breakpoint at `0x0215A30C`** (immediately after `ldr r1,[r0,#0x140]`, so `r1`
+holds the pending value), logging every non-zero `r1` plus the first 8 hits
+unconditionally to prove reachability:
+
+- The site **is reached** repeatedly — 8 hits logged, `r0 = 0x0220FA94`,
+  `lr = 0x0215A154`.
+- `r1` was **always 0**. Zero non-zero values across a run containing two
+  confirmed **6.000** damage hits (opponent HP 7168 → 6784 at frames 78 and 130).
+
+So the accumulator never carries damage. A per-frame memory watch had already
+shown 0 throughout, but that could not exclude a value written and consumed
+within one frame; the breakpoint closes that gap, because it fires *at the moment
+of the flush* regardless of sub-frame timing.
+
+**The one caveat.** Every observed hit had `r0 = 0x0220FA94`, which is the
+**player's** `obj2` (player accumulator = `0x0220FA94 + 0x140`). Damage was dealt
+to the *opponent*, and this call site never processed the opponent's object at
+all. So the exact claim is: the player's accumulator is always empty here, and the
+opponent's is never flushed at this site. Both readings point the same way — if
+melee damage to the opponent flowed through this accumulator, the opponent's
+flush would have to run, and it did not.
+
+Reachability being verified separately from the payload is what makes this usable:
+an earlier version of the same experiment logged only non-zero values, and its
+silence was indistinguishable from the breakpoint never firing.

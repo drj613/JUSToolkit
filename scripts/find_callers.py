@@ -55,22 +55,62 @@ def window_of(target, imgs):
 
 
 def bl_callers(target, imgs):
+    """ARM BL/BLX plus **Thumb** BL/BLX callers.
+
+    Thumb matters and is easy to miss: a live breakpoint showed this ROM calling
+    an ARM function from Thumb code (the captured `lr` had bit 0 set). An
+    ARM-only scan reports "zero callers" for such a function, which reads as a
+    much stronger claim than it is.
+
+    ARM   BL:  0xEB<imm24>            target = pc + 8 + imm24*4
+    ARM   BLX: 0xFA/0xFB<imm24>       target = pc + 8 + imm24*4 (+2 if H)
+    Thumb BL:  F000-F7FF then F800-FFFF   target = pc + 4 + off
+    Thumb BLX: F000-F7FF then E800-EFFF   target = (pc + 4 + off) & ~3
+    """
     hits = []
     for name, base, path in imgs:
         try:
             data = open(path, "rb").read()
         except OSError:
             continue
+        # --- ARM, word aligned ---
         for off in range(0, len(data) - 3, 4):
             word = struct.unpack_from("<I", data, off)[0]
-            if (word >> 24) != 0xEB:          # unconditional BL
+            top = word >> 24
+            if top == 0xEB:
+                imm = word & 0xFFFFFF
+                if imm & 0x800000:
+                    imm -= 0x1000000
+                if base + off + 8 + imm * 4 == target:
+                    hits.append((name, base + off, "arm-bl"))
+            elif top in (0xFA, 0xFB):        # BLX (immediate), ARM -> Thumb
+                imm = word & 0xFFFFFF
+                if imm & 0x800000:
+                    imm -= 0x1000000
+                dest = base + off + 8 + imm * 4 + (2 if top == 0xFB else 0)
+                if dest == target:
+                    hits.append((name, base + off, "arm-blx"))
+        # --- Thumb, halfword aligned ---
+        for off in range(0, len(data) - 3, 2):
+            hi = struct.unpack_from("<H", data, off)[0]
+            if not (0xF000 <= hi <= 0xF7FF):
                 continue
-            imm = word & 0xFFFFFF
-            if imm & 0x800000:
-                imm -= 0x1000000
-            pc = base + off
-            if pc + 8 + imm * 4 == target:
-                hits.append((name, pc))
+            lo = struct.unpack_from("<H", data, off + 2)[0]
+            if 0xF800 <= lo <= 0xFFFF:
+                kind, align = "thumb-bl", False
+            elif 0xE800 <= lo <= 0xEFFF:
+                kind, align = "thumb-blx", True
+            else:
+                continue
+            imm_hi = hi & 0x7FF
+            if imm_hi & 0x400:
+                imm_hi -= 0x800
+            offset = (imm_hi << 12) | ((lo & 0x7FF) << 1)
+            dest = base + off + 4 + offset
+            if align:
+                dest &= ~3
+            if dest == target:
+                hits.append((name, base + off, kind))
     return hits
 
 
@@ -103,9 +143,9 @@ def main(argv):
             print("    NOTE: %d overlays share this address window, so BL hits "
                   "below may be coincidences -- confirm the resident overlay."
                   % len([o for o in owners if o != "arm9"]))
-        for name, pc in hits:
+        for name, pc, kind in hits:
             note = "   <-- ambiguous (shared window)" if shared and name != "arm9" else ""
-            print("    %-6s 0x%08X%s" % (name, pc, note))
+            print("    %-6s 0x%08X  %-9s%s" % (name, pc, kind, note))
         if not hits:
             print("    (none -- may be called indirectly, or unused)")
         if want_data:

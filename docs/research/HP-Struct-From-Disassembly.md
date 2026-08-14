@@ -227,7 +227,47 @@ So the resistance magnitude lives upstream, in whatever resolves a hit into a
 damage value before invoking this dispatcher. Still not located — but the
 architecture is now mapped rather than guessed at.
 
-## Nature is NOT resolved during battle
+## RETRACTED: "nature is not resolved during battle" — it IS
+
+**The section below is wrong.** It is kept, with this banner, because the way it
+went wrong is more instructive than the claim.
+
+Nature **is** read in the battle overlay. The predicate `0x02078CB8` has a real
+caller in ov06 at **`0x021540AA`**, reached by a **Thumb** `BLX`:
+
+```
+0x0215409E  1C28       mov  r0, r5
+0x021540A0  3040       add  r0, #0x40
+0x021540A2  7800       ldrb r0, [r0]
+0x021540A4  2800       cmp  r0, #0
+0x021540A6  D14F       bne  ...
+0x021540A8  6B68       ldr  r0, [r5, #0x34]
+0x021540AA  F724 EE06  blx  0x02078CB8   <-- the nature predicate
+0x021540AC  2800       cmp  r0, #0       <-- consumes its boolean result
+```
+
+The `cmp r0, #0` immediately after confirms the return value is used, and the
+surrounding halfwords decode as ordinary Thumb, so this is not a spurious match.
+
+**Why the original scan missed it:** `find_callers.py` decoded only ARM `BL`
+(`0xEB`). This ROM calls ARM functions from Thumb code, so an ARM-only scan
+reports "zero callers in ov06" — a confident negative produced by an incomplete
+decoder. The tool now decodes ARM BL/BLX **and** Thumb BL/BLX.
+
+Independent evidence that Thumb callers matter here: a live GDB breakpoint on
+`0x02078488` captured `lr = 0x02150ddd`. **Bit 0 set means the caller was Thumb.**
+That single odd address is what exposed the blind spot.
+
+Lesson, sharper than the one below: *"zero callers" is only as strong as your
+decoder is complete.* An absence claim silently inherits every gap in the
+method that produced it — and it is exactly the kind of claim that gets
+propagated by teammates without re-verification.
+
+The premise the original section attacked is still wrong, for the record: being
+in `arm9.bin` genuinely does not tell you which mode runs a function. The
+conclusion drawn from it happened to be right anyway.
+
+## Superseded: Nature is NOT resolved during battle
 
 Worth recording because the opposite is an easy and tempting inference.
 

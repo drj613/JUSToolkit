@@ -1,15 +1,14 @@
 {
-  "iteration": 11,
-  "phase": "koma",
-  "current_task": "K4-design-brief",
+  "iteration": 12,
+  "phase": "combat",
+  "current_task": "C1-overlay-map",
   "queue": [
-    "K4-design-brief",
-    "K3-koma-runtime",
     "C1-overlay-map",
     "C2-function-denominator",
     "C3-hitbox-priority-round2",
     "C4-physics-writers-round2",
-    "C5-gdb-queue-triage"
+    "C5-gdb-queue-triage",
+    "K3-koma-runtime (deferred, low value now)"
   ],
   "done": [
     "K1-koma-data-survey",
@@ -22,7 +21,8 @@
     "K2e-HP-fully-solved-F1-closed",
     "K2f-overlays-extracted-nature-exhaustively-excluded",
     "K2g-nature-narrowed-to-override-rule",
-    "K2h-NATURE-SOLVED"
+    "K2h-NATURE-SOLVED",
+    "K4-design-brief"
   ],
   "stuck": {},
   "required_reading_for_koma_tasks": [
@@ -80,7 +80,7 @@
     "L/R sticker bindings are per-deck fields not yet located in RAM",
     "Is HP computed as size*k at runtime, or tabulated per panel? Naruto 4-koma=144=4*36; if size*k then size5=180, size6=216, size7=252, size8=288. One reading settles it."
   ],
-  "notes": "Iteration 11: NATURE SOLVED - the last big koma unknown. It is computed, not stored: high nibble of koma +0xB with 3 as a no-override sentinel falling back to chr_b/chr_s base nature. Verified 9/9 against the owner Naruto table. Also corrected THREE of my own earlier claims (iteration-4 \"not in koma.bin\" was wrong; iterations 9-10 \"exhaustive\" was overstated; iteration-10 bit-0x10 mechanism was wrong) and added correction banners to all three docs. Koma sprint is now effectively complete; K4 design brief is next.",
+  "notes": "Iteration 12: K4 design brief written and the KOMA SPRINT IS COMPLETE. Brief is designer-facing with a visual catalog of all 66 shapes. Dated progress note appended to Research-Status.md per charter. Phase flipped koma -> combat. Combat entry points recorded, with 0x02078CB8 (nature-in-battle predicate) as the top lead since it may hold the matchup multiplier.",
   "last_wake": "2026-08-14",
   "wakeup_default_seconds": 1800,
   "consecutive_no_progress_wakes": 0,
@@ -335,5 +335,36 @@
     "[0x0214BD80] global table-pointer block: +0x40=chr_b base, +0x48=chr_s base, +0x54=a 12-byte-stride table",
     "ov5 0x0214D998 / 0x0214DC50 consumers do addne r0,r0,r1,lsl #10 - likely palette/tile-attr merge for the glyph",
     "arm9 0x02078CB8 is a pure \"has explicit nature?\" predicate and lives in the BATTLE engine - so nature IS read during combat, despite Deck-System.md implying deck-only. Chase in the combat phase."
-  ]
+  ],
+  "KOMA_SPRINT_COMPLETE": {
+    "brief": "docs/design/Koma-System-Design-Brief.md (includes a visual catalog of all 66 shapes)",
+    "progress_note": "docs/research/Research-Status.md, dated 2026-08-14 section",
+    "solved": [
+      "koma.bin all 12 bytes",
+      "kshape.bin all 66 shapes as 4x5 footprints; size = occupied-cell count",
+      "panel type derived from size",
+      "312 characters / 890 panels / 74 playable",
+      "komatxt.bin per-panel names",
+      "all 57 abilities named",
+      "42 helper passive categories",
+      "per-character-per-size HP for all 74 + bonus model + 256 cap",
+      "NATURE (computed via nibble sentinel + chr_b/chr_s fallback)"
+    ],
+    "still_open_minor": [
+      "low nibble of koma +0xB",
+      "chr_s +0x10",
+      "the relationship table (3 per fighter, membership undecoded)",
+      "piece.bin (per-series grouping)",
+      "nature matchup multiplier (~1.5x, hardcoded in damage path)",
+      "helper facing coverage (one neighbour or a line)",
+      "deck-level nature bonuses / 友情-努力-勝利"
+    ]
+  },
+  "combat_phase_entry_points": {
+    "scope": "combat code = arm9.bin + overlay ov06 ONLY (byte-verified resident). bl 0x020783CC appears 8x in ov06, 0x in arm9.bin.",
+    "nature_in_combat": "0x02078CB8 is a pure \"has explicit nature?\" predicate living in the BATTLE engine - likely home for the nature matchup multiplier. Top lead.",
+    "damage_apply": "0x02078488 core (HP = clamp(current+delta,0,max)); public entry 0x020783CC; list variant 0x020783DC. 8 call sites in ov06 listed in state. Delta arrives ALREADY COMPUTED, so resistance is upstream - trace the producers of r1.",
+    "hp_writers": "0x02078474 (max*pct/100), 0x02078778 (halve), 0x02078604 (smulbb multiplicative - relevant to 底力)",
+    "method_note": "Static value search finds TABLES. It cannot find FUNCTIONS. Reach for disassembly sooner in this phase - the koma sprint lost several iterations to that lesson."
+  }
 }

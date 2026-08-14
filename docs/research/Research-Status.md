@@ -770,3 +770,41 @@ Characters fall into two categories:
 7. **Support characters** - chr_s.bin structure
 8. **AI parameters** - Decompress and analyze AIPM files
 9. **Effect files** - 21 character-specific effect files
+
+## 2026-08-14 — Loop-Atlas: koma sprint COMPLETE, flipping to combat phase
+
+Eleven iterations of the self-paced Atlas loop, run alongside a second session that built an
+agent-drivable melonDS harness. The koma/deckbuilding system is now fully decoded and the design
+brief is written (`../design/Koma-System-Design-Brief.md`).
+
+**Solved this sprint:**
+
+- `koma.bin` — all 12 bytes of 890 records; `kshape.bin` — all 66 shapes as 4x5 footprints, and
+  panel size is the occupied-cell count (group index + 1), never a stored field
+- Panel type derived from size (Helper 1, Support 2-3, Battle 4-8); 312 characters, one Helper each
+- `komatxt.bin` holds per-panel display names, which is why sizes 7-8 can rename
+- All 57 abilities named from `ability.bin` + `ability_t.bin`, including all ten IDs the
+  cheat-code table listed as Unknown. Ｊ魂 (J-soul) = HP; 必殺魂 = SP gauge
+- Per-character-per-size HP for all 74 playable characters, plus the bonus model
+  (`+8` per source, four sources, `256` engine cap = the exact maximum the data can produce)
+- **Nature** — the last unknown. It is computed, not stored: high nibble of `koma.bin` `+0xB`, with
+  `3` as a no-override sentinel falling back to a base nature in `chr_b`/`chr_s`
+
+**Three claims of mine were wrong and are now corrected in place**, each with a banner on the
+original doc: "nature is not in koma.bin" (I dismissed a differing field that was a lookup input),
+"exhaustively refuted" (the search only covered dedicated tables), and the bit-`0x10` override
+mechanism (the real test is a nibble sentinel; my version was right for the wrong reason).
+
+**Method lesson worth carrying into the combat phase.** Static value search found every *table* in
+this system and then failed completely on the one property that is a *function*. Two of nature's
+three inputs were fields already decoded for other purposes. A value search cannot find a
+computation — reach for the disassembly sooner.
+
+**Also produced:** `scripts/analysis/dump_koma.py` (panel dump with resolved natures),
+`scripts/analysis/extract_overlays.py` (all 14 ARM9 overlays, an ~1.4 MB blind spot nobody had
+extracted), and five harness cards in `Human-Testing-Queue.md` of which two closed statically.
+
+**Combat-phase handoff.** `0x02078CB8` is a "has explicit nature?" predicate living in the battle
+engine, so nature is read during combat despite being a deck-building property — a likely home for
+the nature matchup multiplier. Combat code is `arm9.bin` + overlay ov06 only; `bl 0x020783CC`
+(the HP-delta apply) appears 8 times in ov06 and zero times in `arm9.bin`.

@@ -1,5 +1,13 @@
 # Findings: Nature Narrowed to One Missing Rule (task K2g)
 
+> ### ⚠️ CORRECTED — see `nature-SOLVED.md`
+>
+> The **shape** of the model in this doc is right: base nature with a per-panel override. The
+> **mechanism is wrong.** The real test is `high nibble of +0xB == 3` (a sentinel), not `bit 0x10
+> clear`. My bit test caught nibbles `0` and `2` (25 records) but missed nibble `1` (7 records), so
+> it looked close for the wrong reason. There are **32** override panels, not 26. Nature enum is
+> `0=力, 1=知, 2=笑, 3=なし`.
+
 Loop-Atlas iteration 10. Static analysis, working from the harness session's disassembly of HP functions (`docs/research/HP-Struct-From-Disassembly.md`).
 
 **We're down to one unknown — the override rule.** Two `chr_b` arrays identified, and the engine's HP ceiling independently confirmed.

@@ -48,6 +48,43 @@ BYTE_FIELDS = [
 ]
 
 
+# --- nature resolution -------------------------------------------------------
+# Solved from the deck-editor overlay accessor at 0x0214E480 (ov05 disassembly).
+# Nature is NOT a stored per-panel value; it is computed:
+#
+#   helper (panelType 2)          -> 3 (なし)
+#   battle (panelType 0)          -> high nibble of flags(+0xB), unless that
+#                                    nibble is 3 (the "no override" sentinel),
+#                                    in which case chr_b[abilityId] + 0x00
+#   support (panelType 1)         -> chr_s[abilityId*20 + (kshapeGroup-1)*8]
+#
+# Enum: 0 = 力 Power, 1 = 知 Knowledge, 2 = 笑 Laughter, 3 = なし Neutral.
+# Verified: all 9 of Naruto's panels reproduce the owner's observed table.
+
+NATURE_NAMES = {0: "Power", 1: "Knowledge", 2: "Laughter", 3: "Neutral"}
+NATURE_JP = {0: "\u529b", 1: "\u77e5", 2: "\u7b11", 3: "\u306a\u3057"}
+
+CHR_B = Path("jus_files/ripped_jus_files/bin/chr_b.bin")
+CHR_S = Path("jus_files/ripped_jus_files/bin/chr_s.bin")
+
+
+def resolve_natures(recs: list[dict], chr_b: Path = CHR_B, chr_s: Path = CHR_S) -> None:
+    """Annotate each record in-place with 'nature' and 'natureName'."""
+    cb = chr_b.read_bytes()
+    cs = chr_s.read_bytes()
+    for r in recs:
+        ptype = r["unk6"]
+        if ptype == 2:
+            n = 3
+        elif ptype == 0:
+            nib = (r["unkB"] >> 4) & 0xF
+            n = nib if nib != 3 else cb[r["unk7"] * 60 + 0x00]
+        else:
+            n = cs[r["unk7"] * 20 + (r["kshapeGroup"] - 1) * 8]
+        r["nature"] = n
+        r["natureName"] = NATURE_NAMES.get(n, f"?{n}")
+
+
 def parse_records(raw: bytes) -> list[dict]:
     if len(raw) % RECORD_SIZE:
         print(
@@ -106,6 +143,13 @@ def main() -> int:
     print(f"imageId   : min={min(r['imageId'] for r in recs)} "
           f"max={max(r['imageId'] for r in recs)} "
           f"distinct={len({r['imageId'] for r in recs})}")
+
+    if CHR_B.exists() and CHR_S.exists():
+        resolve_natures(recs)
+        nh = collections.Counter(r["natureName"] for r in recs)
+        print(f"nature    : {dict(nh)}")
+    else:
+        print("nature    : skipped (chr_b.bin / chr_s.bin not found)")
 
     print("\n=== per-field summary ===")
     fields = ["unk2"] + [n for _, n in BYTE_FIELDS]

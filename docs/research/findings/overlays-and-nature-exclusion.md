@@ -1,5 +1,15 @@
 # Findings: 14 Overlays Extracted; Nature Table Exhaustively Excluded (task K2f)
 
+> ### ⚠️ CORRECTED — see `nature-SOLVED.md`
+>
+> This doc says the per-koma nature table model is "exhaustively REFUTED." That was **overstated.**
+> The searches were sound and their literal conclusion holds — there is no *dedicated* nature table.
+> But they only tested dedicated tables (whole-byte, nibble-packed, 2-bit-packed at every offset).
+> They never tested **the high nibble of an existing koma field plus a sentinel-and-fallback
+> scheme**, which is what the game actually does. Nature is now solved: it lives in the high nibble
+> of `koma.bin` byte `+0xB`, with `3` meaning "no override, use the character's base nature."
+> The word "exhaustive" claimed more coverage than the method had.
+
 Loop-Atlas iteration 9. Static. New tool: `scripts/analysis/extract_overlays.py`.
 
 **Two results.** Opened a new search space — 11 ARM9 overlays never previously examined. And nature is **not** a per-koma-indexed table anywhere in the ROM binaries. That's now exhaustive, not partial.

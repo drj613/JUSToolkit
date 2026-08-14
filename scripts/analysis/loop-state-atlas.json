@@ -1,11 +1,10 @@
 {
-  "iteration": 10,
+  "iteration": 11,
   "phase": "koma",
-  "current_task": "K2h-settle-nature-override-rule",
+  "current_task": "K4-design-brief",
   "queue": [
-    "K2h-settle-nature-override-rule",
-    "K3-koma-runtime",
     "K4-design-brief",
+    "K3-koma-runtime",
     "C1-overlay-map",
     "C2-function-denominator",
     "C3-hitbox-priority-round2",
@@ -22,7 +21,8 @@
     "K2d-hp-per-size-candidate",
     "K2e-HP-fully-solved-F1-closed",
     "K2f-overlays-extracted-nature-exhaustively-excluded",
-    "K2g-nature-narrowed-to-override-rule"
+    "K2g-nature-narrowed-to-override-rule",
+    "K2h-NATURE-SOLVED"
   ],
   "stuck": {},
   "required_reading_for_koma_tasks": [
@@ -80,7 +80,7 @@
     "L/R sticker bindings are per-deck fields not yet located in RAM",
     "Is HP computed as size*k at runtime, or tabulated per panel? Naruto 4-koma=144=4*36; if size*k then size5=180, size6=216, size7=252, size8=288. One reading settles it."
   ],
-  "notes": "Iteration 10: nature narrowed to a single unknown. Model P1d = base nature (chr_b/chr_s offset 0x00, both exactly 3-valued) overridden on the 26 panels whose koma flags bit 0x10 is clear - which is precisely why no per-koma table exists. Also identified chr_b +0x2C..+0x2E as percentage thresholds (all multiples of 5, feeding the disassembled max*pct/100), ruled out the +0x24 halfword array, and independently confirmed the 0x4000 HP cap as 224+32=256.",
+  "notes": "Iteration 11: NATURE SOLVED - the last big koma unknown. It is computed, not stored: high nibble of koma +0xB with 3 as a no-override sentinel falling back to chr_b/chr_s base nature. Verified 9/9 against the owner Naruto table. Also corrected THREE of my own earlier claims (iteration-4 \"not in koma.bin\" was wrong; iterations 9-10 \"exhaustive\" was overstated; iteration-10 bit-0x10 mechanism was wrong) and added correction banners to all three docs. Koma sprint is now effectively complete; K4 design brief is next.",
   "last_wake": "2026-08-14",
   "wakeup_default_seconds": 1800,
   "consecutive_no_progress_wakes": 0,
@@ -282,5 +282,58 @@
     "0x41": "chr_b index within the RUNTIME battle struct (not the file record) per harness disasm"
   },
   "HP_CAP_CONFIRMED": "Engine clamps max HP to 0x4000 at 0x020784B8. 0x4000/64 = 256 displayed. My table max base HP = 224, plus max bonus +32 = 256 EXACTLY. Three independently derived numbers (harness 1/64 scale, my table max, my 4x8 stacking model) meet on one hardcoded constant.",
-  "battle_code_scope": "Harness matched each uncompressed overlay against live RAM: ov06 IS the battle overlay (100% over 154688 bytes), ov11 likewise at 0x02172A60. Everything else in the shared window is 3-7%. So combat = arm9.bin + ov06 only. Caveats: ov13 100% is meaningless (32 bytes) and the 0x021AC1C0 window is unresolved (ov12 at 59.6%)."
+  "battle_code_scope": "Harness matched each uncompressed overlay against live RAM: ov06 IS the battle overlay (100% over 154688 bytes), ov11 likewise at 0x02172A60. Everything else in the shared window is 3-7%. So combat = arm9.bin + ov06 only. Caveats: ov13 100% is meaningless (32 bytes) and the 0x021AC1C0 window is unresolved (ov12 at 59.6%).",
+  "overlay_residency_CONFIRMED": {
+    "method": "byte-match each uncompressed overlay against live RAM at its load address (harness session)",
+    "0x0214CD20": "battle=ov06 (100%/154688B); DECK EDITOR=ov01 (99.8%/135456B). Everything else 2.6-6.5%.",
+    "0x02172A60": "battle=ov11 (100%/60KB); deck editor=ov10 (100%/215KB). This window is ALSO mode-dependent.",
+    "0x021AC1C0": "ov12 in BOTH - reads 100% in the deck editor and 59.6% in battle, so the battle figure was runtime mutation of its writable data, not a different overlay. Resolves the ambiguity flagged in iteration 9.",
+    "METHOD_NOTE": "Compare in the QUIETEST mode available - a busy combat scene mutates enough data to make a resident overlay look ambiguous.",
+    "consequence": "combat code = arm9.bin + ov06. Deck-editor code = ov01 (+ ov10). ov1.txt in jus_files/analysis/disasm/ IS ov01 (starts at 0x0214CD20, 37979 lines)."
+  },
+  "HP_byte_CONFIRMED_BY_INSTRUCTION": "0x02077C50: ldrb lr,[r4,#0x10] ; lsl lr,lr,#6 ; strh lr,[r1,#0x16] (max) ; strh lr,[r1,#0x18] (current). So HP init literally reads the BYTE at chr_b record +0x10 and shifts left 6 (x64). My table offset and the 1/64 scale are now CODE FACTS, not inferences.",
+  "runtime_battle_struct": {
+    "+0x16": "max HP s16 (LDRSH)",
+    "+0x18": "current HP s16 (LDRSH)",
+    "+0x41": "chr_b index",
+    "+0x49": "regen rate, set per character at init",
+    "note": "0x02077DA4 does current += [+0x49]*2 clamped to max, matching the measured ~64 raw per ~2 frames if rate=32. So 自己回復 and the training auto-heal share this machinery and the mode selects the rate."
+  },
+  "damage_apply_function": {
+    "core": "0x02078488 - HP = clamp(current + delta, 0, max), returns 1 alive / 0 dead. Damage is just a NEGATIVE DELTA.",
+    "public_entry": "0x020783CC (derefs [r0,#0x56C], tail-calls; the .word at 0x020783D8 disassembles as a bogus andeq)",
+    "list_variant": "0x020783DC applies one delta to every living character",
+    "call_sites": "bl 0x020783CC appears 8 times in ov06 and ZERO times in arm9.bin: 0x02157DC0, 0x021582C4, 0x02158BC0, 0x02159274, 0x021592D0, 0x0215952C, 0x02159668, 0x0215A318",
+    "WHY_THE_OVERLAY_WORK_MATTERED": "An hour-long automated attempt that searched only arm9.bin could never have found a single damage site.",
+    "still_open": "the delta arrives ALREADY COMPUTED (one site loads it via ldrsh r1,[r1,#4] from an effect record), so resistance is applied upstream and is not yet found. Search space is now \"the producers of r1 at those 8 sites\"."
+  },
+  "other_HP_writers": {
+    "0x02078474": "current = max * r7 / 100 (same mov r1,#0x64 divide) - supports the chr_b +0x2C percentage reading",
+    "0x02078778": "signed halve-HP idiom",
+    "0x02078604": "multiplicative HP change (smulbb then divide) - worth a look for 底力"
+  },
+  "NATURE_SOLVED": {
+    "output": "docs/research/findings/nature-SOLVED.md; implemented in scripts/analysis/dump_koma.py resolve_natures()",
+    "accessor": "0x0214E480 in the overlay disassembled as jus_files/analysis/disasm/ov5.txt; copies in arm9.txt at 0x02076F70 and 0x02078CB8",
+    "ENUM": "0 = 力 Power, 1 = 知 Knowledge, 2 = 笑 Laughter, 3 = なし Neutral",
+    "RULE": "helper (panelType 2) -> 3. battle (panelType 0) -> nib=(flags>>4)&0xF; nature=nib if nib!=3 else chr_b[abilityId*60 + 0x00]. support (panelType 1) -> chr_s[abilityId*20 + (kshapeGroup-1)*8].",
+    "KEY_TRICK": "3 in the high nibble is a NO-OVERRIDE SENTINEL, not a value. Nature is COMPUTED, not stored - which is why no value-space search over files could ever find it.",
+    "VERIFIED": "All 9 of Naruto koma 497-505 reproduce the owner observed table exactly (9/9).",
+    "distribution": "890 panels: 力 226, 知 183, 笑 169, なし 312. battle(206): 力96/知57/笑53. support(372): 力130/知126/笑116. helper(312): all なし. Only 32 battle panels carry an explicit override (nibbles {0:12,1:7,2:13}); all supports and helpers are nibble 3.",
+    "corollary": "chr_s offsets 0x00 AND 0x08 are per-size nature slots (support path indexes (kshapeGroup-1)*8), which is why offset 0x00 showed a near-even 3-way split - it was one of two nature columns."
+  },
+  "MY_ERRORS_CORRECTED": [
+    "Iteration 4 \"nature is not in koma.bin\" was WRONG. I argued Naruto size-2 (笑) and size-3 (力) were byte-identical except image/shape/ordinal, so no field could encode nature. The error was DISMISSING THE DIFFERING FIELDS: kshapeGroup differs and is a lookup input. Lesson: \"the differing fields are incidental\" is a claim needing evidence, not a default.",
+    "Iterations 9-10 \"exhaustively REFUTED\" was OVERSTATED. The searches were sound and there is no DEDICATED table, but they only tested dedicated tables (byte/nibble/2-bit at every offset). They never tested a nibble of an existing field plus sentinel-and-fallback. The word \"exhaustive\" claimed more coverage than the method had.",
+    "Iteration 10 P1d mechanism REFUTED: the test is high-nibble==3, not bit 0x10 clear. My bit test caught nibbles 0 and 2 (25 records) and missed nibble 1 (7 records) - close for the wrong reason. 32 override panels, not 26. The SHAPE of P1d (base + override) was right."
+  ],
+  "METHOD_LESSON": "Static value search found every TABLE in this system (sizes, shapes, footprints, types, abilities, names, HP) and then failed on the one property that is a FUNCTION. Two of natures three inputs (panelType, kshapeGroup) were fields already decoded for other purposes. No value-space search can find a computation. What cracked it: the peer overlay-residency test told me WHICH overlay to read, then reading the accessor.",
+  "koma_sprint_status": "ALL major unknowns closed: grid/sizes/shapes/footprints, panel types, names, 57 abilities, helper passives, per-character-per-size HP, and now nature. Remaining are minor (low nibble of +0xB, chr_s +0x10, relationships table). K4 design brief is now unblocked and is the next task.",
+  "nature_open_followups": [
+    "low nibble of koma +0xB (goes to runtime struct +0x12; high nibble goes to +0x13)",
+    "chr_s offset 0x10",
+    "[0x0214BD80] global table-pointer block: +0x40=chr_b base, +0x48=chr_s base, +0x54=a 12-byte-stride table",
+    "ov5 0x0214D998 / 0x0214DC50 consumers do addne r0,r0,r1,lsl #10 - likely palette/tile-attr merge for the glyph",
+    "arm9 0x02078CB8 is a pure \"has explicit nature?\" predicate and lives in the BATTLE engine - so nature IS read during combat, despite Deck-System.md implying deck-only. Chase in the combat phase."
+  ]
 }

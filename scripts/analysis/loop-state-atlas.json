@@ -1,5 +1,5 @@
 {
-  "iteration": 6,
+  "iteration": 7,
   "phase": "koma",
   "current_task": "K3-koma-runtime",
   "queue": [
@@ -17,7 +17,8 @@
     "K1c-helper-passives-catalog",
     "K2-koma-format",
     "K2b-abilities-all-57-named",
-    "K2c-nature-exclusions-and-57-descriptions"
+    "K2c-nature-exclusions-and-57-descriptions",
+    "K2d-hp-per-size-candidate"
   ],
   "stuck": {},
   "required_reading_for_koma_tasks": [
@@ -75,7 +76,7 @@
     "L/R sticker bindings are per-deck fields not yet located in RAM",
     "Is HP computed as size*k at runtime, or tabulated per panel? Naruto 4-koma=144=4*36; if size*k then size5=180, size6=216, size7=252, size8=288. One reading settles it."
   ],
-  "notes": "Iteration 6: K2c. Did NOT find nature - and documented the exclusion set precisely so nobody re-searches it (koma.bin, komatxt.bin, flat arm9 byte tables at both per-koma and per-char lengths, piece.bin, chr_b/chr_s). Two real wins instead: ※複数有効 in the game text independently confirms the +8 HP stacking rule, and index 12 斬撃弱点 has a copy-pasted WRONG description that would invert the sign of Luffy s slash vulnerability. Decoded all 57 descriptions for the peer; magnitudes are not in the text. opus-4-6 edit pass clean (12/12 rows, 23/23 Japanese tokens, all hex and key numbers).",
+  "notes": "Iteration 7: harness falsified my size*36 HP guess (HP is quantised to 8 displayed units). Found a strong replacement candidate: five u8 slots in chr_b.bin at 0x10+4n whose 370 values are ALL multiples of 8, giving Naruto a clean +16 ladder 144/160/176/192/208 with 144 matching RAM exactly. But only 19/74 entries are monotonic, so field boundaries are probably not exactly where I drew them - logged PLAUSIBLE with the competing prediction (160 vs their 152) written into card F1 as the discriminator.",
   "last_wake": "2026-08-14",
   "wakeup_default_seconds": 1800,
   "consecutive_no_progress_wakes": 0,
@@ -216,5 +217,15 @@
     "stacking_confirmed_in_text": "Index 52 Ｊ魂最大値＋ description ends ※複数有効 = \"multiple instances are effective\" = STACKS. Independently confirms the owner +32 observation: four applications of a +8 ability the data explicitly marks stackable. The +8 was never special-cased. Index 53 carries the same note."
   },
   "GAME_DATA_BUG": "ability_t.bin index 12 斬撃弱点 (slash WEAKNESS) has the WRONG description - it is a verbatim copy of index 10 斬撃耐性ＵＰ (slash resistance UP), saying damage is 軽減される (reduced). Title says weakness, text says resistance. Index 11 打撃弱点 is correctly labelled マイナス能力. MATTERS: the harness confirmed Luffy carries 0x0C, so anyone resolving the sign from the description would conclude Luffy RESISTS slashing when he is weak to it.",
-  "ability_descriptions": "All 57 decoded to docs/research/findings/ability-descriptions-57.txt. Resistance MAGNITUDES ARE NOT IN THE TEXT - only 3 of 57 entries contain any number (idx 1, 15, 53). So the resistance multiplier is hardcoded in the damage path; the runtime experiment is the only route. Only qualitative hint anywhere: idx 11 says 少し (\"slightly\") larger."
+  "ability_descriptions": "All 57 decoded to docs/research/findings/ability-descriptions-57.txt. Resistance MAGNITUDES ARE NOT IN THE TEXT - only 3 of 57 entries contain any number (idx 1, 15, 53). So the resistance multiplier is hardcoded in the damage path; the runtime experiment is the only route. Only qualitative hint anywhere: idx 11 says 少し (\"slightly\") larger.",
+  "hp_findings": {
+    "output": "docs/research/findings/hp-per-size-chr_b.md",
+    "my_prediction_REFUTED": "size*36 => size5=180 is dead. Harness read all 8 deck slots: every HP is an exact multiple of 64 raw / 8 displayed, and 180/8=22.5. HP carries no fraction; the 1/64 units exist for DAMAGE only, so the 1.250 hit is manufactured by the damage path and is not table data.",
+    "HP_QUANTUM": "8 displayed units (= 512 raw). Matches ability index 52 Ｊ魂最大値＋ granting +8 and being ※複数有効.",
+    "candidate": "chr_b.bin has five u8 fields at 0x10, 0x14, 0x18, 0x1C, 0x20 (stride 4). ALL 370 of those bytes (74 x 5) are multiples of 8 - CONFIRMED, not coincidence. +16 is the dominant step (131 occurrences vs 63 zeros).",
+    "abilityId_indexes_chr_b": "CONFIRMED by arithmetic: battle abilityId has 74 distinct values in 0..73, chr_b has 74 entries.",
+    "naruto_ladder": "chr_b[20] = [144,160,176,144,144]; chr_b[24] (九尾) = [80,96,112,192,208]. Taking sizes 4/5/6 from entry20 slots 0/1/2 and sizes 7/8 from entry24 slots 3/4 gives 144,160,176,192,208 - a clean +16 ladder. 144 matches the harness RAM reading EXACTLY. Sizes 7-8 coming from a different chr_b entry also explains the komatxt rename to ナルト（九尾）, and 208 matches \"8-koma have the most HP\".",
+    "WEAKNESS": "Only 19/74 entries are non-decreasing across the five slots (e.g. chr_b[66]=[104,64,152,64,224]). Either (A) slots are per-size HP but only the sizes a character owns are meaningful and the rest is filler, or (B) my stride-4 grouping is wrong and I am reading one byte from each of five different fields that happen to share the multiple-of-8 property. Reading these as u16 gives high bytes 1,4,5,16,20,22 (not constant), which favours B for the field boundaries. Confidence PLAUSIBLE, not confirmed.",
+    "FALSIFIABLE": "Naruto size-5 panel (koma.bin record 502): mine says 160 (raw 10240), harness says 152 (raw 9728), my old guess said 180 (dead). One exact u16 read decides between two live hypotheses."
+  }
 }

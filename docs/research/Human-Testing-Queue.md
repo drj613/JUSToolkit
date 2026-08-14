@@ -320,8 +320,16 @@ has no HP field.
 - Setup: a deck whose slot-1 battle panel is **Naruto 5-koma** (`koma.bin` record **502**).
   Then repeat with **6-koma** (record 503) if the first is ambiguous.
 - Inputs: none beyond reaching a battle with that deck. Read at rest, before any damage.
-- Discriminator: **A** if 5-koma reads exactly `11520` (`180.0`) and 6-koma reads `13824`
-  (`216.0`). **B** for any other value. A single reading decides it.
+- Discriminator (**UPDATED 2026-08-14** — `180` is dead, HP is quantised to 8 displayed units so
+  `22.5 × 8` is impossible). Three hypotheses, two still live:
+  | Source | Rule | size-5 raw / displayed |
+  |---|---|---|
+  | ~~Atlas iter 4~~ | ~~`size × 36`~~ | ~~`11520` / `180.0`~~ REFUTED |
+  | Harness session | `8 × (14 + size)` | `9728` / `152.0` |
+  | **Atlas iter 7** | `chr_b[20]` slot 1 (see `findings/hp-per-size-chr_b.md`) | **`10240` / `160.0`** |
+  `152` and `160` are one quantum apart, so this needs an exact u16 read. If it reads `160`, HP is
+  per-character-per-size **table data** in `chr_b.bin` and all 74 characters' HP curves become
+  readable offline. If `152`, my stride-4 grouping is noise that happens to fit Naruto.
 - Note: read at rest. Training mode heals ~64 raw units every ~2 frames, so a value sampled
   mid-recovery is meaningless.
 

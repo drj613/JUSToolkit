@@ -1,9 +1,8 @@
 {
-  "iteration": 5,
+  "iteration": 6,
   "phase": "koma",
-  "current_task": "K2c-locate-nature-and-HP-tables",
+  "current_task": "K3-koma-runtime",
   "queue": [
-    "K2c-locate-nature-and-HP-tables",
     "K3-koma-runtime",
     "K4-design-brief",
     "C1-overlay-map",
@@ -17,7 +16,8 @@
     "K1b-observed-behavior-capture",
     "K1c-helper-passives-catalog",
     "K2-koma-format",
-    "K2b-abilities-all-57-named"
+    "K2b-abilities-all-57-named",
+    "K2c-nature-exclusions-and-57-descriptions"
   ],
   "stuck": {},
   "required_reading_for_koma_tasks": [
@@ -75,7 +75,7 @@
     "L/R sticker bindings are per-deck fields not yet located in RAM",
     "Is HP computed as size*k at runtime, or tabulated per panel? Naruto 4-koma=144=4*36; if size*k then size5=180, size6=216, size7=252, size8=288. One reading settles it."
   ],
-  "notes": "Iteration 5: peer session delivered arm9.bin + the HP-is-u16-1/64-units correction. Wrote 5 harness cards, then closed one of them (E1) statically by finding ability.bin + ability_t.bin and naming all 57 abilities. Ｊ魂 = HP confirmed, which verifies the owner's \"j soul\" term and explains the +8 constant. All 10 previously-Unknown ability IDs named. My own slot-position guesses were refuted and recorded. opus-4-6 edit pass clean (69/69 rows, 59/59 distinct Japanese tokens, all hex).",
+  "notes": "Iteration 6: K2c. Did NOT find nature - and documented the exclusion set precisely so nobody re-searches it (koma.bin, komatxt.bin, flat arm9 byte tables at both per-koma and per-char lengths, piece.bin, chr_b/chr_s). Two real wins instead: ※複数有効 in the game text independently confirms the +8 HP stacking rule, and index 12 斬撃弱点 has a copy-pasted WRONG description that would invert the sign of Luffy s slash vulnerability. Decoded all 57 descriptions for the peer; magnitudes are not in the text. opus-4-6 edit pass clean (12/12 rows, 23/23 Japanese tokens, all hex and key numbers).",
   "last_wake": "2026-08-14",
   "wakeup_default_seconds": 1800,
   "consecutive_no_progress_wakes": 0,
@@ -194,5 +194,27 @@
     "4. NEW: arm9.bin is now available locally, so ARM9-resident tables are finally searchable at file_offset = addr - 0x02000000.",
     "5. Decode ability_t.bin Description1/Description2 if passive magnitudes are needed."
   ],
-  "cards_written": "docs/research/Human-Testing-Queue.md gained 5 harness cards (A1 nature location, F1 HP scaling, B1 nature multiplier, E1 ability IDs, D1 helper facing) in the peer format. E1 is now marked CLOSED STATICALLY."
+  "cards_written": "docs/research/Human-Testing-Queue.md gained 5 harness cards (A1 nature location, F1 HP scaling, B1 nature multiplier, E1 ability IDs, D1 helper facing) in the peer format. E1 is now marked CLOSED STATICALLY.",
+  "jus_files_is_now_a_submodule": "jus_files/ is a git SUBMODULE (git@github.com:drj613/jus_files.git, private). Commits to anything under it need `git -C jus_files add/commit/push`; committing from the root only moves the POINTER. Raw .nds/.sav are gitignored inside the subrepo. Also: a stale `jus_files` entry in .git/info/exclude used to silently block submodule add - if you hit \"path is ignored\", check .git/info/exclude, it is NOT in .gitignore.",
+  "nature_EXCLUSIONS": {
+    "koma.bin": "REFUTED - Naruto size-2 (笑) and size-3 (力) byte-identical except image/shape/ordinal",
+    "komatxt.bin": "REFUTED - parallel per-koma (890 x 12) but Unk1/Unk2 CONSTANT across all 9 Naruto panels",
+    "arm9 flat per-koma": "REFUTED - scanned all 692568 bytes for any 890-long window with 3-5 distinct values: ZERO hits. Also zero for 445-byte nibble-packed.",
+    "arm9 flat per-char": "REFUTED for nature - one 312-long candidate at file 0x0A8640 / runtime 0x020A8640, inside deck RAM region, reads like uninitialised data. And nature is per-PANEL not per-character.",
+    "piece.bin": "NOT per-koma - header int32 count=41 then ascending offsets breaking after 23 into a nested count+offsets pattern. 41 ~ 42 series => per-series grouped.",
+    "chr_b.bin / chr_s.bin": "CANNOT be the source - Naruto size-2 and size-3 supports both have abilityId 17 (same chr_s record) yet differ in nature; his two size-4 panels both have abilityId 20. chr_s[0x00] has a beautifully even 3-way split {0:63,1:67,2:63} across 193 entries but it is PER-CHARACTER, so it is not nature."
+  },
+  "nature_remaining_routes": [
+    "1. sub-byte packed field inside a wider record (my scans were byte-granular)",
+    "2. computed/table-driven in ARM9 CODE - find the deck-browser nature-glyph read site via query.py disassembly",
+    "3. harness card A1 (runtime diff of two decks differing only in nature) - the live route"
+  ],
+  "new_confirmations": {
+    "chr_s.bin": "CONFIRMED 193 entries x 20 bytes (3860B); 193 == distinct support abilityId count in koma.bin",
+    "chr_b.bin": "CONFIRMED 74 entries x 60 bytes (4440B); 74 == documented battle-character count",
+    "komatxt.bin_holds_names": "CONFIRMED - first pointer is the panel DISPLAY NAME. Naruto 497-503 = ナルト, 504-505 = ナルト（九尾）. Settles the open question from koma-format-decoded.md: names are PER-PANEL, so a character can change display name at larger sizes with no koma.bin change. Unk2 = characterId - 1.",
+    "stacking_confirmed_in_text": "Index 52 Ｊ魂最大値＋ description ends ※複数有効 = \"multiple instances are effective\" = STACKS. Independently confirms the owner +32 observation: four applications of a +8 ability the data explicitly marks stackable. The +8 was never special-cased. Index 53 carries the same note."
+  },
+  "GAME_DATA_BUG": "ability_t.bin index 12 斬撃弱点 (slash WEAKNESS) has the WRONG description - it is a verbatim copy of index 10 斬撃耐性ＵＰ (slash resistance UP), saying damage is 軽減される (reduced). Title says weakness, text says resistance. Index 11 打撃弱点 is correctly labelled マイナス能力. MATTERS: the harness confirmed Luffy carries 0x0C, so anyone resolving the sign from the description would conclude Luffy RESISTS slashing when he is weak to it.",
+  "ability_descriptions": "All 57 decoded to docs/research/findings/ability-descriptions-57.txt. Resistance MAGNITUDES ARE NOT IN THE TEXT - only 3 of 57 entries contain any number (idx 1, 15, 53). So the resistance multiplier is hardcoded in the damage path; the runtime experiment is the only route. Only qualitative hint anywhere: idx 11 says 少し (\"slightly\") larger."
 }

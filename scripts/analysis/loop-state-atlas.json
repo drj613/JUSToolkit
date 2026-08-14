@@ -1,0 +1,33 @@
+{
+  "iteration": 1,
+  "phase": "koma",
+  "current_task": "K2-koma-format",
+  "queue": [
+    "K2-koma-format",
+    "K3-koma-runtime",
+    "K4-design-brief",
+    "C1-overlay-map",
+    "C2-function-denominator",
+    "C3-hitbox-priority-round2",
+    "C4-physics-writers-round2",
+    "C5-gdb-queue-triage"
+  ],
+  "done": ["K1-koma-data-survey"],
+  "stuck": {},
+  "k1_results": {
+    "output": "docs/research/findings/koma-data-survey.md",
+    "key_finding": "koma.bin = 890 records x 12 bytes, already parsed by src/JUS.Tool/Graphics/Converters/Binary2Koma.cs. 6 of 12 bytes named (ImageId u16 @0x0, nameIdx @0x4, nameNum @0x5, KShapeGroupId @0x8, KShapeElementId @0x9); 6 bytes still Unknown (0x2 u16, 0x6, 0x7, 0xA, 0xB). Size/cost/nature are NOT in named fields.",
+    "resolved": "Deck-System.md vs Koma-Research.md koma.bin contradiction: neither wrong, both incomplete. Code names 6 fields.",
+    "biggest_hole": "Nature/color system has ZERO evidence in any doc or code. May not live in koma.bin at all.",
+    "unexamined": ["bin/piece.bin (35KB)", "bin/kshape.bin exact layout (see DtxCommands.KShapeSprites)"]
+  },
+  "k2_plan": [
+    "1. Read DtxCommands.KShapeSprites to settle real kshape.bin layout (cheap, likely gives shape+size)",
+    "2. Dump koma.bin unknown-byte value distributions across all 890 records; 4-8 distinct values = nature or size, ~74 distinct = character index",
+    "3. Cross-check 3+ chars from Deck-System.md; Naruto is best test case (2 natures, 2 shapes) since it isolates nature from shape",
+    "4. Only then open piece.bin"
+  ],
+  "notes": "Iteration 1 done. K1 complete via 3 parallel Explore subagents (disk survey, repo-code survey, docs fact-extraction). opus-4-6 edit pass ran and PASSED verification (zero hex values or paths dropped between DRAFT and EDITED).",
+  "last_wake": "2026-08-14",
+  "consecutive_no_progress_wakes": 0
+}

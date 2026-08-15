@@ -129,11 +129,38 @@ def access(x: int, reg: int):
 
 
 def is_vtable_load(words: list[int], base: int, addr: int, reg: int) -> bool:
-    """Guard 3: was `reg` just loaded from `[Rm,#0]`? Then imm is a vtable slot."""
+    """Guard 5: is this `[reg,#imm]` a vtable slot rather than a struct field?
+
+    A vtable call is `ldr Rv,[obj,#0]` then `ldr Rf,[Rv,#slot]` then `blx Rf`.
+    The trap: `ldr Rd,[Rm,#0]` is byte-identical to dereferencing a
+    pointer-to-pointer — which is exactly how every singleton global here is
+    loaded (`ldr r0,[pc]=&g; ldr r0,[r0,#0]`). Suppressing on the preceding
+    instruction alone therefore discards real fields: on the ColPrm manager it
+    silently dropped 7 of 16 anchors' first access, including `+0x70`.
+
+    The discriminator is what happens to the *loaded value*. A vtable slot's
+    contents get called; a struct field's do not. So require both the preceding
+    `[Rm,#0]` load AND a nearby `blx` on the value this access produces.
+    """
     if addr - 4 < base:
         return False
     prev = words[(addr - 4 - base) // 4]
-    return (prev & 0x0FFF0FFF) == 0x05900000 and ((prev >> 12) & 0xF) == reg
+    if not ((prev & 0x0FFF0FFF) == 0x05900000 and ((prev >> 12) & 0xF) == reg):
+        return False
+    cur = words[(addr - base) // 4]
+    if not ((cur & 0x0E000000) == 0x04000000 and (cur >> 20) & 1):
+        return False                        # not a word load; cannot be a call target
+    rd = (cur >> 12) & 0xF
+    for k in range(1, 7):                   # is the loaded value called?
+        j = (addr - base) // 4 + k
+        if j >= len(words):
+            break
+        y = words[j]
+        if (y & 0x0FFFFFF0) == 0x012FFF30 and (y & 0xF) == rd:
+            return True
+        if (y & 0x0FFFFFF0) == 0x012FFF10 and (y & 0xF) == rd:
+            return True
+    return False
 
 
 def walk(words: list[int], base: int, anchor: int, reg: int, starts: list[int]):

@@ -1,9 +1,10 @@
 {
- "iteration": 51,
+ "iteration": 52,
  "phase": "combat",
- "current_task": "map the entity table behind query 71 using struct_fields.py",
+ "current_task": "map the ColPrm manager struct via BattleColPrm.cpp anchors",
  "queue": [
-  "map the entity table behind query 71: strides 0xC0 (outer) and 0x30 (inner), count at [global+0x158], fields +0x158 and +0x170",
+  "map the ColPrm manager with struct_fields.py, anchoring on arm9 BattleColPrm.cpp sites (known: list heads +0x70/+0xD0, contact array +0x158)",
+  "confirm character+0x1E0 is the entity index (signed byte used as an array row)",
   "identify the NoteTrack +0x7C / +0x80 / +0x84 objects (3 pointer fields, each backing a query)",
   "identify 0x02026F94 return type = the object at NoteTrack+0x8C (vtable slots 0xA0, 0x24) -- likely the animation/timing manager",
   "identify the object at [X,#0x68] with the 33-slot vtable (384 calls in ov6) -- naming it labels a lot of code",
@@ -65,7 +66,8 @@
   "vtable-vs-field-distinction-cases-1-33-CONFIRMED-dead",
   "notetrack-struct-mapped-7-slots-then-callback",
   "commands-are-PREDICATES-notetrack-query-interface-mapped",
-  "struct_fields.py-six-scan-guards-tooled-with-selftest"
+  "struct_fields.py-six-scan-guards-tooled-with-selftest",
+  "colprm-manager-named-contact-matrix-at-+0x158"
  ],
  "stuck": {},
  "required_reading_for_koma_tasks": [
@@ -182,7 +184,9 @@
   "DISPATCHER_IS_A_QUERY_INTERFACE": "0x02157A60 is a QUERY interface, not commands. Signature query(r0=NoteTrack, r1=character, r2=query number, r3=parameter, +2 stack) -> bool. All 7 live cases in the issued 64-73 band return boolean via mov r0,#1 -> 0x02157F94 or fall to 0x02157F90 mov r0,#0. Forwarder gates note state on the result. Query 3 is the exception: fire-and-forget action (bl 0x0215857C), result discarded.",
   "THE_7_QUERIES": "65 @0x02157E50 query on NoteTrack+0x7C via 0x0215793C; 66 @0x02157E68 threshold: ldrsb [[char+0x1B4]+0x500+0xDF] >= param; 67 @0x02157E84 flag bit7 of ldrh [[NoteTrack+0x80]+0x26]; 69 @0x02157F30 table[param] == ldrh [char+0x88]; 71 @0x02157EC4 loop other entities (skip self [char+0x100+0xE0]), strides 0xC0/0x30, count [global+0x158], true if +0x158 or +0x170 nonzero; 72 @0x02157F50 chain through NoteTrack+0x84 via 0x02158000 then +0x10,+0x28",
   "NOTETRACK_EXTRA_FIELDS": "+0x7C, +0x80, +0x84, +0x88 are four consecutive POINTER fields. Iter-49 map missed +0x80/+0x84 because it anchored only on BattleNoteTrack.cpp; the dispatcher is in BattleChara.cpp and also receives a NoteTrack. The iter-45 \"+0x84 is not prmData\" refutation is now explained: those reads are NoteTrack+0x84.",
-  "TOOL_struct_fields": "scripts/decomp/struct_fields.py -- maps struct fields from an ANCHOR (addr:reg where reg provably holds the struct). Encodes all 6 scan guards + a --size CONTAMINATED check. Run --selftest after editing: it asserts the 12 verified NoteTrack fields are found, the 7 known phantoms {0x10,0x28,0x40,0x5C,0xDF,0xE0,0x158} are not, and nothing exceeds 0xA8. ARM only, straight-line only."
+  "TOOL_struct_fields": "scripts/decomp/struct_fields.py -- maps struct fields from an ANCHOR (addr:reg where reg provably holds the struct). Encodes all 6 scan guards + a --size CONTAMINATED check. Run --selftest after editing: it asserts the 12 verified NoteTrack fields are found, the 7 known phantoms {0x10,0x28,0x40,0x5C,0xDF,0xE0,0x158} are not, and nothing exceeds 0xA8. ARM only, straight-line only.",
+  "GLOBALS_NAMED": "*(0x0214BE10) = BattleColPrm manager (written at 0x0207C844; 7 of 9 refs in arm9 BattleColPrm.cpp; list heads +0x70 and +0xD0; contact array at +0x158). 0x0214BE14 = BattleObj manager (22 of 22 refs in arm9 BattleObj.cpp - independently confirms map claim 1). *(0x02172960) = battle context, 127 refs dominated by ov11 BattleAI* (PLAUSIBLE). Adjacent to chr_b base ptr 0x0214BD80.",
+  "CONTACT_MATRIX": "ColPrm+0x158 = 2D array, row stride 0xC0, element stride 0x30 (4 elements per row). Query 71 reads element +0x00 and +0x18 (0x170-0x158=0x18). Indexed [self][other] where self = ldrsb character+0x1E0, bound = [battleContext+0x158], self skipped. PLAUSIBLE: a pair-wise contact/overlap table. Contents are behind a runtime pointer - unreadable statically."
  },
  "combat_phase_spillover": [
   "status-effect enum = 10 values, contiguous IDs 0x19-0x22 (Shock/Freeze/Burn/Confusion/Poison/Judgment/Paralysis/Blindness/Speed-Down/Battle+Support Seal). Likely an immunity BITMASK on character state struct.",
@@ -766,7 +770,8 @@
   "Type-verified field mapping works, but needs reassignment tracking (iter 49): anchoring on a known-type register (ldr ip,[rN,#0x70]) is right, but without stopping at writes to rN the scan invented +0x10/+0x28/+0x40/+0x5C AND missed +0x94/+0xa3. The cross-check that proved the fixed version: every constructor store must appear.",
   "RECORDING A RULE DOES NOT APPLY IT (iter 50): iteration 49 found the reassignment-tracking defect and wrote it down; one wake later I wrote a fresh scan without the guard and it reported +0xDF/+0xE0/+0x158 as NoteTrack fields (all beyond its 0xA8 size). Caught only by the size sanity check. The guard must live in a reusable tool, not a note. 6th member of the scan-error family.",
   "Anchor a struct map on the TYPE, not one module (iter 50): iter 49 mapped NoteTrack from BattleNoteTrack.cpp only and missed +0x80/+0x84, which are read by the dispatcher in BattleChara.cpp. Any function that receives the type is a valid anchor.",
-  "A guard can be too strict (iter 51): my first ends_block masked off the condition nibble so it stopped at conditional branches (beq is normal in-block flow), finding only 2 of 12 known fields. A missing guard invents fake fields; an over-strict guard loses real ones. Only a selftest with a known-good answer distinguishes them - build the selftest first."
+  "A guard can be too strict (iter 51): my first ends_block masked off the condition nibble so it stopped at conditional branches (beq is normal in-block flow), finding only 2 of 12 known fields. A missing guard invents fake fields; an over-strict guard loses real ones. Only a selftest with a known-good answer distinguishes them - build the selftest first.",
+  "Flag an inconsistency instead of forcing a reading (iter 52): query 71 used stride 0x30 but read +0x158, which cannot both be true of an array of 0x30-byte elements. I recorded it unresolved, then checked how BattleColPrm.cpp used the same global - the base was the MANAGER and the array is embedded at manager+0x158, making both reads land inside one element. The flagged contradiction pointed straight at the correction."
  ],
  "open_questions_for_owner": [
   "Note-kind bucketing: the engine keeps at most 7 simultaneous \"notes\" per character, and 7 of the 17 kinds share one slot (kinds 6,7,8,9,10,14,15) so they should be mutually exclusive in play. Does starting one of those effects visibly cancel another?"

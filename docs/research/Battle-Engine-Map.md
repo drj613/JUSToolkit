@@ -182,6 +182,8 @@ This adds no new caller (`0x02157DB8` is almost certainly among the 8 ARM script
 | object control | **ov6 `BattleObjCtrl.cpp`**, `Battle_ObjCtrlManCreate` `0x02168B88` | claim 4 spawn/ownership `0x02168CF4` |
 | projectile specialisation | **ov6 `BattleObjShot.cpp`**, `Battle_ObjShotManCreate` `0x0216A7BC` | claim 5 `0x0216C958` and siblings `0x0216E1C0`, `0x0216F398` |
 
+**(2026-08-15, iteration 52 — claim 1's manager singleton independently confirmed.)** All **22** references to `0x0214BE14` in the ROM are in arm9 `BattleObj.cpp`, reached by word-reference counting rather than the module-range attribution used above. Two unrelated methods, one conclusion. The adjacent global `0x0214BE10` is the **BattleColPrm manager** (7 of 9 refs in `BattleColPrm.cpp`; written at `0x0207C844`), which holds a pair-wise contact array at `+0x158` — see `findings/colprm-contact-matrix.md`. Both sit in the globals block that also holds the chr_b base pointer at `0x0214BD80`.
+
 Claims 1 and 2 being *generic* pool code is why claim 2's destructor has 30 call sites across arm9 and ov6 — it is shared infrastructure, not projectile-specific. All attributions here are **PLAUSIBLE**: an unnamed translation unit can hide inside any gap, and claim 5's containing interval is `0x5B00` bytes wide.
 
 

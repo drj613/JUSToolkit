@@ -1,7 +1,7 @@
 {
-  "iteration": 32,
+  "iteration": 33,
   "phase": "combat",
-  "current_task": "awaiting the Ghidra decision or harness bisection; otherwise self-generated",
+  "current_task": "awaiting Ghidra decision or harness bisection; self-generating otherwise",
   "queue": [
     "C6h-bisect-frame-for-0x134-writer (harness-side)",
     "D0.3-ghidra-import (BLOCKED: needs user go-ahead)",
@@ -35,7 +35,8 @@
     "C6g-damage-field-confirmed-writer-unreachable",
     "D0.3-attempted-ghidra-blocked",
     "K3-koma-runtime",
-    "K3b-consolidate-struct-map"
+    "K3b-consolidate-struct-map",
+    "K4b-defence-candidates-ruled-out"
   ],
   "stuck": {},
   "required_reading_for_koma_tasks": [
@@ -93,7 +94,7 @@
     "L/R sticker bindings are per-deck fields not yet located in RAM",
     "Is HP computed as size*k at runtime, or tabulated per panel? Naruto 4-koma=144=4*36; if size*k then size5=180, size6=216, size7=252, size8=288. One reading settles it."
   ],
-  "notes": "Iteration 32: consolidated the K3 copy map into Character-State-Struct.md, filling a region that doc lists as Unknown. Two strong candidates fell out of the value distributions: chr_b[0x02] (values 2..6) matches the (tier-2) term in the existing damage formula, and chr_b[0x01] (3 values, mostly 2) looks like weight class given the game has heavyweight/lightweight abilities. Also CORRECTED my own last-wake explanation - regen is uniformly 1 over owned sizes and the odd values were filler - and finally EXPLAINED the iteration-20 over-fit: those \"four sequential IDs\" are one halfword plus a per-size stride-2 array, the same wrong-stride error as the physics window.",
+  "notes": "Iteration 33: closed the attribution caveat the harness flagged as untestable. Both per-character defence candidates from the K3 init copy (chr_b[0x01] and chr_b[0x02]) are IDENTICAL between the two damage targets, so neither can explain the flat -2 - which moves the ability-0x09 attribution from weakly to well supported. Also showed neither field tracks HP, so both are categorical rather than stat proxies, and ran a consistency check on the damage formula: the tier term is constant across the two measured moves, so the 1-point difference is entirely in the move value. Attacker-side vs defender-side tier still indistinguishable without move data.",
   "last_wake": "2026-08-14",
   "wakeup_default_seconds": 1800,
   "consecutive_no_progress_wakes": 0,
@@ -631,5 +632,14 @@
     "iteration20_overfit_EXPLAINED": "The four u16s at chr_b +0x30/+0x32/+0x34/+0x36 that looked like base+0,1,2,3 are actually chr_b[0x30] (a single halfword) followed by a PER-SIZE ARRAY at chr_b[0x32] stride 2. Never four parallel fields - one standalone ID plus an array, read through the wrong frame. Goku 337,0,338,0 is that array with filler in unowned slots. SAME SHAPE OF ERROR as the physics window: reading an array through the wrong stride makes it look like unrelated fields.",
     "doc_errors_annotated": "Character-State-Struct.md cites 0x021DF1D5 as \"Player 1 HP\" - that is the HIGH BYTE of a u16 (the 1/4-scale reading) AND a session-local address. Annotated with the correction and a pointer to find_battle_structs.py. Also added a struct-identity caveat: that doc derives from GDB on 0x021E2A7C+ (wifi mode) while my table is static from the init function; plausibly the same type, not proven - same as Battle-Engine-Map open question B10.",
     "still_unknown": "per-size record +0x2/+0x3 -> battle +0x14/+0x15 (3 values {0,1,2} each), chr_b[0x30] -> +0x2E, and the per-size halfword array -> +0x30."
+  },
+  "RESISTANCE_ATTRIBUTION_STRENGTHENED": {
+    "output": "docs/research/findings/defence-candidates-ruled-out.md",
+    "the_caveat_it_closes": "The harness measured resistance as a flat -2 but could not prove the cause: \"the two targets are different characters and may also differ in a per-character defence value\". They could not test it from runtime because resistance resolves at character load.",
+    "THE_TEST": "The K3 init copy gives exactly two per-character scalar candidates: chr_b[0x01] -> battle +0x11 and chr_b[0x02] -> battle +0x10. Both are IDENTICAL between the two damage targets: コマレッド (70) has [0x01]=2 [0x02]=5, ルフィ (12) has [0x01]=2 [0x02]=5. Neither can produce a 2-point difference.",
+    "result": "The flat -2 is attributable to ability 0x09 (打撃耐性ＵＰ blunt resistance), which Luffy has and コマレッド with an empty ability array does not. Moves my earlier wording from WEAKLY SUPPORTED (\"absence of an obvious defence field is not proof\") to WELL SUPPORTED (the two fields that exist are equal).",
+    "stated_precisely": "This rules out the two per-character scalars the INIT FUNCTION COPIES. A defence value living somewhere the init does not copy would still be missed.",
+    "neither_tracks_HP": "[0x02] mean size-4 HP by value: 2->118.0, 3->124.0, 4->130.5, 5->129.0, 6->128.8 - rises then plateaus, and [0x02]=5 spans HP 64..224. [0x01]: 1->110.5, 2->133.0, 3->105.1 - NON-MONOTONIC with 2 holding 56 of 74. That shape fits a 3-way category with a dominant default, i.e. light/medium/heavy weight class. Both stay PLAUSIBLE; neither is a stat proxy.",
+    "formula_consistency_check": "Whichever side supplies tier in floor(damage1/5)+(tier-2), it is CONSTANT across the two measured moves (same attacker, same defender): B=8.000 and DOWN+B=7.000 differ by exactly 1, so the whole difference sits in floor(damage1/5) and the two moves damage values differ by about 5. Consistent with the formula shape. Cannot distinguish attacker-side (Goku [0x02]=3 -> damage1 in 35..39) from defender-side (targets [0x02]=5 -> damage1 in 25..29) without the per-move damage value, which lives in move script data nobody has located."
   }
 }

@@ -1,10 +1,10 @@
 {
- "iteration": 59,
+ "iteration": 60,
  "phase": "combat",
- "current_task": "identify the +0xC fields of 0x020823E4's two input objects",
+ "current_task": "read collision pipeline stages 1-7 to find where the buckets are filled",
  "queue": [
-  "identify the two input objects' +0xC fields at 0x020823E4 -- would say what geometry is measured",
-  "add an alignment check to struct_fields.py: flag ldr/str at offsets not divisible by 4 and ldrh/strh at odd offsets",
+  "read collision pipeline stages 1-7 (0x0207FBD0, 0x02080C70, 0x02080E5C, 0x020801FC, 0x02080510, 0x020805E8, 0x020802D0) -- find where the 22 buckets get FILLED, the other half of the broadphase",
+  "name the +0x1C participant field (what else in the ROM reads +0x1C off those objects)",
   "read collision pipeline stages 1-7 (0x0207FBD0, 0x02080C70, 0x02080E5C, 0x020801FC, 0x02080510, 0x020805E8, 0x020802D0) -- ordering should show the broadphase/narrowphase split",
   "decode 0x02081A58 (packed nibbles -> row index) to learn what the rows are",
   "read 0x0207D9AC properly (229 instrs, the only live per-frame collision phase)",
@@ -81,7 +81,8 @@
   "CONTACT-ARRAY-WRITER-FOUND-arm9-4-accumulators-base-is-+0x154",
   "contact-array-chain-CONFIRMED-8-stage-collision-pipeline-found",
   "accumulator-inputs-traced-producer-is-0x020823E4",
-  "contact-array-is-NOT-a-damage-ledger-producer-is-fixed-point-geometry"
+  "contact-array-is-NOT-a-damage-ledger-producer-is-fixed-point-geometry",
+  "narrowphase-pair-test-identified-guard7-alignment-added"
  ],
  "stuck": {},
  "required_reading_for_koma_tasks": [
@@ -212,7 +213,10 @@
   "CONTACT_ARRAY_CHAIN_CONFIRMED": "r10 at 0x02081340 IS the ColPrm manager: r6 set at 0x0207F48C from [subobj+4]+0x10 and written ZERO times across 440 instructions before mov r0,r6 at 0x0207FA98. So the writer and ov6 query 71 touch the same array. Producer/consumer: block 0x02081418 writes element +0x04, query 71 reads element +0x04.",
   "ACCUMULATOR_INPUTS": "At pipeline stage 8 (0x02080F14): [sp,#0x4c] is a LOCAL OUT-PARAMETER (frame 0x50) filled by bl 0x020823E4(r0, r1=r6, r2=flag, r3=&out) at 0x02081280 - read 8x, never stored directly. r7 = ldrsb([r6+0x10]+5) << 8 (signed byte, fixed-point x256). The same value is ALSO accumulated into a second word array at [r8,r0*4] (0x020812DC), indexed by 0x02081A58 output. 0x020823E4 is 175 instrs, pairwise (r0 and r1 both dereferenced at +0xC), 3 mul/mla + 20 lsl -- leans geometry over damage, NOT settled.",
   "ACCUMULATED_VALUE_IS_GEOMETRY": "0x020823E4 (175 instrs) produces *out = (r5 + r0) >> 2 via a single store at 0x02082684. 16-bit fixed point (lsl #0x10 / asr #0x10 pairs), 32 shifts vs 3 mul/mla, immediates only 0/40/122/256. NEITHER documented damage scalar appears (x5 jpower, x64 HP). Calls 0x0207342C (packs two 16-bit values into a word) and 0x02031070 (refcount release on [r0+0x9c4]). Byte table 0x02092E68 is a 12-entry class-1/2 classifier. => the contact array is a GEOMETRIC ledger, NOT damage.",
-  "UTILITY_0x0207342C": "303 direct callers across 10 binaries (ov5 90, ov6 65, ov1 34, ov0 28, ov4 28, ov2 17, ov3 16, ov7 13, arm9 8, ov12 4) - the most-called function found in this campaign. Prologue packs two 16-bit values into one word. LIBRARY CODE, not domain logic - do not read it as engine behaviour. 0x02031070 (51 callers) is a refcount release."
+  "UTILITY_0x0207342C": "303 direct callers across 10 binaries (ov5 90, ov6 65, ov1 34, ov0 28, ov4 28, ov2 17, ov3 16, ov7 13, arm9 8, ov12 4) - the most-called function found in this campaign. Prologue packs two 16-bit values into one word. LIBRARY CODE, not domain logic - do not read it as engine behaviour. 0x02031070 (51 callers) is a refcount release.",
+  "NARROWPHASE_PAIR_TEST": "0x020823E4(r0,r1,flag,&out) takes two PEER entities (both loaded from +0x1C of different bases at 0x0208113C/0x02081140) and dereferences each at +0xC. [r0+0xC] has fields +0x40 (x5, ldr AND str) and +0x44; [r1+0xC] has +0x40 and +0x68. Both share +0x40 and the function MUTATES the r0 side. r8 is written exactly once in all 175 instructions (0x020823FC), so that anchor is airtight. Called from a walk of bucket 1 ([manager+0x30]) of the 22-bucket array.",
+  "COLLISION_SHAPE": "22 buckets at ColPrm+0x28 (broadphase bins, drained every frame) -> walk a bucket pairs -> 0x020823E4 narrowphase fixed-point geometry on a+0xC and b+0xC -> *out = (r5+r0)>>2 -> accumulated into the contact matrix at manager+0x154 [row][col]. PLAUSIBLE (strong) as a broadphase/narrowphase split.",
+  "TOOL_GUARD_7": "struct_fields.py now flags MISALIGNED accesses: word ldr/str at an offset not divisible by 4, halfword at an odd offset. Real struct fields are aligned, so a violation means the walk strayed. Caught a bogus +0x175 on first use. Selftest unchanged."
  },
  "combat_phase_spillover": [
   "status-effect enum = 10 values, contiguous IDs 0x19-0x22 (Shock/Freeze/Burn/Confusion/Poison/Judgment/Paralysis/Blindness/Speed-Down/Battle+Support Seal). Likely an immunity BITMASK on character state struct.",
@@ -810,7 +814,8 @@
   "UNALIGNED-LOAD TELL (iter 58): a word ldr/str at an offset not divisible by 4 (or ldrh at an odd offset) is a contradiction - no compiler emits it for a struct field. My inline walk (no branch handling) reported 6 offsets off [r6+0x10] including ldr at +0x01/+0x02; the guarded tool gives 2, both ldrsb. Alignment is a free post-hoc validity check on ANY field map.",
   "Two matching byte offsets is not a layout match (iter 58): [r6+0x10] is read at +0x05 and +0x0E, which happen to be CollisionEntry DurationMult and DamageFlags. Declined to claim it - any 20-byte struct has bytes there. Same shape as iteration 50 +0x1a near-miss on prmData.",
   "Check the caller count before reading a function as domain logic (iter 59): 0x0207342C has 303 callers across 10 binaries, which makes it a utility. A high caller count is a cheap signal that a function is library code and its internals will not explain engine behaviour.",
-  "Absence of known constants is usable evidence (iter 59): the campaign had already established x5 (jpower damage) and x64 (HP units). Neither appears among 0x020823E4 immediates, which is what let me refute \"these are damage figures\" rather than leaving it open. Documented magic numbers work as negative tests too."
+  "Absence of known constants is usable evidence (iter 59): the campaign had already established x5 (jpower damage) and x64 (HP units). Neither appears among 0x020823E4 immediates, which is what let me refute \"these are damage figures\" rather than leaving it open. Documented magic numbers work as negative tests too.",
+  "A once-written register is the strongest anchor there is (iter 60): r8 is written exactly once in 0x020823E4 175 instructions, so every [r8,#imm] in the body is provably a field of that object - no reassignment analysis needed. Worth checking for a single-write register before doing anything more elaborate."
  ],
  "open_questions_for_owner": [
   "Note-kind bucketing: the engine keeps at most 7 simultaneous \"notes\" per character, and 7 of the 17 kinds share one slot (kinds 6,7,8,9,10,14,15) so they should be mutually exclusive in play. Does starting one of those effects visibly cancel another?"

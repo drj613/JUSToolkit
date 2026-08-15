@@ -251,6 +251,7 @@ def main() -> int:
     print(f"{len(fields)} distinct offsets from {len(args.anchor)} anchor(s)\n")
     print("  off     accesses  kinds                 first site")
     bad = []
+    misaligned = []
     for off in sorted(fields):
         hits = fields[off]
         kinds = ",".join(sorted({k for _, k in hits}))
@@ -258,6 +259,20 @@ def main() -> int:
         if args.size is not None and off >= args.size:
             flag = "   <<< CONTAMINATED (>= struct size)"
             bad.append(off)
+        # Guard 7: alignment. A word access at an offset not divisible by 4, or a
+        # halfword access at an odd offset, cannot be a real struct field — no
+        # compiler emits one. It means the walk strayed onto a different object.
+        # (iteration 58: an unguarded walk reported `ldr [rX,#1]` and `ldr [rX,#2]`,
+        # which is what exposed the contamination.)
+        for _, k in hits:
+            if k in ("ldr", "str") and off % 4:
+                flag += "   <<< MISALIGNED (word access at a non-4-aligned offset)"
+                misaligned.append(off)
+                break
+            if k in ("ldrh", "strh", "ldrsh") and off % 2:
+                flag += "   <<< MISALIGNED (halfword access at an odd offset)"
+                misaligned.append(off)
+                break
         print(f"  +0x{off:03X}  x{len(hits):<7}  {kinds:<20}  0x{min(a for a, _ in hits):08X}{flag}")
 
     total = sum(len(v) for v in fields.values())
@@ -265,6 +280,9 @@ def main() -> int:
     if bad:
         print(f"  WARNING: {len(bad)} offset(s) exceed the declared size — an anchor register is "
               f"being reassigned in a way this tool did not catch, or an anchor is wrong.")
+    if misaligned:
+        print(f"  WARNING: {len(misaligned)} misaligned access(es). Real struct fields are aligned, "
+              f"so the walk has strayed onto a different object. Treat the whole map as suspect.")
     if total > 200:
         print("  WARNING: too many hits to read by hand. Add more specific anchors.")
     return 0

@@ -1,9 +1,10 @@
 {
- "iteration": 70,
+ "iteration": 71,
  "phase": "combat",
- "current_task": "identify the owner object in the +0x18 pool allocator",
+ "current_task": "find what writes ColObj+0x28 to name the pool-node owner",
  "queue": [
-  "identify the OWNER (r4 in the 0x0207D468 allocator, fields +0x08 node list, +0x34, +0x38) -- naming it names the 0x2C-byte nodes",
+  "find what writes ColObj+0x28 (search-imm 0x28 filtered to stores with a ColObj base, then trace the value) -- names the owner and closes the pool thread",
+  "read ColObj+0x24's method 0x0207D94C, the third ColObj<->ColPrm interface method",
   "find +0x20's allocator: ldr rN,[mgr,#0x20] followed by an unlink, base verified from the global",
   "resolve the 4 unknown bases at 0x0207C798 / 0x0207C7CC / 0x0207C81C / 0x0207CE64 -- any tracing to the manager means more list heads",
   "run prior_art.py on every remaining open question before touching a binary",
@@ -99,7 +100,8 @@
   "buckets-1-and-8-CONFIRMED-no-producer-against-complete-index",
   "colprm-list-head-audit-+0x18-and-+0x20-are-persistent-heads",
   "colprm-+0x18-and-+0x20-are-FREE-POOLS-colobj-guess-refuted",
-  "colprm-+0x18-pool-allocator-found-recycled-not-leaked"
+  "colprm-+0x18-pool-allocator-found-recycled-not-leaked",
+  "pool-pair-is-two-ColObj-method-slots-owner-located-not-named"
  ],
  "stuck": {},
  "required_reading_for_koma_tasks": [
@@ -251,7 +253,9 @@
   "COLPRM_FREE_POOLS": "+0x18 and +0x20 are FREE POOLS, not ColObj lists. Both follow unlink-from-active / memset / link-into-manager: +0x18 takes 0x2C-byte nodes (memset at 0x0207D924, link 0x0207D93C, base verified from the global), +0x20 takes 0x10-byte nodes (memset 0x0207CBA8, link 0x0207CBB8). Plus +0xD8 the bucket-node pool (2 links vs 14 unlinks). Free lists are never drained, which is why the per-frame drain at +0x28 skips them. Record sizes now known: ColObj 0x40 (Battle_ColObjCreate 0x0207AF00), ColWork 0x64, pool nodes 0x2C and 0x10.",
   "CONVENTIONAL_LIST_OFFSETS": "+0x08, +0x10, +0x18, +0x20 are CONVENTIONAL list-head offsets in this codebase, shared by ColObj, ColWork, ColJoint nodes AND the ColPrm manager. 21 link/unlink sites use +0x18/+0x20 and only 1 verifies as ColPrm. An offset match at these four carries no information without base verification. Caveat recorded in findings/colprm-manager-mapped.md.",
   "COLPRM_0x18_POOL_ALLOCATOR": "0x0207D468-0x0207D494 is the allocator for the +0x18 pool: ldr r0,[pc]=&0x0214BE10; ldr r0,[r0]; ldr r5,[r0,#0x18] (head); cmp r5,#0 -> moveq r0,#0 + popeq (NULL on empty); unlink(mgr+0x18, r5); link(r4+8, r5); then init node +0x14 and +0x18 from owner +0x34 and +0x38. Paired with the free path 0x0207D914-0x0207D93C (memset 0x2C, link back). FIXED-CAPACITY RECYCLER with graceful exhaustion. Active nodes live on the OWNER +0x8 list, not the manager.",
-  "UNLINK_SITE_ATTRIBUTION": "Of 8 unlink sites at +0x18/+0x20: only 0x0207D488 is ColPrm (base *(0x0214BE10) at 0x0207D46C). 0x0207BF2C and 0x0207BFDC are the COLJOINT manager *(0x0214BE0C) - ColJoint keeps its own +0x18 list. 0x0207CD0C and 0x0207CD60 are [r4,#0x68]. 0x0207C3C8 and 0x02082D04 are arg0. 0x02080860 unresolved. +0x20 recycling NOT established."
+  "UNLINK_SITE_ATTRIBUTION": "Of 8 unlink sites at +0x18/+0x20: only 0x0207D488 is ColPrm (base *(0x0214BE10) at 0x0207D46C). 0x0207BF2C and 0x0207BFDC are the COLJOINT manager *(0x0214BE0C) - ColJoint keeps its own +0x18 list. 0x0207CD0C and 0x0207CD60 are [r4,#0x68]. 0x0207C3C8 and 0x02082D04 are arg0. 0x02080860 unresolved. +0x20 recycling NOT established.",
+  "COLOBJ_METHOD_SLOTS": "0x0207C988 creates a ColObj (bl Battle_ColObjCreate at 0x0207CA18) and immediately installs three method pointers: ColObj+0x1C = 0x0207D440 (acquire a 0x2C node from ColPrm+0x18), +0x20 = 0x0207D858 (release it back), +0x24 = 0x0207D94C. ALL THREE reference the ColPrm global 0x0214BE10 (2, 3 and 2 literal loads). +0x1C and +0x20 both open with ldr r4,[r0,#0x28] - the same owner. The iteration-69 free path 0x0207D914-0x0207D93C is inside 0x0207D858 (size 236). None of the three has a direct caller; all are function-pointer slots.",
+  "COLOBJ_LAYOUT": "ColObj is 0x40 bytes (Battle_ColObjCreate 0x0207AEDC). +0x08 ColWork list head (0x64 records), +0x0C and +0x10 zeroed at construction, +0x1C/+0x20/+0x24 method pointers, +0x28 pointer to the owner of the 0x2C-node list (that owner has its node list at +0x8 and source fields at +0x34/+0x38). FIRST concrete link between BattleCol.cpp and BattleColPrm.cpp."
  },
  "combat_phase_spillover": [
   "status-effect enum = 10 values, contiguous IDs 0x19-0x22 (Shock/Freeze/Burn/Confusion/Poison/Judgment/Paralysis/Blindness/Speed-Down/Battle+Support Seal). Likely an immunity BITMASK on character state struct.",
@@ -865,7 +869,8 @@
   "State the coverage of a negative, not just its verdict (iter 67): iterations 63-65 concluded \"nothing fills buckets 1 and 8\" after checking a few hundred instructions, while the complete index shows 499 stores at those offsets ROM-wide. The conclusion held, but I had described a narrow check as if it were exhaustive.",
   "Follow the anomaly in your own data (iter 68): iteration 53 map recorded that +0x18 was the ONLY one of ten init-block words both read and written - the signature of a list head - and I noted it without acting. Fifteen wakes later the complete index proved it. When a map flags one member of a group as behaving differently, that is the thing to chase.",
   "SOME OFFSETS ARE SHARED BY DESIGN (iter 69): +0x08/+0x10/+0x18/+0x20 are this codebase conventional list-head offsets, recurring on four different object types. Of 21 link/unlink sites at +0x18/+0x20 only ONE verified as the ColPrm manager. This is stronger than \"check the base register\" - for conventional offsets the offset itself carries no information at all, so base verification is not a guard but the entire measurement.",
-  "The offset-collision hazard is quantified (iter 70): 2 of the 8 unlink sites at +0x18 belong to the COLJOINT manager, not ColPrm. Matching on offset alone would have tripled the apparent pool traffic and shown allocations that never happen. Iteration 69 caution about +0x08/+0x10 was also vindicated - the allocator links into r4+8 where r4 is the OWNER."
+  "The offset-collision hazard is quantified (iter 70): 2 of the 8 unlink sites at +0x18 belong to the COLJOINT manager, not ColPrm. Matching on offset alone would have tripled the apparent pool traffic and shown allocations that never happen. Iteration 69 caution about +0x08/+0x10 was also vindicated - the allocator links into r4+8 where r4 is the OWNER.",
+  "Locating is not naming (iter 71): the task was \"identify the owner\" and I finished with [ColObj+0x28] - a precise address expression, not an identity. Worth labelling the difference in the writeup rather than letting a location read as an answer."
  ],
  "open_questions_for_owner": [
   "Note-kind bucketing: the engine keeps at most 7 simultaneous \"notes\" per character, and 7 of the 17 kinds share one slot (kinds 6,7,8,9,10,14,15) so they should be mutually exclusive in play. Does starting one of those effects visibly cancel another?"

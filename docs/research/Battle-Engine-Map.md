@@ -157,6 +157,17 @@ end-to-end. No claim in this document is unverified as of this update; see
 
 ## Subsystem: projectile-entities
 
+**Module layout (2026-08-15, from recovered assert-string symbols — see `findings/module-map-and-attribution-limits.md`).** This subsystem spans three source files, which explains several of its claims:
+
+| layer | module | addresses |
+|---|---|---|
+| generic object pool | **arm9 `BattleObj.cpp`**, `Battle_ObjManCreate` `0x02083204` | claim 1 ctor `0x020834D4`, claim 2 dtor `0x02083648` — both inside a tight `0xDC8` range |
+| object control | **ov6 `BattleObjCtrl.cpp`**, `Battle_ObjCtrlManCreate` `0x02168B88` | claim 4 spawn/ownership `0x02168CF4` |
+| projectile specialisation | **ov6 `BattleObjShot.cpp`**, `Battle_ObjShotManCreate` `0x0216A7BC` | claim 5 `0x0216C958` and siblings `0x0216E1C0`, `0x0216F398` |
+
+Claims 1 and 2 being *generic* pool code is why claim 2's destructor has 30 call sites across arm9 and ov6 — it is shared infrastructure, not projectile-specific. All attributions here are **PLAUSIBLE**: an unnamed translation unit can hide inside any gap, and claim 5's containing interval is `0x5B00` bytes wide.
+
+
 **Status:** PARTIAL (4 confirmed / 1 plausible). **Adversarial lens verification completed this phase (Phase-0 spec P3).** The prior campaign's "evidence machine-verified; adversarial lens verification pending" caveat no longer applies — all 5 claims ran through the standard 3 lenses (disasm-correctness / aliasing / data-consistency) and were scored; the confidence column below is now the authoritative post-verification confidence, not a stated/pending pair.
 
 | # | Claim | Key addresses | Confidence |

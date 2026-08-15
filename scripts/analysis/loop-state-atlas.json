@@ -1,9 +1,11 @@
 {
- "iteration": 46,
+ "iteration": 47,
  "phase": "combat",
- "current_task": "find callers of 0x02157A60 passing r2=23 -- the HP-delta producer (campaign item B11)",
+ "current_task": "identify the base objects of the 4 variable-r2 callback sites",
  "queue": [
-  "B11 REFRAMED: find callers of the 0x02157A60 dispatcher passing r2=23 (HP) -> that caller computes the damage delta",
+  "identify base objects of the 4 variable-r2 callback sites 0x0215F1C4 / 0x0215F318 / 0x02168FEC / 0x0216FF6C (only way cases 1-33 are reachable)",
+  "map the NoteTrack 0xA8 struct (the move-script engine): known +0x70 callback, +0x74, +0x7c, +0x88, +0x94/+0x98/+0xa3 init -1",
+  "name commands 64-73 by reading the 7 live cases -- these are the ones actually used",
   "name cases 25/26/33/72 (all read [r0,#0x84], base type unknown per iter 45)",
   "examine the 32-case dispatcher at 0x021580B4 (switch on r3), 2nd largest in ov6",
   "HARNESS TASK (blocked on peer/emulator): break Battle_PrmDataInit 0x021702BC, record returned r0, read [r0+0x00], set a READ WATCHPOINT on it, land a hit -> trapping PC is the collision walker",
@@ -57,7 +59,8 @@
   "prmdatainit-is-the-collision-loader-array-at-prmdata+0",
   "prmdata-at-char+0x84-accessor-mediated-walker-search-reframed",
   "73-case-dispatcher-found-accessor-bank-REFUTED-walker-needs-harness",
-  "73-case-dispatcher-enumerated-hp-sp-are-commands-23-24-32"
+  "73-case-dispatcher-enumerated-hp-sp-are-commands-23-24-32",
+  "notetrack-owns-the-command-callback-b11-reframe-is-a-dead-end"
  ],
  "stuck": {},
  "required_reading_for_koma_tasks": [
@@ -163,7 +166,10 @@
   "ACCESSOR_MEDIATED_ACCESS": "char+0x84 is read at only 10 sites ROM-wide and ZERO chain into +0x00. ov11 0x0217B0B4/0x0217B0CC/0x0217B0E4 are a bank of 5-instruction bx-lr accessors returning char+0x84/+0x90/+0x9C; ov6 has 5 clustered sites 0x02157DD8-0x02157F50 in BattleChara.cpp. Consumers get the pointer in a register -> offset-chain scans cannot find them.",
   "OV6_73_CASE_DISPATCHER": "0x02157A5C cmp r2,#72; 0x02157A60 addls pc,pc,r2,lsl#2; branch table 0x02157A64-0x02157B88 (74 entries); cases span 0x02157B8C-0x02157F90; epilogue 0x02157F90 mov r0,#0 / 0x02157F94 add sp,#0xc / 0x02157F98 pop {r3,r4,r5,r6,pc}. In BattleChara.cpp. Claim 3s 0x021574CC 13-way switch is also on r2 in the same module -> likely a family.",
   "DISPATCHER_73_MAP": "0x02157A60, table 0x02157A68-0x02157B88 (73 entries, cases 0-72), default branch 0x02157A64. 33 live / 40 no-op. No-op bands 0,15-16,27-28,30-31,34-64,68,70. cmd23->0x020783CC HP apply, cmd24->0x020781E4 SP apply, cmd32->0x020783DC, cmd6->0x02083950 (BattleObj.cpp pool), cmd13/14->BattleCharaPursuer.cpp, cmd20->BattleMapItem.cpp",
-  "OV6_DISPATCHERS": "15 add-pc dispatchers in ov6, case counts 4,5,5,5,5,5,7,7,7,9,13,14,32,73. Largest 0x02157A60 (73, on r2); 0x021580B4 (32, on r3); 0x0216A0AC (14); 0x021574E4 (13, on r2, inside claim-3 function 0x021574CC)"
+  "OV6_DISPATCHERS": "15 add-pc dispatchers in ov6, case counts 4,5,5,5,5,5,7,7,7,9,13,14,32,73. Largest 0x02157A60 (73, on r2); 0x021580B4 (32, on r3); 0x0216A0AC (14); 0x021574E4 (13, on r2, inside claim-3 function 0x021574CC)",
+  "NOTETRACK": "Battle_NoteTrackCreate 0x021553E0 allocates 0xA8 bytes, constructed at [character+0x1a8]+0x18, stores the character command dispatcher (0x02157A44) at noteTrack+0x70 (str at 0x02155438). Battle_CharaCreate passes it in r3 at 0x02156CE4. char+0x1a8 therefore holds BOTH the NoteTrack (+0x18) and the pending-delta struct (+0x10).",
+  "NOTETRACK_COMMANDS": "issued set {3,64,65,66,67,68,69,70,71,72,73} across 12 sites. Live in dispatcher: 3,65,66,67,69,71,72. No-op: 64,68,70. Out of range: 73. Generic forwarder 0x02156520 passes its caller r2 through; the 2 tail-call stubs 0x02156584/0x02156594 supply 64 and 68.",
+  "NOTES_ARE_THE_16BYTE_SLOTS": "iter-40 slot records (+0x00 kind, +0x01 ExtFlags, +0x02 ProjectileId) are NoteTrack notes; forwarder ticks a halfword counter at note+0x04 and copies note+0x02 into note+0x01 when the command returns non-zero."
  },
  "combat_phase_spillover": [
   "status-effect enum = 10 values, contiguous IDs 0x19-0x22 (Shock/Freeze/Burn/Confusion/Poison/Judgment/Paralysis/Blindness/Speed-Down/Battle+Support Seal). Likely an immunity BITMASK on character state struct.",
@@ -739,6 +745,9 @@
   "AN OFFSET MATCH IS NOT EVIDENCE WITHOUT THE BASE REGISTER TYPE (iter 45): iter 44 called every ldr [Rn,#0x84] a prmData read. The callees index +0x2c/+0x4c, past prmDatas confirmed 0x20 bytes, so those bases are not character structs. Only the STORE at 0x0215F6B0 is confirmed. Cheap fix: trace where the base register came from before believing an offset hit.",
   "WALKER IS STATICALLY UNREACHABLE (iter 45): 4 approaches closed - offset chains (0/10), x20 arithmetic (70 hits), accessor-bank callers (no such bank), stub-bank callers (28/36 zero). Access is assembled at runtime from dispatch-table indices. Needs a harness watchpoint; recipe is in the queue.",
   "ARM BL vs B mask bug (iter 46): (x & 0x0F000000)==0x0A000000 matches B (opcode 0xA) but NEVER BL (0xB). Use 0x0E000000 then test bit 24. My first enumeration silently reported 0 callees for all 73 cases and looked self-consistent; only a previous wake manual disassembly contradicted it.",
-  "Shared-command-enum hypothesis REFUTED (iter 46): the 73-way and 13-way ov6 switches both use only low case numbers (13-way live = 1,2,4,6-12), zero overlap with the 73-way no-op band 34-64. Separate enums; the 31-case dead band is unexplained."
+  "Shared-command-enum hypothesis REFUTED (iter 46): the 73-way and 13-way ov6 switches both use only low case numbers (13-way live = 1,2,4,6-12), zero overlap with the 73-way no-op band 34-64. Separate enums; the 31-case dead band is unexplained.",
+  "B11 dead end recorded (iter 47): dispatcher cases 23/24 call the HP/SP apply functions but NOTHING issues those command numbers. The apply path is reachable a second way that is unused. A handler case existing does not mean it is invoked - enumerate the issuers before building on a case.",
+  "ARM mask bug #3 (iter 47): for ldr Rd,[Rn,#imm] I masked the Rn field instead of Rd, so a scan for ldr ip,[Rn,#0x70] returned 0 sites. Correct mask is 0x0FF0FFFF vs 0x0590C070. Added a selftest against a known site before trusting the result - do this every time.",
+  "Filter Rn=r15 out of offset scans (iter 47): 14 of 36 ldr [Rn,#0x70] hits were pc-relative literal loads, not field reads at all."
  ]
 }

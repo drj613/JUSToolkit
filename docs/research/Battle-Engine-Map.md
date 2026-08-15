@@ -61,7 +61,11 @@ end-to-end. No claim in this document is unverified as of this update; see
 | **24** | `0x02157DC8` | `0x020781E4` — the SP apply |
 | **32** | `0x02157E04` | `0x020783DC` — HP-apply sibling |
 
-This adds no new caller (`0x02157DB8` is almost certainly among the 8 ARM script-effect sites already counted) but it reframes **campaign item B11, "who computes the delta"**: the delta arrives as an *argument to a command*, so the producer is whatever fills the dispatcher's arguments — not anything inside the apply path. Finding a caller that passes `r2 = 23` is the new B11 approach, and it does not depend on offset scanning. Full case map in `findings/73-case-dispatcher-enumerated.md`.
+This adds no new caller (`0x02157DB8` is almost certainly among the 8 ARM script-effect sites already counted) but it reframes **campaign item B11, "who computes the delta"**: the delta arrives as an *argument to a command*, so the producer is whatever fills the dispatcher's arguments — not anything inside the apply path. Full case map in `findings/73-case-dispatcher-enumerated.md`.
+
+**(2026-08-15, iteration 47 — that B11 approach is a DEAD END.)** The dispatcher is installed exactly once, into `noteTrack+0x70` (`str r6,[r4,#0x70]` at `0x02155438` inside `Battle_NoteTrackCreate` `0x021553E0`, which `Battle_CharaCreate` calls at `0x02156CE4` passing the dispatcher in `r3`). Every command issued through that field is enumerated: **{3, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73}** — **23 and 24 never appear**. So cases 1–33 except 3 look unreachable in this build (PLAUSIBLE; 4 variable-`r2` sites on unidentified base types remain). The 8 ARM script-effect callers of `0x020783CC` stay the real HP-delta path, and case 23 is a second, unused entry point.
+
+**Architectural payoff:** `character+0x1a8` holds the NoteTrack (a `0xA8`-byte move-script engine) at `+0x18` *and* the pending-delta struct at `+0x10`. Iteration 40's collision stub bank is NoteTrack code, and its 16-byte slot records are the notes — the forwarder `0x02156520` ticks a counter at note`+0x04` and moves note`+0x02` into note`+0x01`. See `findings/notetrack-issues-the-commands-b11-dead-end.md`.
 
 
 **Status:** PARTIAL (4 confirmed / 3 plausible / 2 speculative claims)

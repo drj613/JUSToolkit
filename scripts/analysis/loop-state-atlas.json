@@ -1,9 +1,10 @@
 {
- "iteration": 42,
+ "iteration": 43,
  "phase": "combat",
- "current_task": "densify the module map using path/format-string literals as extra markers",
+ "current_task": "find the consumer of prmData+0x00 (the collision-array walker)",
  "queue": [
-  "densify the module map with a 2nd marker source (path/format-string literals) to convert 134 LOOSE attributions to TIGHT",
+  "find code loading +0x00 off a PrmData pointer = the collision-array consumer / walker (constrain with a nearby #0x14 stride multiply, or start from Battle_PrmDataInit callers)",
+  "resolve prmData +0x0C/+0x10/+0x14 prefixes (3 unidentified per-character files)",
   "read BattleObj.cpp end to end: [0x02083204,0x02083FCC) is only 0xDC8 bytes = the generic entity API",
   "find what indexes the 68-entry table at 0x02171FEC (the real walker question)",
   "find what reads slot+0x02 (the real ProjectileId consumer)",
@@ -49,7 +50,8 @@
   "projectileid-is-a-selector-17entry-table-REFUTED",
   "collision-accessor-bank-found-kind-table-decoded-projectileid-is-a-copied-tag",
   "symbols-recovered-275-named-functions-stub-dispatch-table-found",
-  "module-map-built-bulk-reattribution-refuted-projectile-3-layer-architecture"
+  "module-map-built-bulk-reattribution-refuted-projectile-3-layer-architecture",
+  "prmdatainit-is-the-collision-loader-array-at-prmdata+0"
  ],
  "stuck": {},
  "required_reading_for_koma_tasks": [
@@ -147,7 +149,10 @@
   "ov6_stub_dispatch_table": "0x02171FEC-0x021720F8 = 68 contiguous ov6 function pointers; the 36 collision stubs are entries (28 of 36 have zero direct callers)",
   "MODULE_MAP": "jus_files/analysis/modules.json - per-function (name, .cpp) pairs. ov6 = 21 modules, BattlePause.cpp 0x0214E388 .. BattlePrmData.cpp 0x021702BC",
   "projectile_3_layer": "arm9 BattleObj.cpp (generic pool, Battle_ObjManCreate 0x02083204, claims 1+2) -> ov6 BattleObjCtrl.cpp (spawn 0x02168CF4) -> ov6 BattleObjShot.cpp (claim 5 family)",
-  "ATTRIBUTION_TRUST": "only 43/194 map addresses get a range <=0x2000. arm9 median gap 0xB60 max 0x6578; ov6 median 0x14D0 max 0x8618. Attribution BOUNDS, never proves - unnamed .cpp can hide in any gap."
+  "ATTRIBUTION_TRUST": "only 43/194 map addresses get a range <=0x2000. arm9 median gap 0xB60 max 0x6578; ov6 median 0x14D0 max 0x8618. Attribution BOUNDS, never proves - unnamed .cpp can hide in any gap.",
+  "PRMDATA_STRUCT": "Battle_PrmDataInit(r0=kind,r1=index) at ov6 0x021702BC allocates 0x20 bytes: +0x00 chr/col array, +0x04 chr/shot, +0x08 chr/effect, +0x0C/+0x10/+0x14 three more loads, +0x18=-1 +0x1A=0x7a +0x1C=-1 +0x1E=-1",
+  "ARM9_NAME_TABLE": "0x020924B0 = 74 battle entries {char* name, u32 extra} at 8-byte stride (idx73=dt_b_04); 0x02092700 = 193 support (idx192=dt_s_03). 0x250=74*8. extra += 0x100 per index. ALREADY in ARM9-Research-Guide.md:44,123-127 - the consumer is what was new.",
+  "LOADER_FUNCTIONS": "Battle_PrmDataInit 0x021702BC (col/shot/effect); Battle_CharaParamCreate 0x021614B0 (bin/state.bin, bin/exadd.bin); BattleMapLoadItem 0x021644C4 (item/J_Power.aar, item/itemprob.ipf); ov11 0x02177060 + 0x02181028 (chr/ai/)"
  },
  "combat_phase_spillover": [
   "status-effect enum = 10 values, contiguous IDs 0x19-0x22 (Shock/Freeze/Burn/Confusion/Poison/Judgment/Paralysis/Blindness/Speed-Down/Battle+Support Seal). Likely an immunity BITMASK on character state struct.",
@@ -715,6 +720,7 @@
   "The ROM has debug symbols and the campaign nearly missed it (iter 41): Battle-Engine-Map claim 7 used BattleAI_* assert strings once, in passing, to identify ov11 - then nobody generalised it for ~30 iterations. When a technique works once, ask what else it names.",
   "Neighbourhood is not containment (iter 41): --nearest gives the closest NAMED function below an address, with unnamed functions in between. Good enough to assign a module (PLAUSIBLE), never enough for CONFIRMED_STATIC.",
   "Shared overlay load addresses bit me a 3rd time (iter 42): 10 overlays share 0x0214CD20, so span-based binary lookup put battle code in Option.cpp/Opening.cpp/Movie.cpp. find_callers.py already warns about exactly this. ANY address->binary lookup in the shared window needs an explicit overlay label.",
-  "Quantify a method reach before trusting its output (iter 42): the module map looked like it attributed 177/194 addresses; measuring gap width showed only 43 were trustworthy. The two largest buckets were the two to discard."
+  "Quantify a method reach before trusting its output (iter 42): the module map looked like it attributed 177/194 addresses; measuring gap width showed only 43 were trustworthy. The two largest buckets were the two to discard.",
+  "Path literals beat .cpp literals for labelling (iter 43): .cpp asserts are ~1 per file (26 refs / 22 files in ov6) so they cannot densify a module map - REFUTED. But a function that loads a file references its path, which identifies purpose directly. That found the collision loader in one pass."
  ]
 }

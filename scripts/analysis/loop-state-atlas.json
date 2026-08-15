@@ -1,5 +1,5 @@
 {
-  "iteration": 34,
+  "iteration": 35,
   "phase": "combat",
   "current_task": "awaiting Ghidra decision or harness bisection; self-generating otherwise",
   "queue": [
@@ -37,7 +37,8 @@
     "K3-koma-runtime",
     "K3b-consolidate-struct-map",
     "K4b-defence-candidates-ruled-out",
-    "jpower-damage-located"
+    "jpower-damage-located",
+    "docs-coverage-sweep"
   ],
   "stuck": {},
   "required_reading_for_koma_tasks": [
@@ -95,7 +96,7 @@
     "L/R sticker bindings are per-deck fields not yet located in RAM",
     "Is HP computed as size*k at runtime, or tabulated per panel? Naruto 4-koma=144=4*36; if size*k then size5=180, size6=216, size7=252, size8=288. One reading settles it."
   ],
-  "notes": "Iteration 34: found the per-move damage value. jpower.bin is 311 x 304 bytes with damage1 at +0x0C (confirmed 9/9 against a published column), and the key insight is that damage1 stores DISPLAYED DAMAGE x 5 - every value a multiple of 5 except 144. Both corrected measurements resolve to unique file values (B->40, DOWN+B->35), which independently checks the harness net-of-regen correction against data that predates it. Also REFUTED my own one-wake-old chr_b[0x02]=tier hypothesis (tier must be 2; Goku reads 3) and found chr_b[0x01] fits instead. Corrected an error in jpower-Mapping.md (index 146 is damage1=35, a DOWN+B candidate, not 40). Third loose-ends miss this phase - now recorded as a procedure.",
+  "notes": "Iteration 35: ran the new docs-coverage procedure and it paid off immediately - found chr_b-Complete-Mapping.md, never opened despite chr_b being my most-worked file, which CONFIRMS chr_b[0x01] as the damage-formula tier (its tier 1/2/3 -> -1/0/+1 table matches my {1:11,2:56,3:7} distribution exactly). Two independent derivations met on the same field. Also validated that doc series column 74/74 against my join, and issued one narrow correction: chr_b[24] is Kyuubi Naruto not Kakashi, on three lines of evidence. chr_b[0x02] refuted as tier, returns to unknown with a new statC/walk-speed lead.",
   "last_wake": "2026-08-14",
   "wakeup_default_seconds": 1800,
   "consecutive_no_progress_wakes": 0,
@@ -652,5 +653,18 @@
     "chr_b_0x01_fits": "Goku reads 2 and so do both targets, giving tier-2 = 0 and damage = damage1/5 exactly. Distribution {1:11, 2:56, 3:7} becomes a modifier of {-1,0,+1} on 18 of 74 characters - a sensible tier shape. PLAUSIBLE. Deliberately NOT reassigning [0x02] to weight class by elimination, since that is the reasoning that produced the wrong answer last time. The test also cannot tell attacker-side from defender-side tier, because Goku and both targets all read 2.",
     "doc_error_corrected": "jpower-Mapping.md claimed Goku B uses damage1=40 at indices 146, 195, 218. Entry 146 actually has damage1=35 - which is exactly what DOWN+B (7.000) requires, so 146 was a DOWN+B candidate filed under B. Corrected in place."
   },
-  "LOOSE_ENDS_RULE_IS_LOAD_BEARING": "THIRD instance this phase. jpower-Mapping.md already contained the 304-byte entry size, the field names, the formula, and Goku B at damage1=40 - and I had jpower.bin on my candidate list for two wakes as \"94KB, never examined\" without opening the two docs named after it. The first two instances (the drain trampoline in GDB-Validation-Queue.md; scripts/gdb/README.md on the peer side) I recorded as a lesson. This one says the lesson did not stick, so it is now a PROCEDURE: BEFORE OPENING A BINARY, GREP THE DOCS DIRECTORY FOR ITS NAME."
+  "LOOSE_ENDS_RULE_IS_LOAD_BEARING": "THIRD instance this phase. jpower-Mapping.md already contained the 304-byte entry size, the field names, the formula, and Goku B at damage1=40 - and I had jpower.bin on my candidate list for two wakes as \"94KB, never examined\" without opening the two docs named after it. The first two instances (the drain trampoline in GDB-Validation-Queue.md; scripts/gdb/README.md on the peer side) I recorded as a lesson. This one says the lesson did not stick, so it is now a PROCEDURE: BEFORE OPENING A BINARY, GREP THE DOCS DIRECTORY FOR ITS NAME.",
+  "DOCS_SWEEP": {
+    "output": "docs/research/findings/docs-coverage-sweep.md",
+    "procedure_worked_first_try": "Found chr_b-Complete-Mapping.md, a doc named after the file I had done the most work on, never opened. FOURTH loose-ends instance.",
+    "four_files_with_named_docs": "koma.bin (11 docs, incl docs/articles/specs/koma.md never read), chr_b.bin (4, incl chr_b-Complete-Mapping.md), jpower.bin (3, last iteration miss), state.bin (Character-State-Struct.md - and I have read/edited that doc repeatedly without ever opening the 336-byte file it is named after).",
+    "no_file_unexplored": "Every bin/ file has at least 2 doc mentions, so the risk here is entirely REDISCOVERY, not gaps."
+  },
+  "TIER_CONFIRMED": {
+    "field": "chr_b byte +0x01 -> battle struct +0x11 IS the damage-formula tier. CONFIRMED.",
+    "evidence": "chr_b-Complete-Mapping.md already documents tier 1 -> -1, tier 2 -> +0, tier 3 -> +1 (with examples Bankai B=9, Ichigo B=10, Caramelman B=13). My chr_b[0x01] distribution is {1:11, 2:56, 3:7} - exactly three values, exactly those values. Combined with the previous iteration test (Goku and both damage targets all read 2, giving tier-2=0 and damage = damage1/5 exactly, matching B=8.000 with damage1=40). Two independent derivations from opposite directions landing on the same field.",
+    "chr_b_0x02_now_unknown": "REFUTED as tier, returns to unknown. NEW LEAD from the doc: it says walk speed is in chr_b.bin as a \"statC field, threshold/tier-based\" - worth testing against [0x02] five values."
+  },
+  "MUTUAL_VALIDATION_74_of_74": "The doc has a full chr_b index -> character -> series -> classId -> jpower-block table derived from the ARM9 string table at 0x0924B0. My join goes a different route (koma abilityId -> chr_b index, names from komatxt, series from Koma.NameTable). SERIES CODE AGREES ON ALL 74 ROWS - two independent derivations of the same index space with zero disagreement.",
+  "NARROW_CORRECTION_chr_b_24": "The doc lists chr_b[24] as Kakashi (na_b_05) and chr_b[21] as Kyuubi Naruto. THREE independent lines say chr_b[24] is Kyuubi Naruto: (1) koma records 504/505 sizes 7-8 carry abilityId 24; (2) komatxt names those panels ナルト（九尾）; (3) chr_b[24] per-size HP slots 3/4 are 192,208 - exactly the owner observed Naruto size-7/8 HP, where chr_b[21] gives 176,192. So the NAME-WITHIN-SERIES ordering is off for these rows while the series column is right. Likely cause: the doc assumes the 0x020924B0 string-table index equals the chr_b index, and Battle-Engine-Map already DEMOTED that assumption (its 6-bit-id = classId claim was refuted on a range mismatch), so the alignment was never verified. Correction banner added."
 }

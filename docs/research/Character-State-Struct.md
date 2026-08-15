@@ -17,8 +17,8 @@ gap. Source: `findings/k3-chr_b-to-battle-copy.md`.
 
 | offset | source | contents | confidence |
 |---|---|---|---|
-| `+0x10` | `chr_b[0x02]` signed | 5 values `2..6`. **Candidate: the `tier` term** in this project's damage formula `floor(damage1/5)+(tier-2)` — `tier-2` over `2..6` gives `0..4` | **PLAUSIBLE** |
-| `+0x11` | `chr_b[0x01]` signed | 3 values `{1:11, 2:56, 3:7}`. **Candidate: weight class** — the game has `重量級` (heavyweight, ability `0x17`) and `軽量級` (lightweight, `0x18`) | **PLAUSIBLE** |
+| `+0x10` | `chr_b[0x02]` signed | 5 values `2..6`. **REFUTED as `tier`** (that's `+0x11`). Unknown. Lead: `chr_b-Complete-Mapping.md` says walk speed lives in `chr_b.bin` as a "`statC` field, threshold/tier-based" | unknown |
+| `+0x11` | `chr_b[0x01]` signed | **the damage-formula `tier`**. Values `{1:11, 2:56, 3:7}`, and `chr_b-Complete-Mapping.md` independently documents tier `1`→−1, `2`→+0, `3`→+1. Goku and both damage targets read `2`, giving `tier-2 = 0` and `damage = damage1/5` exactly — matching B = 8.000 with `damage1 = 40` | **CONFIRMED** |
 | `+0x13` | `chr_b[0x00]` | **base nature** (`0`=力, `1`=知, `2`=笑) | **CONFIRMED** |
 | `+0x14` | per-size record `+0x2` | 3 values `{0,1,2}` over owned sizes | unknown |
 | `+0x15` | per-size record `+0x3` | 3 values `{0,1,2}` over owned sizes | unknown |

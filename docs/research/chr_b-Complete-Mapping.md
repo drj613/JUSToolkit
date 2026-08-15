@@ -1,5 +1,26 @@
 # chr_b.bin Complete Reference
 
+> ### Cross-check 2026-08-14 (Loop-Atlas)
+>
+> **Series column validated: 74/74.** An independent derivation — `koma.bin` `abilityId` → `chr_b`
+> index, names from `komatxt.bin`, series from `Koma.NameTable` — agrees with this table's series code
+> on every one of the 74 rows. Strong mutual validation for both.
+>
+> **One narrow correction: `chr_b[24]` is Kyuubi Naruto, not Kakashi.** Three independent lines:
+> `koma.bin` records 504/505 (sizes 7 and 8) carry `abilityId = 24`; `komatxt.bin` names those panels
+> **ナルト（九尾）**; and `chr_b[24]`'s per-size HP slots 3/4 are **192, 208**, exactly the owner's
+> observed Naruto size-7/8 HP, where `chr_b[21]` gives `176, 192`. So the *name-within-series* ordering
+> is off for these rows while the series column is right.
+>
+> Likely cause: this table assumes the `0x020924B0` string-table index equals the `chr_b` index, and
+> `Battle-Engine-Map.md` **demoted** that assumption (its claim that the table's 6-bit id equals
+> `classId` was refuted on a range mismatch). The alignment was never verified.
+>
+> **Also: the tier field is located.** The tier table below (`1`→−1, `2`→+0, `3`→+1) is
+> `chr_b` byte **`+0x01`**, copied to battle-struct `+0x11` by the init function `0x02077C0C`. Its
+> distribution is `{1:11, 2:56, 3:7}`. See `findings/docs-coverage-sweep.md`.
+
+
 Complete mapping extracted from ARM9.bin pointer table at offset 0x0924B0.
 
 ## chr_b.bin → Collision File Mapping

@@ -53,6 +53,17 @@ end-to-end. No claim in this document is unverified as of this update; see
 
 ## Subsystem: damage-pipeline
 
+**HP/SP application is command-dispatched (2026-08-15, iteration 46).** The apply functions are reached as numbered cases of the 73-case per-character dispatcher at ov6 `0x02157A60` (`cmp r2,#72; addls pc,pc,r2,lsl#2`, table `0x02157A68`–`0x02157B88`, `BattleChara.cpp`):
+
+| command | case target | calls |
+|---|---|---|
+| **23** | `0x02157DB8` | `0x020783CC` — the HP-apply trampoline |
+| **24** | `0x02157DC8` | `0x020781E4` — the SP apply |
+| **32** | `0x02157E04` | `0x020783DC` — HP-apply sibling |
+
+This adds no new caller (`0x02157DB8` is almost certainly among the 8 ARM script-effect sites already counted) but it reframes **campaign item B11, "who computes the delta"**: the delta arrives as an *argument to a command*, so the producer is whatever fills the dispatcher's arguments — not anything inside the apply path. Finding a caller that passes `r2 = 23` is the new B11 approach, and it does not depend on offset scanning. Full case map in `findings/73-case-dispatcher-enumerated.md`.
+
+
 **Status:** PARTIAL (4 confirmed / 3 plausible / 2 speculative claims)
 
 | # | Claim | Key addresses | Confidence |

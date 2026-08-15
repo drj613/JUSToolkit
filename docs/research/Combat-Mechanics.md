@@ -121,6 +121,13 @@ Remain active after character switches out or is KO'd.
 ### Technical Details
 
 - `projectileId` in collision: negative values reference shot definitions
+  — **REFUTED as a per-character shot index (2026-08-14).** Tested across all 2837 collision records
+  and 184 shot files: only 5/211 (2.4%) negative values fall inside the owning character's shot
+  record count, 31 characters carry negative values while owning no shot file, and 95 of 184
+  characters with a shot file have no negative value anywhere. The negatives form a contiguous
+  −18..−34 band with nothing between −1 and −17, which suggests a biased index into a *global*
+  17-entry table (`-v-18`) rather than the per-character file. See
+  `findings/shot-data-and-projectileid-refuted.md`.
 - Shot file structure: 32 bytes per record
 - Collision types: type4 = projectile, type5 = summon
 - High `durationMult` values indicate trap/persistent behavior

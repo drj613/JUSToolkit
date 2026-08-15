@@ -1,9 +1,11 @@
 {
- "iteration": 40,
+ "iteration": 41,
  "phase": "combat",
- "current_task": "find callers of the 31 ov6 collision accessor stubs; they should lead to the record walker",
+ "current_task": "re-attribute Battle-Engine-Map addresses to modules via the new symbol table",
  "queue": [
-  "find callers of the 31 ov6 collision stubs -> the runtime CollisionEntry walker (map open question)",
+  "re-attribute every Battle-Engine-Map address via extract_symbols.py --nearest (cheap, corrects/confirms subsystem assignments in bulk)",
+  "build a .cpp module map (211 translation units ordered by address) to bound neighbourhood inference",
+  "find what indexes the 68-entry table at 0x02171FEC (the real walker question)",
   "find what reads slot+0x02 (the real ProjectileId consumer)",
   "chr/ai/* + ai_param.bin for ov11 (269 files)",
   "C6h-bisect-frame-for-0x134-writer (harness-side)",
@@ -45,7 +47,8 @@
   "collision-subtype-vs-jpower",
   "shot-data-profiled-projectileid-REFUTED",
   "projectileid-is-a-selector-17entry-table-REFUTED",
-  "collision-accessor-bank-found-kind-table-decoded-projectileid-is-a-copied-tag"
+  "collision-accessor-bank-found-kind-table-decoded-projectileid-is-a-copied-tag",
+  "symbols-recovered-275-named-functions-stub-dispatch-table-found"
  ],
  "stuck": {},
  "required_reading_for_koma_tasks": [
@@ -137,7 +140,10 @@
   "ov6_collision_accessor_bank": "0x02155900-0x02156900, ~36 tiny funcs, record ptr in r1, 11 of 16 named fields read",
   "ov6_spawn_factory": "0x021565A4; kind in r1 (0..16), ExtFlags in r2; indexes table 0x021710A8 -> slot; writes object[slot*16+0]=kind, +1=ExtFlags",
   "ov6_kind_slot_table": "0x021710A8 (ov6 file off 0x24388) = 17 signed bytes 06 05 00 00 00 01 02 02 02 02 02 03 04 00 02 02 01 -> 7 distinct slots",
-  "projectileid_is_a_copied_tag": "kinds 8 (0x02155D84) and 14 (0x02155DA4) only; strb to slot+0x02, verbatim, no bias/index/switch"
+  "projectileid_is_a_copied_tag": "kinds 8 (0x02155D84) and 14 (0x02155DA4) only; strb to slot+0x02, verbatim, no bias/index/switch",
+  "SYMBOLS_RECOVERED": "ROM keeps assert strings: function name + source .cpp. 211 distinct .cpp files, 324 bindings, 275 distinct named functions -> jus_files/analysis/symbols.json via scripts/decomp/extract_symbols.py",
+  "ov6_named_functions": "Battle_ObjShotManCreate=0x0216A7BC (BattleObjShot.cpp), Battle_ObjCtrlManCreate=0x02168B88 (BattleObjCtrl.cpp), Battle_CharaCreate=0x02156A38, Battle_NoteTrackCreate=0x021553E0, Battle_MarkerCreate=0x02167F20, Battle_PrmDataInit=0x021702BC",
+  "ov6_stub_dispatch_table": "0x02171FEC-0x021720F8 = 68 contiguous ov6 function pointers; the 36 collision stubs are entries (28 of 36 have zero direct callers)"
  },
  "combat_phase_spillover": [
   "status-effect enum = 10 values, contiguous IDs 0x19-0x22 (Shock/Freeze/Burn/Confusion/Poison/Judgment/Paralysis/Blindness/Speed-Down/Battle+Support Seal). Likely an immunity BITMASK on character state struct.",
@@ -701,6 +707,8 @@
   "READ THE C# SCHEMA FIRST: src/JUS.Tool/Combat/Converters/*.cs are authoritative field-by-field readers. Binary2Collision.cs fixed ProjectileId at 0x03 and named HitTier/HitProperties. 4 of my 5 offset guesses were wrong.",
   "DO NOT bank an untested successor hypothesis (iter 38->39): I refuted the documented ProjectileId reading, proposed \"-v-18 into a global 17-entry table\" in the same breath, wrote it up as the next lead, and it failed both tests one wake later. Test the successor before recording it as the way forward.",
   "Check for stride arithmetic before calling a field-reading cluster a record walker (iter 40): 11 of 16 collision fields read off one base looked like the parser, but 36 function starts and no #0x14 made it an accessor bank. Caught it myself before writing.",
-  "Arity coincidences are not identities (iter 40): 17 spawn kinds vs 17 ProjectileId values is tempting, but only 2 of 17 stubs read the field and their kinds are hardcoded immediates. Declined to claim it."
+  "Arity coincidences are not identities (iter 40): 17 spawn kinds vs 17 ProjectileId values is tempting, but only 2 of 17 stubs read the field and their kinds are hardcoded immediates. Declined to claim it.",
+  "The ROM has debug symbols and the campaign nearly missed it (iter 41): Battle-Engine-Map claim 7 used BattleAI_* assert strings once, in passing, to identify ov11 - then nobody generalised it for ~30 iterations. When a technique works once, ask what else it names.",
+  "Neighbourhood is not containment (iter 41): --nearest gives the closest NAMED function below an address, with unnamed functions in between. Good enough to assign a module (PLAUSIBLE), never enough for CONFIRMED_STATIC."
  ]
 }

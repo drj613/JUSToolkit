@@ -1,9 +1,10 @@
 {
- "iteration": 56,
+ "iteration": 57,
  "phase": "combat",
- "current_task": "establish r10's type at 0x02081340",
+ "current_task": "identify the accumulated values at pipeline stage 8",
  "queue": [
-  "establish r10's type at 0x02081340 (find the enclosing function entry and its callers) -- upgrades the writer link from PLAUSIBLE to confirmed",
+  "identify the accumulated values [sp,#0x4c] and r7 at pipeline stage 8 -- if damage figures, the contact array is a per-pair damage ledger and links collision to the damage pipeline",
+  "read collision pipeline stages 1-7 (0x0207FBD0, 0x02080C70, 0x02080E5C, 0x020801FC, 0x02080510, 0x020805E8, 0x020802D0) -- ordering should show the broadphase/narrowphase split",
   "identify the accumulated values [sp,#0x4c] and r7 in block 1 -- if damage figures, the array is a per-pair damage ledger",
   "decode 0x02081A58 (packed nibbles -> row index) to learn what the rows are",
   "read 0x0207D9AC properly (229 instrs, the only live per-frame collision phase)",
@@ -77,7 +78,8 @@
   "colprm-manager-mapped-40-fields-guard5-false-positive-fixed",
   "colprm-E0-E4-E8-are-owned-subobjects-not-hot-state",
   "colprm-22-bucket-array-and-19-entry-phase-table",
-  "CONTACT-ARRAY-WRITER-FOUND-arm9-4-accumulators-base-is-+0x154"
+  "CONTACT-ARRAY-WRITER-FOUND-arm9-4-accumulators-base-is-+0x154",
+  "contact-array-chain-CONFIRMED-8-stage-collision-pipeline-found"
  ],
  "stuck": {},
  "required_reading_for_koma_tasks": [
@@ -203,7 +205,9 @@
   "COLPRM_LAYOUT_REVISED": "+0x00..+0x24 init block (10 words); +0x28..+0xD7 TWENTY-TWO bucket list heads x 8 bytes (so iter-53 \"list heads at +0x70/+0xD0\" are buckets 9 and 21); +0xD8 free-list head; +0xE0/+0xE4/+0xE8 owned sub-objects; +0xEC/+0xF0 more pointers; +0xFC..+0x148 PHASE TABLE of 19 function pointers (NOT data); +0x14C byte; +0x158 contact array.",
   "COLPRM_CALLBACKS": "0x02028384 REGISTERS A CALLBACK FUNCTION (not a table). 0x0207F480 = per-frame reset: drains 22 buckets at manager+0x28 into the free list at +0xD8 via 0x02037C24 (unlink) / 0x02037B98 (link). 0x0207FB60 = phase driver: fetches the manager via [subobj+4]+0x10 then blx manager+0xFC, +0x100, +0x104. +0xFC and +0x100 are bx-lr STUBS; only +0x104 = 0x0207D9AC is live (229 instrs, opens ldr r5,[r0,#0x28]).",
   "CONTACT_ARRAY_WRITER": "arm9 0x02081340 / 0x02081388 / 0x020813D0 / 0x02081418 - four read-modify-write accumulator blocks 0x48 apart, all \"add r2,sl,#0x154\" then mla by 0xC0 (row) and 0x30 (column). They accumulate into element fields +0x10 (and +0x28), +0x0C, +0x08, +0x04 respectively. Preceded by tst r0,#0xc0 flag tests and nibble extraction feeding bl 0x02081A58.",
-  "ARRAY_BASE_IS_0x154": "CORRECTION to iteration 52: the contact array is based at manager+0x154, NOT +0x158. The writer computes it explicitly. Query 71 therefore reads element +0x04 and +0x1C. Element fields known: +0x04 (written blk4, READ by query 71), +0x08, +0x0C, +0x10, +0x1C (read), +0x28."
+  "ARRAY_BASE_IS_0x154": "CORRECTION to iteration 52: the contact array is based at manager+0x154, NOT +0x158. The writer computes it explicitly. Query 71 therefore reads element +0x04 and +0x1C. Element fields known: +0x04 (written blk4, READ by query 71), +0x08, +0x0C, +0x10, +0x1C (read), +0x28.",
+  "COLLISION_PIPELINE": "0x0207F480 (callback on ColPrm+0xE0, word ref 0x0207C860) is the PER-FRAME COLLISION DRIVER: 440 instructions ending at 0x0207FB60. Opens with the 22-bucket drain, then runs 8 stages at 0x0207FA60..0x0207FA98, each mov r0,r6 + bl, r6 = the manager: 0x0207FBD0, 0x02080C70, 0x02080E5C, 0x020801FC, 0x02080510, 0x020805E8, 0x020802D0, 0x02080C28. Stage 8 -> 0x02080C28 (4-instr forwarder) -> 0x02080F14 (mov sl,r0) -> the four contact-array accumulators.",
+  "CONTACT_ARRAY_CHAIN_CONFIRMED": "r10 at 0x02081340 IS the ColPrm manager: r6 set at 0x0207F48C from [subobj+4]+0x10 and written ZERO times across 440 instructions before mov r0,r6 at 0x0207FA98. So the writer and ov6 query 71 touch the same array. Producer/consumer: block 0x02081418 writes element +0x04, query 71 reads element +0x04."
  },
  "combat_phase_spillover": [
   "status-effect enum = 10 values, contiguous IDs 0x19-0x22 (Shock/Freeze/Burn/Confusion/Poison/Judgment/Paralysis/Blindness/Speed-Down/Battle+Support Seal). Likely an immunity BITMASK on character state struct.",
@@ -795,7 +799,9 @@
   "A FIELD MAPPER CANNOT SEE ARRAYS (iter 55): struct_fields.py reported ColPrm +0x70 and +0xD0 as separate list heads; they are buckets 9 and 21 of a 22-entry array at +0x28. A sparsely-used array always appears as scattered fields. Before reading a map as a struct definition, look for constant strides in the CODE that walks it.",
   "Check whether \"table\" words decode as instructions (iter 55): I called 0x0207F480/0x0207FB60/0x0207FBB0 handler tables in iteration 54 after printing their words without asking if they were ARM code. All three are functions. One decode step would have caught it.",
   "SCAN BY COMPUTATION SHAPE, NOT OFFSET (iter 56): searching for stores at offsets inside the array range gave 2251 hits ROM-wide; searching for the 0xC0/0x30 stride pair gave 5, of which 4 were the answer. When a structure has distinctive index arithmetic, match the arithmetic - it is orders of magnitude more selective than the offset.",
-  "A base inferred from a read offset is under-determined (iter 56): iteration 52 put the array at +0x158 because query 71 two reads had to land in one 0x30 element - true but any base satisfying that fits. The writer computes add r2,sl,#0x154 directly. Prefer a base the CODE computes over one you deduce from a consumer."
+  "A base inferred from a read offset is under-determined (iter 56): iteration 52 put the array at +0x158 because query 71 two reads had to land in one 0x30 element - true but any base satisfying that fits. The writer computes add r2,sl,#0x154 directly. Prefer a base the CODE computes over one you deduce from a consumer.",
+  "ESTABLISH A FUNCTION EXTENT BEFORE NAMING IT (iter 57): I called 0x0207F480 \"the per-frame reset\" in iteration 55 after reading ~20 of its 440 instructions - it is the collision driver and the drain is only its opening. Same failure as iteration 54 (\"handler table\" from unread words) and 53 (\"hot fields\" from access counts): describing a region from the part I happened to print. Finding the next prologue is one step and bounds the thing before you label it.",
+  "A zero-write check is also a POSITIVE tool (iter 57): the reassignment guard that caught phantom fields in iterations 49-50 was used here in the affirmative - proving r6 is never written across 440 instructions is what upgraded the writer link to CONFIRMED_STATIC."
  ],
  "open_questions_for_owner": [
   "Note-kind bucketing: the engine keeps at most 7 simultaneous \"notes\" per character, and 7 of the 17 kinds share one slot (kinds 6,7,8,9,10,14,15) so they should be mutually exclusive in play. Does starting one of those effects visibly cancel another?"

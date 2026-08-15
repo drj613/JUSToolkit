@@ -341,6 +341,25 @@ None of the 5 claims were outright REFUTED by any lens. Claim 5's downgrade is a
 
 ## Subsystem: collision-data
 
+**Runtime collision system located (2026-08-15, iterations 52–57).** The static `chr/col/*` records were always the *input*; this is the machinery that consumes them.
+
+`*(0x0214BE10)` is the **BattleColPrm manager** (arm9 `BattleColPrm.cpp`, written at `0x0207C844`):
+
+| region | contents |
+|---|---|
+| `+0x28`–`+0xD7` | 22 bucket list heads, 8 bytes each — drained every frame |
+| `+0xD8` | free list |
+| `+0xE0`/`+0xE4`/`+0xE8` | owned sub-objects, each with a registered callback |
+| `+0xFC`–`+0x148` | 19-entry phase table (all excluded as array writers) |
+| **`+0x154`** | **pair-wise contact array**: rows `0xC0`, elements `0x30`, 4 per row |
+
+**Per-frame driver:** `0x0207F480`, the callback on `+0xE0` — 440 instructions that drain the 22 buckets, then run an **8-stage pipeline** (`0x0207FA60`–`0x0207FA98`), every stage taking the manager as `arg0`. Stage 8 reaches four accumulator blocks at `0x02081340`/`0x02081388`/`0x020813D0`/`0x02081418` which do `add r2,sl,#0x154` and `+=` into element fields `+0x10`(and `+0x28`), `+0x0C`, `+0x08`, `+0x04`.
+
+**Producer/consumer confirmed across binaries:** block `0x02081418` writes element `+0x04`; ov6 query 71 (the move-script predicate "is any other entity in contact?") reads element `+0x04`. The full chain manager→writer is CONFIRMED_STATIC — `r6` holds the manager with zero intervening writes across all 440 instructions.
+
+Open: what the accumulated values are (`[sp,#0x4c]` and `r7` at stage 8) — if damage figures, this is a per-pair damage ledger. See `findings/collision-pipeline-closed.md` and `findings/contact-array-writer-found.md`.
+
+
 **Status:** PARTIAL — full-roster scale reached this phase (**round 2**, Phase-0 specs P1+P2). **Coverage:** 281/281 collision JSONs now exist and were mined — 74/74 `*_b_*` battle-character files + 206 `*_s_*` support files + 1 shared `item_collision.json`. Round 1's 4-file/92-entry sample (5.4% roster coverage) is superseded by a full-roster 2047-entry (battle, non-terminator: 1861) / 747-entry (support) pooled dataset — an ~22x scale-up. Still **data-only** (no disassembly; a single data-consistency verification lens, not the usual three). **Round 2 confidence: 3 CONFIRMED_STATIC / 6 PLAUSIBLE / 4 SPECULATIVE** (13 claims; this table fully supersedes round 1's — several round-1 findings *broke*, not merely weakened, at scale).
 
 | # | Claim | Confidence |

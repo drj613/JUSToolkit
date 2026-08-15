@@ -25,6 +25,7 @@ this large.
 ```
 BattleColPrm manager   (*(0x0214BE10))
   +0x00 .. +0x24   ten consecutive words, written in order at 0x0207C4F0..0x0207C514
+                     NOT uniform init data: +0x20 is a LIST HEAD (linked at 0x0207CBB8) -- iteration 67
                      +0x18 is the only one later read as well as written
   +0x70            list head          (ldr, 0x0207D89C)
   +0xD0            list head          (ldr, 0x0207D3A8)

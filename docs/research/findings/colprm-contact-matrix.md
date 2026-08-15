@@ -93,7 +93,7 @@ command instead of a hand-walk, with the six-wake guards applied automatically.
 | `0x0214BE14` is the BattleObj manager | **CONFIRMED_STATIC** — 22 of 22 refs in `BattleObj.cpp`; confirms map claim 1 |
 | `*(0x02172960)` is a battle-wide context | **PLAUSIBLE** — 127 refs, dominated by ov11 `BattleAI*` |
 | Query 71 indexes an array of `0x30`-byte elements based at `lr` | **REFUTED** — `+0x158` exceeds one element |
-| The array is embedded at `ColPrm+0x158`, elements `0x30`, rows `0xC0` | **CONFIRMED_STATIC** — both reads fall inside one element (`0x170-0x158 = 0x18`) |
+| The array is embedded at `ColPrm+0x158`, elements `0x30`, rows `0xC0` | **CORRECTED (iteration 56)** — geometry right, base wrong: it is `+0x154`. The writer at `0x02081340` computes `add r2,sl,#0x154` explicitly, so query 71's reads are element `+0x04` and `+0x1C`. See `findings/contact-array-writer-found.md`. |
 | The array is a pair-wise contact matrix | **PLAUSIBLE** — `[self][other]` indexing plus the `BattleColPrm.cpp` module name |
 | Rows hold 4 elements because battles have 4 entities | **not claimed** — `0xC0/0x30 = 4` is a fixed width; the active count is unverified |
 | The array's contents can be read statically | **REFUTED** — the base is a runtime pointer |

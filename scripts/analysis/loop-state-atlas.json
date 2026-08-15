@@ -1,9 +1,11 @@
 {
- "iteration": 55,
+ "iteration": 56,
  "phase": "combat",
- "current_task": "scan the remaining 16 ColPrm phase-table entries for the contact-array writer",
+ "current_task": "establish r10's type at 0x02081340",
  "queue": [
-  "scan the other 16 ColPrm phase-table entries for a store to +0x158 (only 3 of 19 checked; the contact-array writer is likely among them)",
+  "establish r10's type at 0x02081340 (find the enclosing function entry and its callers) -- upgrades the writer link from PLAUSIBLE to confirmed",
+  "identify the accumulated values [sp,#0x4c] and r7 in block 1 -- if damage figures, the array is a per-pair damage ledger",
+  "decode 0x02081A58 (packed nibbles -> row index) to learn what the rows are",
   "read 0x0207D9AC properly (229 instrs, the only live per-frame collision phase)",
   "find +0xE8's teardown or confirm it leaks (grep arm9 for a null-store to +0xE8 off a ColPrm base)",
   "find what WRITES the contact array at ColPrm+0x158 -- that writer is the actual collision test",
@@ -74,7 +76,8 @@
   "colprm-manager-named-contact-matrix-at-+0x158",
   "colprm-manager-mapped-40-fields-guard5-false-positive-fixed",
   "colprm-E0-E4-E8-are-owned-subobjects-not-hot-state",
-  "colprm-22-bucket-array-and-19-entry-phase-table"
+  "colprm-22-bucket-array-and-19-entry-phase-table",
+  "CONTACT-ARRAY-WRITER-FOUND-arm9-4-accumulators-base-is-+0x154"
  ],
  "stuck": {},
  "required_reading_for_koma_tasks": [
@@ -198,7 +201,9 @@
   "COLPRM_SUBOBJECTS": "+0xE0/+0xE4/+0xE8 are OWNED SUB-OBJECT POINTERS, not per-frame state. Uniform lifecycle: factory -> str -> init 0x02012940(obj,&id) -> install handler table via 0x02028384(obj->[4],table) -> self-register via vtable slot 0x24 with r1=owner. +0xE0: factory 0x02020D90, id 0x9E000, table 0x0207F480. +0xE4: factory 0x02026F94, id 0xA5000, table 0x0207FB60. +0xE8: factory 0x02026F94, id 0xA0000, table 0x0207FBB0. Teardown at 0x0207C93C destroys +0xE0 and +0xE4 via vtable slot 0x8 and nulls them; +0xE8 is NOT torn down in that window.",
   "SHARED_COMPONENT_0x02026F94": "factory 0x02026F94 is used by BOTH ColPrm (+0xE4 id 0xA5000, +0xE8 id 0xA0000) and Battle_NoteTrackCreate (0x02155440 -> NoteTrack+0x8C, id 0x86000). Same object type, same vtable-0x24 self-registration. Resource ids passed to 0x02012940 in arm9: 12 distinct, all 0x1000-aligned, 0x040000 / 0x08A000..0x0A6000 / 0x0C0000.",
   "COLPRM_LAYOUT_REVISED": "+0x00..+0x24 init block (10 words); +0x28..+0xD7 TWENTY-TWO bucket list heads x 8 bytes (so iter-53 \"list heads at +0x70/+0xD0\" are buckets 9 and 21); +0xD8 free-list head; +0xE0/+0xE4/+0xE8 owned sub-objects; +0xEC/+0xF0 more pointers; +0xFC..+0x148 PHASE TABLE of 19 function pointers (NOT data); +0x14C byte; +0x158 contact array.",
-  "COLPRM_CALLBACKS": "0x02028384 REGISTERS A CALLBACK FUNCTION (not a table). 0x0207F480 = per-frame reset: drains 22 buckets at manager+0x28 into the free list at +0xD8 via 0x02037C24 (unlink) / 0x02037B98 (link). 0x0207FB60 = phase driver: fetches the manager via [subobj+4]+0x10 then blx manager+0xFC, +0x100, +0x104. +0xFC and +0x100 are bx-lr STUBS; only +0x104 = 0x0207D9AC is live (229 instrs, opens ldr r5,[r0,#0x28])."
+  "COLPRM_CALLBACKS": "0x02028384 REGISTERS A CALLBACK FUNCTION (not a table). 0x0207F480 = per-frame reset: drains 22 buckets at manager+0x28 into the free list at +0xD8 via 0x02037C24 (unlink) / 0x02037B98 (link). 0x0207FB60 = phase driver: fetches the manager via [subobj+4]+0x10 then blx manager+0xFC, +0x100, +0x104. +0xFC and +0x100 are bx-lr STUBS; only +0x104 = 0x0207D9AC is live (229 instrs, opens ldr r5,[r0,#0x28]).",
+  "CONTACT_ARRAY_WRITER": "arm9 0x02081340 / 0x02081388 / 0x020813D0 / 0x02081418 - four read-modify-write accumulator blocks 0x48 apart, all \"add r2,sl,#0x154\" then mla by 0xC0 (row) and 0x30 (column). They accumulate into element fields +0x10 (and +0x28), +0x0C, +0x08, +0x04 respectively. Preceded by tst r0,#0xc0 flag tests and nibble extraction feeding bl 0x02081A58.",
+  "ARRAY_BASE_IS_0x154": "CORRECTION to iteration 52: the contact array is based at manager+0x154, NOT +0x158. The writer computes it explicitly. Query 71 therefore reads element +0x04 and +0x1C. Element fields known: +0x04 (written blk4, READ by query 71), +0x08, +0x0C, +0x10, +0x1C (read), +0x28."
  },
  "combat_phase_spillover": [
   "status-effect enum = 10 values, contiguous IDs 0x19-0x22 (Shock/Freeze/Burn/Confusion/Poison/Judgment/Paralysis/Blindness/Speed-Down/Battle+Support Seal). Likely an immunity BITMASK on character state struct.",
@@ -788,7 +793,9 @@
   "A GREEN SELFTEST IS NOT CORRECTNESS (iter 53): the selftest passed both before and after a real tool bug, because its anchors did not exercise the broken path. What caught it was cross-checking the new map against a field known from earlier unrelated work (+0x70 from iter 52). Rule: list a struct known fields BEFORE mapping it, and treat any the tool misses as a tool bug until proven otherwise.",
   "ACCESS COUNT DOES NOT IMPLY HOT STATE (iter 54): I called ColPrm +0xE0/+0xE4/+0xE8 \"the per-frame mutable state\" because they had 5-6 read+write accesses while other fields were write-once. They are owned sub-object pointers; the reads are a constructor reloading the pointer before each of four setup calls. Construction-via-several-calls and per-frame mutation produce identical access profiles. Read the code before characterising a field.",
   "A FIELD MAPPER CANNOT SEE ARRAYS (iter 55): struct_fields.py reported ColPrm +0x70 and +0xD0 as separate list heads; they are buckets 9 and 21 of a 22-entry array at +0x28. A sparsely-used array always appears as scattered fields. Before reading a map as a struct definition, look for constant strides in the CODE that walks it.",
-  "Check whether \"table\" words decode as instructions (iter 55): I called 0x0207F480/0x0207FB60/0x0207FBB0 handler tables in iteration 54 after printing their words without asking if they were ARM code. All three are functions. One decode step would have caught it."
+  "Check whether \"table\" words decode as instructions (iter 55): I called 0x0207F480/0x0207FB60/0x0207FBB0 handler tables in iteration 54 after printing their words without asking if they were ARM code. All three are functions. One decode step would have caught it.",
+  "SCAN BY COMPUTATION SHAPE, NOT OFFSET (iter 56): searching for stores at offsets inside the array range gave 2251 hits ROM-wide; searching for the 0xC0/0x30 stride pair gave 5, of which 4 were the answer. When a structure has distinctive index arithmetic, match the arithmetic - it is orders of magnitude more selective than the offset.",
+  "A base inferred from a read offset is under-determined (iter 56): iteration 52 put the array at +0x158 because query 71 two reads had to land in one 0x30 element - true but any base satisfying that fits. The writer computes add r2,sl,#0x154 directly. Prefer a base the CODE computes over one you deduce from a consumer."
  ],
  "open_questions_for_owner": [
   "Note-kind bucketing: the engine keeps at most 7 simultaneous \"notes\" per character, and 7 of the 17 kinds share one slot (kinds 6,7,8,9,10,14,15) so they should be mutually exclusive in play. Does starting one of those effects visibly cancel another?"

@@ -1,9 +1,9 @@
 {
- "iteration": 43,
+ "iteration": 44,
  "phase": "combat",
- "current_task": "find the consumer of prmData+0x00 (the collision-array walker)",
+ "current_task": "find callers of the ov6 prmData accessor bank at 0x02157DD8-0x02157F50",
  "queue": [
-  "find code loading +0x00 off a PrmData pointer = the collision-array consumer / walker (constrain with a nearby #0x14 stride multiply, or start from Battle_PrmDataInit callers)",
+  "find callers of the 5 ov6 prmData accessors at 0x02157DD8-0x02157F50 (the precise walker question); if zero direct callers, search their addresses as 32-bit words like the iter-41 stub table",
   "resolve prmData +0x0C/+0x10/+0x14 prefixes (3 unidentified per-character files)",
   "read BattleObj.cpp end to end: [0x02083204,0x02083FCC) is only 0xDC8 bytes = the generic entity API",
   "find what indexes the 68-entry table at 0x02171FEC (the real walker question)",
@@ -51,7 +51,8 @@
   "collision-accessor-bank-found-kind-table-decoded-projectileid-is-a-copied-tag",
   "symbols-recovered-275-named-functions-stub-dispatch-table-found",
   "module-map-built-bulk-reattribution-refuted-projectile-3-layer-architecture",
-  "prmdatainit-is-the-collision-loader-array-at-prmdata+0"
+  "prmdatainit-is-the-collision-loader-array-at-prmdata+0",
+  "prmdata-at-char+0x84-accessor-mediated-walker-search-reframed"
  ],
  "stuck": {},
  "required_reading_for_koma_tasks": [
@@ -152,7 +153,9 @@
   "ATTRIBUTION_TRUST": "only 43/194 map addresses get a range <=0x2000. arm9 median gap 0xB60 max 0x6578; ov6 median 0x14D0 max 0x8618. Attribution BOUNDS, never proves - unnamed .cpp can hide in any gap.",
   "PRMDATA_STRUCT": "Battle_PrmDataInit(r0=kind,r1=index) at ov6 0x021702BC allocates 0x20 bytes: +0x00 chr/col array, +0x04 chr/shot, +0x08 chr/effect, +0x0C/+0x10/+0x14 three more loads, +0x18=-1 +0x1A=0x7a +0x1C=-1 +0x1E=-1",
   "ARM9_NAME_TABLE": "0x020924B0 = 74 battle entries {char* name, u32 extra} at 8-byte stride (idx73=dt_b_04); 0x02092700 = 193 support (idx192=dt_s_03). 0x250=74*8. extra += 0x100 per index. ALREADY in ARM9-Research-Guide.md:44,123-127 - the consumer is what was new.",
-  "LOADER_FUNCTIONS": "Battle_PrmDataInit 0x021702BC (col/shot/effect); Battle_CharaParamCreate 0x021614B0 (bin/state.bin, bin/exadd.bin); BattleMapLoadItem 0x021644C4 (item/J_Power.aar, item/itemprob.ipf); ov11 0x02177060 + 0x02181028 (chr/ai/)"
+  "LOADER_FUNCTIONS": "Battle_PrmDataInit 0x021702BC (col/shot/effect); Battle_CharaParamCreate 0x021614B0 (bin/state.bin, bin/exadd.bin); BattleMapLoadItem 0x021644C4 (item/J_Power.aar, item/itemprob.ipf); ov11 0x02177060 + 0x02181028 (chr/ai/)",
+  "PRMDATA_AT_CHAR_0x84": "str r0,[r1,#0x84] at 0x0215F6B0. Path: character+0x84 -> prmData -> +0x00 -> chr/col array -> +index*20. Loading loop uses a 0x1C-stride descriptor: kind at +0x15, index at +0x16, prmData cached at +0x0C; kind remapped through a word table before the call.",
+  "ACCESSOR_MEDIATED_ACCESS": "char+0x84 is read at only 10 sites ROM-wide and ZERO chain into +0x00. ov11 0x0217B0B4/0x0217B0CC/0x0217B0E4 are a bank of 5-instruction bx-lr accessors returning char+0x84/+0x90/+0x9C; ov6 has 5 clustered sites 0x02157DD8-0x02157F50 in BattleChara.cpp. Consumers get the pointer in a register -> offset-chain scans cannot find them."
  },
  "combat_phase_spillover": [
   "status-effect enum = 10 values, contiguous IDs 0x19-0x22 (Shock/Freeze/Burn/Confusion/Poison/Judgment/Paralysis/Blindness/Speed-Down/Battle+Support Seal). Likely an immunity BITMASK on character state struct.",
@@ -721,6 +724,9 @@
   "Neighbourhood is not containment (iter 41): --nearest gives the closest NAMED function below an address, with unnamed functions in between. Good enough to assign a module (PLAUSIBLE), never enough for CONFIRMED_STATIC.",
   "Shared overlay load addresses bit me a 3rd time (iter 42): 10 overlays share 0x0214CD20, so span-based binary lookup put battle code in Option.cpp/Opening.cpp/Movie.cpp. find_callers.py already warns about exactly this. ANY address->binary lookup in the shared window needs an explicit overlay label.",
   "Quantify a method reach before trusting its output (iter 42): the module map looked like it attributed 177/194 addresses; measuring gap width showed only 43 were trustworthy. The two largest buckets were the two to discard.",
-  "Path literals beat .cpp literals for labelling (iter 43): .cpp asserts are ~1 per file (26 refs / 22 files in ov6) so they cannot densify a module map - REFUTED. But a function that loads a file references its path, which identifies purpose directly. That found the collision loader in one pass."
+  "Path literals beat .cpp literals for labelling (iter 43): .cpp asserts are ~1 per file (26 refs / 22 files in ov6) so they cannot densify a module map - REFUTED. But a function that loads a file references its path, which identifies purpose directly. That found the collision loader in one pass.",
+  "Scanners must stop at function boundaries (iter 44): my char+0x84 -> +0x00 chain scan looked ahead 4 instructions with no boundary check and walked over a bx lr (0xE12FFF1E), inventing a collision-array reader in ov11. With the check, 0 of 10 sites chain. 5th under-constrained-scan false positive this campaign.",
+  "x20 stride scanning is not discriminating (iter 44): 70 hits ROM-wide because 20 bytes is a very common struct size. Recognised and abandoned instead of grinding through them.",
+  "ACCESSOR-MEDIATED ACCESS is why the walker resisted 40+ iterations (iter 44): the engine never inlines char+0x84 -> prmData+0x00 -> x20. It calls an accessor. Every offset-based search was looking for a chain that does not exist in the instruction stream. Same shape as C3 (Thumb code searched as ARM). Switch to caller-graph search."
  ]
 }

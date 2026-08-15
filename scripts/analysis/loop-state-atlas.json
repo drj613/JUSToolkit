@@ -1,9 +1,10 @@
 {
- "iteration": 48,
+ "iteration": 49,
  "phase": "combat",
- "current_task": "map the NoteTrack 0xA8 struct (the move-script engine)",
+ "current_task": "name dispatcher commands 64-73 by reading the 7 live cases",
  "queue": [
-  "map the NoteTrack 0xA8 struct (the move-script engine): known +0x70 callback, +0x74, +0x7c, +0x88, +0x94/+0x98/+0xa3 init -1",
+  "name commands 64-73 by reading the 7 live dispatcher cases (the only commands actually issued)",
+  "identify 0x02026F94 return type = the object at NoteTrack+0x8C (vtable slots 0xA0, 0x24) -- likely the animation/timing manager",
   "name commands 64-73 by reading the 7 live cases -- these are the ones actually used",
   "identify the object at [X,#0x68] with the 33-slot vtable (384 calls in ov6) -- naming it labels a lot of code",
   "name cases 25/26/33/72 (all read [r0,#0x84], base type unknown per iter 45)",
@@ -61,7 +62,8 @@
   "73-case-dispatcher-found-accessor-bank-REFUTED-walker-needs-harness",
   "73-case-dispatcher-enumerated-hp-sp-are-commands-23-24-32",
   "notetrack-owns-the-command-callback-b11-reframe-is-a-dead-end",
-  "vtable-vs-field-distinction-cases-1-33-CONFIRMED-dead"
+  "vtable-vs-field-distinction-cases-1-33-CONFIRMED-dead",
+  "notetrack-struct-mapped-7-slots-then-callback"
  ],
  "stuck": {},
  "required_reading_for_koma_tasks": [
@@ -172,7 +174,9 @@
   "NOTETRACK_COMMANDS": "issued set {3,64,65,66,67,68,69,70,71,72,73} across 12 sites. Live in dispatcher: 3,65,66,67,69,71,72. No-op: 64,68,70. Out of range: 73. Generic forwarder 0x02156520 passes its caller r2 through; the 2 tail-call stubs 0x02156584/0x02156594 supply 64 and 68.",
   "NOTES_ARE_THE_16BYTE_SLOTS": "iter-40 slot records (+0x00 kind, +0x01 ExtFlags, +0x02 ProjectileId) are NoteTrack notes; forwarder ticks a halfword counter at note+0x04 and copies note+0x02 into note+0x01 when the command returns non-zero.",
   "CASES_1_33_ARE_DEAD": "CONFIRMED_STATIC (was PLAUSIBLE). The 4 remaining suspects 0x0215F1C4/0x0215F318/0x02168FEC/0x0216FF6C are C++ VIRTUAL CALLS at vtable slot 0x70 (each preceded by ldr r1,[r0,#0x0]), not NoteTrack field reads. So dispatcher cases 23/24 -> 0x020783CC/0x020781E4 are dead code; a second unused entry point.",
-  "OV6_IS_VIRTUAL": "384 vtable calls across 33 distinct slots in ov6. Most used: 0xD8 x80, 0x8 x45, 0x6C x39, 0xC x22, 0x24 x21, 0x94 x21, 0xEC x18, 0x14 x15, 0xA0 x14, 0x5C x14. Slot 0x70 exactly 4x. Object reached via ldr r0,[X,#0x68]."
+  "OV6_IS_VIRTUAL": "384 vtable calls across 33 distinct slots in ov6. Most used: 0xD8 x80, 0x8 x45, 0x6C x39, 0xC x22, 0x24 x21, 0x94 x21, 0xEC x18, 0x14 x15, 0xA0 x14, 0x5C x14. Slot 0x70 exactly 4x. Object reached via ldr r0,[X,#0x68].",
+  "NOTETRACK_LAYOUT": "0xA8 bytes. +0x00..+0x6F = 7 note slots x 16 bytes (slot +0x00 kind 0..16, +0x01 ExtFlags, +0x02 ProjectileId, +0x04 u16 counter). +0x70 command callback (0x02157A44). +0x74 the character (callback r1). +0x7C ctor arg2. +0x88 ctor arg1. +0x8C object from 0x02026F94. +0x90 word reset 0. +0x94 init -1. +0x98 init/reset -1. +0x9C/+0x9E halfwords reset 0. +0xA0/+0xA1/+0xA2 bytes reset 0. +0xA3 init -1. -1 = empty-slot sentinel.",
+  "MAX_7_ACTIVE_NOTES": "7-iteration reset loop at 0x021555E4 with add r4,r4,#0x10 confirms 7x16=0x70. Matches iter-40 kind->slot table 0x021710A8 (17 kinds -> 7 slots). Notes are BUCKETED by kind, not queued: slot 2 absorbs kinds 6,7,8,9,10,14,15 so those are mutually exclusive."
  },
  "combat_phase_spillover": [
   "status-effect enum = 10 values, contiguous IDs 0x19-0x22 (Shock/Freeze/Burn/Confusion/Poison/Judgment/Paralysis/Blindness/Speed-Down/Battle+Support Seal). Likely an immunity BITMASK on character state struct.",
@@ -752,6 +756,10 @@
   "B11 dead end recorded (iter 47): dispatcher cases 23/24 call the HP/SP apply functions but NOTHING issues those command numbers. The apply path is reachable a second way that is unused. A handler case existing does not mean it is invoked - enumerate the issuers before building on a case.",
   "ARM mask bug #3 (iter 47): for ldr Rd,[Rn,#imm] I masked the Rn field instead of Rd, so a scan for ldr ip,[Rn,#0x70] returned 0 sites. Correct mask is 0x0FF0FFFF vs 0x0590C070. Added a selftest against a known site before trusting the result - do this every time.",
   "Filter Rn=r15 out of offset scans (iter 47): 14 of 36 ldr [Rn,#0x70] hits were pc-relative literal loads, not field reads at all.",
-  "VTABLE SLOT vs STRUCT FIELD (iter 48): before treating ldr Rd,[Rn,#off] as a field read, check whether Rn was just loaded from [Rm,#0]. If so, off is a VTABLE SLOT INDEX and the type is whatever Rm is. ov6 has 384 virtual calls across 33 slots, so this is common, not an edge case. 5th member of the scan-error family: constrain to read every hit / stop at function boundaries / know the base type / exclude r15 bases / check for a preceding vtable load."
+  "VTABLE SLOT vs STRUCT FIELD (iter 48): before treating ldr Rd,[Rn,#off] as a field read, check whether Rn was just loaded from [Rm,#0]. If so, off is a VTABLE SLOT INDEX and the type is whatever Rm is. ov6 has 384 virtual calls across 33 slots, so this is common, not an edge case. 5th member of the scan-error family: constrain to read every hit / stop at function boundaries / know the base type / exclude r15 bases / check for a preceding vtable load.",
+  "Type-verified field mapping works, but needs reassignment tracking (iter 49): anchoring on a known-type register (ldr ip,[rN,#0x70]) is right, but without stopping at writes to rN the scan invented +0x10/+0x28/+0x40/+0x5C AND missed +0x94/+0xa3. The cross-check that proved the fixed version: every constructor store must appear."
+ ],
+ "open_questions_for_owner": [
+  "Note-kind bucketing: the engine keeps at most 7 simultaneous \"notes\" per character, and 7 of the 17 kinds share one slot (kinds 6,7,8,9,10,14,15) so they should be mutually exclusive in play. Does starting one of those effects visibly cancel another?"
  ]
 }

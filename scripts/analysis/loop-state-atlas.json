@@ -1,10 +1,11 @@
 {
- "iteration": 64,
+ "iteration": 65,
  "phase": "combat",
- "current_task": "identify *(0x0214BE0C), the fourth manager global",
+ "current_task": "map BattleCol.cpp (ColMan / ColObj), the layer beneath ColPrm",
  "queue": [
+  "GREP symbols.json FIRST on every new subsystem task -- 5 collision names sat unread for 24 wakes while I derived the structure by hand. Fold into the loose-ends rule.",
+  "map BattleCol.cpp: Battle_ColManCreate 0x0207AD3C, Battle_ColObjCreate 0x0207AEDC -- the layer beneath everything mapped in iterations 52-64; ColPrm buckets probably hold ColObjs",
   "HARNESS (now DECISIVE, not just useful): read watchpoint on ColPrm+0x154 -- bucket 1 is never filled yet the narrowphase accumulators sit behind its walk, so static analysis contradicts itself. One run settles whether the contact array is ever written. Recipe in iteration 45.",
-  "identify *(0x0214BE0C) -- a fourth manager global next to ColPrm and BattleObj, owning an 8-stride list array at offset 0",
   "identify what the driver ten allocated nodes represent (one per bucket per frame = ten fixed roles?)",
   "identify stage 1's four branch conditions that sort entries into buckets 5, 7, 15, 16",
   "identify what distinguishes buckets 5/7/15/16 -- the branch conditions before each of stage 1 four link calls define the classification",
@@ -89,7 +90,8 @@
   "broadphase-bucket-fill-is-stage-1",
   "collision-bucket-dataflow-mapped-9-of-22",
   "driver-fills-10-buckets-bucket-6-producer-found",
-  "buckets-1-and-8-have-NO-producer-two-dead-read-paths"
+  "buckets-1-and-8-have-NO-producer-two-dead-read-paths",
+  "collision-is-three-modules-five-symbols-named"
  ],
  "stuck": {},
  "required_reading_for_koma_tasks": [
@@ -229,7 +231,9 @@
   "DRIVER_FILLS_10_BUCKETS": "0x0207F480 per frame: (1) drain all 22 buckets to the free list at +0xD8, (2) TEN unlink-from-free-list + link-into-bucket pairs filling buckets 11 (0x0207F5C4), 14 (0x0207F610), 0 (0x0207F648), 13 (0x0207F688), 6 (0x0207F6B4), 9 (0x0207F744), 17 (0x0207F77C), 12 (0x0207F7C4), 20 (0x0207F7F0), 21 (0x0207F81C), (3) run the 8 stages. Buckets are rebuilt from scratch each frame, not maintained. r6 = the manager with 0 writes after 0x0207F490.",
   "LINK_HELPER_CENSUS": "145 calls to 0x02037B98 (list link) ROM-wide, with r0 origin recovered at each. EXACTLY ONE targets +0x58 (bucket 6): arm9 0x0207F6B4. Producers known for 14 of 22 buckets; buckets 1, 2, 3, 4, 8, 10, 18, 19 have none. Buckets 1 (consumed by 0x02080F14) and 8 (consumed by stage 3) have consumers but no link-helper producer, so their insertion bypasses the helper.",
   "BUCKETS_1_AND_8_DEAD": "No producer anywhere in the ROM, verified 4 ways: (1) 145 immediate-offset link calls, none at +0x30/+0x68; (2) 6 computed-base link calls resolved - bases at offset 0, +0x24, +0x74, none at ColPrm +0x28; (3) 3 sibling list helpers 0x02037B54/0x02037BD8/0x02037C54, 8 calls total, none matching; (4) zero direct stores at +0x30/+0x68 off a verified manager register across the driver, stages 1-3 and 0x02080F14. Consumers exist: 0x02080F14 reads bucket 1 (6 of 6 bucket accesses, no computed form) and stage 3 reads bucket 8. Both are DEAD READ PATHS.",
-  "FOURTH_MANAGER_GLOBAL": "*(0x0214BE0C) is a manager with an 8-stride list array AT OFFSET 0, indexed by a small register (cmp r6,#2 after one insert). Site 0x0207BF40. Globals block: 0x0214BD80 chr_b base ptr, 0x0214BE0C this one, 0x0214BE10 BattleColPrm, 0x0214BE14 BattleObj."
+  "FOURTH_MANAGER_GLOBAL": "*(0x0214BE0C) is a manager with an 8-stride list array AT OFFSET 0, indexed by a small register (cmp r6,#2 after one insert). Site 0x0207BF40. Globals block: 0x0214BD80 chr_b base ptr, 0x0214BE0C this one, 0x0214BE10 BattleColPrm, 0x0214BE14 BattleObj.",
+  "COLLISION_THREE_MODULES": "BattleCol.cpp: Battle_ColManCreate 0x0207AD3C, Battle_ColObjCreate 0x0207AEDC, Battle_ColObjAddColWork 0x0207B11C. BattleColJoint.cpp: Battle_ColJointManCreate 0x0207BD40, manager = *(0x0214BE0C) with an 8-stride list array AT OFFSET 0, installed at 0x0207BE70 (1 writer of 9 refs). BattleColPrm.cpp: Battle_ColPrmManCreate 0x0207C4C0, manager = *(0x0214BE10). Everything iterations 52-64 mapped is the ColPrm layer only. The contact-array writer 0x02081340 = Battle_ColPrmManCreate + 0x4E80.",
+  "COLWORK_RECORD": "A ColWork is 0x64 bytes, allocated at 0x0207B150 (assert line 0x225), memset, then linked onto its owner ColObj list at +0x8, with a back-pointer to the owner at +0x20 and 0x20 stored at +0x18. Battle_ColObjAddColWork does NOT touch a ColPrm bucket."
  },
  "combat_phase_spillover": [
   "status-effect enum = 10 values, contiguous IDs 0x19-0x22 (Shock/Freeze/Burn/Confusion/Poison/Judgment/Paralysis/Blindness/Speed-Down/Battle+Support Seal). Likely an immunity BITMASK on character state struct.",
@@ -835,7 +839,8 @@
   "Do not assume a prologue (iter 62): my walk started at f+4 expecting a push, but stage 6 has no prologue and its ONLY bucket access is the first instruction, so the scan reported \"undetermined\". Read the actual first instruction rather than skipping an assumed calling convention.",
   "Search the CALLER too, not just the callees you enumerated (iter 63): I scanned stages 1-8 for link calls, found them only in stage 1, and concluded stage 1 was the bucket filler. The driver that CALLS those stages fills ten buckets itself, in a region I had already mislabelled as a reset. When enumerating a set of functions for a behaviour, include the function that dispatches them.",
   "A census is only as wide as its address-recovery (iter 64): iteration 63 resolved link targets only for immediate-offset adds and concluded producers were known for 14 of 22 buckets. Six calls used shifted-register computed bases - exactly how a generic \"insert into bucket idx\" would be written. The conclusion survived, but by luck. State what forms a census DOES resolve, so the gap is visible.",
-  "Run the cheap disconfirming check before publishing a contradiction (iter 64): I drafted \"bucket 1 is dead yet the accumulators sit behind it\" as an open tension, then ran the obvious escape - does 0x02080F14 walk a live bucket too? It does not (6 of 6 accesses are bucket 1, no computed form). The tension is real, and now it is evidenced rather than asserted."
+  "Run the cheap disconfirming check before publishing a contradiction (iter 64): I drafted \"bucket 1 is dead yet the accumulators sit behind it\" as an open tension, then ran the obvious escape - does 0x02080F14 walk a live bucket too? It does not (6 of 6 accesses are bucket 1, no computed form). The tension is real, and now it is evidenced rather than asserted.",
+  "GREP THE ASSETS YOU BUILT (iter 65): five collision symbols - ColManCreate, ColObjCreate, ColObjAddColWork, ColJointManCreate, ColPrmManCreate - were in jus_files/analysis/symbols.json from iteration 41 and went unread for 24 wakes while I derived the same module structure by hand. The loose-ends rule says grep docs/ before opening a binary; it must also say grep the generated artefacts."
  ],
  "open_questions_for_owner": [
   "Note-kind bucketing: the engine keeps at most 7 simultaneous \"notes\" per character, and 7 of the 17 kinds share one slot (kinds 6,7,8,9,10,14,15) so they should be mutually exclusive in play. Does starting one of those effects visibly cancel another?"

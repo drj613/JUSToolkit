@@ -125,9 +125,16 @@ Remain active after character switches out or is KO'd.
   and 184 shot files: only 5/211 (2.4%) negative values fall inside the owning character's shot
   record count, 31 characters carry negative values while owning no shot file, and 95 of 184
   characters with a shot file have no negative value anywhere. The negatives form a contiguous
-  −18..−34 band with nothing between −1 and −17, which suggests a biased index into a *global*
-  17-entry table (`-v-18`) rather than the per-character file. See
+  −18..−34 band with nothing between −1 and −17. See
   `findings/shot-data-and-projectileid-refuted.md`.
+  **What it is instead (2026-08-14, iteration 39):** a per-character *selector*, not an index of any
+  kind. 92 of the 120 characters that use a negative value use exactly **one** distinct value across
+  their whole file, and 194 of 211 negatives (92%) sit on `CollisionType` 4 (projectile) or 5
+  (summon) — so the field is genuinely projectile machinery, just not a pointer. The "global 17-entry
+  table" successor hypothesis is itself **REFUTED**: no file in any of the four `chr/`
+  subdirectories has 17 records at any of six strides. Current PLAUSIBLE reading is a hardcoded
+  spawn-behavior selector dispatched by a code switch. See
+  `findings/projectileid-is-a-selector-not-an-index.md`.
 - Shot file structure: 32 bytes per record
 - Collision types: type4 = projectile, type5 = summon
 - High `durationMult` values indicate trap/persistent behavior

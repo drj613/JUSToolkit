@@ -77,6 +77,8 @@ Each jpower entry (304 bytes) contains:
 
 - **Main record (0x00-0x3F):** damage1, damage2, damage3, hitstun, linkCategory,
   nextId
+  - **`jpower ID` is byte `+0x00`** — reproduces the block-0 ID column below exactly.
+    Note IDs are not array indices: entry *n* has ID `3n` for the first seven.
   - **Offsets confirmed 2026-08-14** by reproducing the block-0 columns below, 9/9:
     `damage1` = byte at `+0x0C`, `damage2` = byte at `+0x0E`, `damage3` = byte at
     `+0x10`. File is 94544 bytes = 311 × 304 exactly.
@@ -140,6 +142,12 @@ investigate nextId chains for multi-hit moves.
 
 **Selection mechanism unknown.** Possible methods:
 1. Collision `subType` selects which jpower entry to use from the block
+   — **QUESTIONED (2026-08-14):** now that the collision files are extracted, Goku's
+   25 records give subType `{0:2, 1:6, 2:13, 5:2, 6:1, 7:1}` — **13 of 25 share
+   subType 2**, which a one-to-one move selector wouldn't do. And subType is not the
+   jpower ID (block 0's IDs are `0,3,6,…,23`; subTypes include `1,2,5,7`). At most a
+   block-relative index. One character tested; see
+   `findings/collision-subtype-vs-jpower.md`.
 2. Collision `type2` or `linkCategory` performs selection
 3. Another mapping file/table we haven't found
 4. Hardcoded logic in game code per character index

@@ -1,10 +1,10 @@
 {
-  "iteration": 36,
+  "iteration": 37,
   "phase": "combat",
-  "current_task": "correlate collision subType against jpower entry selection",
+  "current_task": "chr/shot/* projectile data (newly available, no prior demoted claims)",
   "queue": [
-    "correlate collision subType (+0x01) vs jpower entry selection",
-    "chr/shot/* for projectile-entities",
+    "chr/shot/* projectile-entities data (184 files)",
+    "chr/ai/* + ai_param.bin for ov11 (269 files)",
     "C6h-bisect-frame-for-0x134-writer (harness-side)",
     "D0.3-ghidra-import (BLOCKED: needs user go-ahead)"
   ],
@@ -40,7 +40,8 @@
     "K4b-defence-candidates-ruled-out",
     "jpower-damage-located",
     "docs-coverage-sweep",
-    "collision-data-extracted"
+    "collision-data-extracted",
+    "collision-subtype-vs-jpower"
   ],
   "stuck": {},
   "required_reading_for_koma_tasks": [
@@ -98,7 +99,7 @@
     "L/R sticker bindings are per-deck fields not yet located in RAM",
     "Is HP computed as size*k at runtime, or tabulated per panel? Naruto 4-koma=144=4*36; if size*k then size5=180, size6=216, size7=252, size8=288. One reading settles it."
   ],
-  "notes": "Iteration 36: the docs-first procedure paid off a second time and bigger. Went to open state.bin, found docs/articles/specs/summary.md instead - a whole-ROM file classification listing chr/ChrBin.aar/chr/col/* and three other categories I did not know were in the ROM. Wrote an ALAR v3 extractor (variable-length entries, per the spec doc that also existed) and unpacked 907 files: 281 collision, 269 AI, 184 shot, 66 effect. Confirmed the 20-byte collision stride against actual data (2837 records) and profiled the columns, finding two hitTier-shaped candidates which I deliberately did NOT name. This unblocks the most-refuted subsystem is core open question.",
+  "notes": "Iteration 37: modest wake, two useful negatives. Confirmed jpower ID is byte +0x00 (and that IDs are not array indices). QUESTIONED the existing \"collision subType selects the jpower entry\" claim - Goku 13 of 25 records share subType 2, and subType is not the jpower ID. And REFUTED my own suspicion from reading Goku alone that +0x10 is a function of type: across 2837 records type predicts it only 50.3% of the time, so the fields stay independent and survive as hitTier candidates. Caught that one before writing it down, unlike the chr_b +0x30 over-fit.",
   "last_wake": "2026-08-14",
   "wakeup_default_seconds": 1800,
   "consecutive_no_progress_wakes": 0,
@@ -682,5 +683,9 @@
   "next_leads": [
     "Correlate collision subType (+0x01, 16 values) against jpower entry selection - jpower-Mapping.md names this as its own open question (\"How do characters select specific jpower entries from their assigned block?\") and the collision files are the missing half. Goku has 25 collision records vs 9 jpower block-0 entries: a bounded problem now.",
     "chr/shot/* (184 files) is the projectile-entities subsystem data, also never opened."
-  ]
+  ],
+  "jpower_ID_field": "jpower \"ID\" is a BYTE at record +0x00, confirmed by reproducing the doc block-0 column (0,3,6,9,12,15,18,21,23) exactly. IDs are NOT array indices - entry n has ID 3n for the first seven, then 21 and 23. So \"jpower ID\" and \"jpower entry index\" are different numbering, which matters for any lookup.",
+  "subType_claim_QUESTIONED": "jpower-Mapping.md says \"Collision subType selects which jpower entry to use from the block\". Now testable with the collision files extracted. Goku (db_b_01, 25 records, chr_b[0] -> block 0 with 9 entries): subType = {0:2, 1:6, 2:13, 5:2, 6:1, 7:1}. Max 7 so it COULD index 9 entries, but 13 of 25 records share subType 2 - a one-to-one move selector would not concentrate half the records on one value. And subType is NOT the jpower ID (block 0 IDs are 0,3,6,...,23 while subTypes include 1,2,5,7). At most a block-relative index. QUESTIONED not refuted - one character tested and the claim may hold for a reading of \"entry\" I have not guessed. Annotated in the doc.",
+  "MY_TYPE_CORRELATION_REFUTED": "Reading Goku 25 records I suspected +0x10 was a function of +0x00 (type) - every type-5 record had +0x10=3, every type-3 had 1 or 2. If true, +0x10 would be a derived category and weak as a hitTier candidate. Tested across all 2837 records: types where +0x10 is fully determined = 1 of 8; predicting +0x10 from type alone is right only 50.3% of the time; +0x11 48.7%. Every type spreads across multiple values. THE CORRELATION WAS A 25-RECORD ARTEFACT. So +0x10 (4 values) and +0x11 (7 values) remain INDEPENDENT fields and survive as hitTier/hitProperties candidates - still candidates, not claims. Same failure mode as the chr_b +0x30 over-fit, caught earlier this time because I checked before writing it down.",
+  "no_terminator_convention": "Goku record 22 is all zeros, which looked like a terminator. Across the whole corpus there is exactly ONE all-zero record - that one. So it is not a convention and code should not treat a zero record as end-of-list."
 }

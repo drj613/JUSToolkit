@@ -1,9 +1,10 @@
 {
- "iteration": 39,
+ "iteration": 40,
  "phase": "combat",
- "current_task": "search ov6 for the switch that consumes negative ProjectileId",
+ "current_task": "find callers of the 31 ov6 collision accessor stubs; they should lead to the record walker",
  "queue": [
-  "search ov6 for ~17-case jump table or 0x12/0x22 bias on a signed byte (tests the spawn-selector hypothesis)",
+  "find callers of the 31 ov6 collision stubs -> the runtime CollisionEntry walker (map open question)",
+  "find what reads slot+0x02 (the real ProjectileId consumer)",
   "chr/ai/* + ai_param.bin for ov11 (269 files)",
   "C6h-bisect-frame-for-0x134-writer (harness-side)",
   "D0.3-ghidra-import (BLOCKED: needs user go-ahead)"
@@ -43,7 +44,8 @@
   "collision-data-extracted",
   "collision-subtype-vs-jpower",
   "shot-data-profiled-projectileid-REFUTED",
-  "projectileid-is-a-selector-17entry-table-REFUTED"
+  "projectileid-is-a-selector-17entry-table-REFUTED",
+  "collision-accessor-bank-found-kind-table-decoded-projectileid-is-a-copied-tag"
  ],
  "stuck": {},
  "required_reading_for_koma_tasks": [
@@ -131,7 +133,11 @@
   "nature_damage_multiplier": "~1.5x per owner but UNSURE - SPECULATIVE",
   "hp_readout_144_152": "RESOLVED+CONFIRMED: base HP / effective HP after deck bonuses. Naruto 4-koma reads 144/176 at max (144+32).",
   "relationship_stacking": "CONFIRMED (owner): bonuses STACK. Leader + all 3 relationships = +32 HP total. Four independent +8 sources, fully additive. effective = base + 8*(active sources), max 4.",
-  "hp_scales_with_size": "CONFIRMED (owner): base HP rises with panel size; 8-koma panels have the most HP in the game."
+  "hp_scales_with_size": "CONFIRMED (owner): base HP rises with panel size; 8-koma panels have the most HP in the game.",
+  "ov6_collision_accessor_bank": "0x02155900-0x02156900, ~36 tiny funcs, record ptr in r1, 11 of 16 named fields read",
+  "ov6_spawn_factory": "0x021565A4; kind in r1 (0..16), ExtFlags in r2; indexes table 0x021710A8 -> slot; writes object[slot*16+0]=kind, +1=ExtFlags",
+  "ov6_kind_slot_table": "0x021710A8 (ov6 file off 0x24388) = 17 signed bytes 06 05 00 00 00 01 02 02 02 02 02 03 04 00 02 02 01 -> 7 distinct slots",
+  "projectileid_is_a_copied_tag": "kinds 8 (0x02155D84) and 14 (0x02155DA4) only; strb to slot+0x02, verbatim, no bias/index/switch"
  },
  "combat_phase_spillover": [
   "status-effect enum = 10 values, contiguous IDs 0x19-0x22 (Shock/Freeze/Burn/Confusion/Poison/Judgment/Paralysis/Blindness/Speed-Down/Battle+Support Seal). Likely an immunity BITMASK on character state struct.",
@@ -693,6 +699,8 @@
  "lessons": [
   "LOOSE-ENDS v2 (instance 5, iter 38): grep docs/ AS A WHOLE, for the CONCEPT as well as the filename. I grepped only docs/articles/specs/ and re-derived the already-documented 32-byte shot stride.",
   "READ THE C# SCHEMA FIRST: src/JUS.Tool/Combat/Converters/*.cs are authoritative field-by-field readers. Binary2Collision.cs fixed ProjectileId at 0x03 and named HitTier/HitProperties. 4 of my 5 offset guesses were wrong.",
-  "DO NOT bank an untested successor hypothesis (iter 38->39): I refuted the documented ProjectileId reading, proposed \"-v-18 into a global 17-entry table\" in the same breath, wrote it up as the next lead, and it failed both tests one wake later. Test the successor before recording it as the way forward."
+  "DO NOT bank an untested successor hypothesis (iter 38->39): I refuted the documented ProjectileId reading, proposed \"-v-18 into a global 17-entry table\" in the same breath, wrote it up as the next lead, and it failed both tests one wake later. Test the successor before recording it as the way forward.",
+  "Check for stride arithmetic before calling a field-reading cluster a record walker (iter 40): 11 of 16 collision fields read off one base looked like the parser, but 36 function starts and no #0x14 made it an accessor bank. Caught it myself before writing.",
+  "Arity coincidences are not identities (iter 40): 17 spawn kinds vs 17 ProjectileId values is tempting, but only 2 of 17 stubs read the field and their kinds are hardcoded immediates. Declined to claim it."
  ]
 }

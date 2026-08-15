@@ -1,11 +1,11 @@
 {
- "iteration": 60,
+ "iteration": 61,
  "phase": "combat",
- "current_task": "read collision pipeline stages 1-7 to find where the buckets are filled",
+ "current_task": "anchor-scan collision stages 5 and 7 per register-lifetime",
  "queue": [
-  "read collision pipeline stages 1-7 (0x0207FBD0, 0x02080C70, 0x02080E5C, 0x020801FC, 0x02080510, 0x020805E8, 0x020802D0) -- find where the 22 buckets get FILLED, the other half of the broadphase",
+  "anchor-scan stages 5 (0x02080510, 84 instrs) and 7 (0x020802D0, 144 instrs) per register-lifetime -- arg0 is reassigned 16 and 24 times so whole-function scans are worthless",
+  "identify what distinguishes buckets 5/7/15/16 -- the branch conditions before each of stage 1 four link calls define the classification",
   "name the +0x1C participant field (what else in the ROM reads +0x1C off those objects)",
-  "read collision pipeline stages 1-7 (0x0207FBD0, 0x02080C70, 0x02080E5C, 0x020801FC, 0x02080510, 0x020805E8, 0x020802D0) -- ordering should show the broadphase/narrowphase split",
   "decode 0x02081A58 (packed nibbles -> row index) to learn what the rows are",
   "read 0x0207D9AC properly (229 instrs, the only live per-frame collision phase)",
   "find +0xE8's teardown or confirm it leaks (grep arm9 for a null-store to +0xE8 off a ColPrm base)",
@@ -82,7 +82,8 @@
   "contact-array-chain-CONFIRMED-8-stage-collision-pipeline-found",
   "accumulator-inputs-traced-producer-is-0x020823E4",
   "contact-array-is-NOT-a-damage-ledger-producer-is-fixed-point-geometry",
-  "narrowphase-pair-test-identified-guard7-alignment-added"
+  "narrowphase-pair-test-identified-guard7-alignment-added",
+  "broadphase-bucket-fill-is-stage-1"
  ],
  "stuck": {},
  "required_reading_for_koma_tasks": [
@@ -216,7 +217,8 @@
   "UTILITY_0x0207342C": "303 direct callers across 10 binaries (ov5 90, ov6 65, ov1 34, ov0 28, ov4 28, ov2 17, ov3 16, ov7 13, arm9 8, ov12 4) - the most-called function found in this campaign. Prologue packs two 16-bit values into one word. LIBRARY CODE, not domain logic - do not read it as engine behaviour. 0x02031070 (51 callers) is a refcount release.",
   "NARROWPHASE_PAIR_TEST": "0x020823E4(r0,r1,flag,&out) takes two PEER entities (both loaded from +0x1C of different bases at 0x0208113C/0x02081140) and dereferences each at +0xC. [r0+0xC] has fields +0x40 (x5, ldr AND str) and +0x44; [r1+0xC] has +0x40 and +0x68. Both share +0x40 and the function MUTATES the r0 side. r8 is written exactly once in all 175 instructions (0x020823FC), so that anchor is airtight. Called from a walk of bucket 1 ([manager+0x30]) of the 22-bucket array.",
   "COLLISION_SHAPE": "22 buckets at ColPrm+0x28 (broadphase bins, drained every frame) -> walk a bucket pairs -> 0x020823E4 narrowphase fixed-point geometry on a+0xC and b+0xC -> *out = (r5+r0)>>2 -> accumulated into the contact matrix at manager+0x154 [row][col]. PLAUSIBLE (strong) as a broadphase/narrowphase split.",
-  "TOOL_GUARD_7": "struct_fields.py now flags MISALIGNED accesses: word ldr/str at an offset not divisible by 4, halfword at an odd offset. Real struct fields are aligned, so a violation means the walk strayed. Caught a bogus +0x175 on first use. Selftest unchanged."
+  "TOOL_GUARD_7": "struct_fields.py now flags MISALIGNED accesses: word ldr/str at an offset not divisible by 4, halfword at an odd offset. Real struct fields are aligned, so a violation means the walk strayed. Caught a bogus +0x175 on first use. Selftest unchanged.",
+  "BROADPHASE_FILL": "Stage 1 = 0x0207FBD0 (395 instrs). r8 = the ColPrm manager, mov r8,r0 written EXACTLY ONCE. Reads bucket 6 (ldr r5,[r8,#0x58]) as the source list, then 4 unlink + 4 link calls distributing into bucket 7 (0x0207FD94, r8+0x60), bucket 5 (0x0207FF98, r8+0x50), bucket 16 (0x02080008, r8+0xA8), bucket 15 (0x02080118, r8+0xA0). Stage 2 (0x02080C70, 46 instrs) consumes bucket 7; stage 3 (0x02080E5C, 46 instrs) consumes bucket 8 - same routine, adjacent buckets. Stage 8 touches no buckets. Stages 4-7 UNATTRIBUTED (arg0 reassigned 3/16/10/24 times)."
  },
  "combat_phase_spillover": [
   "status-effect enum = 10 values, contiguous IDs 0x19-0x22 (Shock/Freeze/Burn/Confusion/Poison/Judgment/Paralysis/Blindness/Speed-Down/Battle+Support Seal). Likely an immunity BITMASK on character state struct.",
@@ -815,7 +817,9 @@
   "Two matching byte offsets is not a layout match (iter 58): [r6+0x10] is read at +0x05 and +0x0E, which happen to be CollisionEntry DurationMult and DamageFlags. Declined to claim it - any 20-byte struct has bytes there. Same shape as iteration 50 +0x1a near-miss on prmData.",
   "Check the caller count before reading a function as domain logic (iter 59): 0x0207342C has 303 callers across 10 binaries, which makes it a utility. A high caller count is a cheap signal that a function is library code and its internals will not explain engine behaviour.",
   "Absence of known constants is usable evidence (iter 59): the campaign had already established x5 (jpower damage) and x64 (HP units). Neither appears among 0x020823E4 immediates, which is what let me refute \"these are damage figures\" rather than leaving it open. Documented magic numbers work as negative tests too.",
-  "A once-written register is the strongest anchor there is (iter 60): r8 is written exactly once in 0x020823E4 175 instructions, so every [r8,#imm] in the body is provably a field of that object - no reassignment analysis needed. Worth checking for a single-write register before doing anything more elaborate."
+  "A once-written register is the strongest anchor there is (iter 60): r8 is written exactly once in 0x020823E4 175 instructions, so every [r8,#imm] in the body is provably a field of that object - no reassignment analysis needed. Worth checking for a single-write register before doing anything more elaborate.",
+  "A count matching your expectation is not confirmation (iter 61): my unconstrained scan of stage 1 reported 22 accesses in the bucket byte range, and the array has exactly 22 buckets - so it looked like a clean sweep. With the base register verified the real count is 5; the other 17 reached that numeric range through other registers. The coincidence was what made the contaminated number persuasive.",
+  "Report write-counts alongside offset attributions (iter 61): stages 4-7 reassign arg0 3/16/10/24 times, so their bucket attributions are worthless. Counting writes to the base register is a one-line check that tells you whether a whole-function offset scan means anything at all."
  ],
  "open_questions_for_owner": [
   "Note-kind bucketing: the engine keeps at most 7 simultaneous \"notes\" per character, and 7 of the 17 kinds share one slot (kinds 6,7,8,9,10,14,15) so they should be mutually exclusive in play. Does starting one of those effects visibly cancel another?"

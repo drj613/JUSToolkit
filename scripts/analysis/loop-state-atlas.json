@@ -1,9 +1,10 @@
 {
- "iteration": 63,
+ "iteration": 64,
  "phase": "combat",
- "current_task": "find producers for buckets 1 and 8, which bypass the link helper",
+ "current_task": "identify *(0x0214BE0C), the fourth manager global",
  "queue": [
-  "find producers for buckets 1 and 8 -- both have consumers but no link-helper call, so insertion bypasses 0x02037B98 (likely direct pointer stores)",
+  "HARNESS (now DECISIVE, not just useful): read watchpoint on ColPrm+0x154 -- bucket 1 is never filled yet the narrowphase accumulators sit behind its walk, so static analysis contradicts itself. One run settles whether the contact array is ever written. Recipe in iteration 45.",
+  "identify *(0x0214BE0C) -- a fourth manager global next to ColPrm and BattleObj, owning an 8-stride list array at offset 0",
   "identify what the driver ten allocated nodes represent (one per bucket per frame = ten fixed roles?)",
   "identify stage 1's four branch conditions that sort entries into buckets 5, 7, 15, 16",
   "identify what distinguishes buckets 5/7/15/16 -- the branch conditions before each of stage 1 four link calls define the classification",
@@ -87,7 +88,8 @@
   "narrowphase-pair-test-identified-guard7-alignment-added",
   "broadphase-bucket-fill-is-stage-1",
   "collision-bucket-dataflow-mapped-9-of-22",
-  "driver-fills-10-buckets-bucket-6-producer-found"
+  "driver-fills-10-buckets-bucket-6-producer-found",
+  "buckets-1-and-8-have-NO-producer-two-dead-read-paths"
  ],
  "stuck": {},
  "required_reading_for_koma_tasks": [
@@ -225,7 +227,9 @@
   "BROADPHASE_FILL": "Stage 1 = 0x0207FBD0 (395 instrs). r8 = the ColPrm manager, mov r8,r0 written EXACTLY ONCE. Reads bucket 6 (ldr r5,[r8,#0x58]) as the source list, then 4 unlink + 4 link calls distributing into bucket 7 (0x0207FD94, r8+0x60), bucket 5 (0x0207FF98, r8+0x50), bucket 16 (0x02080008, r8+0xA8), bucket 15 (0x02080118, r8+0xA0). Stage 2 (0x02080C70, 46 instrs) consumes bucket 7; stage 3 (0x02080E5C, 46 instrs) consumes bucket 8 - same routine, adjacent buckets. Stage 8 touches no buckets. Stages 4-7 UNATTRIBUTED (arg0 reassigned 3/16/10/24 times).",
   "COLLISION_BUCKET_DATAFLOW": "Each consumer stage reads exactly ONE bucket in its first 4 instructions. stage1 0x0207FBD0 drains bucket 6 (source) -> fills 5,7,15,16; stage2 0x02080C70 reads 7; stage3 0x02080E5C reads 8; stage4 0x020801FC reads 5 (0x02080208); stage5 0x02080510 reads 16 (0x02080514); stage6 0x020805E8 reads 21 (first instruction, no prologue); stage7 0x020802D0 reads 11 (0x020802DC, and only that - two [sp] reloads add nothing); stage8 -> 0x02080F14 reads bucket 1. 9 of 22 buckets assigned. Bucket 6 has no producer in the pipeline; bucket 15 has no consumer.",
   "DRIVER_FILLS_10_BUCKETS": "0x0207F480 per frame: (1) drain all 22 buckets to the free list at +0xD8, (2) TEN unlink-from-free-list + link-into-bucket pairs filling buckets 11 (0x0207F5C4), 14 (0x0207F610), 0 (0x0207F648), 13 (0x0207F688), 6 (0x0207F6B4), 9 (0x0207F744), 17 (0x0207F77C), 12 (0x0207F7C4), 20 (0x0207F7F0), 21 (0x0207F81C), (3) run the 8 stages. Buckets are rebuilt from scratch each frame, not maintained. r6 = the manager with 0 writes after 0x0207F490.",
-  "LINK_HELPER_CENSUS": "145 calls to 0x02037B98 (list link) ROM-wide, with r0 origin recovered at each. EXACTLY ONE targets +0x58 (bucket 6): arm9 0x0207F6B4. Producers known for 14 of 22 buckets; buckets 1, 2, 3, 4, 8, 10, 18, 19 have none. Buckets 1 (consumed by 0x02080F14) and 8 (consumed by stage 3) have consumers but no link-helper producer, so their insertion bypasses the helper."
+  "LINK_HELPER_CENSUS": "145 calls to 0x02037B98 (list link) ROM-wide, with r0 origin recovered at each. EXACTLY ONE targets +0x58 (bucket 6): arm9 0x0207F6B4. Producers known for 14 of 22 buckets; buckets 1, 2, 3, 4, 8, 10, 18, 19 have none. Buckets 1 (consumed by 0x02080F14) and 8 (consumed by stage 3) have consumers but no link-helper producer, so their insertion bypasses the helper.",
+  "BUCKETS_1_AND_8_DEAD": "No producer anywhere in the ROM, verified 4 ways: (1) 145 immediate-offset link calls, none at +0x30/+0x68; (2) 6 computed-base link calls resolved - bases at offset 0, +0x24, +0x74, none at ColPrm +0x28; (3) 3 sibling list helpers 0x02037B54/0x02037BD8/0x02037C54, 8 calls total, none matching; (4) zero direct stores at +0x30/+0x68 off a verified manager register across the driver, stages 1-3 and 0x02080F14. Consumers exist: 0x02080F14 reads bucket 1 (6 of 6 bucket accesses, no computed form) and stage 3 reads bucket 8. Both are DEAD READ PATHS.",
+  "FOURTH_MANAGER_GLOBAL": "*(0x0214BE0C) is a manager with an 8-stride list array AT OFFSET 0, indexed by a small register (cmp r6,#2 after one insert). Site 0x0207BF40. Globals block: 0x0214BD80 chr_b base ptr, 0x0214BE0C this one, 0x0214BE10 BattleColPrm, 0x0214BE14 BattleObj."
  },
  "combat_phase_spillover": [
   "status-effect enum = 10 values, contiguous IDs 0x19-0x22 (Shock/Freeze/Burn/Confusion/Poison/Judgment/Paralysis/Blindness/Speed-Down/Battle+Support Seal). Likely an immunity BITMASK on character state struct.",
@@ -829,7 +833,9 @@
   "Report write-counts alongside offset attributions (iter 61): stages 4-7 reassign arg0 3/16/10/24 times, so their bucket attributions are worthless. Counting writes to the base register is a one-line check that tells you whether a whole-function offset scan means anything at all.",
   "Scan the REGISTER LIFETIME, not the function (iter 62): stages 4-7 reassign arg0 3/16/10/24 times, but each reads its bucket within the first 4 instructions. Restricting the walk to entry-until-first-write gave windows of 4/7/2/14 instructions and one clean answer each. Whole-function scanning did not merely add noise - it pointed the wrong way (bucket 7 spurious for two stages).",
   "Do not assume a prologue (iter 62): my walk started at f+4 expecting a push, but stage 6 has no prologue and its ONLY bucket access is the first instruction, so the scan reported \"undetermined\". Read the actual first instruction rather than skipping an assumed calling convention.",
-  "Search the CALLER too, not just the callees you enumerated (iter 63): I scanned stages 1-8 for link calls, found them only in stage 1, and concluded stage 1 was the bucket filler. The driver that CALLS those stages fills ten buckets itself, in a region I had already mislabelled as a reset. When enumerating a set of functions for a behaviour, include the function that dispatches them."
+  "Search the CALLER too, not just the callees you enumerated (iter 63): I scanned stages 1-8 for link calls, found them only in stage 1, and concluded stage 1 was the bucket filler. The driver that CALLS those stages fills ten buckets itself, in a region I had already mislabelled as a reset. When enumerating a set of functions for a behaviour, include the function that dispatches them.",
+  "A census is only as wide as its address-recovery (iter 64): iteration 63 resolved link targets only for immediate-offset adds and concluded producers were known for 14 of 22 buckets. Six calls used shifted-register computed bases - exactly how a generic \"insert into bucket idx\" would be written. The conclusion survived, but by luck. State what forms a census DOES resolve, so the gap is visible.",
+  "Run the cheap disconfirming check before publishing a contradiction (iter 64): I drafted \"bucket 1 is dead yet the accumulators sit behind it\" as an open tension, then ran the obvious escape - does 0x02080F14 walk a live bucket too? It does not (6 of 6 accesses are bucket 1, no computed form). The tension is real, and now it is evidenced rather than asserted."
  ],
  "open_questions_for_owner": [
   "Note-kind bucketing: the engine keeps at most 7 simultaneous \"notes\" per character, and 7 of the 17 kinds share one slot (kinds 6,7,8,9,10,14,15) so they should be mutually exclusive in play. Does starting one of those effects visibly cancel another?"

@@ -53,6 +53,8 @@ end-to-end. No claim in this document is unverified as of this update; see
 
 ## Subsystem: damage-pipeline
 
+**Terminology correction (iteration 50): the `0x02157A60` dispatcher is a *query* interface, not a command interface.** All seven live cases in the issued 64–73 band return a boolean (`mov r0,#1` → `0x02157F94`, else `0x02157F90` → `mov r0,#0`) and mutate nothing; the forwarder acts on the result (`cmp r0,#0; ldrbne r1,[note+2]; strbne r1,[note+1]`). So a NoteTrack asks the character "is condition N true?" and advances the note only if so. Signature: `query(r0 = NoteTrack, r1 = character, r2 = query number, r3 = parameter, +2 stack args) -> bool`. Cases 23/24/32 below really do call the HP/SP apply functions, but nothing issues those numbers — see the iteration-47 note. Details and the seven queries in `findings/commands-are-predicates.md`.
+
 **HP/SP application is command-dispatched (2026-08-15, iteration 46).** The apply functions are reached as numbered cases of the 73-case per-character dispatcher at ov6 `0x02157A60` (`cmp r2,#72; addls pc,pc,r2,lsl#2`, table `0x02157A68`–`0x02157B88`, `BattleChara.cpp`):
 
 | command | case target | calls |

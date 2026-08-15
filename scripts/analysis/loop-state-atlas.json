@@ -1,11 +1,12 @@
 {
- "iteration": 49,
+ "iteration": 50,
  "phase": "combat",
- "current_task": "name dispatcher commands 64-73 by reading the 7 live cases",
+ "current_task": "build the reassignment-tracking base-register check into a reusable tool",
  "queue": [
-  "name commands 64-73 by reading the 7 live dispatcher cases (the only commands actually issued)",
+  "build the reassignment-tracking base-register check into a REUSABLE TOOL (scripts/decomp/) -- 6 scan-error variants, this one recurred twice in a row",
+  "map the entity table behind query 71: strides 0xC0 (outer) and 0x30 (inner), count at [global+0x158], fields +0x158 and +0x170",
+  "identify the NoteTrack +0x7C / +0x80 / +0x84 objects (3 pointer fields, each backing a query)",
   "identify 0x02026F94 return type = the object at NoteTrack+0x8C (vtable slots 0xA0, 0x24) -- likely the animation/timing manager",
-  "name commands 64-73 by reading the 7 live cases -- these are the ones actually used",
   "identify the object at [X,#0x68] with the 33-slot vtable (384 calls in ov6) -- naming it labels a lot of code",
   "name cases 25/26/33/72 (all read [r0,#0x84], base type unknown per iter 45)",
   "examine the 32-case dispatcher at 0x021580B4 (switch on r3), 2nd largest in ov6",
@@ -63,7 +64,8 @@
   "73-case-dispatcher-enumerated-hp-sp-are-commands-23-24-32",
   "notetrack-owns-the-command-callback-b11-reframe-is-a-dead-end",
   "vtable-vs-field-distinction-cases-1-33-CONFIRMED-dead",
-  "notetrack-struct-mapped-7-slots-then-callback"
+  "notetrack-struct-mapped-7-slots-then-callback",
+  "commands-are-PREDICATES-notetrack-query-interface-mapped"
  ],
  "stuck": {},
  "required_reading_for_koma_tasks": [
@@ -176,7 +178,10 @@
   "CASES_1_33_ARE_DEAD": "CONFIRMED_STATIC (was PLAUSIBLE). The 4 remaining suspects 0x0215F1C4/0x0215F318/0x02168FEC/0x0216FF6C are C++ VIRTUAL CALLS at vtable slot 0x70 (each preceded by ldr r1,[r0,#0x0]), not NoteTrack field reads. So dispatcher cases 23/24 -> 0x020783CC/0x020781E4 are dead code; a second unused entry point.",
   "OV6_IS_VIRTUAL": "384 vtable calls across 33 distinct slots in ov6. Most used: 0xD8 x80, 0x8 x45, 0x6C x39, 0xC x22, 0x24 x21, 0x94 x21, 0xEC x18, 0x14 x15, 0xA0 x14, 0x5C x14. Slot 0x70 exactly 4x. Object reached via ldr r0,[X,#0x68].",
   "NOTETRACK_LAYOUT": "0xA8 bytes. +0x00..+0x6F = 7 note slots x 16 bytes (slot +0x00 kind 0..16, +0x01 ExtFlags, +0x02 ProjectileId, +0x04 u16 counter). +0x70 command callback (0x02157A44). +0x74 the character (callback r1). +0x7C ctor arg2. +0x88 ctor arg1. +0x8C object from 0x02026F94. +0x90 word reset 0. +0x94 init -1. +0x98 init/reset -1. +0x9C/+0x9E halfwords reset 0. +0xA0/+0xA1/+0xA2 bytes reset 0. +0xA3 init -1. -1 = empty-slot sentinel.",
-  "MAX_7_ACTIVE_NOTES": "7-iteration reset loop at 0x021555E4 with add r4,r4,#0x10 confirms 7x16=0x70. Matches iter-40 kind->slot table 0x021710A8 (17 kinds -> 7 slots). Notes are BUCKETED by kind, not queued: slot 2 absorbs kinds 6,7,8,9,10,14,15 so those are mutually exclusive."
+  "MAX_7_ACTIVE_NOTES": "7-iteration reset loop at 0x021555E4 with add r4,r4,#0x10 confirms 7x16=0x70. Matches iter-40 kind->slot table 0x021710A8 (17 kinds -> 7 slots). Notes are BUCKETED by kind, not queued: slot 2 absorbs kinds 6,7,8,9,10,14,15 so those are mutually exclusive.",
+  "DISPATCHER_IS_A_QUERY_INTERFACE": "0x02157A60 is a QUERY interface, not commands. Signature query(r0=NoteTrack, r1=character, r2=query number, r3=parameter, +2 stack) -> bool. All 7 live cases in the issued 64-73 band return boolean via mov r0,#1 -> 0x02157F94 or fall to 0x02157F90 mov r0,#0. Forwarder gates note state on the result. Query 3 is the exception: fire-and-forget action (bl 0x0215857C), result discarded.",
+  "THE_7_QUERIES": "65 @0x02157E50 query on NoteTrack+0x7C via 0x0215793C; 66 @0x02157E68 threshold: ldrsb [[char+0x1B4]+0x500+0xDF] >= param; 67 @0x02157E84 flag bit7 of ldrh [[NoteTrack+0x80]+0x26]; 69 @0x02157F30 table[param] == ldrh [char+0x88]; 71 @0x02157EC4 loop other entities (skip self [char+0x100+0xE0]), strides 0xC0/0x30, count [global+0x158], true if +0x158 or +0x170 nonzero; 72 @0x02157F50 chain through NoteTrack+0x84 via 0x02158000 then +0x10,+0x28",
+  "NOTETRACK_EXTRA_FIELDS": "+0x7C, +0x80, +0x84, +0x88 are four consecutive POINTER fields. Iter-49 map missed +0x80/+0x84 because it anchored only on BattleNoteTrack.cpp; the dispatcher is in BattleChara.cpp and also receives a NoteTrack. The iter-45 \"+0x84 is not prmData\" refutation is now explained: those reads are NoteTrack+0x84."
  },
  "combat_phase_spillover": [
   "status-effect enum = 10 values, contiguous IDs 0x19-0x22 (Shock/Freeze/Burn/Confusion/Poison/Judgment/Paralysis/Blindness/Speed-Down/Battle+Support Seal). Likely an immunity BITMASK on character state struct.",
@@ -757,7 +762,9 @@
   "ARM mask bug #3 (iter 47): for ldr Rd,[Rn,#imm] I masked the Rn field instead of Rd, so a scan for ldr ip,[Rn,#0x70] returned 0 sites. Correct mask is 0x0FF0FFFF vs 0x0590C070. Added a selftest against a known site before trusting the result - do this every time.",
   "Filter Rn=r15 out of offset scans (iter 47): 14 of 36 ldr [Rn,#0x70] hits were pc-relative literal loads, not field reads at all.",
   "VTABLE SLOT vs STRUCT FIELD (iter 48): before treating ldr Rd,[Rn,#off] as a field read, check whether Rn was just loaded from [Rm,#0]. If so, off is a VTABLE SLOT INDEX and the type is whatever Rm is. ov6 has 384 virtual calls across 33 slots, so this is common, not an edge case. 5th member of the scan-error family: constrain to read every hit / stop at function boundaries / know the base type / exclude r15 bases / check for a preceding vtable load.",
-  "Type-verified field mapping works, but needs reassignment tracking (iter 49): anchoring on a known-type register (ldr ip,[rN,#0x70]) is right, but without stopping at writes to rN the scan invented +0x10/+0x28/+0x40/+0x5C AND missed +0x94/+0xa3. The cross-check that proved the fixed version: every constructor store must appear."
+  "Type-verified field mapping works, but needs reassignment tracking (iter 49): anchoring on a known-type register (ldr ip,[rN,#0x70]) is right, but without stopping at writes to rN the scan invented +0x10/+0x28/+0x40/+0x5C AND missed +0x94/+0xa3. The cross-check that proved the fixed version: every constructor store must appear.",
+  "RECORDING A RULE DOES NOT APPLY IT (iter 50): iteration 49 found the reassignment-tracking defect and wrote it down; one wake later I wrote a fresh scan without the guard and it reported +0xDF/+0xE0/+0x158 as NoteTrack fields (all beyond its 0xA8 size). Caught only by the size sanity check. The guard must live in a reusable tool, not a note. 6th member of the scan-error family.",
+  "Anchor a struct map on the TYPE, not one module (iter 50): iter 49 mapped NoteTrack from BattleNoteTrack.cpp only and missed +0x80/+0x84, which are read by the dispatcher in BattleChara.cpp. Any function that receives the type is a valid anchor."
  ],
  "open_questions_for_owner": [
   "Note-kind bucketing: the engine keeps at most 7 simultaneous \"notes\" per character, and 7 of the 17 kinds share one slot (kinds 6,7,8,9,10,14,15) so they should be mutually exclusive in play. Does starting one of those effects visibly cancel another?"

@@ -129,7 +129,7 @@ it.
 | Some site chains `character+0x84` directly into `prmData+0x00` | **REFUTED** — 0 of 10 sites, with boundary checking |
 | ×20 stride arithmetic identifies the walker | **REFUTED** — 70 hits; 20 is too common a struct size |
 | The pointer is handed out by accessor functions, defeating offset-chain scans | **CONFIRMED_STATIC** — ov11 bank of 3 at `0x0217B0B4`/`0x0217B0CC`/`0x0217B0E4`; 5 clustered ov6 sites |
-| ov6 `0x02157DD8`–`0x02157F50` is ov6's prmData accessor bank | **PLAUSIBLE** — 5 sites in one `0x180` window in `BattleChara.cpp`, same shape as ov11's |
+| ov6 `0x02157DD8`–`0x02157F50` is ov6's prmData accessor bank | **REFUTED (2026-08-15, iteration 45)** — they are cases in a 73-case switch dispatched at `0x02157A60` (`cmp r2,#72`), all branching to a common epilogue at `0x02157F90`, not returning. They also do not read `prmData`: their callees index `+0x2c`/`+0x4c`, past the end of the confirmed `0x20`-byte struct. See `findings/73-case-dispatcher-and-the-offset-without-type-error.md`. |
 
 ## Next angles, ranked
 

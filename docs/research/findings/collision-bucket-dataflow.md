@@ -53,7 +53,7 @@ Partly right by luck. Bucket 7 was spurious in both — exactly why iteration 61
 |---|---|---|
 | 1 | ? | stage 8's callee `0x02080F14` (iteration 60) |
 | **5** | stage 1 (`0x0207FF98`) | stage 4 |
-| **6** | *external* — nothing in the pipeline fills it | stage 1, as its **source list** |
+| **6** | the **driver itself** at `0x0207F6B4` *(iteration 63 — not external as stated here)* | stage 1, as its **source list** |
 | **7** | stage 1 (`0x0207FD94`) | stage 2 |
 | 8 | ? | stage 3 |
 | 11 | ? | stage 7 |

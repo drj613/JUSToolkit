@@ -1,9 +1,9 @@
 {
- "iteration": 68,
+ "iteration": 69,
  "phase": "combat",
- "current_task": "identify what lives on the persistent ColPrm lists at +0x18 and +0x20",
+ "current_task": "trace the 8 unlink sites at +0x18/+0x20 to see whether the pools recycle",
  "queue": [
-  "identify what lives on the two PERSISTENT ColPrm lists (+0x18, +0x20) -- they survive across frames while the 22 buckets are rebuilt, so likely the long-lived ColObj registrations",
+  "trace each of the 8 unlink sites at +0x18/+0x20 individually (0x0207BE5C, 0x0207BF2C, 0x0207BFDC, 0x0207C3C8, 0x0207CD0C, 0x0207CD60, 0x0207D488, 0x02080860, 0x02082D04) -- the only way to learn whether the pools recycle or leak",
   "resolve the 4 unknown bases at 0x0207C798 / 0x0207C7CC / 0x0207C81C / 0x0207CE64 -- any tracing to the manager means more list heads",
   "run prior_art.py on every remaining open question before touching a binary",
   "map BattleCol.cpp: Battle_ColManCreate 0x0207AD3C, Battle_ColObjCreate 0x0207AEDC -- the layer beneath everything mapped in iterations 52-64; ColPrm buckets probably hold ColObjs",
@@ -96,7 +96,8 @@
   "collision-is-three-modules-five-symbols-named",
   "prior_art.py-built-query.py-already-existed-25-wakes-duplicated",
   "buckets-1-and-8-CONFIRMED-no-producer-against-complete-index",
-  "colprm-list-head-audit-+0x18-and-+0x20-are-persistent-heads"
+  "colprm-list-head-audit-+0x18-and-+0x20-are-persistent-heads",
+  "colprm-+0x18-and-+0x20-are-FREE-POOLS-colobj-guess-refuted"
  ],
  "stuck": {},
  "required_reading_for_koma_tasks": [
@@ -244,7 +245,9 @@
   "FIFTH_GLOBAL_0x0214BE08": "found free by query.py pool-values 0x0214BE00 0x0214BE20. 4 literal loads: 0x0207AE70, 0x0207B29C, 0x0207BC3C, 0x0207BCC4 - all inside the collision modules. Contents unread. Globals block: 0x0214BD80 chr_b, 0x0214BE08 (this), 0x0214BE0C ColJoint, 0x0214BE10 ColPrm, 0x0214BE14 BattleObj.",
   "BUCKETS_1_8_COMPLETE_INDEX": "Seventh check, first with COMPLETE coverage. query.py search-imm: +0x30 has 1054 accesses / 352 stores ROM-wide; +0x68 has 1059 / 147. Earlier hand checks covered a few hundred instructions out of 499 relevant stores. After correct filtering (per-function extents for the 17 arm9 global-load sites in 7 functions, plus mapped regions with their known manager register, excluding sp bases) exactly ONE candidate survived: 0x0207CBC8 str [r0,#0x68] - and its base is [r7+8], a list node, not the manager. NO PRODUCER for either bucket.",
   "COLPRM_0x20_IS_A_LIST_HEAD": "CORRECTION to iteration 53: ColPrm+0x20 is a LIST HEAD, linked at 0x0207CBB8 (add r0,sb,#0x20 then bl 0x02037B98), not part of a uniform init block. The function at 0x0207CB58 moves nodes off an arg0+0x10 list into manager+0x20. So +0x00..+0x24 is NOT uniformly init data.",
-  "COLPRM_LIST_HEADS": "Full map from the prebuilt branches index (263 link/unlink sites ROM-wide), filtered to a VERIFIED manager register: +0x20 (list head, inside the old \"init block\"), buckets 0/5/6/7/9/11/12/13/14/15/16/17/20/21, and +0xD8 free list (2 links, 14 unlinks). Separately CONFIRMED off a directly-global-loaded base: +0x18 (0x0207D93C) and +0x20 (0x0207CBB8). +0x18 and +0x20 are PERSISTENT - the per-frame drain starts at +0x28 and never touches them. +0x08/+0x10 NOT claimed: those bases are arg0 or nodes (0x0207D494 reads [r0,#0x28] to get a node, then links into the NODE +0x08)."
+  "COLPRM_LIST_HEADS": "Full map from the prebuilt branches index (263 link/unlink sites ROM-wide), filtered to a VERIFIED manager register: +0x20 (list head, inside the old \"init block\"), buckets 0/5/6/7/9/11/12/13/14/15/16/17/20/21, and +0xD8 free list (2 links, 14 unlinks). Separately CONFIRMED off a directly-global-loaded base: +0x18 (0x0207D93C) and +0x20 (0x0207CBB8). +0x18 and +0x20 are PERSISTENT - the per-frame drain starts at +0x28 and never touches them. +0x08/+0x10 NOT claimed: those bases are arg0 or nodes (0x0207D494 reads [r0,#0x28] to get a node, then links into the NODE +0x08).",
+  "COLPRM_FREE_POOLS": "+0x18 and +0x20 are FREE POOLS, not ColObj lists. Both follow unlink-from-active / memset / link-into-manager: +0x18 takes 0x2C-byte nodes (memset at 0x0207D924, link 0x0207D93C, base verified from the global), +0x20 takes 0x10-byte nodes (memset 0x0207CBA8, link 0x0207CBB8). Plus +0xD8 the bucket-node pool (2 links vs 14 unlinks). Free lists are never drained, which is why the per-frame drain at +0x28 skips them. Record sizes now known: ColObj 0x40 (Battle_ColObjCreate 0x0207AF00), ColWork 0x64, pool nodes 0x2C and 0x10.",
+  "CONVENTIONAL_LIST_OFFSETS": "+0x08, +0x10, +0x18, +0x20 are CONVENTIONAL list-head offsets in this codebase, shared by ColObj, ColWork, ColJoint nodes AND the ColPrm manager. 21 link/unlink sites use +0x18/+0x20 and only 1 verifies as ColPrm. An offset match at these four carries no information without base verification. Caveat recorded in findings/colprm-manager-mapped.md."
  },
  "combat_phase_spillover": [
   "status-effect enum = 10 values, contiguous IDs 0x19-0x22 (Shock/Freeze/Burn/Confusion/Poison/Judgment/Paralysis/Blindness/Speed-Down/Battle+Support Seal). Likely an immunity BITMASK on character state struct.",
@@ -856,7 +859,8 @@
   "Prefer the pre-existing tool even when yours works (iter 66): query.py callers found a functions.json caller edge that my find_callers.py structurally cannot see, because mine only scans BL/BLX. A tool I did not write was more complete than the one I built and trusted for 45 wakes.",
   "min(sites)..max(sites) IS NOT A SCOPE (iter 67): I defined \"regions where the manager can be in scope\" as the span between the first and last global-load site - 0x0207C83C to 0x02157EC8, which covers arm9 AND every overlay. It matched 159 candidates, almost all [sp,#0x30] stack writes. Per-function extents cut it to 1. Same class as iteration 61 \"22 accesses in the bucket range\": an unconstrained window yielding a plausible count.",
   "State the coverage of a negative, not just its verdict (iter 67): iterations 63-65 concluded \"nothing fills buckets 1 and 8\" after checking a few hundred instructions, while the complete index shows 499 stores at those offsets ROM-wide. The conclusion held, but I had described a narrow check as if it were exhaustive.",
-  "Follow the anomaly in your own data (iter 68): iteration 53 map recorded that +0x18 was the ONLY one of ten init-block words both read and written - the signature of a list head - and I noted it without acting. Fifteen wakes later the complete index proved it. When a map flags one member of a group as behaving differently, that is the thing to chase."
+  "Follow the anomaly in your own data (iter 68): iteration 53 map recorded that +0x18 was the ONLY one of ten init-block words both read and written - the signature of a list head - and I noted it without acting. Fifteen wakes later the complete index proved it. When a map flags one member of a group as behaving differently, that is the thing to chase.",
+  "SOME OFFSETS ARE SHARED BY DESIGN (iter 69): +0x08/+0x10/+0x18/+0x20 are this codebase conventional list-head offsets, recurring on four different object types. Of 21 link/unlink sites at +0x18/+0x20 only ONE verified as the ColPrm manager. This is stronger than \"check the base register\" - for conventional offsets the offset itself carries no information at all, so base verification is not a guard but the entire measurement."
  ],
  "open_questions_for_owner": [
   "Note-kind bucketing: the engine keeps at most 7 simultaneous \"notes\" per character, and 7 of the 17 kinds share one slot (kinds 6,7,8,9,10,14,15) so they should be mutually exclusive in play. Does starting one of those effects visibly cancel another?"

@@ -24,6 +24,9 @@ this large.
 
 ```
 BattleColPrm manager   (*(0x0214BE10))
+  CAVEAT (iteration 69): +0x08, +0x10, +0x18 and +0x20 are CONVENTIONAL list-head offsets
+  shared by ColObj, ColWork, ColJoint nodes and this manager alike. An offset match at those
+  four proves nothing without verifying the base register.
   +0x00 .. +0x24   ten consecutive words, written in order at 0x0207C4F0..0x0207C514
                      NOT uniform init data: +0x20 is a LIST HEAD (linked at 0x0207CBB8) -- iteration 67
                      +0x18 is the only one later read as well as written

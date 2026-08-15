@@ -1,9 +1,10 @@
 {
- "iteration": 53,
+ "iteration": 54,
  "phase": "combat",
- "current_task": "read the ColPrm +0xE0/+0xE4/+0xE8 accessors",
+ "current_task": "follow ColPrm+0xE0's handler table at 0x0207F480",
  "queue": [
-  "read the ColPrm +0xE0/+0xE4/+0xE8 accessors (the per-frame collision state, 6/5/5 read-write sites)",
+  "follow ColPrm+0xE0's handler table at 0x0207F480 (function pointers on the object that owns the contact array) -- most direct route to the collision test",
+  "find +0xE8's teardown or confirm it leaks (grep arm9 for a null-store to +0xE8 off a ColPrm base)",
   "find what WRITES the contact array at ColPrm+0x158 -- that writer is the actual collision test",
   "add a --known-fields argument to struct_fields.py so the cross-check is automatic",
   "confirm character+0x1E0 is the entity index (signed byte used as an array row)",
@@ -70,7 +71,8 @@
   "commands-are-PREDICATES-notetrack-query-interface-mapped",
   "struct_fields.py-six-scan-guards-tooled-with-selftest",
   "colprm-manager-named-contact-matrix-at-+0x158",
-  "colprm-manager-mapped-40-fields-guard5-false-positive-fixed"
+  "colprm-manager-mapped-40-fields-guard5-false-positive-fixed",
+  "colprm-E0-E4-E8-are-owned-subobjects-not-hot-state"
  ],
  "stuck": {},
  "required_reading_for_koma_tasks": [
@@ -190,7 +192,9 @@
   "TOOL_struct_fields": "scripts/decomp/struct_fields.py -- maps struct fields from an ANCHOR (addr:reg where reg provably holds the struct). Encodes all 6 scan guards + a --size CONTAMINATED check. Run --selftest after editing: it asserts the 12 verified NoteTrack fields are found, the 7 known phantoms {0x10,0x28,0x40,0x5C,0xDF,0xE0,0x158} are not, and nothing exceeds 0xA8. ARM only, straight-line only.",
   "GLOBALS_NAMED": "*(0x0214BE10) = BattleColPrm manager (written at 0x0207C844; 7 of 9 refs in arm9 BattleColPrm.cpp; list heads +0x70 and +0xD0; contact array at +0x158). 0x0214BE14 = BattleObj manager (22 of 22 refs in arm9 BattleObj.cpp - independently confirms map claim 1). *(0x02172960) = battle context, 127 refs dominated by ov11 BattleAI* (PLAUSIBLE). Adjacent to chr_b base ptr 0x0214BD80.",
   "CONTACT_MATRIX": "ColPrm+0x158 = 2D array, row stride 0xC0, element stride 0x30 (4 elements per row). Query 71 reads element +0x00 and +0x18 (0x170-0x158=0x18). Indexed [self][other] where self = ldrsb character+0x1E0, bound = [battleContext+0x158], self skipped. PLAUSIBLE: a pair-wise contact/overlap table. Contents are behind a runtime pointer - unreadable statically.",
-  "COLPRM_MANAGER_MAP": "*(0x0214BE10), 40 fields all below +0x158. +0x00..+0x24 ten words written in order at 0x0207C4F0..0x0207C514 (+0x18 also read); +0x70 and +0xD0 list heads; +0xD8/+0xDC write-once; +0xE0 x6, +0xE4 x5, +0xE8 x5, +0xEC x3, +0xF0 x3 all ldr+str (the per-frame hot state); +0xF4 and +0xFC..+0x148 a second init block; +0x14C byte ldrb/strb; +0x158 contact array. 16 anchors derived mechanically from 7 literal pools."
+  "COLPRM_MANAGER_MAP": "*(0x0214BE10), 40 fields all below +0x158. +0x00..+0x24 ten words written in order at 0x0207C4F0..0x0207C514 (+0x18 also read); +0x70 and +0xD0 list heads; +0xD8/+0xDC write-once; +0xE0 x6, +0xE4 x5, +0xE8 x5, +0xEC x3, +0xF0 x3 all ldr+str (the per-frame hot state); +0xF4 and +0xFC..+0x148 a second init block; +0x14C byte ldrb/strb; +0x158 contact array. 16 anchors derived mechanically from 7 literal pools.",
+  "COLPRM_SUBOBJECTS": "+0xE0/+0xE4/+0xE8 are OWNED SUB-OBJECT POINTERS, not per-frame state. Uniform lifecycle: factory -> str -> init 0x02012940(obj,&id) -> install handler table via 0x02028384(obj->[4],table) -> self-register via vtable slot 0x24 with r1=owner. +0xE0: factory 0x02020D90, id 0x9E000, table 0x0207F480. +0xE4: factory 0x02026F94, id 0xA5000, table 0x0207FB60. +0xE8: factory 0x02026F94, id 0xA0000, table 0x0207FBB0. Teardown at 0x0207C93C destroys +0xE0 and +0xE4 via vtable slot 0x8 and nulls them; +0xE8 is NOT torn down in that window.",
+  "SHARED_COMPONENT_0x02026F94": "factory 0x02026F94 is used by BOTH ColPrm (+0xE4 id 0xA5000, +0xE8 id 0xA0000) and Battle_NoteTrackCreate (0x02155440 -> NoteTrack+0x8C, id 0x86000). Same object type, same vtable-0x24 self-registration. Resource ids passed to 0x02012940 in arm9: 12 distinct, all 0x1000-aligned, 0x040000 / 0x08A000..0x0A6000 / 0x0C0000."
  },
  "combat_phase_spillover": [
   "status-effect enum = 10 values, contiguous IDs 0x19-0x22 (Shock/Freeze/Burn/Confusion/Poison/Judgment/Paralysis/Blindness/Speed-Down/Battle+Support Seal). Likely an immunity BITMASK on character state struct.",
@@ -777,7 +781,8 @@
   "A guard can be too strict (iter 51): my first ends_block masked off the condition nibble so it stopped at conditional branches (beq is normal in-block flow), finding only 2 of 12 known fields. A missing guard invents fake fields; an over-strict guard loses real ones. Only a selftest with a known-good answer distinguishes them - build the selftest first.",
   "Flag an inconsistency instead of forcing a reading (iter 52): query 71 used stride 0x30 but read +0x158, which cannot both be true of an array of 0x30-byte elements. I recorded it unresolved, then checked how BattleColPrm.cpp used the same global - the base was the MANAGER and the array is embedded at manager+0x158, making both reads land inside one element. The flagged contradiction pointed straight at the correction.",
   "GUARD 5 FALSE POSITIVE (iter 53): ldr Rd,[Rm,#0] is byte-identical for a vtable-pointer load and for dereferencing a singleton global (ldr r0,[pc]=&g; ldr r0,[r0,#0]). The guard suppressed real fields at 7 of 16 ColPrm anchors. Fix: also require a blx/bx on the VALUE the access loads, within 6 instructions. Vtable slots get called; struct fields do not.",
-  "A GREEN SELFTEST IS NOT CORRECTNESS (iter 53): the selftest passed both before and after a real tool bug, because its anchors did not exercise the broken path. What caught it was cross-checking the new map against a field known from earlier unrelated work (+0x70 from iter 52). Rule: list a struct known fields BEFORE mapping it, and treat any the tool misses as a tool bug until proven otherwise."
+  "A GREEN SELFTEST IS NOT CORRECTNESS (iter 53): the selftest passed both before and after a real tool bug, because its anchors did not exercise the broken path. What caught it was cross-checking the new map against a field known from earlier unrelated work (+0x70 from iter 52). Rule: list a struct known fields BEFORE mapping it, and treat any the tool misses as a tool bug until proven otherwise.",
+  "ACCESS COUNT DOES NOT IMPLY HOT STATE (iter 54): I called ColPrm +0xE0/+0xE4/+0xE8 \"the per-frame mutable state\" because they had 5-6 read+write accesses while other fields were write-once. They are owned sub-object pointers; the reads are a constructor reloading the pointer before each of four setup calls. Construction-via-several-calls and per-frame mutation produce identical access profiles. Read the code before characterising a field."
  ],
  "open_questions_for_owner": [
   "Note-kind bucketing: the engine keeps at most 7 simultaneous \"notes\" per character, and 7 of the 17 kinds share one slot (kinds 6,7,8,9,10,14,15) so they should be mutually exclusive in play. Does starting one of those effects visibly cancel another?"

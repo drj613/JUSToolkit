@@ -1,11 +1,11 @@
 {
- "iteration": 47,
+ "iteration": 48,
  "phase": "combat",
- "current_task": "identify the base objects of the 4 variable-r2 callback sites",
+ "current_task": "map the NoteTrack 0xA8 struct (the move-script engine)",
  "queue": [
-  "identify base objects of the 4 variable-r2 callback sites 0x0215F1C4 / 0x0215F318 / 0x02168FEC / 0x0216FF6C (only way cases 1-33 are reachable)",
   "map the NoteTrack 0xA8 struct (the move-script engine): known +0x70 callback, +0x74, +0x7c, +0x88, +0x94/+0x98/+0xa3 init -1",
   "name commands 64-73 by reading the 7 live cases -- these are the ones actually used",
+  "identify the object at [X,#0x68] with the 33-slot vtable (384 calls in ov6) -- naming it labels a lot of code",
   "name cases 25/26/33/72 (all read [r0,#0x84], base type unknown per iter 45)",
   "examine the 32-case dispatcher at 0x021580B4 (switch on r3), 2nd largest in ov6",
   "HARNESS TASK (blocked on peer/emulator): break Battle_PrmDataInit 0x021702BC, record returned r0, read [r0+0x00], set a READ WATCHPOINT on it, land a hit -> trapping PC is the collision walker",
@@ -60,7 +60,8 @@
   "prmdata-at-char+0x84-accessor-mediated-walker-search-reframed",
   "73-case-dispatcher-found-accessor-bank-REFUTED-walker-needs-harness",
   "73-case-dispatcher-enumerated-hp-sp-are-commands-23-24-32",
-  "notetrack-owns-the-command-callback-b11-reframe-is-a-dead-end"
+  "notetrack-owns-the-command-callback-b11-reframe-is-a-dead-end",
+  "vtable-vs-field-distinction-cases-1-33-CONFIRMED-dead"
  ],
  "stuck": {},
  "required_reading_for_koma_tasks": [
@@ -169,7 +170,9 @@
   "OV6_DISPATCHERS": "15 add-pc dispatchers in ov6, case counts 4,5,5,5,5,5,7,7,7,9,13,14,32,73. Largest 0x02157A60 (73, on r2); 0x021580B4 (32, on r3); 0x0216A0AC (14); 0x021574E4 (13, on r2, inside claim-3 function 0x021574CC)",
   "NOTETRACK": "Battle_NoteTrackCreate 0x021553E0 allocates 0xA8 bytes, constructed at [character+0x1a8]+0x18, stores the character command dispatcher (0x02157A44) at noteTrack+0x70 (str at 0x02155438). Battle_CharaCreate passes it in r3 at 0x02156CE4. char+0x1a8 therefore holds BOTH the NoteTrack (+0x18) and the pending-delta struct (+0x10).",
   "NOTETRACK_COMMANDS": "issued set {3,64,65,66,67,68,69,70,71,72,73} across 12 sites. Live in dispatcher: 3,65,66,67,69,71,72. No-op: 64,68,70. Out of range: 73. Generic forwarder 0x02156520 passes its caller r2 through; the 2 tail-call stubs 0x02156584/0x02156594 supply 64 and 68.",
-  "NOTES_ARE_THE_16BYTE_SLOTS": "iter-40 slot records (+0x00 kind, +0x01 ExtFlags, +0x02 ProjectileId) are NoteTrack notes; forwarder ticks a halfword counter at note+0x04 and copies note+0x02 into note+0x01 when the command returns non-zero."
+  "NOTES_ARE_THE_16BYTE_SLOTS": "iter-40 slot records (+0x00 kind, +0x01 ExtFlags, +0x02 ProjectileId) are NoteTrack notes; forwarder ticks a halfword counter at note+0x04 and copies note+0x02 into note+0x01 when the command returns non-zero.",
+  "CASES_1_33_ARE_DEAD": "CONFIRMED_STATIC (was PLAUSIBLE). The 4 remaining suspects 0x0215F1C4/0x0215F318/0x02168FEC/0x0216FF6C are C++ VIRTUAL CALLS at vtable slot 0x70 (each preceded by ldr r1,[r0,#0x0]), not NoteTrack field reads. So dispatcher cases 23/24 -> 0x020783CC/0x020781E4 are dead code; a second unused entry point.",
+  "OV6_IS_VIRTUAL": "384 vtable calls across 33 distinct slots in ov6. Most used: 0xD8 x80, 0x8 x45, 0x6C x39, 0xC x22, 0x24 x21, 0x94 x21, 0xEC x18, 0x14 x15, 0xA0 x14, 0x5C x14. Slot 0x70 exactly 4x. Object reached via ldr r0,[X,#0x68]."
  },
  "combat_phase_spillover": [
   "status-effect enum = 10 values, contiguous IDs 0x19-0x22 (Shock/Freeze/Burn/Confusion/Poison/Judgment/Paralysis/Blindness/Speed-Down/Battle+Support Seal). Likely an immunity BITMASK on character state struct.",
@@ -748,6 +751,7 @@
   "Shared-command-enum hypothesis REFUTED (iter 46): the 73-way and 13-way ov6 switches both use only low case numbers (13-way live = 1,2,4,6-12), zero overlap with the 73-way no-op band 34-64. Separate enums; the 31-case dead band is unexplained.",
   "B11 dead end recorded (iter 47): dispatcher cases 23/24 call the HP/SP apply functions but NOTHING issues those command numbers. The apply path is reachable a second way that is unused. A handler case existing does not mean it is invoked - enumerate the issuers before building on a case.",
   "ARM mask bug #3 (iter 47): for ldr Rd,[Rn,#imm] I masked the Rn field instead of Rd, so a scan for ldr ip,[Rn,#0x70] returned 0 sites. Correct mask is 0x0FF0FFFF vs 0x0590C070. Added a selftest against a known site before trusting the result - do this every time.",
-  "Filter Rn=r15 out of offset scans (iter 47): 14 of 36 ldr [Rn,#0x70] hits were pc-relative literal loads, not field reads at all."
+  "Filter Rn=r15 out of offset scans (iter 47): 14 of 36 ldr [Rn,#0x70] hits were pc-relative literal loads, not field reads at all.",
+  "VTABLE SLOT vs STRUCT FIELD (iter 48): before treating ldr Rd,[Rn,#off] as a field read, check whether Rn was just loaded from [Rm,#0]. If so, off is a VTABLE SLOT INDEX and the type is whatever Rm is. ov6 has 384 virtual calls across 33 slots, so this is common, not an edge case. 5th member of the scan-error family: constrain to read every hit / stop at function boundaries / know the base type / exclude r15 bases / check for a preceding vtable load."
  ]
 }

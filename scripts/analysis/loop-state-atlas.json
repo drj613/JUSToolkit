@@ -1,5 +1,5 @@
 {
-  "iteration": 33,
+  "iteration": 34,
   "phase": "combat",
   "current_task": "awaiting Ghidra decision or harness bisection; self-generating otherwise",
   "queue": [
@@ -36,7 +36,8 @@
     "D0.3-attempted-ghidra-blocked",
     "K3-koma-runtime",
     "K3b-consolidate-struct-map",
-    "K4b-defence-candidates-ruled-out"
+    "K4b-defence-candidates-ruled-out",
+    "jpower-damage-located"
   ],
   "stuck": {},
   "required_reading_for_koma_tasks": [
@@ -94,7 +95,7 @@
     "L/R sticker bindings are per-deck fields not yet located in RAM",
     "Is HP computed as size*k at runtime, or tabulated per panel? Naruto 4-koma=144=4*36; if size*k then size5=180, size6=216, size7=252, size8=288. One reading settles it."
   ],
-  "notes": "Iteration 33: closed the attribution caveat the harness flagged as untestable. Both per-character defence candidates from the K3 init copy (chr_b[0x01] and chr_b[0x02]) are IDENTICAL between the two damage targets, so neither can explain the flat -2 - which moves the ability-0x09 attribution from weakly to well supported. Also showed neither field tracks HP, so both are categorical rather than stat proxies, and ran a consistency check on the damage formula: the tier term is constant across the two measured moves, so the 1-point difference is entirely in the move value. Attacker-side vs defender-side tier still indistinguishable without move data.",
+  "notes": "Iteration 34: found the per-move damage value. jpower.bin is 311 x 304 bytes with damage1 at +0x0C (confirmed 9/9 against a published column), and the key insight is that damage1 stores DISPLAYED DAMAGE x 5 - every value a multiple of 5 except 144. Both corrected measurements resolve to unique file values (B->40, DOWN+B->35), which independently checks the harness net-of-regen correction against data that predates it. Also REFUTED my own one-wake-old chr_b[0x02]=tier hypothesis (tier must be 2; Goku reads 3) and found chr_b[0x01] fits instead. Corrected an error in jpower-Mapping.md (index 146 is damage1=35, a DOWN+B candidate, not 40). Third loose-ends miss this phase - now recorded as a procedure.",
   "last_wake": "2026-08-14",
   "wakeup_default_seconds": 1800,
   "consecutive_no_progress_wakes": 0,
@@ -641,5 +642,15 @@
     "stated_precisely": "This rules out the two per-character scalars the INIT FUNCTION COPIES. A defence value living somewhere the init does not copy would still be missed.",
     "neither_tracks_HP": "[0x02] mean size-4 HP by value: 2->118.0, 3->124.0, 4->130.5, 5->129.0, 6->128.8 - rises then plateaus, and [0x02]=5 spans HP 64..224. [0x01]: 1->110.5, 2->133.0, 3->105.1 - NON-MONOTONIC with 2 holding 56 of 74. That shape fits a 3-way category with a dominant default, i.e. light/medium/heavy weight class. Both stay PLAUSIBLE; neither is a stat proxy.",
     "formula_consistency_check": "Whichever side supplies tier in floor(damage1/5)+(tier-2), it is CONSTANT across the two measured moves (same attacker, same defender): B=8.000 and DOWN+B=7.000 differ by exactly 1, so the whole difference sits in floor(damage1/5) and the two moves damage values differ by about 5. Consistent with the formula shape. Cannot distinguish attacker-side (Goku [0x02]=3 -> damage1 in 35..39) from defender-side (targets [0x02]=5 -> damage1 in 25..29) without the per-move damage value, which lives in move script data nobody has located."
-  }
+  },
+  "JPOWER_DAMAGE": {
+    "output": "docs/research/findings/jpower-damage-located.md; jpower-Mapping.md corrected and extended",
+    "layout_CONFIRMED": "bin/jpower.bin = 94544 bytes = 311 entries x 304 bytes exactly. damage1 = BYTE at record +0x0C, damage2 = +0x0E, damage3 = +0x10. Located by reproducing the block-0 column published in jpower-Mapping.md, 9 of 9 - not chance.",
+    "THE_KEY_INSIGHT": "damage1 stores DISPLAYED DAMAGE x 5. Every value in the file is a multiple of 5 except 144 (5,10,15,20,25,30,35,40,45,50,60,100,144,150,200). So floor(damage1/5) in the project formula is an EXACT division, not a scaling heuristic, and (tier-2) is a genuine per-character modifier rather than part of the scaling.",
+    "measured_moves_resolve_uniquely": "B = 8.000 requires floor(damage1/5)=8 -> damage1 = 40, the ONLY value that gives 8 (16 entries have it). DOWN+B = 7.000 -> damage1 = 35, the only value giving 7 (4 entries). So the corrected measurements land exactly on real file values - an independent check on the harness +2.0 net-of-regen correction, using data written before that correction existed.",
+    "chr_b_0x02_REFUTED_AS_TIER": "SELF-CORRECTION, one iteration old. Goku B is 8.000 with damage1=40, so floor(40/5)=8 and (tier-2) must be 0, i.e. tier=2. Goku chr_b[0x02]=3 and both targets read 5 - neither is 2. REFUTED.",
+    "chr_b_0x01_fits": "Goku reads 2 and so do both targets, giving tier-2 = 0 and damage = damage1/5 exactly. Distribution {1:11, 2:56, 3:7} becomes a modifier of {-1,0,+1} on 18 of 74 characters - a sensible tier shape. PLAUSIBLE. Deliberately NOT reassigning [0x02] to weight class by elimination, since that is the reasoning that produced the wrong answer last time. The test also cannot tell attacker-side from defender-side tier, because Goku and both targets all read 2.",
+    "doc_error_corrected": "jpower-Mapping.md claimed Goku B uses damage1=40 at indices 146, 195, 218. Entry 146 actually has damage1=35 - which is exactly what DOWN+B (7.000) requires, so 146 was a DOWN+B candidate filed under B. Corrected in place."
+  },
+  "LOOSE_ENDS_RULE_IS_LOAD_BEARING": "THIRD instance this phase. jpower-Mapping.md already contained the 304-byte entry size, the field names, the formula, and Goku B at damage1=40 - and I had jpower.bin on my candidate list for two wakes as \"94KB, never examined\" without opening the two docs named after it. The first two instances (the drain trampoline in GDB-Validation-Queue.md; scripts/gdb/README.md on the peer side) I recorded as a lesson. This one says the lesson did not stick, so it is now a PROCEDURE: BEFORE OPENING A BINARY, GREP THE DOCS DIRECTORY FOR ITS NAME."
 }

@@ -1,11 +1,12 @@
 {
-  "iteration": 35,
+  "iteration": 36,
   "phase": "combat",
-  "current_task": "awaiting Ghidra decision or harness bisection; self-generating otherwise",
+  "current_task": "correlate collision subType against jpower entry selection",
   "queue": [
+    "correlate collision subType (+0x01) vs jpower entry selection",
+    "chr/shot/* for projectile-entities",
     "C6h-bisect-frame-for-0x134-writer (harness-side)",
-    "D0.3-ghidra-import (BLOCKED: needs user go-ahead)",
-    "self-generated: identify the 4 unknown copied fields"
+    "D0.3-ghidra-import (BLOCKED: needs user go-ahead)"
   ],
   "done": [
     "K1-koma-data-survey",
@@ -38,7 +39,8 @@
     "K3b-consolidate-struct-map",
     "K4b-defence-candidates-ruled-out",
     "jpower-damage-located",
-    "docs-coverage-sweep"
+    "docs-coverage-sweep",
+    "collision-data-extracted"
   ],
   "stuck": {},
   "required_reading_for_koma_tasks": [
@@ -96,7 +98,7 @@
     "L/R sticker bindings are per-deck fields not yet located in RAM",
     "Is HP computed as size*k at runtime, or tabulated per panel? Naruto 4-koma=144=4*36; if size*k then size5=180, size6=216, size7=252, size8=288. One reading settles it."
   ],
-  "notes": "Iteration 35: ran the new docs-coverage procedure and it paid off immediately - found chr_b-Complete-Mapping.md, never opened despite chr_b being my most-worked file, which CONFIRMS chr_b[0x01] as the damage-formula tier (its tier 1/2/3 -> -1/0/+1 table matches my {1:11,2:56,3:7} distribution exactly). Two independent derivations met on the same field. Also validated that doc series column 74/74 against my join, and issued one narrow correction: chr_b[24] is Kyuubi Naruto not Kakashi, on three lines of evidence. chr_b[0x02] refuted as tier, returns to unknown with a new statC/walk-speed lead.",
+  "notes": "Iteration 36: the docs-first procedure paid off a second time and bigger. Went to open state.bin, found docs/articles/specs/summary.md instead - a whole-ROM file classification listing chr/ChrBin.aar/chr/col/* and three other categories I did not know were in the ROM. Wrote an ALAR v3 extractor (variable-length entries, per the spec doc that also existed) and unpacked 907 files: 281 collision, 269 AI, 184 shot, 66 effect. Confirmed the 20-byte collision stride against actual data (2837 records) and profiled the columns, finding two hitTier-shaped candidates which I deliberately did NOT name. This unblocks the most-refuted subsystem is core open question.",
   "last_wake": "2026-08-14",
   "wakeup_default_seconds": 1800,
   "consecutive_no_progress_wakes": 0,
@@ -666,5 +668,19 @@
     "chr_b_0x02_now_unknown": "REFUTED as tier, returns to unknown. NEW LEAD from the doc: it says walk speed is in chr_b.bin as a \"statC field, threshold/tier-based\" - worth testing against [0x02] five values."
   },
   "MUTUAL_VALIDATION_74_of_74": "The doc has a full chr_b index -> character -> series -> classId -> jpower-block table derived from the ARM9 string table at 0x0924B0. My join goes a different route (koma abilityId -> chr_b index, names from komatxt, series from Koma.NameTable). SERIES CODE AGREES ON ALL 74 ROWS - two independent derivations of the same index space with zero disagreement.",
-  "NARROW_CORRECTION_chr_b_24": "The doc lists chr_b[24] as Kakashi (na_b_05) and chr_b[21] as Kyuubi Naruto. THREE independent lines say chr_b[24] is Kyuubi Naruto: (1) koma records 504/505 sizes 7-8 carry abilityId 24; (2) komatxt names those panels ナルト（九尾）; (3) chr_b[24] per-size HP slots 3/4 are 192,208 - exactly the owner observed Naruto size-7/8 HP, where chr_b[21] gives 176,192. So the NAME-WITHIN-SERIES ordering is off for these rows while the series column is right. Likely cause: the doc assumes the 0x020924B0 string-table index equals the chr_b index, and Battle-Engine-Map already DEMOTED that assumption (its 6-bit-id = classId claim was refuted on a range mismatch), so the alignment was never verified. Correction banner added."
+  "NARROW_CORRECTION_chr_b_24": "The doc lists chr_b[24] as Kakashi (na_b_05) and chr_b[21] as Kyuubi Naruto. THREE independent lines say chr_b[24] is Kyuubi Naruto: (1) koma records 504/505 sizes 7-8 carry abilityId 24; (2) komatxt names those panels ナルト（九尾）; (3) chr_b[24] per-size HP slots 3/4 are 192,208 - exactly the owner observed Naruto size-7/8 HP, where chr_b[21] gives 176,192. So the NAME-WITHIN-SERIES ordering is off for these rows while the series column is right. Likely cause: the doc assumes the 0x020924B0 string-table index equals the chr_b index, and Battle-Engine-Map already DEMOTED that assumption (its 6-bit-id = classId claim was refuted on a range mismatch), so the alignment was never verified. Correction banner added.",
+  "COLLISION_DATA_EXTRACTED": {
+    "output": "docs/research/findings/collision-data-extracted.md; new tool scripts/analysis/extract_alar.py; Battle-Engine-Map hitbox-priority open question annotated",
+    "HOW_FOUND": "Went to open state.bin (flagged by the sweep) and the docs-first procedure led somewhere better: docs/articles/specs/summary.md is a WHOLE-ROM FILE CLASSIFICATION I had never read. It lists chr/ChrBin.aar/chr/col/*, chr/ai/*, chr/ai/move/*, chr/shot/*, chr/effect/* - paths I did not know existed because I had only inventoried bin/.",
+    "the_gap_it_closes": "Battle-Engine-Map hitbox-priority open question: \"Where is the runtime CollisionEntry parser - the code that walks the loaded 20-byte-stride collision array at hit-test time? Not located in this campaign at all.\" The CODE is still unfound, but nobody noticed the DATA was inside an unopened 322KB container.",
+    "extractor": "ALAR v3 per docs/articles/specs/alar.md. Entries are VARIABLE-LENGTH with the path embedded (0x00 uint id, 0x04 uint offset, 0x08 uint size, 0x0C uint flags, 0x10 ushort path hash, 0x12 NUL-terminated path) - my earlier hand-rolled attempt failed by assuming fixed-size entries.",
+    "contents": "ChrBin.aar = ALAR v3 flags 0x45, 907 files, payload 282649 bytes (87.7%). Extracted: 281 chr/col, 269 chr/ai, 184 chr/shot, 66 chr/effect.",
+    "STRIDE_20_CONFIRMED": "Every collision file divides exactly by 20. db_b_01 (Goku) 500 bytes = 25 records; op_b_01 (Luffy) 760 = 38; na_b_01 (Naruto) 920 = 46. 2837 records total across 281 files. So the 20-byte-stride claim is now validated against DATA, not inferred from code.",
+    "column_profile": "+0x00 8 values (type); +0x01 16 values (subType - jpower-Mapping says collision subType selects which jpower entry to use); +0x02 4 values; +0x06/+0x0B/+0x12/+0x13 CONSTANT ZERO across all 2837 records; +0x10 4 values well spread (392/948/741/756); +0x11 7 values.",
+    "hitTier_candidates_NOT_claimed": "Battle-Engine-Map says no two-entity hitTier/hitProperties comparison was ever found. +0x10 (4 values, even spread) and +0x11 (7 values) have exactly that shape. I am NOT claiming they are those fields - that subsystem has four demoted claims from naming fields on structural resemblance, and my own worst errors this phase came from the same move. Candidates only; confirming needs the consumer, which is the parser nobody has found."
+  },
+  "next_leads": [
+    "Correlate collision subType (+0x01, 16 values) against jpower entry selection - jpower-Mapping.md names this as its own open question (\"How do characters select specific jpower entries from their assigned block?\") and the collision files are the missing half. Goku has 25 collision records vs 9 jpower block-0 entries: a bounded problem now.",
+    "chr/shot/* (184 files) is the projectile-entities subsystem data, also never opened."
+  ]
 }

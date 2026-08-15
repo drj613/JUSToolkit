@@ -149,7 +149,7 @@ end-to-end. No claim in this document is unverified as of this update; see
 
 ### Open questions
 
-- Where is the actual runtime `CollisionEntry` parser — the code that walks the loaded 20-byte-stride collision array field-by-field at hit-test time? Not located in this campaign at all.
+- Where is the actual runtime `CollisionEntry` parser — the code that walks the loaded 20-byte-stride collision array field-by-field at hit-test time? Not located in this campaign at all. **(2026-08-14: the code is still unfound, but the DATA is now extracted — `chr/ChrBin.aar` was never unpacked and contains 281 collision files, 2837 records, stride 20 confirmed. The 20-byte claim is validated against the data. Two low-cardinality columns, `+0x10` (4 values) and `+0x11` (7 values), have the shape of `hitTier`/`hitProperties` — named as candidates only. See `findings/collision-data-extracted.md`.)**
 - No two-entity `hitTier`/`hitProperties` comparison (the literal clash-resolution code) was found anywhere in ov0/ov3/ov4/ov5/ov6.
 - What does the 6-bit id in `word1` actually encode, if not `classId`? It increments by exactly 1 between consecutive raw table entries, consistent with *some* dense per-character index space, just not the one hypothesized.
 

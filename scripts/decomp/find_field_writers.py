@@ -136,6 +136,61 @@ def scan(off, wanted, regions):
     return direct, split, blind, extents
 
 
+BLOCK_FNS = {0x020517FC: 'memset(dst, val, n)', 0x02051890: 'memcpy(dst, src, n)'}
+BL = re.compile(r'^bl #(0x[0-9a-fA-F]+)$')
+MOV = re.compile(r'^mov (\w+), (\w+)$')
+MOV_IMM = re.compile(r'^mov (\w+), #(0x[0-9a-fA-F]+|\d+)$')
+
+
+def scan_blocks(off, wanted, regions):
+    """Block writes that cover `off`: memset/memcpy calls, and stm.
+
+    For each call to a block function, back-resolve r0 (the destination, as
+    `add rD, base, #N` or a plain register move giving N = 0) and r2 (the size,
+    immediate only). The block covers the field when N <= off < N + size.
+    A destination or size that is computed is reported, never assumed.
+    """
+    code, extents = load()
+    covers, unresolved, stm_sites = [], 0, []
+    for region in regions:
+        rows = code.get(region)
+        if not rows:
+            continue
+        index = {a: i for i, (a, _t) in enumerate(rows)}
+        for i, (addr, text) in enumerate(rows):
+            if text.startswith('stm'):
+                stm_sites.append((region, addr, text, fn_of(extents, region, addr)))
+            m = BL.match(text)
+            if not m or int(m.group(1), 16) not in BLOCK_FNS:
+                continue
+            dst_base, dst_off, size = None, None, None
+            for j in range(i - 1, max(-1, i - 1 - WINDOW), -1):
+                _a2, t2 = rows[j]
+                ma = ADD.match(t2)
+                if ma and ma.group(2) == 'r0' and dst_base is None:
+                    if ma.group(1) == 'add' and ma.group(3) not in NOT_A_BASE:
+                        dst_base, dst_off = ma.group(3), int(ma.group(4), 0)
+                    continue
+                mv = MOV.match(t2)
+                if mv and mv.group(1) == 'r0' and dst_base is None:
+                    if mv.group(2) not in NOT_A_BASE:
+                        dst_base, dst_off = mv.group(2), 0
+                    continue
+                mi = MOV_IMM.match(t2)
+                if mi and mi.group(1) == 'r2' and size is None:
+                    size = int(mi.group(2), 0)
+                    continue
+            if dst_base is None or size is None:
+                unresolved += 1
+                continue
+            if dst_off <= off < dst_off + size:
+                ex = fn_of(extents, region, addr)
+                comp = companions(rows, index, ex, dst_base, wanted)
+                covers.append((region, addr, BLOCK_FNS[int(m.group(1), 16)],
+                               dst_base, dst_off, size, ex, comp))
+    return covers, unresolved, stm_sites
+
+
 def thumb_share():
     c = collections.Counter()
     tot = collections.Counter()
@@ -175,6 +230,25 @@ def report(off, wanted, regions):
     return direct, split
 
 
+def report_blocks(off, wanted, regions):
+    covers, unresolved, stm_sites = scan_blocks(off, wanted, regions)
+    print(f'\nBLOCK WRITES covering +{off:#x} '
+          f'(memset/memcpy with a resolvable destination and immediate size): '
+          f'{len(covers)} site(s); {unresolved} call(s) with a computed '
+          f'destination or size, NOT counted')
+    for region, addr, what, base, dst_off, size, ex, comp in covers:
+        tag = 'MATCH' if comp else '.'
+        print(f'  {tag:5} {addr:#010x} {region:<5} {what:<20} '
+              f'dst={base}+{dst_off:#x} n={size:#x} '
+              f"fn={'?' if not ex else f'{ex[0]:#010x}'} "
+              f'companions={sorted(hex(x) for x in comp)}')
+    if not covers:
+        print('  none')
+    print(f'\nstm instructions in scope: {len(stm_sites)} '
+          '(bases not resolved -- still a blind spot)')
+    return covers
+
+
 def selftest():
     """Anchors, all hand-verified from the disassembly:
       * +0x30 must find 0x0208352C (entity+0x30 = the character, iteration 74)
@@ -193,8 +267,15 @@ def selftest():
     _d, s, _b, _e = scan(0x186, set(), ['ov6', 'arm9'])
     assert any(a in (0x02156B98 + 8, 0x0207CA98) or True for _r, a, *_ in s) and s, \
         'selftest: split pass found nothing for +0x186 (the add #0x100 idiom)'
-    print(f'selftest OK: direct pass and split pass both anchored '
-          f'({len(s)} split sites for +0x186)')
+    # the block pass must find the installer's own memset of +0xA4..+0x173
+    covers, _u, _stm = scan_blocks(0xE8, {0x60}, ['arm9'])
+    assert any(c[1] == 0x0207CA80 for c in covers), \
+        'selftest: installer memset at 0x0207CA80 does not cover +0xE8'
+    hit = [c for c in covers if c[1] == 0x0207CA80][0]
+    assert hit[4] == 0xA4 and hit[5] == 0xD0, \
+        f'selftest: memset resolved as +{hit[4]:#x} n={hit[5]:#x}, expected +0xa4 n=0xd0'
+    print(f'selftest OK: direct, split and block passes all anchored '
+          f'({len(s)} split sites for +0x186; installer memset +0xa4 n=0xd0 covers +0xE8)')
     return 0
 
 
@@ -205,6 +286,8 @@ def main():
     ap.add_argument('--companions', default='',
                     help='comma-separated distinctive offsets on the same struct')
     ap.add_argument('--regions', default=','.join(REGIONS))
+    ap.add_argument('--blocks', action='store_true',
+                    help='also scan memset/memcpy block writes that cover the offset')
     ap.add_argument('--selftest', action='store_true')
     a = ap.parse_args()
     if a.selftest:
@@ -212,7 +295,10 @@ def main():
     if a.offset is None:
         ap.error('an offset is required (or --selftest)')
     wanted = {int(x, 0) for x in a.companions.split(',') if x.strip()}
-    report(a.offset, wanted, [r.strip() for r in a.regions.split(',') if r.strip()])
+    regions = [r.strip() for r in a.regions.split(',') if r.strip()]
+    report(a.offset, wanted, regions)
+    if a.blocks:
+        report_blocks(a.offset, wanted, regions)
     return 0
 
 

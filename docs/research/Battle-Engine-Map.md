@@ -94,7 +94,7 @@ This adds no new caller (`0x02157DB8` is almost certainly among the 8 ARM script
 
 ### Open questions
 
-- Who writes `[[charPtr+0x1a8]+0x10]+0xE8` (and `+0x130`)? This is the single highest-value unresolved item in the whole campaign — see next-campaign spec **B11**.
+- Who writes `[[charPtr+0x1a8]+0x10]+0xE8` (and `+0x130`)? This is the single highest-value unresolved item in the whole campaign — see next-campaign spec **B11**. **(2026-08-15, iteration 75 — the target is now sharp.** `[[char+0x1a8]+0x10]` is the object installer `0x0207C988` **returns** (`mov r0,r4` at `0x0207CB34`), stored at `entity+0x10` by `0x02083564`. It is the same object as the ColObj owner `[ColObj+0x28]` and the `0x2C`-byte pool-node owner — three separately-tracked objects, one struct. So `+0xE8` lives on a base that also carries `+0x40` flags, `+0x60` (the ColObj) and the `0xD0`-byte region from `+0xA4`, and `+0xE8` is **zeroed at installation** by that memset. See `findings/entity-0x10-is-the-colobj-owner-and-the-damage-scratch-object.md`.)*
 - Is there a separate, unfound ×1.5 nature-advantage multiplier, or does JUS implement "nature advantage" as baked-in per-koma damage tables rather than a runtime multiply?
 - Exact call site (of 358 total, ~60+ within ov6) where `0x0200D12C` is invoked with literal divisor 5 for the ground-truth damage/5 term — none found.
 

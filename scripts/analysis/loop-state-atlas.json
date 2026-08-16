@@ -1,17 +1,17 @@
 {
- "iteration": 74,
+ "iteration": 75,
  "phase": "combat",
  "current_task": "name the pool-node owner from its size and field shape",
  "queue": [
-  "SETTLE entity+0x10: iteration 72 says it is the ColObj (str r0,[r4,#0x10] at 0x02083564 after installer 0x0207C988); iteration 47 says it is the pending-delta struct (+0x40 bit 0x800 gates delta application). Both load-bearing for the damage pipeline. One store site each -- cheap and decisive.",
-  "re-audit the map's char+0xNN offsets against THREE objects: the ov6 0x1F0 battle character, the pooled entity, and the arm9 +0x56c struct. +0x84 (prmData), +0x1B4, +0x1B8 still unassigned.",
-  "name the arm9 struct behind constructor 0x02053528 / the +0x56c gauge field (GDB anchor 0x020784E4) via alloc_census.py on arm9 tags",
-  "mine the 469 tagged allocation names for other misattributions -- every earlier extract_symbols.py nearest-function binding is now checkable",
+  "B11, now with a sharp target: find the writer of owner+0xE8. The base is [[char+0x1a8]+0x10] = the installer's return value, an object that also carries +0x40 flags, +0x60 (the ColObj), +0x34/+0x38 and the 0xD0 region from +0xA4. Search for stores to +0xE8 on bases that ALSO touch one of those, instead of on a nameless scratch pointer.",
+  "name the owner by tracing the pool at [[0x0214BE14]+0x8C]+0x8 (installer 0x0207C988 does ldr r4,[sb,#8] at 0x0207C9AC after bl 0x0201899C)",
+  "re-audit the map's char+0xNN offsets across THREE objects: the ov6 0x1F0 battle character, the pooled entity, the arm9 +0x56c struct. +0x84 (prmData), +0x1B4, +0x1B8 unassigned.",
+  "name the arm9 struct behind constructor 0x02053528 / the +0x56c gauge (GDB anchor 0x020784E4) via alloc_census.py on arm9 tags",
+  "mine the 469 tagged allocation names for other misattributions",
   "read ColObj+0x24's method 0x0207D94C, the third ColObj<->ColPrm interface method",
   "find +0x20's allocator: ldr rN,[mgr,#0x20] followed by an unlink, base verified from the global",
   "resolve the 4 unknown bases at 0x0207C798 / 0x0207C7CC / 0x0207C81C / 0x0207CE64",
   "map BattleCol.cpp: Battle_ColManCreate 0x0207AD3C, Battle_ColObjCreate 0x0207AEDC",
-  "PARKED (iterations 71-73): name the 0x2C pool-node owner. It is [installer arg0 + 0x8] where installer arg0 = [[0x0214BE14]+0x8C] (iteration 74 resolved the base: 0x02083550's ldr r0,[r0,#0] reads the MANAGER GLOBAL, not arg0 -- arg0 is the callback, parked in ip at 0x020834E0).",
   "HARNESS (blocked by static-only): read watchpoint on ColPrm+0x154 for the bucket-1 contradiction; recipe in iteration 45",
   "D0.3 Ghidra import -- BLOCKED, needs the user's go-ahead"
  ],
@@ -85,7 +85,8 @@
   "pool-pair-is-two-ColObj-method-slots-owner-located-not-named",
   "collision-is-wired-by-claim-1-pooled-entity-constructor",
   "allocator-is-tagged--battle-character-is-the-0x1F0-object-at-X+0x1a8",
-  "character<->entity-bidirectional-link;-iteration-73-setter-direction-REVERSED"
+  "character<->entity-bidirectional-link;-iteration-73-setter-direction-REVERSED",
+  "entity+0x10-=-ColObj-owner-=-damage-scratch-object-=-parked-pool-node-owner-(one-struct)"
  ],
  "stuck": {},
  "required_reading_for_koma_tasks": [
@@ -143,7 +144,7 @@
   "L/R sticker bindings are per-deck fields not yet located in RAM",
   "Is HP computed as size*k at runtime, or tabulated per panel? Naruto 4-koma=144=4*36; if size*k then size5=180, size6=216, size7=252, size8=288. One reading settles it."
  ],
- "notes": "Iteration 37: modest wake, two useful negatives. Confirmed jpower ID is byte +0x00 (and that IDs are not array indices). QUESTIONED the existing \"collision subType selects the jpower entry\" claim - Goku 13 of 25 records share subType 2, and subType is not the jpower ID. And REFUTED my own suspicion from reading Goku alone that +0x10 is a function of type: across 2837 records type predicts it only 50.3% of the time, so the fields stay independent and survive as hitTier candidates. Caught that one before writing it down, unlike the chr_b +0x30 over-fit. | it73: allocator 0x0201A21C is TAGGED -- scripts/decomp/alloc_census.py (selftest) names 469 of 494 sites. The 0x1F0 object at X+0x1a8 is the BATTLE CHARACTER (Battle_CharaCreate/BattleChara.cpp), not 'MoveInfo'; the outer X with the +0x56c gauge is a separate, unnamed, non-heap object. Self-refuted this wake's own 'character struct is 0x1F0' claim by finally grepping docs/ for the address. | it74: REVERSED iteration 73's setter direction. 0x021570EC is a callback invoked by the pooled-entity constructor 0x020834D4 with (r0=entity, r1=character); character+0x1a8 = the entity, entity+0x30 = the character. No outer object exists -- the +0x56c struct is a separate arm9 one. Open conflict: entity+0x10 is claimed as BOTH the ColObj (it72) and the pending-delta struct (it47).",
+ "notes": "Iteration 37: modest wake, two useful negatives. Confirmed jpower ID is byte +0x00 (and that IDs are not array indices). QUESTIONED the existing \"collision subType selects the jpower entry\" claim - Goku 13 of 25 records share subType 2, and subType is not the jpower ID. And REFUTED my own suspicion from reading Goku alone that +0x10 is a function of type: across 2837 records type predicts it only 50.3% of the time, so the fields stay independent and survive as hitTier candidates. Caught that one before writing it down, unlike the chr_b +0x30 over-fit. | it73: allocator 0x0201A21C is TAGGED -- scripts/decomp/alloc_census.py (selftest) names 469 of 494 sites. The 0x1F0 object at X+0x1a8 is the BATTLE CHARACTER (Battle_CharaCreate/BattleChara.cpp), not 'MoveInfo'; the outer X with the +0x56c gauge is a separate, unnamed, non-heap object. Self-refuted this wake's own 'character struct is 0x1F0' claim by finally grepping docs/ for the address. | it74: REVERSED iteration 73's setter direction. 0x021570EC is a callback invoked by the pooled-entity constructor 0x020834D4 with (r0=entity, r1=character); character+0x1a8 = the entity, entity+0x30 = the character. No outer object exists -- the +0x56c struct is a separate arm9 one. Open conflict: entity+0x10 is claimed as BOTH the ColObj (it72) and the pending-delta struct (it47). | it75: entity+0x10 = the installer's RETURN = the ColObj owner = the damage-pipeline scratch object [[char+0x1a8]+0x10] = the parked 0x2C-pool-node owner. One struct, >=0x188 bytes, pool-allocated (never in the tagged census). REFUTED iteration 72's 'entity+0x10 is the ColObj'. B11 (+0xE8's writer) now has a base with distinctive companion fields to search on.",
  "last_wake": "2026-08-14",
  "wakeup_default_seconds": 1800,
  "consecutive_no_progress_wakes": 0,
@@ -256,7 +257,11 @@
   "entity_0x18": "the 0xA8-byte NoteTrack (add r0,r6,#0x18 at 0x02156CDC, r6=[char+0x1a8])",
   "0x02083624": "thin shim onto the pooled-entity constructor 0x020834D4; r0-r2 untouched, bl at 0x0208363C",
   "0x020834D4_arg0": "the callback, moved to ip at 0x020834E0 on the FIRST instruction. The ldr r0,[r0,#0] at 0x02083550 therefore reads the manager global 0x0214BE14, not arg0 -- corrects an iteration-72 misreading.",
-  "arm9_0x56c_struct": "a SEPARATE struct from the ov6 0x1F0 battle character. GDB anchor 0x020784E4 (arm9) does ldr r4,[r0,#0x56c]; arm9 has its own character constructor at 0x02053528. Two character-ish structs in two binaries."
+  "arm9_0x56c_struct": "a SEPARATE struct from the ov6 0x1F0 battle character. GDB anchor 0x020784E4 (arm9) does ldr r4,[r0,#0x56c]; arm9 has its own character constructor at 0x02053528. Two character-ish structs in two binaries.",
+  "entity_0x10": "= the object installer 0x0207C988 RETURNS (mov r0,r4 at 0x0207CB34), stored by str r0,[r4,#0x10] at 0x02083564. NOT the ColObj (iteration 72 was wrong) -- the ColObj sits at owner+0x60.",
+  "the_owner_struct": "ONE object with three former names: the damage-pipeline scratch base [[char+0x1a8]+0x10] (it47), the ColObj owner [ColObj+0x28] (it71), and the 0x2C-pool-node owner (it70-73, was PARKED). >=0x188 bytes. Fields: +0x08 node list, +0x34/+0x38 node sources, +0x3C, +0x40 flags (bit 0x200 cleared at 0x0207CB2C, bit 0x800 gates delta application), +0x50, +0x60 ColObj, +0xA4 start of a 0xD0 memset, +0xE8 per-hit damage magnitude, +0x130, +0x140, +0x144, +0x174/+0x175, +0x182, +0x184/+0x186.",
+  "owner_0xE8_is_zeroed_at_install": "+0xE8 falls inside the 0xD0-byte memset from +0xA4 (0x0207CA80), i.e. +0xA4..+0x173 -- consistent with a one-shot drain",
+  "owner_is_pool_allocated": "taken from a pool at [installer arg0 + 0x8] where arg0 = [[0x0214BE14]+0x8C]. NOT in the tagged-allocation census, so allocation-size matching could never have found it."
  },
  "combat_phase_spillover": [
   "status-effect enum = 10 values, contiguous IDs 0x19-0x22 (Shock/Freeze/Burn/Confusion/Poison/Judgment/Paralysis/Blindness/Speed-Down/Battle+Support Seal). Likely an immunity BITMASK on character state struct.",
@@ -882,7 +887,11 @@
   "A TWO-ARGUMENT STORE TELLS YOU NOTHING ABOUT WHICH ARGUMENT IS THE CONTAINER. Iteration 73 read 'mov r4,r1 / str r0,[r4,#0x1a8]' and assigned the roles by assumption, getting them exactly backwards and inventing a >=0x570 outer object that does not exist. xrefs-to returned ONE reference and settled it in a minute. Always find a caller before naming roles.",
   "ZERO CALLERS MEANS CALLBACK, AND THE INVOKER SUPPLIES THE ROLES. Twice now (0x0207D440 in iteration 71, 0x021570EC here) a function with no callers turned out to be a function pointer. The right move is xrefs-to for a literal load, then read the blx site -- not to guess the signature from the body.",
   "AN 'IMPOSSIBLE' SIZE CONFLICT IS USUALLY TWO OBJECTS, NOT A WRAPPER. A 0x1F0 allocation and a +0x56c field cannot be one struct. Iteration 73 resolved that by inventing an outer container; the truth was two separate structs in two separate binaries (ov6 battle character, arm9 +0x56c struct). Prefer 'these are different objects' over 'there is a hidden layer'.",
-  "A CORRECTION CAN BE THE MOST VALUABLE WAKE. Iteration 74 produced no new subsystem, but it reversed a wrong claim before it propagated into the map's damage-pipeline reasoning AND yielded the character<->entity bidirectional link as a by-product. Re-deriving a suspect claim is real work, not overhead."
+  "A CORRECTION CAN BE THE MOST VALUABLE WAKE. Iteration 74 produced no new subsystem, but it reversed a wrong claim before it propagated into the map's damage-pipeline reasoning AND yielded the character<->entity bidirectional link as a by-product. Re-deriving a suspect claim is real work, not overhead.",
+  "READ THE RETURN VALUE BEFORE FOLLOWING ANOTHER POINTER. Iterations 71-73 chased the owner outward through three correct pointer hops and never asked what installer 0x0207C988 RETURNS -- one instruction (mov r0,r4 at 0x0207CB34) that named it outright. A return value is a stronger handle on an object's identity than any field.",
+  "A PARKED QUESTION CAN BE ANSWERED BY A DIFFERENT THREAD. The pool-node owner was parked at iteration 73 after three failed wakes; iteration 75 settled it as a side effect of resolving an unrelated contradiction. Parking is the right call, but re-check parked items against every new structural result rather than treating them as closed.",
+  "A CONTRADICTION BETWEEN TWO WAKES IS A HIGH-YIELD TASK, NOT A CHORE. 'entity+0x10 is the ColObj' vs 'entity+0x10 is the damage scratch object' looked like a bookkeeping fix. Settling it refuted one claim, unified three objects, answered a parked question, and sharpened the campaign's top open item (B11).",
+  "IF THE SEARCH SPACE CANNOT CONTAIN THE ANSWER, THE METHOD IS WRONG NO MATTER HOW WELL IT RUNS. Iteration 73 matched the owner's >=0x183 size against the tagged-allocation census; the owner is pool-allocated and was never on that list. Before running a census-style search, check that the target could appear in it at all."
  ],
  "open_questions_for_owner": [
   "Note-kind bucketing: the engine keeps at most 7 simultaneous \"notes\" per character, and 7 of the 17 kinds share one slot (kinds 6,7,8,9,10,14,15) so they should be mutually exclusive in play. Does starting one of those effects visibly cancel another?"

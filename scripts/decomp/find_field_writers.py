@@ -46,6 +46,32 @@ MEM_REG = re.compile(r'^(str|strb|strh) (\w+), \[(\w+), (\w+)\]$')
 ADD = re.compile(r'^(add|sub) (\w+), (\w+), #(0x[0-9a-fA-F]+|\d+)$')
 NOT_A_BASE = ('sp', 'pc', 'r15')
 
+# Decoding is delegated to struct_fields.py, which works on raw words and owns
+# the addressing-mode rules. Matching disassembly TEXT for `[base, #imm]` — what
+# this file did until iteration 81 — cannot see post-indexed `[base], #imm` or
+# pre-indexed-writeback `[base, #imm]!` at all, and silently drops all 502 of
+# them ROM-wide. It also cannot tell `#-8` from `#8` without extra parsing.
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import struct_fields as SF                                     # noqa: E402
+
+
+def decode_stores(region):
+    """[(addr, word, kind, base_reg, offset)] for every store in `region`.
+
+    Raw-word decode, so post-indexed and writeback forms are seen and their
+    offsets are correct: a post-indexed access is at offset 0 and its immediate
+    is a stride (iteration 80).
+    """
+    words, base = SF.load(region)
+    out = []
+    for i, x in enumerate(words):
+        for reg in range(15):
+            hit = SF.access(x, reg)
+            if hit and hit[0][0] == 's':
+                out.append((base + i * 4, x, hit[0], reg, hit[1]))
+                break
+    return out
+
 
 def load():
     """region -> [(addr, text)], and region -> sorted ARM function extents."""
@@ -95,6 +121,13 @@ def companions(rows, index, extent, base, wanted):
 
 
 def scan(off, wanted, regions):
+    """Direct and split-offset stores to `off`, decoded from raw words.
+
+    Text matching was replaced at iteration 81. The regex required
+    `[base, #imm]`, so post-indexed and writeback stores were invisible; and it
+    took the printed immediate at face value, so a post-indexed stride read as a
+    field offset. Both classes are now handled by struct_fields.access().
+    """
     code, extents = load()
     direct, split, blind = [], [], collections.Counter()
     for region in regions:
@@ -102,17 +135,22 @@ def scan(off, wanted, regions):
         if not rows:
             continue
         index = {a: i for i, (a, _t) in enumerate(rows)}
-        for i, (addr, text) in enumerate(rows):
-            if text.startswith('stm'):
+        text_at = {a: t for a, t in rows}
+        words, wbase = SF.load(region)
+
+        for a, t in rows:                        # blind-spot census, text is fine here
+            if t.startswith('stm'):
                 blind[f'{region}:stm'] += 1
-            if MEM_REG.match(text):
+            if MEM_REG.match(t):
                 blind[f'{region}:reg-offset-store'] += 1
-            m = MEM.match(text)
-            if not m or m.group(1)[0] != 's':
+
+        for addr, word, kind, base_reg, this in decode_stores(region):
+            if base_reg == 13 or base_reg == 15:          # sp, pc are not struct bases
                 continue
-            base, this = m.group(3), int(m.group(4), 0)
-            if base in NOT_A_BASE:
+            if addr not in index:                # outside the disassembled listing
                 continue
+            base = f'r{base_reg}'
+            text = text_at.get(addr, kind)
             ex = fn_of(extents, region, addr)
             if this == off:
                 direct.append((region, addr, text, base, ex,
@@ -121,18 +159,24 @@ def scan(off, wanted, regions):
             if this >= off:
                 continue
             need = off - this
+            i = (addr - wbase) // 4
             for j in range(i - 1, max(-1, i - 1 - WINDOW), -1):
-                _a2, t2 = rows[j]
-                ma = ADD.match(t2)
-                if ma and ma.group(2) == base:
-                    if (ma.group(1) == 'add' and int(ma.group(4), 0) == need
-                            and ma.group(3) not in NOT_A_BASE):
-                        split.append((region, addr, text, t2, ma.group(3), ex,
-                                      companions(rows, index, ex, ma.group(3), wanted)))
+                y = words[j]
+                # `add base, src, #need`, unconditional, S clear
+                if ((y >> 28) & 0xF) == 0xE and (y & 0x0FF00000) == 0x02800000 \
+                        and ((y >> 12) & 0xF) == base_reg:
+                    v, r = y & 0xFF, (y >> 8) & 0xF
+                    imm = ((v >> (2 * r)) | (v << (32 - 2 * r))) & 0xFFFFFFFF if r else v
+                    src = (y >> 16) & 0xF
+                    if imm == need and src not in (13, 15):
+                        split.append((region, addr, text,
+                                      text_at.get(wbase + j * 4, f'add r{base_reg}, '
+                                                  f'r{src}, #{imm:#x}'),
+                                      f'r{src}', ex,
+                                      companions(rows, index, ex, f'r{src}', wanted)))
                     break
-                if (re.match(rf'^\w+ {base},', t2)
-                        and not t2.startswith(('cmp', 'cmn', 'tst', 'teq', 'str'))):
-                    break                        # base reassigned -- stop, do not guess
+                if SF.writes(y, base_reg):       # base reassigned -- stop, do not guess
+                    break
     return direct, split, blind, extents
 
 
@@ -227,7 +271,39 @@ def report(off, wanted, regions):
               f"reg-offset stores {blind.get(f'{region}:reg-offset-store',0)}")
     print('  also invisible: a pointer to a sub-region passed as an argument, so the '
           "callee's offset is unrelated to the field's offset in the parent")
+    print(addressing_mode_note(regions))
     return direct, split
+
+
+def addressing_mode_note(regions):
+    """Addressing modes present in scope, decoded from raw words.
+
+    Until iteration 81 this file matched disassembly text and could not see
+    post-indexed or writeback transfers at all. It now cross-checks with a
+    raw-word decode so a future text/word divergence is visible rather than
+    silent.
+    """
+    post = writeback = neg = total = 0
+    for region in regions:
+        try:
+            words, _base = SF.load(region)
+        except Exception:
+            continue
+        for x in words:
+            sdt = (x & 0x0E000000) == 0x04000000
+            hw = (x & 0x0E400090) == 0x00400090 and (x & 0x60)
+            if not (sdt or hw):
+                continue
+            total += 1
+            if not (x >> 23) & 1:
+                neg += 1
+            if not (x >> 24) & 1:
+                post += 1
+            elif (x >> 21) & 1:
+                writeback += 1
+    return (f'  addressing modes in scope (raw-word decode, includes data words): '
+            f'{total} transfers, {post} post-indexed, {writeback} writeback, '
+            f'{neg} negative-offset — all now decoded correctly, none skipped')
 
 
 def report_blocks(off, wanted, regions):

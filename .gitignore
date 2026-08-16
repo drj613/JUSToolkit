@@ -30,3 +30,4 @@ scripts/analysis/.venv/
 # Beads transient state
 .beads/.br_history/
 .beads/.write.lock
+jus_files/analysis/strings_cache/

@@ -1,38 +1,18 @@
 {
- "iteration": 72,
+ "iteration": 73,
  "phase": "combat",
  "current_task": "name the pool-node owner from its size and field shape",
  "queue": [
-  "name the owner FROM ITS SHAPE, not another pointer hop: ColObj at +0x60, 0xD0 region at +0xA4, bytes at +0x174/+0x182, >= 0x183 bytes -- cross-check symbols.json constructors and their allocation sizes (the method that identified ColObj 0x40 and ColWork 0x64)",
+  "NAME THE OUTER OBJECT X: arg1 of setter 0x021570EC, holds the battle character at +0x1a8 and the gauge at +0x56c (>=0x570 bytes, NOT heap-allocated). This is the thing the whole campaign has miscalled 'the character struct'.",
+  "re-audit every char+0xNN offset in Battle-Engine-Map.md against the two objects; +0x84 (prmData), +0x1B4, +0x1B8 are ambiguous and the damage-pipeline claims rest on them",
+  "mine the 469 tagged allocation names for other misattributions -- every earlier extract_symbols.py nearest-function binding is now checkable against a call-site tag",
   "read ColObj+0x24's method 0x0207D94C, the third ColObj<->ColPrm interface method",
   "find +0x20's allocator: ldr rN,[mgr,#0x20] followed by an unlink, base verified from the global",
-  "resolve the 4 unknown bases at 0x0207C798 / 0x0207C7CC / 0x0207C81C / 0x0207CE64 -- any tracing to the manager means more list heads",
-  "run prior_art.py on every remaining open question before touching a binary",
-  "map BattleCol.cpp: Battle_ColManCreate 0x0207AD3C, Battle_ColObjCreate 0x0207AEDC -- the layer beneath everything mapped in iterations 52-64; ColPrm buckets probably hold ColObjs",
-  "HARNESS (now DECISIVE, not just useful): read watchpoint on ColPrm+0x154 -- bucket 1 is never filled yet the narrowphase accumulators sit behind its walk, so static analysis contradicts itself. One run settles whether the contact array is ever written. Recipe in iteration 45.",
-  "identify what the driver ten allocated nodes represent (one per bucket per frame = ten fixed roles?)",
-  "identify stage 1's four branch conditions that sort entries into buckets 5, 7, 15, 16",
-  "identify what distinguishes buckets 5/7/15/16 -- the branch conditions before each of stage 1 four link calls define the classification",
-  "name the +0x1C participant field (what else in the ROM reads +0x1C off those objects)",
-  "decode 0x02081A58 (packed nibbles -> row index) to learn what the rows are",
-  "read 0x0207D9AC properly (229 instrs, the only live per-frame collision phase)",
-  "find +0xE8's teardown or confirm it leaks (grep arm9 for a null-store to +0xE8 off a ColPrm base)",
-  "find what WRITES the contact array at ColPrm+0x158 -- that writer is the actual collision test",
-  "add a --known-fields argument to struct_fields.py so the cross-check is automatic",
-  "confirm character+0x1E0 is the entity index (signed byte used as an array row)",
-  "identify the NoteTrack +0x7C / +0x80 / +0x84 objects (3 pointer fields, each backing a query)",
-  "identify 0x02026F94 return type = the object at NoteTrack+0x8C (vtable slots 0xA0, 0x24) -- likely the animation/timing manager",
-  "identify the object at [X,#0x68] with the 33-slot vtable (384 calls in ov6) -- naming it labels a lot of code",
-  "name cases 25/26/33/72 (all read [r0,#0x84], base type unknown per iter 45)",
-  "examine the 32-case dispatcher at 0x021580B4 (switch on r3), 2nd largest in ov6",
-  "HARNESS TASK (blocked on peer/emulator): break Battle_PrmDataInit 0x021702BC, record returned r0, read [r0+0x00], set a READ WATCHPOINT on it, land a hit -> trapping PC is the collision walker",
-  "resolve prmData +0x0C/+0x10/+0x14 prefixes (3 unidentified per-character files)",
-  "read BattleObj.cpp end to end: [0x02083204,0x02083FCC) is only 0xDC8 bytes = the generic entity API",
-  "find what indexes the 68-entry table at 0x02171FEC (the real walker question)",
-  "find what reads slot+0x02 (the real ProjectileId consumer)",
-  "chr/ai/* + ai_param.bin for ov11 (269 files)",
-  "C6h-bisect-frame-for-0x134-writer (harness-side)",
-  "D0.3-ghidra-import (BLOCKED: needs user go-ahead)"
+  "resolve the 4 unknown bases at 0x0207C798 / 0x0207C7CC / 0x0207C81C / 0x0207CE64",
+  "map BattleCol.cpp: Battle_ColManCreate 0x0207AD3C, Battle_ColObjCreate 0x0207AEDC",
+  "PARKED (3 failed wakes, iterations 71-73): name the 0x2C pool-node owner. Located at [ColObj+0x28] = [installer arg0 + 0x8]; owner+0x60 is NOT the ColObj dispatch route (0 sites ROM-wide). Needs runtime or a caller-graph walk up from 0x020834D4.",
+  "HARNESS (blocked by static-only): read watchpoint on ColPrm+0x154 to settle the bucket-1 contradiction; recipe in iteration 45",
+  "D0.3 Ghidra import -- BLOCKED, needs the user's go-ahead"
  ],
  "done": [
   "K1-koma-data-survey",
@@ -102,7 +82,8 @@
   "colprm-+0x18-and-+0x20-are-FREE-POOLS-colobj-guess-refuted",
   "colprm-+0x18-pool-allocator-found-recycled-not-leaked",
   "pool-pair-is-two-ColObj-method-slots-owner-located-not-named",
-  "collision-is-wired-by-claim-1-pooled-entity-constructor"
+  "collision-is-wired-by-claim-1-pooled-entity-constructor",
+  "allocator-is-tagged--battle-character-is-the-0x1F0-object-at-X+0x1a8"
  ],
  "stuck": {},
  "required_reading_for_koma_tasks": [
@@ -160,7 +141,7 @@
   "L/R sticker bindings are per-deck fields not yet located in RAM",
   "Is HP computed as size*k at runtime, or tabulated per panel? Naruto 4-koma=144=4*36; if size*k then size5=180, size6=216, size7=252, size8=288. One reading settles it."
  ],
- "notes": "Iteration 37: modest wake, two useful negatives. Confirmed jpower ID is byte +0x00 (and that IDs are not array indices). QUESTIONED the existing \"collision subType selects the jpower entry\" claim - Goku 13 of 25 records share subType 2, and subType is not the jpower ID. And REFUTED my own suspicion from reading Goku alone that +0x10 is a function of type: across 2837 records type predicts it only 50.3% of the time, so the fields stay independent and survive as hitTier candidates. Caught that one before writing it down, unlike the chr_b +0x30 over-fit.",
+ "notes": "Iteration 37: modest wake, two useful negatives. Confirmed jpower ID is byte +0x00 (and that IDs are not array indices). QUESTIONED the existing \"collision subType selects the jpower entry\" claim - Goku 13 of 25 records share subType 2, and subType is not the jpower ID. And REFUTED my own suspicion from reading Goku alone that +0x10 is a function of type: across 2837 records type predicts it only 50.3% of the time, so the fields stay independent and survive as hitTier candidates. Caught that one before writing it down, unlike the chr_b +0x30 over-fit. | it73: allocator 0x0201A21C is TAGGED -- scripts/decomp/alloc_census.py (selftest) names 469 of 494 sites. The 0x1F0 object at X+0x1a8 is the BATTLE CHARACTER (Battle_CharaCreate/BattleChara.cpp), not 'MoveInfo'; the outer X with the +0x56c gauge is a separate, unnamed, non-heap object. Self-refuted this wake's own 'character struct is 0x1F0' claim by finally grepping docs/ for the address.",
  "last_wake": "2026-08-14",
  "wakeup_default_seconds": 1800,
  "consecutive_no_progress_wakes": 0,
@@ -258,7 +239,15 @@
   "COLOBJ_METHOD_SLOTS": "0x0207C988 creates a ColObj (bl Battle_ColObjCreate at 0x0207CA18) and immediately installs three method pointers: ColObj+0x1C = 0x0207D440 (acquire a 0x2C node from ColPrm+0x18), +0x20 = 0x0207D858 (release it back), +0x24 = 0x0207D94C. ALL THREE reference the ColPrm global 0x0214BE10 (2, 3 and 2 literal loads). +0x1C and +0x20 both open with ldr r4,[r0,#0x28] - the same owner. The iteration-69 free path 0x0207D914-0x0207D93C is inside 0x0207D858 (size 236). None of the three has a direct caller; all are function-pointer slots.",
   "COLOBJ_LAYOUT": "ColObj is 0x40 bytes (Battle_ColObjCreate 0x0207AEDC). +0x08 ColWork list head (0x64 records), +0x0C and +0x10 zeroed at construction, +0x1C/+0x20/+0x24 method pointers, +0x28 pointer to the owner of the 0x2C-node list (that owner has its node list at +0x8 and source fields at +0x34/+0x38). FIRST concrete link between BattleCol.cpp and BattleColPrm.cpp.",
   "COLLISION_WIRED_AT_ENTITY_CONSTRUCTION": "0x020834D4 (projectile-entities claim 1, the pooled-entity constructor in BattleObj.cpp) calls the ColObj installer 0x0207C988 at 0x02083560 and keeps the result at entity+0x10. The installer does r4 = arg0->[0x8] (the owner), calls Battle_ColObjCreate, installs ColObj+0x1C/+0x20/+0x24, sets ColObj+0x28 = the owner, and writes owner+0x34/+0x38 - exactly the fields the pool allocator later reads to init a node. Collision registration happens inside entity construction; there is no standalone register call. FIRST link between the projectile-entities and collision subsystems.",
-  "POOL_NODE_OWNER_SHAPE": "The owner is [installer arg0 + 0x8], still unnamed. Shape: +0x34 and +0x38 (source fields for node init), +0x3C, ColObj pointer at +0x60, a 0xD0-byte region memset from +0xA4, bytes at +0x174 and +0x182. At least 0x183 bytes."
+  "POOL_NODE_OWNER_SHAPE": "The owner is [installer arg0 + 0x8], still unnamed. Shape: +0x34 and +0x38 (source fields for node init), +0x3C, ColObj pointer at +0x60, a 0xD0-byte region memset from +0xA4, bytes at +0x174 and +0x182. At least 0x183 bytes.",
+  "alloc_0x0201A21C_signature": "alloc(r0=size, r1=\"File.cpp\", r2=\"Function\", r3=tag) -- TAGGED: every call site names itself. 494 calls ROM-wide, 431 with an immediate size, 469 with a resolved name, 63 computed.",
+  "Battle_CharaCreate": "ov6 0x02156A38, allocates 0x1F0 at 0x02156A58, tag \"BattleChara.cpp\"/\"Battle_CharaCreate\" -- THE BATTLE CHARACTER (previously miscalled MoveInfo)",
+  "battle_character_size": "0x1F0 bytes, memset at 0x02156A68",
+  "battle_character_setter": "0x021570EC(r0=character, r1=outer X) -> str r0,[r4,#0x1a8] at 0x021570F4",
+  "battle_character_fields": "+0x1C0 obj from 0x02026F94; +0x1C4=[arg1+0x10]; +0x1C8=[arg1+0x14]; +0x1E0=arg0 (strb, the iteration-52 ldrsb entity index); +0x1EA=[arg1+0x1D]; +0x1EB=[arg1+0x1C]",
+  "outer_object_X": "holds the character at +0x1a8 and the gauge at +0x56c, so >=0x570 bytes; NOT heap-allocated (no battle allocation >=0x570 among 431 sized sites). UNNAMED.",
+  "largest_named_allocations": "0x4000/0x2000 ov12 ALTextDS.cpp; 0x1040 Battle_ColJointManCreate 0x0207BD5C; 0x314 Battle_ObjCtrlManCreate 0x02168BA0; 0x284 Battle_ComicDeckCreate 0x02152134; 0x1F0 Battle_CharaCreate 0x02156A58; 0x1C4 Battle_CharaDataInit 0x0215F064",
+  "owner_0x60_is_not_the_dispatch_route": "searched every binary for ldr [rY,#0x60] -> ldr +0x1C/+0x20/+0x24 off it -> blx: 0 sites. owner+0x60 is a bookkeeping slot only."
  },
  "combat_phase_spillover": [
   "status-effect enum = 10 values, contiguous IDs 0x19-0x22 (Shock/Freeze/Burn/Confusion/Poison/Judgment/Paralysis/Blindness/Speed-Down/Battle+Support Seal). Likely an immunity BITMASK on character state struct.",
@@ -875,7 +864,12 @@
   "The offset-collision hazard is quantified (iter 70): 2 of the 8 unlink sites at +0x18 belong to the COLJOINT manager, not ColPrm. Matching on offset alone would have tripled the apparent pool traffic and shown allocations that never happen. Iteration 69 caution about +0x08/+0x10 was also vindicated - the allocator links into r4+8 where r4 is the OWNER.",
   "Locating is not naming (iter 71): the task was \"identify the owner\" and I finished with [ColObj+0x28] - a precise address expression, not an identity. Worth labelling the difference in the writeup rather than letting a location read as an answer.",
   "When two hops in a row fail to name a thing, change method (iter 72): iterations 71 and 72 each moved the owner pointer one dereference closer and neither produced an identity - the address expression got longer, not shorter. Name it from the object shape (size + field pattern cross-checked against known constructors), which is how ColObj 0x40 and ColWork 0x64 were identified.",
-  "A failed heredoc assertion does not stop a following git commit (iter 72): my map edit asserted on a stale anchor and died, but the next command still committed - so the doc landed without the map or state updates. When a commit is chained after a scripted edit, verify the edit succeeded before committing, or make them one command."
+  "A failed heredoc assertion does not stop a following git commit (iter 72): my map edit asserted on a stale anchor and died, but the next command still committed - so the doc landed without the map or state updates. When a commit is chained after a scripted edit, verify the edit succeeded before committing, or make them one command.",
+  "THE PRIOR-ART GATE MUST FIRE BEFORE WRITING THE DOC, NOT ONLY BEFORE STARTING WORK. Iteration 73 had a doc written AND edit-passed claiming 'the battle character struct is 0x1F0 bytes -- CONFIRMED_STATIC' when Battle-Engine-Map.md had recorded 0x02156A58 / 0x1F0 = 496 bytes since an earlier campaign. One grep of docs/ for the headline address would have caught it. New hard rule: grep docs/ for every address in a doc's headline claim before writing the doc.",
+  "'ALL KNOWN OFFSETS FIT INSIDE THE SIZE' IS NOT A CROSS-CHECK when the offsets were harvested from more than one object. Five offsets all landing below 0x1F0 is exactly what you expect if some belong to a 0x1F0 object and some to a 0x570 one. It proves nothing about either.",
+  "THE ALLOCATOR IS TAGGED -- USE IT INSTEAD OF NEAREST-FUNCTION BINDING. 0x0201A21C takes the .cpp name and function name as arguments, so a size binds to a NAME AT THE CALL SITE. That is strictly stronger than extract_symbols.py, which can only say a string sits near some code. 469 of 494 sites resolve. Every earlier nearest-bind attribution is now re-checkable.",
+  "A LONG-STANDING LABEL CAN BE THE BUG. 'MoveInfo' for [char+0x1a8] survived several campaigns and shaped the damage-pipeline claims; it was wrong. When two documented facts about one object refuse to reconcile (a 0x1F0 allocation vs a +0x56c field), suspect the naming before inventing an indirection.",
+  "AN ABSENCE IN THE CENSUS IS EVIDENCE. No battle allocation >=0x570 among 431 sized sites means the outer object is not heap-allocated through this allocator -- a real structural fact from a negative result, provided the census width (431 of 494, 63 computed and excluded) is stated."
  ],
  "open_questions_for_owner": [
   "Note-kind bucketing: the engine keeps at most 7 simultaneous \"notes\" per character, and 7 of the 17 kinds share one slot (kinds 6,7,8,9,10,14,15) so they should be mutually exclusive in play. Does starting one of those effects visibly cancel another?"

@@ -91,16 +91,38 @@ def ends_block(x: int) -> bool:
     return False
 
 
+def writes_back(x: int) -> bool:
+    """Does this transfer modify its own base register?
+
+    Post-indexed (P = 0, bit 24) always writes back; pre-indexed does so when
+    W = 1 (bit 21). Both forms were previously invisible to `writes()`, so
+    guard 2 never fired on them and the walk carried on past a base that had
+    already moved. `str r0,[r4],#4` was the worst case: a store, so the old
+    load-only test skipped it entirely.
+    """
+    p_bit = (x >> 24) & 1
+    w_bit = (x >> 21) & 1
+    return p_bit == 0 or w_bit == 1
+
+
 def writes(x: int, r: int) -> bool:
     """Guard 2: conservatively, does this instruction write register r?"""
     if (x & 0x0F000000) == 0x0B000000:                     # bl clobbers a1-a4, ip, lr
         return r in (0, 1, 2, 3, 12, 14)
     if (x & 0x0FFFFFF0) == 0x012FFF30:                     # blx Rm, same
         return r in (0, 1, 2, 3, 12, 14)
-    if (x & 0x0E000000) == 0x04000000 and (x >> 20) & 1:   # ldr/ldrb
-        return ((x >> 12) & 0xF) == r
-    if (x & 0x0E400090) == 0x00400090 and (x & 0x60) and (x >> 20) & 1:
-        return ((x >> 12) & 0xF) == r                      # ldrh/ldrsb/ldrsh
+    if (x & 0x0E000000) == 0x04000000:                     # ldr/str/ldrb/strb
+        if writes_back(x) and ((x >> 16) & 0xF) == r:
+            return True                                    # base advances
+        if (x >> 20) & 1:
+            return ((x >> 12) & 0xF) == r
+        return False
+    if (x & 0x0E400090) == 0x00400090 and (x & 0x60):      # ldrh/strh/ldrsb/ldrsh
+        if writes_back(x) and ((x >> 16) & 0xF) == r:
+            return True                                    # base advances
+        if (x >> 20) & 1:
+            return ((x >> 12) & 0xF) == r
+        return False
     if (x & 0x0E000000) == 0x08000000 and (x >> 20) & 1:   # ldm
         return bool((x >> r) & 1)
     if (x & 0x0FE000F0) in (0x00000090, 0x00200090):       # mul / mla
@@ -113,18 +135,42 @@ def writes(x: int, r: int) -> bool:
     return False
 
 
+def effective_offset(x: int, imm: int):
+    """Guard 10: the offset the access actually uses, or None if unusable.
+
+    Two encoding details the first version of this file ignored, both of which
+    produce wrong field offsets rather than missing ones:
+
+      * POST-INDEXED (P = 0). `ldrsh r2,[r6],#2` reads at offset **0** and then
+        advances the base by 2. The immediate is a stride, not a field offset.
+        Reporting it as `+2` invented `+0x9A` on the ColPrm record at iteration
+        78, when the real second array element is written by the loop's next
+        pass, not by that instruction.
+      * DOWN (U = 0). `ldr r0,[r4,#-8]` subtracts. A negative offset from a
+        struct base is not a field here, so it is dropped rather than reported
+        as `+8`.
+    """
+    if not (x >> 23) & 1:                   # U = 0, offset subtracts
+        return None
+    if not (x >> 24) & 1:                   # P = 0, post-indexed
+        return 0
+    return imm
+
+
 def access(x: int, reg: int):
     """An `[reg,#imm]` load or store. Guard 4: r15 is never a struct base."""
     if reg == 15:
         return None
     if (x & 0x0E000000) == 0x04000000 and ((x >> 16) & 0xF) == reg:
         kind = ("ldr" if (x >> 20) & 1 else "str") + ("b" if (x >> 22) & 1 else "")
-        return kind, x & 0xFFF
+        off = effective_offset(x, x & 0xFFF)
+        return None if off is None else (kind, off)
     if (x & 0x0E400090) == 0x00400090 and (x & 0x60) and ((x >> 16) & 0xF) == reg:
         sh = (x >> 5) & 3
         ld = (x >> 20) & 1
         kind = {1: "ldrh" if ld else "strh", 2: "ldrsb", 3: "ldrsh"}[sh]
-        return kind, ((x & 0xF00) >> 4) | (x & 0xF)
+        off = effective_offset(x, ((x & 0xF00) >> 4) | (x & 0xF))
+        return None if off is None else (kind, off)
     return None
 
 
@@ -291,6 +337,28 @@ def selftest() -> int:
     if over:
         ok = False
         print(f"FAIL: offsets beyond the 0xA8 struct: {[hex(o) for o in sorted(over)]}")
+    # guard 10 anchors: the ColPrm record's three int16[2] arrays at
+    # +0x90/+0x94/+0x98 (iteration 79). `ldrsh r2,[r6],#2` at 0x0207CB0C is
+    # post-indexed: it reads +0x98, not +0x9A. +0x9A must NOT be reported.
+    aw0, ab0 = load("arm9")
+    a0 = func_starts(aw0, ab0)
+    # r6 holds record+0x98, so offsets here are relative to the array base:
+    # `strh r3,[r6]` and `ldrsh r2,[r6],#2` both touch element 0. A stride of 2
+    # reported as an offset would show up as {0, 2}.
+    arr = {off for _, _k, off in walk(aw0, ab0, 0x0207CB08, 6, a0)}
+    if 2 in arr:
+        ok = False
+        print("FAIL: post-indexed stride reported as a field offset (+2)")
+    if arr != {0}:
+        ok = False
+        print(f"FAIL: expected only element 0 off the array base, got "
+              f"{[hex(o) for o in sorted(arr)]}")
+    # the whole-record scan must no longer invent +0x9A
+    rec = {off for a, r in ((0x0207CCDC, 4), (0x0207CA20, 4))
+           for _, _k, off in walk(aw0, ab0, a, r, a0)}
+    if 0x9A in rec:
+        ok = False
+        print("FAIL: +0x9A still reported on the ColPrm record")
     # guard 8 anchors: the ColPrm record's node list and scratch region are
     # reached only by `add`, so a load/store-only scan cannot see them.
     aw, ab = load("arm9")

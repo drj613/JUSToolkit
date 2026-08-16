@@ -128,6 +128,60 @@ def access(x: int, reg: int):
     return None
 
 
+def address_taken(x: int, reg: int):
+    """Guard 8: `add Rd, reg, #imm` — a field whose ADDRESS is taken.
+
+    Every list head and every embedded sub-region in this codebase is reached
+    this way, never as `[reg,#imm]`: `add r0,r4,#8` then link(), or
+    `add r0,r4,#0xa4` then memset(). A scan that only looks at load/store
+    encodings therefore misses exactly the structural fields you most want —
+    iteration 78 found 13 offsets on the ColPrm record and none of them were the
+    node list at `+0x08` or the scratch region at `+0xA4`.
+
+    Reported as kind `addr` so it is never confused with a read or a write.
+    Requires an unconditional `add` with a rotate-encoded immediate and S clear.
+    """
+    if (x >> 28) & 0xF != 0xE:
+        return None
+    if (x & 0x0FF00000) != 0x02800000:      # add Rd, Rn, #imm, S clear
+        return None
+    if ((x >> 16) & 0xF) != reg:
+        return None
+    if ((x >> 12) & 0xF) == 15:             # add pc, ... is control flow
+        return None
+    v, r = x & 0xFF, (x >> 8) & 0xF
+    imm = ((v >> (2 * r)) | (v << (32 - 2 * r))) & 0xFFFFFFFF if r else v
+    if imm == 0:
+        return None                         # `add Rd,reg,#0` is a move, not a field
+    return "addr", imm
+
+
+def split_base(words: list[int], base: int, addr: int, dest: int):
+    """Guard 9: resolve `add rD, reg, #N` used as a base for `[rD, #M]`.
+
+    `+0x100` is not a field. The code does `add r0,r4,#0x100` then
+    `strh r2,[r0,#0x86]` to reach `+0x186` — ARM's 12-bit immediate covers it,
+    so this is the compiler's choice, not a necessity, and it appears on this
+    codebase's larger structs. Reporting `+0x100` as a field would be wrong.
+
+    Looks ahead up to 6 instructions for an access off `dest`, stopping if
+    `dest` is rewritten. Yields (kind, N + M) for each one found.
+    """
+    out = []
+    for k in range(1, 7):
+        j = (addr - base) // 4 + k
+        if j >= len(words):
+            break
+        y = words[j]
+        hit = access(y, dest)
+        if hit:
+            out.append(hit)
+            continue
+        if writes(y, dest) or ends_block(y):
+            break
+    return out
+
+
 def is_vtable_load(words: list[int], base: int, addr: int, reg: int) -> bool:
     """Guard 5: is this `[reg,#imm]` a vtable slot rather than a struct field?
 
@@ -163,15 +217,30 @@ def is_vtable_load(words: list[int], base: int, addr: int, reg: int) -> bool:
     return False
 
 
+def emit_taken(words: list[int], base: int, addr: int, word: int, hit):
+    """An address-taken field, with split bases resolved to their real offset."""
+    dest = (word >> 12) & 0xF
+    parts = split_base(words, base, addr, dest)
+    if parts:
+        for kind, off in parts:
+            yield addr, kind + "/split", hit[1] + off
+        return
+    yield addr, hit[0], hit[1]
+
+
 def walk(words: list[int], base: int, anchor: int, reg: int, starts: list[int]):
     """Yield (addr, kind, offset) for accesses off `reg` around `anchor`."""
     i = bisect.bisect_right(starts, anchor) - 1
     lo = starts[i] if i >= 0 else base
     hi = starts[i + 1] if i + 1 < len(starts) else base + len(words) * 4
 
-    hit = access(words[(anchor - base) // 4], reg)
+    w0 = words[(anchor - base) // 4]
+    hit = access(w0, reg)
     if hit and not is_vtable_load(words, base, anchor, reg):
         yield anchor, hit[0], hit[1]
+    hit = address_taken(w0, reg)
+    if hit:
+        yield from emit_taken(words, base, anchor, w0, hit)
 
     for step in (4, -4):
         a = anchor
@@ -187,6 +256,9 @@ def walk(words: list[int], base: int, anchor: int, reg: int, starts: list[int]):
             hit = access(x, reg)
             if hit and not is_vtable_load(words, base, a, reg):   # guards 3, 4
                 yield a, hit[0], hit[1]
+            hit = address_taken(x, reg)                           # guard 8
+            if hit:
+                yield from emit_taken(words, base, a, x, hit)      # guard 9
 
 
 # Verified NoteTrack facts, from iterations 49 and 50. The selftest asserts the
@@ -219,7 +291,19 @@ def selftest() -> int:
     if over:
         ok = False
         print(f"FAIL: offsets beyond the 0xA8 struct: {[hex(o) for o in sorted(over)]}")
+    # guard 8 anchors: the ColPrm record's node list and scratch region are
+    # reached only by `add`, so a load/store-only scan cannot see them.
+    aw, ab = load("arm9")
+    astarts = func_starts(aw, ab)
+    taken = {off for a, r in ((0x0207CA20, 4), (0x0207D498, 4))
+             for _, k, off in walk(aw, ab, a, r, astarts) if k == "addr"}
+    for want in (0x08, 0xA4):
+        if want not in taken:
+            ok = False
+            print(f"FAIL: address-taken field +{want:#x} not found on the ColPrm record")
     print(f"selftest: {len(found)} offsets found: {[hex(o) for o in sorted(found)]}")
+    print(f"selftest: address-taken fields on the ColPrm record: "
+          f"{[hex(o) for o in sorted(taken)]}")
     print("selftest PASSED" if ok else "selftest FAILED")
     return 0 if ok else 1
 

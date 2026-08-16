@@ -40,13 +40,21 @@ ALLOC = 0x0201A21C
 WINDOW = 14
 REGIONS = ['arm9'] + [f'ov{i}' for i in range(15)]
 
+# ARM puts the condition in the mnemonic, so a regex listing bare opcodes
+# silently drops every predicated instruction (iteration 81: that hid 40% of one
+# sweep's hits). Every pattern here carries an optional suffix, and a conditional
+# writer is reported as CONDITIONAL rather than resolved -- `movgt r0,#0x20` /
+# `movle r0,#0x40` is a real idiom, and picking either value would invent a size
+# the call may never use.
+COND = r'(?:eq|ne|cs|cc|mi|pl|vs|vc|hi|ls|ge|lt|gt|le|lo|hs)'
+
 LINE = re.compile(r'^0x([0-9A-Fa-f]{8}): ([0-9a-f]{8})  (.*)$')
-MOV_IMM = re.compile(r'^mov r([0-2]), #(-?(?:0x[0-9a-fA-F]+|\d+))$')
-LDR_PC = re.compile(r'^ldr r([0-2]), \[pc, #(0x[0-9a-fA-F]+|\d+)\]$')
+MOV_IMM = re.compile(rf'^mov({COND})? r([0-2]), #(-?(?:0x[0-9a-fA-F]+|\d+))$')
+LDR_PC = re.compile(rf'^ldr({COND})? r([0-2]), \[pc, #(0x[0-9a-fA-F]+|\d+)\]$')
 WORD = re.compile(r'^\.word (0x[0-9A-Fa-f]+)$')
-BL_ALLOC = re.compile(r'^bl #(0x[0-9a-fA-F]+)$')
+BL_ALLOC = re.compile(rf'^bl({COND})? #(0x[0-9a-fA-F]+)$')
 # a back-scan must not cross out of the function it started in
-BOUNDARY = re.compile(r'^(push |bx lr$|pop \{.*pc\}$)')
+BOUNDARY = re.compile(rf'^(push{COND}? |bx{COND}? lr$|pop{COND}? \{{.*pc\}}$)')
 
 
 def ensure_strings_cache():
@@ -107,12 +115,16 @@ def resolve(rows, idx, call_i):
             break                          # guard: do not cross a function edge
         m = MOV_IMM.match(text)
         if m:
-            found.setdefault(int(m.group(1)), ('imm', int(m.group(2), 0)))
+            kind = 'cond' if m.group(1) else 'imm'
+            found.setdefault(int(m.group(2)), (kind, int(m.group(3), 0)))
             continue
         m = LDR_PC.match(text)
         if m:
-            reg = int(m.group(1))
-            lit = addr + 8 + int(m.group(2), 0)
+            reg = int(m.group(2))
+            if m.group(1):
+                found.setdefault(reg, ('cond', None))
+                continue
+            lit = addr + 8 + int(m.group(3), 0)
             k = idx.get(lit)
             val = None
             if k is not None:
@@ -135,7 +147,7 @@ def census():
         rows, idx = load_region(region)
         for i, (addr, _w, text) in enumerate(rows):
             m = BL_ALLOC.match(text)
-            if not m or int(m.group(1), 16) != ALLOC:
+            if not m or int(m.group(2), 16) != ALLOC:
                 continue
             f = resolve(rows, idx, i)
             size = f.get(0, (None, None))
@@ -145,14 +157,16 @@ def census():
             def name(entry):
                 if entry[0] == 'lit' and entry[1] is not None:
                     return strings.get(entry[1], f'<{entry[1]:#010x}>')
-                return {'imm': 'IMM', 'computed': 'COMPUTED'}.get(entry[0], 'NOT_FOUND')
+                return {'imm': 'IMM', 'computed': 'COMPUTED',
+                        'cond': 'CONDITIONAL'}.get(entry[0], 'NOT_FOUND')
 
             out.append({
                 'region': region,
                 'site': addr,
                 'size': size[1] if size[0] == 'imm' else None,
-                'size_note': 'COMPUTED' if size[0] == 'computed' else
-                             ('NOT_FOUND' if size[0] is None else ''),
+            'size_cond': size[1] if size[0] == 'cond' else None,
+                'size_note': {'computed': 'COMPUTED', 'cond': 'CONDITIONAL',
+                              None: 'NOT_FOUND'}.get(size[0], ''),
                 'cpp': name(cpp),
                 'func': name(fn),
             })
@@ -190,13 +204,17 @@ def main():
 
     rows = census()
     total = len(rows)
+    cond = [r for r in rows if r['size_note'] == 'CONDITIONAL']
     sized = [r for r in rows if r['size'] is not None]
     keep = [r for r in sized if r['size'] >= a.min_size]
     if a.name:
         keep = [r for r in keep if a.name.lower() in (r['cpp'] + ' ' + r['func']).lower()]
     keep.sort(key=lambda r: -r['size'])
-    print(f'{total} allocator calls; {len(sized)} with an immediate size; '
-          f'{total - len(sized)} computed or unresolved (NOT counted below)')
+    print(f'{total} allocator calls; {len(sized)} with an unconditional immediate '
+          f'size; {len(cond)} whose size is set CONDITIONALLY (a real idiom -- two '
+          f'possible sizes, so neither is claimed); '
+          f'{total - len(sized) - len(cond)} computed or unresolved. '
+          f'Only the {len(sized)} appear below.')
     print(f'{"size":>8}  {"site":<12} {"region":<6} {"function":<34} file')
     for r in keep:
         print(f'{r["size"]:#8x}  {r["site"]:#010x}  {r["region"]:<6} '

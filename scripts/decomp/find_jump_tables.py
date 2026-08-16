@@ -140,21 +140,37 @@ def main() -> int:
 
     if args.tables:
         print("ARM jump-table dispatches (case count = guarding `cmp Rm,#N`, so N+1 cases)")
-        total = shown = 0
+        total = shown = nocmp = 0
+        filtering = bool(args.min_cases) or args.max_cases < 10**9
         for name, buf, base in bins:
             for h in find_tables(words(buf), base):
                 total += 1
                 n = h["cases"]
-                if n is None or not (args.min_cases <= n + 1 <= args.max_cases):
+                if n is None:
+                    # No guarding `cmp` -- the index is computed arithmetically.
+                    # These used to be dropped silently, which hid two real
+                    # unconditional dispatches at 0x0200D198 and 0x0200D38C
+                    # (iteration 82). Report them unless a case filter is asked
+                    # for, since an unknown count cannot satisfy a range.
+                    nocmp += 1
+                    if filtering:
+                        continue
+                    shown += 1
+                    print(f"  {name:<5} 0x{h['addr']:08X}  {h['kind']:<22} r{h['rm']} "
+                          f"cond={h['cond'] or 'al':<3} NO GUARDING CMP -> case count "
+                          f"unknown (index computed)")
+                    continue
+                if not (args.min_cases <= n + 1 <= args.max_cases):
                     continue
                 shown += 1
                 print(f"  {name:<5} 0x{h['addr']:08X}  {h['kind']:<22} r{h['rm']} "
                       f"cond={h['cond'] or 'al':<3} cmp #{n} -> {n + 1} cases "
                       f"(cmp at 0x{h['cmp_at']:08X})")
-        print(f"\n  {shown} shown / {total} total dispatch sites")
-        if args.min_cases or args.max_cases < 10**9:
+        print(f"\n  {shown} shown / {total} total dispatch sites "
+              f"({nocmp} with no guarding cmp)")
+        if filtering:
             print(f"  (filtered to {args.min_cases}..{args.max_cases} cases; "
-                  f"sites with no recoverable cmp are hidden)")
+                  f"the {nocmp} sites with no recoverable cmp are hidden)")
         print("  NOTE: Thumb dispatches are NOT covered. Silence is not absence.")
 
     if args.ldrsb is not None:

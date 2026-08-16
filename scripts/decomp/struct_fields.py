@@ -263,15 +263,75 @@ def is_vtable_load(words: list[int], base: int, addr: int, reg: int) -> bool:
     return False
 
 
-def emit_taken(words: list[int], base: int, addr: int, word: int, hit):
-    """An address-taken field, with split bases resolved to their real offset."""
+def strided_group(words: list[int], base: int, addr: int, dest: int, first: int,
+                  starts: list[int]):
+    """Guard 11: `add rD, base, #N` then a loop doing `add rD, rD, #K`.
+
+    Adjacent list heads are walked with one pointer, not addressed individually:
+
+        add r6, sl, #0x10       ; first head
+      loop:
+        ...                     ; work on [r6]
+        add r8, r8, #1
+        cmp r8, #3              ; three heads
+        add r6, r6, #8          ; stride
+        blt loop
+
+    An anchor-register walk sees only `+0x10`, because `+0x18` and `+0x20` are
+    never expressed relative to the anchor. Iteration 83 found them by reading the
+    loop; iteration 85 confirmed the tool could not. This recovers the whole group.
+
+    Returns the extra offsets (excluding `first`), or [] when the shape is absent
+    or the trip count cannot be recovered -- a stride with an unknown bound is not
+    guessed at.
+    """
+    i = bisect.bisect_right(starts, addr) - 1
+    hi = starts[i + 1] if i + 1 < len(starts) else base + len(words) * 4
+    stride = trips = None
+    j = (addr - base) // 4
+    end = min(len(words), (hi - base) // 4)
+    while j + 1 < end:
+        j += 1
+        x = words[j]
+        # self-increment of the walking pointer: add rD, rD, #K
+        if ((x >> 28) & 0xF) == 0xE and (x & 0x0FF00000) == 0x02800000 \
+                and ((x >> 12) & 0xF) == dest and ((x >> 16) & 0xF) == dest:
+            v, r = x & 0xFF, (x >> 8) & 0xF
+            stride = ((v >> (2 * r)) | (v << (32 - 2 * r))) & 0xFFFFFFFF if r else v
+            continue
+        # trip count: cmp rC, #M on any register, before the backward branch
+        if (x & 0x0FF0F000) == 0x03500000:
+            v, r = x & 0xFF, (x >> 8) & 0xF
+            trips = ((v >> (2 * r)) | (v << (32 - 2 * r))) & 0xFFFFFFFF if r else v
+            continue
+        # a BACKWARD branch closes the loop; forward branches are just control
+        # flow inside it (the real loop here opens with `b` to its condition test)
+        if (x & 0x0E000000) == 0x0A000000 and not (x >> 24) & 1:
+            # Only a back-edge that has both a stride and a trip count is the
+            # walk's own loop. An inner loop closes first here -- the detach
+            # routine drains each list before advancing to the next head -- so
+            # keep scanning rather than giving up at the first backward branch.
+            if (x & 0xFFFFFF) & 0x800000 and stride and trips and 1 < trips <= 64:
+                return [first + k * stride for k in range(1, trips)]
+            continue
+        if writes(x, dest):                 # pointer reassigned -- not a strided walk
+            return []
+    return []
+
+
+def emit_taken(words: list[int], base: int, addr: int, word: int, hit,
+               starts: list[int] | None = None):
+    """An address-taken field, with split bases and strided head groups resolved."""
     dest = (word >> 12) & 0xF
     parts = split_base(words, base, addr, dest)
     if parts:
         for kind, off in parts:
             yield addr, kind + "/split", hit[1] + off
-        return
-    yield addr, hit[0], hit[1]
+    else:
+        yield addr, hit[0], hit[1]
+    if starts is not None:                                    # guard 11
+        for off in strided_group(words, base, addr, dest, hit[1], starts):
+            yield addr, "addr/strided", off
 
 
 def walk(words: list[int], base: int, anchor: int, reg: int, starts: list[int]):
@@ -286,7 +346,7 @@ def walk(words: list[int], base: int, anchor: int, reg: int, starts: list[int]):
         yield anchor, hit[0], hit[1]
     hit = address_taken(w0, reg)
     if hit:
-        yield from emit_taken(words, base, anchor, w0, hit)
+        yield from emit_taken(words, base, anchor, w0, hit, starts)
 
     for step in (4, -4):
         a = anchor
@@ -304,7 +364,7 @@ def walk(words: list[int], base: int, anchor: int, reg: int, starts: list[int]):
                 yield a, hit[0], hit[1]
             hit = address_taken(x, reg)                           # guard 8
             if hit:
-                yield from emit_taken(words, base, a, x, hit)      # guard 9
+                yield from emit_taken(words, base, a, x, hit, starts)  # guards 9, 11
 
 
 # Verified NoteTrack facts, from iterations 49 and 50. The selftest asserts the
@@ -337,6 +397,17 @@ def selftest() -> int:
     if over:
         ok = False
         print(f"FAIL: offsets beyond the 0xA8 struct: {[hex(o) for o in sorted(over)]}")
+    # guard 11 anchor: the detach routine walks three adjacent list heads with one
+    # pointer (add r6,sl,#0x10 / add r6,r6,#8 / cmp r8,#3), so +0x18 and +0x20 are
+    # never expressed off the anchor register (iterations 83, 85).
+    aw1, ab1 = load("arm9")
+    a1 = func_starts(aw1, ab1)
+    heads = {off for _, _k, off in walk(aw1, ab1, 0x0207CB60, 10, a1)}
+    for want in (0x10, 0x18, 0x20):
+        if want not in heads:
+            ok = False
+            print(f"FAIL: strided list head +{want:#x} not recovered "
+                  f"(got {[hex(o) for o in sorted(heads)]})")
     # guard 10 anchors: the ColPrm record's three int16[2] arrays at
     # +0x90/+0x94/+0x98 (iteration 79). `ldrsh r2,[r6],#2` at 0x0207CB0C is
     # post-indexed: it reads +0x98, not +0x9A. +0x9A must NOT be reported.

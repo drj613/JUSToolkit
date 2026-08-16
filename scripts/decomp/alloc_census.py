@@ -286,7 +286,11 @@ def census():
             out.append({
                 'region': region,
                 'site': addr,
-                'size': size[1] if size[0] == 'imm' else None,
+                # A size can arrive as a pc-relative literal, not just a mov
+                # immediate: Battle_ObjManCreate loads 0x42D8 that way, and
+                # discarding 'lit' hid the second-largest battle allocation in
+                # the ROM (iteration 101).
+                'size': size[1] if size[0] in ('imm', 'lit') else None,
             'size_cond': size[1] if size[0] == 'cond' else None,
                 'size_note': {'computed': 'COMPUTED', 'cond': 'CONDITIONAL',
                               None: 'NOT_FOUND'}.get(size[0], ''),

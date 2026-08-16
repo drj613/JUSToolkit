@@ -35,6 +35,8 @@ import subprocess
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import struct_fields as SF                                        # noqa: E402
 DISASM = os.path.join(ROOT, 'jus_files', 'analysis', 'disasm')
 ALLOC = 0x0201A21C
 WINDOW = 14
@@ -140,6 +142,127 @@ def resolve(rows, idx, call_i):
     return found
 
 
+def thumb_census(strings):
+    """Thumb `blx` calls to the allocator.
+
+    alloc_census.py counted ARM `bl` only until iteration 99. There are 238 Thumb
+    call sites -- 32% of the ROM's allocations -- and ov6's own entry point
+    `Battle_Add` is one of them.
+
+    The back-resolver INVALIDATES r0-r3, ip and lr at every call, which the quick
+    scratch version at iteration 98 did not: it reported 0x214BE40 (a RAM address)
+    as several sizes because a stale `ldr r0,[pc,..]` from before a call survived.
+    A register whose value cannot be tracked is reported, never guessed.
+    """
+    out = []
+    for region in REGIONS:
+        try:
+            words, base = SF.load(region)
+        except (FileNotFoundError, StopIteration):
+            continue                 # region not present; any other error is a bug
+        hs = []
+        for x in words:
+            hs.append(x & 0xFFFF)
+            hs.append((x >> 16) & 0xFFFF)
+
+        def word_at(addr):
+            i = (addr - base) // 4
+            return words[i] if 0 <= i < len(words) else None
+
+        for i in range(len(hs) - 1):
+            hi, lo = hs[i], hs[i + 1]
+            if not (0xF000 <= hi <= 0xF7FF and 0xE800 <= lo <= 0xEFFF):
+                continue                       # blx only; bl cannot reach ARM
+            off = ((hi & 0x7FF) << 12) | ((lo & 0x7FF) << 1)
+            if off & 0x400000:
+                off -= 0x800000
+            if ((base + i * 2 + 4 + off) & ~3) != ALLOC:
+                continue
+
+            val, dead = {}, set()
+            for j in range(max(0, i - WINDOW * 2), i):
+                h, ad = hs[j], base + j * 2
+                if 0xB500 <= h <= 0xB5FF:      # a prologue: nothing before it counts
+                    val, dead = {}, set()
+                    continue
+                if 0xF000 <= h <= 0xF7FF and j + 1 < len(hs) \
+                        and 0xE800 <= hs[j + 1] <= 0xFFFF:
+                    for r in (0, 1, 2, 3, 12, 14):     # a call clobbers these
+                        val.pop(r, None)
+                        dead.add(r)
+                    continue
+                if (h >> 11) == 0b00100:               # mov rd, #imm
+                    rd = (h >> 8) & 7
+                    val[rd] = h & 0xFF
+                    dead.discard(rd)
+                elif (h >> 11) == 0b00000 and (h & 0x07C0):   # lsl rd, rs, #n
+                    rd, rs = h & 7, (h >> 3) & 7
+                    if rs in val:
+                        val[rd] = (val[rs] << ((h >> 6) & 0x1F)) & 0xFFFFFFFF
+                        dead.discard(rd)
+                    else:
+                        val.pop(rd, None)
+                        dead.add(rd)
+                elif (h >> 11) == 0b01001:             # ldr rd, [pc, #n]
+                    rd = (h >> 8) & 7
+                    v = word_at(((ad + 4) & ~3) + (h & 0xFF) * 4)
+                    if v is None:
+                        val.pop(rd, None)
+                        dead.add(rd)
+                    else:
+                        val[rd] = v
+                        dead.discard(rd)
+                else:
+                    # Any other instruction that writes a low register makes it
+                    # opaque. MEMORY LOADS MATTER MOST: at 0x02088A28 an
+                    # `ldrh r0,[r4,#0x10]` left a stale pc-relative value in r0
+                    # and the census reported 0x214BE40 -- a RAM address -- as an
+                    # allocation size.
+                    rd = None
+                    if (h >> 11) in (0b00011, 0b00001, 0b00010):        # add/sub/lsr/asr
+                        rd = h & 7
+                    elif (h >> 12) in (0b0011, 0b1010):                 # add/sub imm8, add sp/pc
+                        rd = (h >> 8) & 7
+                    elif (h >> 10) == 0b010000:                         # ALU rd, rs
+                        rd = h & 7
+                    elif (h >> 10) == 0b010001 and ((h >> 8) & 3) != 3:  # hi-reg add/mov
+                        rd = (h & 7) | ((h >> 4) & 8)
+                    elif (h >> 12) == 0b0101 and (h >> 11) & 1:         # load, reg offset
+                        rd = h & 7
+                    elif (h >> 13) == 0b011 and (h >> 11) & 1:          # ldr/ldrb imm5
+                        rd = h & 7
+                    elif (h >> 12) == 0b1000 and (h >> 11) & 1:         # ldrh imm5
+                        rd = h & 7
+                    elif (h >> 12) == 0b1001 and (h >> 11) & 1:         # ldr sp-relative
+                        rd = (h >> 8) & 7
+                    elif (h >> 12) == 0b1100 and (h >> 11) & 1:         # ldmia
+                        for r in range(8):
+                            if h & (1 << r):
+                                val.pop(r, None)
+                                dead.add(r)
+                    if rd is not None:
+                        val.pop(rd, None)
+                        dead.add(rd)
+
+            def name(reg):
+                if reg in val:
+                    return strings.get(val[reg], f'<{val[reg]:#010x}>')
+                return 'CLOBBERED' if reg in dead else 'NOT_FOUND'
+
+            out.append({
+                'region': region,
+                'site': base + i * 2,
+                'size': val.get(0),
+                'size_cond': None,
+                'size_note': '' if 0 in val else ('CLOBBERED' if 0 in dead
+                                                  else 'NOT_FOUND'),
+                'cpp': name(1),
+                'func': name(2),
+                'isa': 'thumb',
+            })
+    return out
+
+
 def census():
     strings = load_strings(ensure_strings_cache())
     out = []
@@ -169,7 +292,9 @@ def census():
                               None: 'NOT_FOUND'}.get(size[0], ''),
                 'cpp': name(cpp),
                 'func': name(fn),
+                'isa': 'arm',
             })
+    out.extend(thumb_census(strings))          # iteration 99
     return out
 
 
@@ -185,10 +310,20 @@ def selftest():
     if h['func'] != 'IMM':                 # only when the strings dump is present
         assert h['func'] == 'Battle_CharaCreate', f"selftest: func {h['func']!r}"
         assert h['cpp'] == 'BattleChara.cpp', f"selftest: cpp {h['cpp']!r}"
+    thumb = [r for r in rows if r.get('isa') == 'thumb']
+    ba = [r for r in thumb if r['site'] == 0x0214CD66]
+    assert ba, 'selftest: Thumb Battle_Add site 0x0214CD66 not found'
+    assert ba[0]['size'] == 0x170, f"selftest: Battle_Add size {ba[0]['size']!r} != 0x170"
+    assert ba[0]['func'] == 'Battle_Add', f"selftest: func {ba[0]['func']!r}"
+    assert ba[0]['cpp'] == 'Battle.cpp', f"selftest: cpp {ba[0]['cpp']!r}"
+    bad = [r for r in thumb if r['size'] is not None and r['size'] > 0x100000]
+    assert not bad, ('selftest: implausible Thumb sizes (stale register?): '
+                     + str([(hex(r['site']), hex(r['size'])) for r in bad[:4]]))
     named = [r for r in rows if r['func'] not in ('IMM', 'COMPUTED', 'NOT_FOUND')
              and not r['func'].startswith('<')]
     assert len(rows) > 400, f'selftest: only {len(rows)} sites'
-    print(f'selftest OK: {len(rows)} sites, {len(named)} with a resolved name')
+    print(f'selftest OK: {len(rows)} sites ({len(thumb)} Thumb), '
+          f'{len(named)} with a resolved name; Battle_Add resolves to 0x170')
     return 0
 
 
@@ -210,15 +345,18 @@ def main():
     if a.name:
         keep = [r for r in keep if a.name.lower() in (r['cpp'] + ' ' + r['func']).lower()]
     keep.sort(key=lambda r: -r['size'])
+    arm = sum(1 for r in rows if r.get('isa') == 'arm')
+    thumb = total - arm
+    print(f'{arm} ARM + {thumb} Thumb = ', end='')
     print(f'{total} allocator calls; {len(sized)} with an unconditional immediate '
           f'size; {len(cond)} whose size is set CONDITIONALLY (a real idiom -- two '
           f'possible sizes, so neither is claimed); '
           f'{total - len(sized) - len(cond)} computed or unresolved. '
           f'Only the {len(sized)} appear below.')
-    print(f'{"size":>8}  {"site":<12} {"region":<6} {"function":<34} file')
+    print(f'{"size":>8}  {"site":<12} {"region":<6} {"isa":<5} {"function":<34} file')
     for r in keep:
         print(f'{r["size"]:#8x}  {r["site"]:#010x}  {r["region"]:<6} '
-              f'{r["func"]:<34} {r["cpp"]}')
+              f'{r.get("isa","arm"):<5} {r["func"]:<34} {r["cpp"]}')
     return 0
 
 

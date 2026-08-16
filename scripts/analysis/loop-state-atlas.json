@@ -1,17 +1,18 @@
 {
- "iteration": 73,
+ "iteration": 74,
  "phase": "combat",
  "current_task": "name the pool-node owner from its size and field shape",
  "queue": [
-  "NAME THE OUTER OBJECT X: arg1 of setter 0x021570EC, holds the battle character at +0x1a8 and the gauge at +0x56c (>=0x570 bytes, NOT heap-allocated). This is the thing the whole campaign has miscalled 'the character struct'.",
-  "re-audit every char+0xNN offset in Battle-Engine-Map.md against the two objects; +0x84 (prmData), +0x1B4, +0x1B8 are ambiguous and the damage-pipeline claims rest on them",
-  "mine the 469 tagged allocation names for other misattributions -- every earlier extract_symbols.py nearest-function binding is now checkable against a call-site tag",
+  "SETTLE entity+0x10: iteration 72 says it is the ColObj (str r0,[r4,#0x10] at 0x02083564 after installer 0x0207C988); iteration 47 says it is the pending-delta struct (+0x40 bit 0x800 gates delta application). Both load-bearing for the damage pipeline. One store site each -- cheap and decisive.",
+  "re-audit the map's char+0xNN offsets against THREE objects: the ov6 0x1F0 battle character, the pooled entity, and the arm9 +0x56c struct. +0x84 (prmData), +0x1B4, +0x1B8 still unassigned.",
+  "name the arm9 struct behind constructor 0x02053528 / the +0x56c gauge field (GDB anchor 0x020784E4) via alloc_census.py on arm9 tags",
+  "mine the 469 tagged allocation names for other misattributions -- every earlier extract_symbols.py nearest-function binding is now checkable",
   "read ColObj+0x24's method 0x0207D94C, the third ColObj<->ColPrm interface method",
   "find +0x20's allocator: ldr rN,[mgr,#0x20] followed by an unlink, base verified from the global",
   "resolve the 4 unknown bases at 0x0207C798 / 0x0207C7CC / 0x0207C81C / 0x0207CE64",
   "map BattleCol.cpp: Battle_ColManCreate 0x0207AD3C, Battle_ColObjCreate 0x0207AEDC",
-  "PARKED (3 failed wakes, iterations 71-73): name the 0x2C pool-node owner. Located at [ColObj+0x28] = [installer arg0 + 0x8]; owner+0x60 is NOT the ColObj dispatch route (0 sites ROM-wide). Needs runtime or a caller-graph walk up from 0x020834D4.",
-  "HARNESS (blocked by static-only): read watchpoint on ColPrm+0x154 to settle the bucket-1 contradiction; recipe in iteration 45",
+  "PARKED (iterations 71-73): name the 0x2C pool-node owner. It is [installer arg0 + 0x8] where installer arg0 = [[0x0214BE14]+0x8C] (iteration 74 resolved the base: 0x02083550's ldr r0,[r0,#0] reads the MANAGER GLOBAL, not arg0 -- arg0 is the callback, parked in ip at 0x020834E0).",
+  "HARNESS (blocked by static-only): read watchpoint on ColPrm+0x154 for the bucket-1 contradiction; recipe in iteration 45",
   "D0.3 Ghidra import -- BLOCKED, needs the user's go-ahead"
  ],
  "done": [
@@ -83,7 +84,8 @@
   "colprm-+0x18-pool-allocator-found-recycled-not-leaked",
   "pool-pair-is-two-ColObj-method-slots-owner-located-not-named",
   "collision-is-wired-by-claim-1-pooled-entity-constructor",
-  "allocator-is-tagged--battle-character-is-the-0x1F0-object-at-X+0x1a8"
+  "allocator-is-tagged--battle-character-is-the-0x1F0-object-at-X+0x1a8",
+  "character<->entity-bidirectional-link;-iteration-73-setter-direction-REVERSED"
  ],
  "stuck": {},
  "required_reading_for_koma_tasks": [
@@ -141,7 +143,7 @@
   "L/R sticker bindings are per-deck fields not yet located in RAM",
   "Is HP computed as size*k at runtime, or tabulated per panel? Naruto 4-koma=144=4*36; if size*k then size5=180, size6=216, size7=252, size8=288. One reading settles it."
  ],
- "notes": "Iteration 37: modest wake, two useful negatives. Confirmed jpower ID is byte +0x00 (and that IDs are not array indices). QUESTIONED the existing \"collision subType selects the jpower entry\" claim - Goku 13 of 25 records share subType 2, and subType is not the jpower ID. And REFUTED my own suspicion from reading Goku alone that +0x10 is a function of type: across 2837 records type predicts it only 50.3% of the time, so the fields stay independent and survive as hitTier candidates. Caught that one before writing it down, unlike the chr_b +0x30 over-fit. | it73: allocator 0x0201A21C is TAGGED -- scripts/decomp/alloc_census.py (selftest) names 469 of 494 sites. The 0x1F0 object at X+0x1a8 is the BATTLE CHARACTER (Battle_CharaCreate/BattleChara.cpp), not 'MoveInfo'; the outer X with the +0x56c gauge is a separate, unnamed, non-heap object. Self-refuted this wake's own 'character struct is 0x1F0' claim by finally grepping docs/ for the address.",
+ "notes": "Iteration 37: modest wake, two useful negatives. Confirmed jpower ID is byte +0x00 (and that IDs are not array indices). QUESTIONED the existing \"collision subType selects the jpower entry\" claim - Goku 13 of 25 records share subType 2, and subType is not the jpower ID. And REFUTED my own suspicion from reading Goku alone that +0x10 is a function of type: across 2837 records type predicts it only 50.3% of the time, so the fields stay independent and survive as hitTier candidates. Caught that one before writing it down, unlike the chr_b +0x30 over-fit. | it73: allocator 0x0201A21C is TAGGED -- scripts/decomp/alloc_census.py (selftest) names 469 of 494 sites. The 0x1F0 object at X+0x1a8 is the BATTLE CHARACTER (Battle_CharaCreate/BattleChara.cpp), not 'MoveInfo'; the outer X with the +0x56c gauge is a separate, unnamed, non-heap object. Self-refuted this wake's own 'character struct is 0x1F0' claim by finally grepping docs/ for the address. | it74: REVERSED iteration 73's setter direction. 0x021570EC is a callback invoked by the pooled-entity constructor 0x020834D4 with (r0=entity, r1=character); character+0x1a8 = the entity, entity+0x30 = the character. No outer object exists -- the +0x56c struct is a separate arm9 one. Open conflict: entity+0x10 is claimed as BOTH the ColObj (it72) and the pending-delta struct (it47).",
  "last_wake": "2026-08-14",
  "wakeup_default_seconds": 1800,
  "consecutive_no_progress_wakes": 0,
@@ -243,11 +245,18 @@
   "alloc_0x0201A21C_signature": "alloc(r0=size, r1=\"File.cpp\", r2=\"Function\", r3=tag) -- TAGGED: every call site names itself. 494 calls ROM-wide, 431 with an immediate size, 469 with a resolved name, 63 computed.",
   "Battle_CharaCreate": "ov6 0x02156A38, allocates 0x1F0 at 0x02156A58, tag \"BattleChara.cpp\"/\"Battle_CharaCreate\" -- THE BATTLE CHARACTER (previously miscalled MoveInfo)",
   "battle_character_size": "0x1F0 bytes, memset at 0x02156A68",
-  "battle_character_setter": "0x021570EC(r0=character, r1=outer X) -> str r0,[r4,#0x1a8] at 0x021570F4",
+  "battle_character_setter": "0x021570EC is a CALLBACK (0 callers; literal-loaded at 0x02156B9C inside Battle_CharaCreate, invoked by blx ip at 0x02083528). callback(r0=the entity, r1=the character) -> str r0,[r1+0x1a8]; returns r1.",
   "battle_character_fields": "+0x1C0 obj from 0x02026F94; +0x1C4=[arg1+0x10]; +0x1C8=[arg1+0x14]; +0x1E0=arg0 (strb, the iteration-52 ldrsb entity index); +0x1EA=[arg1+0x1D]; +0x1EB=[arg1+0x1C]",
   "outer_object_X": "holds the character at +0x1a8 and the gauge at +0x56c, so >=0x570 bytes; NOT heap-allocated (no battle allocation >=0x570 among 431 sized sites). UNNAMED.",
   "largest_named_allocations": "0x4000/0x2000 ov12 ALTextDS.cpp; 0x1040 Battle_ColJointManCreate 0x0207BD5C; 0x314 Battle_ObjCtrlManCreate 0x02168BA0; 0x284 Battle_ComicDeckCreate 0x02152134; 0x1F0 Battle_CharaCreate 0x02156A58; 0x1C4 Battle_CharaDataInit 0x0215F064",
-  "owner_0x60_is_not_the_dispatch_route": "searched every binary for ldr [rY,#0x60] -> ldr +0x1C/+0x20/+0x24 off it -> blx: 0 sites. owner+0x60 is a bookkeeping slot only."
+  "owner_0x60_is_not_the_dispatch_route": "searched every binary for ldr [rY,#0x60] -> ldr +0x1C/+0x20/+0x24 off it -> blx: 0 sites. owner+0x60 is a bookkeeping slot only.",
+  "character_0x1a8": "= the POOLED ENTITY from claim 1's constructor 0x020834D4. NOT 'MoveInfo', and NOT an outer wrapper.",
+  "entity_0x30": "= back-pointer to the battle character (str r0,[r4,#0x30] at 0x0208352C, the callback's return value)",
+  "entity_0x38": "strb -1 at 0x02083520",
+  "entity_0x18": "the 0xA8-byte NoteTrack (add r0,r6,#0x18 at 0x02156CDC, r6=[char+0x1a8])",
+  "0x02083624": "thin shim onto the pooled-entity constructor 0x020834D4; r0-r2 untouched, bl at 0x0208363C",
+  "0x020834D4_arg0": "the callback, moved to ip at 0x020834E0 on the FIRST instruction. The ldr r0,[r0,#0] at 0x02083550 therefore reads the manager global 0x0214BE14, not arg0 -- corrects an iteration-72 misreading.",
+  "arm9_0x56c_struct": "a SEPARATE struct from the ov6 0x1F0 battle character. GDB anchor 0x020784E4 (arm9) does ldr r4,[r0,#0x56c]; arm9 has its own character constructor at 0x02053528. Two character-ish structs in two binaries."
  },
  "combat_phase_spillover": [
   "status-effect enum = 10 values, contiguous IDs 0x19-0x22 (Shock/Freeze/Burn/Confusion/Poison/Judgment/Paralysis/Blindness/Speed-Down/Battle+Support Seal). Likely an immunity BITMASK on character state struct.",
@@ -869,7 +878,11 @@
   "'ALL KNOWN OFFSETS FIT INSIDE THE SIZE' IS NOT A CROSS-CHECK when the offsets were harvested from more than one object. Five offsets all landing below 0x1F0 is exactly what you expect if some belong to a 0x1F0 object and some to a 0x570 one. It proves nothing about either.",
   "THE ALLOCATOR IS TAGGED -- USE IT INSTEAD OF NEAREST-FUNCTION BINDING. 0x0201A21C takes the .cpp name and function name as arguments, so a size binds to a NAME AT THE CALL SITE. That is strictly stronger than extract_symbols.py, which can only say a string sits near some code. 469 of 494 sites resolve. Every earlier nearest-bind attribution is now re-checkable.",
   "A LONG-STANDING LABEL CAN BE THE BUG. 'MoveInfo' for [char+0x1a8] survived several campaigns and shaped the damage-pipeline claims; it was wrong. When two documented facts about one object refuse to reconcile (a 0x1F0 allocation vs a +0x56c field), suspect the naming before inventing an indirection.",
-  "AN ABSENCE IN THE CENSUS IS EVIDENCE. No battle allocation >=0x570 among 431 sized sites means the outer object is not heap-allocated through this allocator -- a real structural fact from a negative result, provided the census width (431 of 494, 63 computed and excluded) is stated."
+  "AN ABSENCE IN THE CENSUS IS EVIDENCE. No battle allocation >=0x570 among 431 sized sites means the outer object is not heap-allocated through this allocator -- a real structural fact from a negative result, provided the census width (431 of 494, 63 computed and excluded) is stated.",
+  "A TWO-ARGUMENT STORE TELLS YOU NOTHING ABOUT WHICH ARGUMENT IS THE CONTAINER. Iteration 73 read 'mov r4,r1 / str r0,[r4,#0x1a8]' and assigned the roles by assumption, getting them exactly backwards and inventing a >=0x570 outer object that does not exist. xrefs-to returned ONE reference and settled it in a minute. Always find a caller before naming roles.",
+  "ZERO CALLERS MEANS CALLBACK, AND THE INVOKER SUPPLIES THE ROLES. Twice now (0x0207D440 in iteration 71, 0x021570EC here) a function with no callers turned out to be a function pointer. The right move is xrefs-to for a literal load, then read the blx site -- not to guess the signature from the body.",
+  "AN 'IMPOSSIBLE' SIZE CONFLICT IS USUALLY TWO OBJECTS, NOT A WRAPPER. A 0x1F0 allocation and a +0x56c field cannot be one struct. Iteration 73 resolved that by inventing an outer container; the truth was two separate structs in two separate binaries (ov6 battle character, arm9 +0x56c struct). Prefer 'these are different objects' over 'there is a hidden layer'.",
+  "A CORRECTION CAN BE THE MOST VALUABLE WAKE. Iteration 74 produced no new subsystem, but it reversed a wrong claim before it propagated into the map's damage-pipeline reasoning AND yielded the character<->entity bidirectional link as a by-product. Re-deriving a suspect claim is real work, not overhead."
  ],
  "open_questions_for_owner": [
   "Note-kind bucketing: the engine keeps at most 7 simultaneous \"notes\" per character, and 7 of the 17 kinds share one slot (kinds 6,7,8,9,10,14,15) so they should be mutually exclusive in play. Does starting one of those effects visibly cancel another?"

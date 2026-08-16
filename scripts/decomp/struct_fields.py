@@ -174,6 +174,54 @@ def access(x: int, reg: int):
     return None
 
 
+# ---------------------------------------------------------------------------
+# Shared ARM encoding decoders.
+#
+# Four separate wakes lost time to a hand-written mask whose compare value
+# disagreed with it about which bits matter -- the `bl` mask (iteration 46), the
+# `ldr` Rd/Rn mask (47), the `mov` immediate mask (89) and the pc-relative load
+# mask (111). Every one produced a clean zero instead of an error, so nothing
+# looked wrong until a count came back implausible.
+#
+# These are the tested versions. Use them instead of writing a mask inline; the
+# selftest hand-verifies each against a real instruction from this ROM.
+# ---------------------------------------------------------------------------
+
+def is_bl(x: int):
+    """`bl #target` -> the absolute target, else None. Excludes `b`."""
+    if (x >> 28) & 0xF == 0xF:
+        return None                       # blx (immediate) has cond == 0xF
+    if (x & 0x0F000000) != 0x0B000000:
+        return None
+    off = x & 0xFFFFFF
+    if off & 0x800000:
+        off -= 0x1000000
+    return off * 4 + 8                    # caller adds the site address
+
+
+def is_ldr_pc(x: int):
+    """`ldr rD,[pc,#±imm]` -> (rD, signed displacement), else None.
+
+    The mask must keep bit 23 (U) OUT of the comparison or fix it explicitly;
+    masking it away while the compare value sets it can never match.
+    """
+    if (x & 0x0E5F0000) != 0x041F0000:
+        return None
+    imm = x & 0xFFF
+    return (x >> 12) & 0xF, (imm if (x >> 23) & 1 else -imm)
+
+
+def is_mov_imm(x: int):
+    """`mov rD,#imm` (unconditional, S clear) -> (rD, value), else None."""
+    if (x >> 28) & 0xF != 0xE:
+        return None
+    if (x & 0x0FFF0000) != 0x03A00000:
+        return None
+    v, r = x & 0xFF, (x >> 8) & 0xF
+    val = ((v >> (2 * r)) | (v << (32 - 2 * r))) & 0xFFFFFFFF if r else v
+    return (x >> 12) & 0xF, val
+
+
 def address_taken(x: int, reg: int):
     """Guard 8: `add Rd, reg, #imm` — a field whose ADDRESS is taken.
 
@@ -397,6 +445,36 @@ def selftest() -> int:
     if over:
         ok = False
         print(f"FAIL: offsets beyond the 0xA8 struct: {[hex(o) for o in sorted(over)]}")
+    # Encoding decoders, each against a hand-read instruction from this ROM.
+    aw2, ab2 = load("arm9")
+
+    def word_at(addr):
+        return aw2[(addr - ab2) // 4]
+
+    # 0x02076CB4: ldr r0, [pc, #0x20]  -> the deck global's pool word
+    got = is_ldr_pc(word_at(0x02076CB4))
+    if got != (0, 0x20):
+        ok = False
+        print(f"FAIL: is_ldr_pc(0x02076CB4) = {got!r}, expected (0, 0x20)")
+    # 0x02076CD0: movlo r0, #0xc  -- conditional, must be rejected
+    if is_mov_imm(word_at(0x02076CD0)) is not None:
+        ok = False
+        print("FAIL: is_mov_imm accepted a conditional mov")
+    # 0x02076CC0 is `ldr r0,[r0,#0x8ec]`, not pc-relative
+    if is_ldr_pc(word_at(0x02076CC0)) is not None:
+        ok = False
+        print("FAIL: is_ldr_pc accepted a non-pc load")
+    # 0x02076EB4: bl #0x2076c98
+    rel = is_bl(word_at(0x02076EB4))
+    if rel is None or 0x02076EB4 + rel != 0x02076C98:
+        ok = False
+        print(f"FAIL: is_bl(0x02076EB4) -> {None if rel is None else hex(0x02076EB4 + rel)}, "
+              f"expected 0x02076c98")
+    # 0x02076CA4 is `bxeq lr`, not a bl
+    if is_bl(word_at(0x02076CA4)) is not None:
+        ok = False
+        print("FAIL: is_bl accepted a non-bl")
+
     # guard 11 anchor: the detach routine walks three adjacent list heads with one
     # pointer (add r6,sl,#0x10 / add r6,r6,#8 / cmp r8,#3), so +0x18 and +0x20 are
     # never expressed off the anchor register (iterations 83, 85).

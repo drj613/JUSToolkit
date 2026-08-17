@@ -1,10 +1,11 @@
 {
-  "iteration": 136,
+  "iteration": 137,
   "phase": "combat",
   "current_task": "name the pool-node owner from its size and field shape",
   "queue": [
-    "map MoveMan +0x648..+0x2647 (0x2000 bytes) -- the bulk of the manager, untouched by surviving constructor code; consumers will have to name it",
-    "read the two MoveMan callbacks 0x02082E10 and 0x0208317C -- per-track entry points in BattleMove.cpp, so the census can name them",
+    "find who SETS MoveMan element +0x34 bit 0x100 (the snapshot suppressor) -- its writer creates or repositions an element, the fastest route to naming the element type",
+    "read the middle of 0x02082E10 (0x02082E88..0x02083148, ~180 instructions) -- the bulk of the per-frame logic; will name more element fields",
+    "read 0x0208317C (136B), the second track's callback -- diff against 0x02082E10 to separate shared from per-track logic",
     "read 0x02083204, MoveMan's sole caller -- says who owns the move manager",
     "read the six 0x80 constructors (0x0202B4A8, 0x02015D70, 0x0203ABD4, 0x020445F4, 0x0202B520, 0x02015E14) and record the vtable each installs at +0x00 -- settles overloads vs sibling classes",
     "resolve the 83 direct sites with no resolved size, to test whether 0xE4 really is the untagged ceiling",
@@ -162,7 +163,8 @@
     "P133: named all three overridden vtable slots -- +0x00 destructor, +0x04 deleting destructor (via 0x0201B244 = operator delete), +0x18 Clone (confirmed at BOTH levels; parent allocates 0x80, derived 0x84, corroborating the +0x80 halfword). MAJOR: 0x0201A21C is only a 12-byte LINKER VENEER; the real allocator is 0x0201A228 (72B, size split at 0x100, manager [global+0x1A4]), and it DISCARDS the file/function/line args (r1/r2 clobbered immediately, r3 never read). Census unaffected (call-site evidence) but it scans only the veneer. Six sampled direct callers pass size only, all below 0x0206ADB8 -- P130's boundary is a COMPILATION boundary. Dropped P129's 'notify' label.",
     "P134: extended alloc_census.py to scan BOTH allocator entries (veneer 0x0201A21C + direct 0x0201A228): 732 -> 1135 sites. Answered P133's open question NO -- 0 of 403 direct sites carry a real source filename vs 572 of 732 veneer sites, so the tagged/untagged split is clean. Direct rows now reported UNTAGGED (their 'names' were stale registers; <0x020a0c34> is P131's instance counter). BUG FOUND: the ARM pass had no size plausibility bound (only Thumb did) -- 0x020462EC reported 0x2096568 (34MB); bounded both at 0x100000 and widened the selftest. Regression: 659 old rows vs 659 new veneer rows, diff empty.",
     "P135: swept the 403 direct-entry sites. NEGATIVE RESULT -- largest is 0xE4, so P134 extended coverage not reach; every large allocation in the ROM is tagged. Distribution is tiny-object dominated (0x14 x46, 0x8 x42, 0x24 x34). Sweep independently rediscovered 0x0204B0D4 = P133's parent Clone (found originally via a vtable diff). Seven sites allocate exactly 0x80 (the parent CommonEffect size) via six distinct constructors; overloads vs sibling classes NOT resolved. Extracted a reusable allocate-then-construct signature that names constructors/clones straight from the census.",
-    "P136: COURSE CORRECTION back to Mission 2 after nine wakes of middleware drift. Read Battle_MoveManCreate = 0x02082A38 (NOT 0x02082A50, which is the alloc site). It owns TWO NoteTracks at +0x20 (id 0xA1000, cb 0x02082E10) and +0x24 (id 0xA6000, cb 0x0208317C), each via the same six-step block -- independently reproducing iteration 54's ColPrm +0xE4/+0xE8 pattern. HALF THE CONSTRUCTOR IS DEAD: 8 word clears + a 128x0xC strided loop, both wiped by memset(obj,0,0x2648) (literal verified, no branch skips it). The dead loop still documents 128 records of 0xC at +0x48. +0x2C = halfword 0x29. OOM path calls memset(NULL,0,0x2648) -- 2nd instance of the P128 shape."
+    "P136: COURSE CORRECTION back to Mission 2 after nine wakes of middleware drift. Read Battle_MoveManCreate = 0x02082A38 (NOT 0x02082A50, which is the alloc site). It owns TWO NoteTracks at +0x20 (id 0xA1000, cb 0x02082E10) and +0x24 (id 0xA6000, cb 0x0208317C), each via the same six-step block -- independently reproducing iteration 54's ColPrm +0xE4/+0xE8 pattern. HALF THE CONSTRUCTOR IS DEAD: 8 word clears + a 128x0xC strided loop, both wiped by memset(obj,0,0x2648) (literal verified, no branch skips it). The dead loop still documents 128 records of 0xC at +0x48. +0x2C = halfword 0x29. OOM path calls memset(NULL,0,0x2648) -- 2nd instance of the P128 shape.",
+    "P137: MoveMan +0x648..+0x2647 resolved as 128 x 0x40 elements (PLAUSIBLE -- tiles exactly, elements need >=0x38, but no code computes base+i*0x40). Offset scanning found 0 writers because 0x648 is not an encodable ARM immediate and the constructor used it only as a LOOP BOUND; the region is reached by POINTER via node+0x8. +0x48..+0x647 = 128 x 0xC links (next/prev/payload) CONFIRMED. Callback 0x02082E10 walks that list and is a FRAME SNAPSHOT: AND +0x34 with 0x0003FFFF, then bit 0x100 set -> clear it, else copy +0x0C->+0x14 and +0x10->+0x18 (previous-value pair for deltas)."
   ],
   "stuck": {},
   "required_reading_for_koma_tasks": [
@@ -220,7 +222,7 @@
     "L/R sticker bindings are per-deck fields not yet located in RAM",
     "Is HP computed as size*k at runtime, or tabulated per panel? Naruto 4-koma=144=4*36; if size*k then size5=180, size6=216, size7=252, size8=288. One reading settles it."
   ],
-  "notes": "Iteration 136 done. BACK ON MISSION 2 after nine wakes of middleware drift -- watch for that signal (consecutive wakes sharing no addresses with battle subsystems). Battle_MoveManCreate is 0x02082A38, not 0x02082A50 (that is the alloc site, mis-quoted in ~12 docs). It owns two NoteTracks at +0x20/+0x24 with ids 0xA1000/0xA6000, built by the SAME six-step block as ColPrm's +0xE4/+0xE8 -- mutual corroboration across two unrelated managers. Half its constructor is dead (wiped by memset(obj,0,0x2648)), but the dead loop documents 128 records of 0xC at +0x48. 0x2000 bytes at +0x648 remain unexplored -- the top task. Conventional-offset list: +0x08, +0x10, +0x18, +0x20, +0x24, +0x48.",
+  "notes": "Iteration 137 done. MoveMan is TWO PARALLEL 128-ELEMENT ARRAYS: +0x48..+0x647 = 128 links of 0xC (CONFIRMED), +0x648..+0x2647 = 128 elements of 0x40 (PLAUSIBLE -- tiles exactly and elements need >=0x38, but no code computes base+i*0x40; that observation is what would upgrade it). 0x648 is not an encodable ARM immediate and was only ever a loop bound, which is why offset scanning found nothing -- not a tooling failure. Elements are reached by POINTER via node+0x8. Callback 0x02082E10 is a per-frame snapshot: +0x14/+0x18 hold the previous values of +0x0C/+0x10, and flag 0x100 suppresses one snapshot. Top task: find who SETS bit 0x100 -- that writer creates or repositions an element. Conventional-offset list: +0x08, +0x10, +0x18, +0x20, +0x24, +0x48.",
   "last_wake": "2026-08-14",
   "wakeup_default_seconds": 1800,
   "consecutive_no_progress_wakes": 0,
@@ -559,7 +561,13 @@
     "MoveMan_intended_array": "128 records of 0xC bytes at +0x48..+0x647, each with a field at +0x8 -- same record count as the ColPrm manager",
     "MoveMan_0x2C": "halfword = 0x29 (mov r0,#0x29; strh r0,[r4,#0x2c] at 0x02082B6C)",
     "notetrack_id_space": "0x1000-aligned ids, four now known: 0xA0000, 0xA1000 (MoveMan A), 0xA5000, 0xA6000 (MoveMan B); iteration 54 counted 12 distinct across arm9",
-    "notetrack_six_step_block": "0x02026F94 factory -> store handle -> 0x02012940(track,&id) -> 0x02028384(..,callback) -> vtable[+0x24](track,owner) self-register -> vtable[+0x94](track,0x2000000)"
+    "notetrack_six_step_block": "0x02026F94 factory -> store handle -> 0x02012940(track,&id) -> 0x02028384(..,callback) -> vtable[+0x24](track,owner) self-register -> vtable[+0x94](track,0x2000000)",
+    "MoveMan_links_array": "+0x48..+0x647 = 128 links of 0xC bytes (next +0x00, prev +0x04 inferred, payload +0x08) -- CONFIRMED from iteration 136's loop base/stride/bound",
+    "MoveMan_elements_array": "+0x648..+0x2647 = 128 elements of 0x40 (PLAUSIBLE): tiles exactly with zero slack, elements need >=0x38, but NO code computes base+i*0x40 -- reached only via node+0x8",
+    "MoveMan_callback_0x02082E10": "868 bytes, callers=0, installed via 0x02028384; walks the link list (ldr lr,[ip,#8]; ldr ip,[ip]) and is a per-frame snapshot pass",
+    "MoveMan_element_fields": "+0x0C/+0x10 current values; +0x14/+0x18 previous (copied from +0x0C/+0x10); +0x26 signed halfword (>0 sets flag 0x4); +0x34 flags word",
+    "MoveMan_element_flags_0x34": "bits 0x4, 0x10, 0x20, 0x100 (suppresses ONE snapshot), 0x600 (tested as a pair -> sets 0x20 and skips), 0x1000; masked with 0x0003FFFF every pass; pool holds 0xFFFFEFCB = ~0x1034",
+    "why_0x648_invisible": "0x648 needs an 11-bit span so it is not an encodable ARM immediate; the constructor built it via add #0x248 + add #0x400 purely as a loop BOUND. Zero field writers is correct, not a tooling failure."
   },
   "combat_phase_spillover": [
     "status-effect enum = 10 values, contiguous IDs 0x19-0x22 (Shock/Freeze/Burn/Confusion/Poison/Judgment/Paralysis/Blindness/Speed-Down/Battle+Support Seal). Likely an immunity BITMASK on character state struct.",
@@ -1449,7 +1457,13 @@
     "P136: when a reading is surprising (a memset undoing the initialisation before it), check the three things that could make it wrong -- the literal's value, whether any branch skips it, whether the register was rewritten -- before publishing. All three held here.",
     "P136: DEAD code is still a layout document. The wiped loop gave 128 records of 0xC at +0x48, which nothing in the surviving code reveals.",
     "P136: finding the same six-step construction block in two managers reached from opposite directions corroborates BOTH readings at once. Recognising a shape already documented is worth more than a new one-off.",
-    "P136: 'the null check jumps into shared cleanup instead of returning' is now confirmed twice (P128, P136). Treat it as this codebase's habit and expect NULL-deref-on-OOM rather than graceful failure."
+    "P136: 'the null check jumps into shared cleanup instead of returning' is now confirmed twice (P128, P136). Treat it as this codebase's habit and expect NULL-deref-on-OOM rather than graceful failure.",
+    "P137: zero writers for a high offset may mean the offset is not a FIELD at all. 0x648 was only ever a loop bound, and it is not an encodable ARM immediate -- so both the empty scan and the split-add in the constructor were expected, not anomalies.",
+    "P137: before trusting a perfect tiling, name what is missing. 0x648 + 128*0x40 = 0x2648 exactly, elements need >=0x38, and 0x40 is the only aligned stride that fits -- yet no instruction computes base + i*0x40, so it stays PLAUSIBLE. Say which observation would upgrade it.",
+    "P137: when offset scanning comes back empty, read the tool's own blind-spot list and pick the one that fits. 'A pointer to a sub-region passed as an argument' was the answer, and the consumer confirmed it in one instruction (ldr lr,[ip,#8]).",
+    "P137: a 0xC record IS the list link in this codebase (next/prev/payload). A constructor zeroing +0x8 of N records is initialising N payload pointers -- which also tells you N elements exist somewhere else.",
+    "P137: `dst = src` pairs at adjacent offsets (+0x14 <- +0x0C, +0x18 <- +0x10) are a previous/current snapshot for delta computation. A flag that skips the copy for one pass marks a newly created or teleported element.",
+    "P137: read a big loop's HEAD and TAIL first. The tail gave the iteration form (linked list, not array) and the head gave the element layout; the ~180 instructions in between were not needed for either."
   ],
   "open_questions_for_owner": [
     "Note-kind bucketing: the engine keeps at most 7 simultaneous \"notes\" per character, and 7 of the 17 kinds share one slot (kinds 6,7,8,9,10,14,15) so they should be mutually exclusive in play. Does starting one of those effects visibly cancel another?"

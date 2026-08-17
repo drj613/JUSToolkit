@@ -1,10 +1,12 @@
 {
-  "iteration": 140,
+  "iteration": 141,
   "phase": "combat",
   "current_task": "name the pool-node owner from its size and field shape",
   "queue": [
+    "read a CONSUMER of record+0x38 (or node+0x18) -- with three distinct bits in hand, one comparison site would confirm the category-mask reading",
+    "trace 0x02083624's caller -- the only remaining path to arg2's low nibble, and it decides whether the installer's 0x400000 branch is dead",
+    "identify the three ov6 callers 0x02164F0C / 0x02164F48 / 0x02168E44 -- in the battle overlay, so the census should name them",
     "read 0x0201899C -- called with a buffer whose contents are thrown away; would settle whether P140's dead block is leftover code or a compiler artefact",
-    "find the installer 0x0207C988's caller and read its six arguments -- arg2 feeds BOTH record+0x34 and the +0x3C flags, so naming arg2 names two fields",
     "decode record+0x175's 2-bit fields packed from [sp+0x34] -- the installer's tail packs at least three",
     "read 0x0201899C -- called with r0 = sp+8 and its three words are immediately overwritten; either a constructor or dead",
     "establish the transform node's fixed-point format -- would give the element's coordinates real units (P125 proved 24.8 for arena bounds, different module)",
@@ -172,7 +174,8 @@
     "P137: MoveMan +0x648..+0x2647 resolved as 128 x 0x40 elements (PLAUSIBLE -- tiles exactly, elements need >=0x38, but no code computes base+i*0x40). Offset scanning found 0 writers because 0x648 is not an encodable ARM immediate and the constructor used it only as a LOOP BOUND; the region is reached by POINTER via node+0x8. +0x48..+0x647 = 128 x 0xC links (next/prev/payload) CONFIRMED. Callback 0x02082E10 walks that list and is a FRAME SNAPSHOT: AND +0x34 with 0x0003FFFF, then bit 0x100 set -> clear it, else copy +0x0C->+0x14 and +0x10->+0x18 (previous-value pair for deltas).",
     "P138: hunted +0x34 bit 0x100's writer -- FAILED (target still unknown). Found instead the ELEMENT ALLOCATOR 0x02082C34 (248B, 1 caller): free list at container+0x08, active at +0x00, graceful NULL on exhaustion, +0x08 = arg1, and iteration 137's snapshot on all three branches (confirms shared object type). +0x0C/+0x10 from [arg2]/[arg2+4] or default 0x10000. CRITICAL: strb to +0x3C/+0x3D/+0x3E means the element reaches +0x3E and needs >=0x3F -- strengthens the 0x40 stride. New +0x34 bits: 0x1, 0x200 (if [container+0x28]&1), 0x8. Cross-module: sole caller is the ColObj installer 0x0207C988 at 0x0207CA08 with arg0 = [installer_arg0+0xF0].",
     "P139: read the installer's arg setup before 0x0207CA08. element+0x08 = the OWNER object; +0x0C/+0x10 = the owner's transform x/y asr 4, from ip = [[owner+4]+0x50] -- a THIRD independent sighting of P128/P129's transform node, first to read +0x0C/+0x10/+0x14 together. REFUTED my own P138 claim that 0x10000 = 1.0-in-16.16 = a scale pair: these are POSITION components, so it is a default position. Also refuted my own prediction that this would settle P137's ip/lr ambiguity -- it does not, and the consumer's list is NOT the container+0x00 list.",
-    "P140: scanned all 111 instructions of the ColObj installer 0x0207C988. The three-word buffer at sp+8 is ENTIRELY DEAD -- written at 3 sites, read nowhere; 0x0201899C's output is overwritten and its return clobbered. REFUTES my P139 guess that a later call consumes the raw x/y/z. Seventh vestigial finding. record+0x5C = the BattleMove element; [sb+0xEC] = ColObj factory container, [sb+0xF0] = element container (long-carried queue item resolved). record+0x34 = installer arg2, +0x38 = arg3, +0x3C = a flags word from arg5|0x20C000 plus arg2-derived bits; installer takes >=6 args. record+0x184/+0x186 init to 0x100. record+0x175 is stored twice, first store dead."
+    "P140: scanned all 111 instructions of the ColObj installer 0x0207C988. The three-word buffer at sp+8 is ENTIRELY DEAD -- written at 3 sites, read nowhere; 0x0201899C's output is overwritten and its return clobbered. REFUTES my P139 guess that a later call consumes the raw x/y/z. Seventh vestigial finding. record+0x5C = the BattleMove element; [sb+0xEC] = ColObj factory container, [sb+0xF0] = element container (long-carried queue item resolved). record+0x34 = installer arg2, +0x38 = arg3, +0x3C = a flags word from arg5|0x20C000 plus arg2-derived bits; installer takes >=6 args. record+0x184/+0x186 init to 0x100. record+0x175 is stored twice, first store dead.",
+    "P141: traced record+0x34/+0x38's values up two levels to four real call sites. arg2/arg3 pass through the constructor untouched; argument numbering verified by frame arithmetic in BOTH frames. arg3 observed as 0, 0x800, 0x4000, 0x8000 -- zero or one bit every time, so record+0x38 is a CATEGORY/LAYER MASK (PLAUSIBLE, no consumer read yet). arg2 = 0x100 at two sites and bic r3,#0xf at a third, so arg2's low nibble is zero everywhere visible and the installer's 0x0207CA58-0x0207CA68 branch has no observed live caller (NOT claimed dead -- 0x0208363C's r2 untraced). 0x02083624 is a thin wrapper forcing arg3=0. arg6 = 0 at all three ov6 sites, so record+0x175's packed fields are zero in practice."
   ],
   "stuck": {},
   "required_reading_for_koma_tasks": [
@@ -230,7 +233,7 @@
     "L/R sticker bindings are per-deck fields not yet located in RAM",
     "Is HP computed as size*k at runtime, or tabulated per panel? Naruto 4-koma=144=4*36; if size*k then size5=180, size6=216, size7=252, size8=288. One reading settles it."
   ],
-  "notes": "Iteration 140 done. The ColObj installer's three-word buffer at sp+8 is ENTIRELY DEAD (written 3x, read 0x, and 0x0201899C's call contributes nothing) -- refuting my own P139 guess. record+0x5C = the BattleMove element, sitting directly below +0x60 the ColObj. [sb+0xEC] and [sb+0xF0] are the ColObj and element containers -- a long-carried queue item, now resolved (sb is still NOT proven to be ColPrmMan). record+0x34/+0x38 = the installer's arg2/arg3; record+0x3C is a flags word from arg5|0x20C000 plus arg2-derived bits, so arg2 does double duty. The installer takes >=6 args. Top task: read 0x0201899C, then find the installer's caller to name arg2 (which names two record fields at once). Conventional-offset list: +0x08, +0x10, +0x18, +0x20, +0x24, +0x34 (1092 hits), +0x48.",
+  "notes": "Iteration 141 done. record+0x38 is a single-bit CATEGORY/LAYER MASK -- observed 0, 0x800, 0x4000, 0x8000 across four real call sites (PLAUSIBLE; confirming it needs one consumer of +0x38 or node+0x18). arg2/arg3 pass through the pooled-entity constructor untouched, and the argument numbering is verified by frame arithmetic in both frames. arg2's low nibble is zero at every visible site (one caller does bic r2,r3,#0xf deliberately), so the installer's 0x0207CA58-0x0207CA68 / 0x400000 branch has NO OBSERVED LIVE CALLER -- not claimed dead, 0x0208363C's r2 untraced. 0x02083624 is a thin wrapper forcing arg3=0, giving the subsystem two entry points. arg6=0 at all three ov6 sites so record+0x175's packed fields are zero in practice. Conventional-offset list: +0x08, +0x10, +0x18, +0x20, +0x24, +0x34 (1092 hits), +0x48.",
   "last_wake": "2026-08-14",
   "wakeup_default_seconds": 1800,
   "consecutive_no_progress_wakes": 0,
@@ -593,7 +596,13 @@
     "record_0x34_0x38_source": "record+0x34 = the installer's arg2 (r7) at 0x0207CA64; record+0x38 = arg3 (r6) at 0x0207CA6C -- the same fields the pool allocator reads (iteration 70/72)",
     "record_0x3C_formula": "arg5 ([sp+0x30]) | 0x20C000, plus 0x30000 if arg2 & 0x00FCFFFF, plus ((arg2 & 0xF) << 4) | 0x400000 if arg2's low nibble is set",
     "installer_arg_count": "0x0207C988 takes at least 6 arguments: r0-r3 plus [sp+0x30] and [sp+0x34]",
-    "record_0x184_0x186": "both initialise to 0x100 (strh at 0x0207CA98/0x0207CA9C via add r0,r4,#0x100 -- 0x186 is not an encodable ARM immediate)"
+    "record_0x184_0x186": "both initialise to 0x100 (strh at 0x0207CA98/0x0207CA9C via add r0,r4,#0x100 -- 0x186 is not an encodable ARM immediate)",
+    "record_0x38_category_mask": "single-bit category/layer mask; observed values 0 (0x0208363C), 0x800 (0x02168E44), 0x4000 (0x02164F48), 0x8000 (0x02164F0C). Copied to node+0x18 by the pool allocator (iteration 70). PLAUSIBLE -- no consumer read.",
+    "record_0x34_observed": "0x100 at 0x02164F0C and 0x02164F48; computed as r3 & ~0xF at 0x02168E44. Meaning not claimed.",
+    "installer_0x400000_branch": "0x0207CA58-0x0207CA68 (ands #0xf; lslne #4; orrne #0x400000; orrne r5) -- no observed live caller: all three ov6 sites pass arg2 with a zero low nibble. NOT claimed dead; 0x0208363C's r2 is untraced.",
+    "func_0x02083624": "thin wrapper over the pooled-entity constructor: forces arg3 = 0 (mov r3,#0 at 0x02083634) and shifts the remaining args down one",
+    "constructor_arg_passthrough": "0x020834D4 keeps arg2/arg3 in r7/r6 (0x020834F0/0x020834F8) and passes them to the installer unchanged (0x02083554/0x02083548)",
+    "abi_frame_check": "installer 0x0207C988 pushes 7 regs (0x1C) + sub #0x14 so caller [sp+0] -> [sp+0x30]; constructor 0x020834D4 pushes 6 (0x18) + sub #8 so caller [sp+0] -> [sp+0x20]. Both match the offsets each reads."
   },
   "combat_phase_spillover": [
     "status-effect enum = 10 values, contiguous IDs 0x19-0x22 (Shock/Freeze/Burn/Confusion/Poison/Judgment/Paralysis/Blindness/Speed-Down/Battle+Support Seal). Likely an immunity BITMASK on character state struct.",
@@ -1506,7 +1515,13 @@
     "P140: read a constructor for what it stores from its ARGUMENTS, not just what it stores. record+0x34/+0x38 had been known as fields the allocator reads since iteration 70; the installer named their source in two instructions.",
     "P140: one argument feeding two fields in different encodings (arg2 stored whole at +0x34, its low nibble re-encoded into +0x3C bits 4-7 with a 0x400000 marker) means naming that argument pays twice. Prioritise arguments that appear more than once.",
     "P140: a split immediate (add #0x100 then offset +0x86) is the signature of an offset above 0xFFF or otherwise unencodable -- the same mechanism that hid +0x648 in P137. Expect it for every field past +0xFF in a large struct.",
-    "P140: two stores to the same offset back to back (strb r7 then strb r2 at record+0x175) is a dead store. Note it; do not silently report only the surviving value."
+    "P140: two stores to the same offset back to back (strb r7 then strb r2 at record+0x175) is a dead store. Note it; do not silently report only the surviving value.",
+    "P141: verify argument numbering with FRAME ARITHMETIC before building on it. Pushed-register count plus the sub tells you exactly where a caller's [sp+0] lands; two frames agreeing with the offsets each function reads is cheap proof.",
+    "P141: a field's meaning comes from the VALUES real callers pass, not from its writer. record+0x38 had been a named field for 70 wakes; four call sites gave it a shape (zero or one bit = a category mask) in one read.",
+    "P141: single-bit constants spread across 0x800/0x4000/0x8000 rule out a size or an index. The distribution of observed values is itself the evidence for 'mask'.",
+    "P141: when every visible caller zeroes the input a branch depends on -- one site even doing bic r2,r3,#0xf deliberately -- say 'no observed live caller' and name the untraced path, rather than either claiming it dead or ignoring it.",
+    "P141: a thin wrapper that injects a default (0x02083624 forcing arg3=0) means the subsystem has two entry points, and callers of the wrapper will never exercise whatever that argument controls. Check for wrappers before concluding an argument is always set.",
+    "P141: I mistyped the installer's branch addresses as 0x02083A.. in my own draft and caught it by re-disassembling before the edit pass. Re-verify addresses transcribed from an earlier wake's notes rather than from a fresh read."
   ],
   "open_questions_for_owner": [
     "Note-kind bucketing: the engine keeps at most 7 simultaneous \"notes\" per character, and 7 of the 17 kinds share one slot (kinds 6,7,8,9,10,14,15) so they should be mutually exclusive in play. Does starting one of those effects visibly cancel another?"

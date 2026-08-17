@@ -1,9 +1,16 @@
 {
-  "iteration": 146,
+  "iteration": 147,
   "phase": "combat",
-  "current_task": "name the pool-node owner from its size and field shape",
+  "current_task": "READ 0x0216AF04 (760 bytes) -- the obj-shot per-frame pass, registered via 0x02028384. Highest-value next step in this module: it drives all 72 elements and will name the lifetime/position fields.",
   "queue": [
-    "TRACE Battle_ObjShotManCreate ov6 0x0216A7D4 (0x3FD4, BattleObjShot.cpp) -- the actual projectile subsystem; find its element constructor and spawn sites. justoolkit-06 is BLOCKED on this for their input sweep.",
+    "READ 0x0216AF04 (760 bytes) -- the obj-shot per-frame pass, registered via 0x02028384. Highest-value next step in this module: it drives all 72 elements and will name the lifetime/position fields.",
+    "READ 0x0216EEF4 -- shared by kinds 0x00/0x0F/0x15/0x16; tells us whether those four are stubs or a real default handler. Then 0x0216B4F4 (kinds 0x01/0x03/0x04).",
+    "ACCOUNT for the 0x2158 unexplained bytes of the obj-shot manager (elements end at +0x1E7C, manager is 0x3FD4). search-imm 0x1e7c is ROM-wide zero, so nothing addresses the boundary with a literal. Not divisible by 72.",
+    "READ ColPrm record+0x17C -- new field, gates the arm-A target filter in 0x0216A944. Find its writers with find_field_writers.py.",
+    "MoveMan element+0x34 bit 0x200 -- cleared on projectile attach at 0x0216AE80. Find who SETS it; 0x100 is the known snapshot suppressor.",
+    "REPORT the fifth functions.json binning gap: 0x0216B2A0 (0x28 bytes, kind-0x1A handler) is absent; 0x0216B220 ends at 0x0216B29C, next record 0x0216B2C8. Feeds the standing query.py binning-audit task.",
+    "0x0208369C(9) -- called with a literal 9 to get the arm-A list head. Identify it; 'category' is inferred from the surrounding filter only.",
+    "obj-shot element+0x10 -- read as a pointer to a signed byte decremented when element+0x26 & 8. Refcount or slot counter?",
     "confirm the map-item vs obj-ctrl attribution of 0x02164D48 and 0x02168CF4 -- currently PLAUSIBLE from bracketed census proximity, not from tags",
     "read record+0x150 -- it drives the 0x6FF category gate via the flag API, so its writer decides which category a record lands in; highest-value unknown in this chain",
     "find the consumer of the r6+0x88 category list -- would confirm what category-0x800 records receive that the generic pass withholds",
@@ -193,7 +200,8 @@
     "P145: RETRACTED my P144 claim that 0x0207EF1C is a second writer of record+0x34 -- its base is [record+0x5C] = the ELEMENT, so it writes element+0x34. FOUND the snapshot suppressor: 0x020804E8 (40B, 3 call sites) is the element's REPOSITION function -- snapshot +0x0C/+0x10 into +0x14/+0x18, write the new pair, then orr #0x100. This confirms iteration 138's SPECULATIVE that 0x100 belongs to repositioning not creation. New element+0x34 bit 0x800, set when a 0x18-stride table entry's byte +0x15 has bit 8; table at [[r5+0xF8]+0x18] -- data-driven flag propagation.",
     "P146 (delegated: 2 subagent traces + Codex arithmetic review, all verified before publication): (a) 0x800's polarity is NOT a contradiction -- 0x020801D4 is loop-continue (reject pair), 0x0207F7C8 is the next category check in a per-category filing chain; one meaning, two routings. (b) record+0x34 is NOT write-once -- REFUTED: flag API 0x0207D064 (orr) / 0x0207D0BC (bic) / 0x0207CF18 / 0x0207CF78 mirrors changes into +0x38 and the +0x08 node list; destructor 0x0207CCD4 memsets 0x188. (c) P144's 0x6FF puzzle SOLVED -- ov6 ORs [record+0x150]&0xFF into +0x34 at 0x02165FB0-0x02165FB8, and 0x6FF covers bits 0-7, so the test reads RUNTIME bits not the 0x100 seed. Also: the +0x5C trap is 1 of 7 instances; query.py mis-bins the flag API as 0x0207CFE0. Corrected a subagent claim (0x0207FBD0 has 1 caller, 0x0207F480 has 0).",
     "P146b: charter updated on the user's direct authorization -- added a North star section referencing docs/PROJECT-GOAL.md (master, f47d63d) and naming justoolkit-06 as this loop's runtime validator; extended Mission 2 with the entity/projectile focus and its known entry points (Battle_ObjManCreate 0x0208321C, Battle_ObjShotManCreate ov6 0x0216A7D4, Battle_ObjCtrlManCreate ov6 0x02168BA0, constructor 0x020834D4, wrapper 0x02083624). All operating rules verified unchanged before and after the opus-4-6 pass.",
-    "P146c: RUNTIME CONFIRMATION via justoolkit-06. The 0x40 element stride is empirically CONFIRMED -- 12 live allocations 0x40 apart (0x0220C208..0x0220C388), container 0x0220B740, first element at container+0xAC8, and (0xAC8-0x648)/0x40 = 18 exactly, validating base and stride together. Closes BOTH gaps Codex named. Also confirmed live: r2 is DTCM (a stack temp, no persistent struct), and elements read back zero (the 0x0207CCD4 destructor memset). AND: the three entity-constructor call sites are NOT the attack path -- 0x02164F0C/0x02164F48 are in 0x02164D48 (bracketed by BattleMapLoadItem/BattleMapItemInit = map items), 0x02168E44 is in 0x02168CF4 (just above Battle_ObjCtrlManCreate = object control). Explains 06's verified zero-allocation result for plain B. Projectiles are BattleObjShot ov6 0x0216A7D4."
+    "P146c: RUNTIME CONFIRMATION via justoolkit-06. The 0x40 element stride is empirically CONFIRMED -- 12 live allocations 0x40 apart (0x0220C208..0x0220C388), container 0x0220B740, first element at container+0xAC8, and (0xAC8-0x648)/0x40 = 18 exactly, validating base and stride together. Closes BOTH gaps Codex named. Also confirmed live: r2 is DTCM (a stack temp, no persistent struct), and elements read back zero (the 0x0207CCD4 destructor memset). AND: the three entity-constructor call sites are NOT the attack path -- 0x02164F0C/0x02164F48 are in 0x02164D48 (bracketed by BattleMapLoadItem/BattleMapItemInit = map items), 0x02168E44 is in 0x02168CF4 (just above Battle_ObjCtrlManCreate = object control). Explains 06's verified zero-allocation result for plain B. Projectiles are BattleObjShot ov6 0x0216A7D4.",
+    "P147: TRACE Battle_ObjShotManCreate ov6 0x0216A7D4 (0x3FD4, BattleObjShot.cpp) -- the actual projectile subsystem; find its element constructor and spawn sites. justoolkit-06 is BLOCKED on this for their input sweep. -- DONE, see findings/objshot-manager-and-the-27-kind-dispatch-table.md"
   ],
   "stuck": {},
   "required_reading_for_koma_tasks": [
@@ -209,13 +217,13 @@
   "k1b_observed": {
     "source": "live melonDS 1.1 play session walked by owner; 25 screenshots in docs/research/assets/koma-ui/",
     "tier": "OBSERVED - outranks CONFIRMED-from-disasm for behavior, silent on byte layout",
-    "BIGGEST_HOLE_NOW_FILLED": "Nature system = 4-value enum: \u529b Power / \u77e5 Knowledge / \u7b11 Laughter / \u306a\u3057 Neutral. Triangle: Power>Knowledge>Laughter>Power. Neutral outside. Natures are PER-PANEL not per-character.",
+    "BIGGEST_HOLE_NOW_FILLED": "Nature system = 4-value enum: 力 Power / 知 Knowledge / 笑 Laughter / なし Neutral. Triangle: Power>Knowledge>Laughter>Power. Neutral outside. Natures are PER-PANEL not per-character.",
     "other_facts": [
       "Grid 4 rows x 5 cols = 20 cells; panels cost exactly their own area, no separate currency",
       "Sizes 1-8. Type is DERIVED from size: Battle 4-8, Support 2-3, Helper 1",
       "Legal deck requires >=1 battle, >=1 support, >=1 helper",
-      "Every 1-cell helper observed had nature \u306a\u3057",
-      "Battle panels each have exactly 3 relationship chars (\u3042\u3044\u3057\u3087\u3046); adjacency = chime+sparkle+extra HP; owner recalls internal name approx 'j soul' (UNVERIFIED)",
+      "Every 1-cell helper observed had nature なし",
+      "Battle panels each have exactly 3 relationship chars (あいしょう); adjacency = chime+sparkle+extra HP; owner recalls internal name approx 'j soul' (UNVERIFIED)",
       "Most helpers require a facing (up/down/left/right) set after placement -> 2-bit per-placed-panel field in deck save",
       "Stickers: Leader (battle only), L and R (battle or support) bind to shoulder buttons",
       "Deck select shows per-deck B/S/H counters; 7 rows + NEW seen, consistent with 8 slots at 0x020AFEB4",
@@ -236,11 +244,11 @@
   "k2_plan": [
     "1. Read DtxCommands.KShapeSprites, settle kshape.bin, test P5 first (shrinks the search)",
     "2. Dump all 890 records to JSON (no such tool exists; CLI only emits PNGs) and histogram every byte",
-    "3. Run the Naruto 4\u529b/4\u7b11 query: same size + same char, differing byte = nature (should crack P1 outright)",
+    "3. Run the Naruto 4力/4笑 query: same size + same char, differing byte = nature (should crack P1 outright)",
     "4. Cross-check with P2",
     "5. Then open piece.bin for the relationships table"
   ],
-  "naruto_reference_table": "size/type/nature: 1 Helper \u306a\u3057 | 2 Support \u7b11 | 3 Support \u529b | 4 Battle \u529b (vertical bar) | 4 Battle \u7b11 | 5 Battle \u529b | 6 Battle \u529b | 7 Battle \u529b \u30ca\u30eb\u30c8\uff08\u4e5d\u5c3e\uff09 | 8 Battle \u529b \u30ca\u30eb\u30c8\uff08\u4e5d\u5c3e\uff09. Relationships: \u81ea\u6765\u4e5f/\u6211\u611b\u7f85/\u30b5\u30af\u30e9. Any decode must reproduce this exactly.",
+  "naruto_reference_table": "size/type/nature: 1 Helper なし | 2 Support 笑 | 3 Support 力 | 4 Battle 力 (vertical bar) | 4 Battle 笑 | 5 Battle 力 | 6 Battle 力 | 7 Battle 力 ナルト（九尾） | 8 Battle 力 ナルト（九尾）. Relationships: 自来也/我愛羅/サクラ. Any decode must reproduce this exactly.",
   "open_questions": [
     "Nature triangle magnitude - owner guesses ~1.5x but UNSURE (SPECULATIVE)",
     "Whether passive magnitudes are per-passive constants or per-character",
@@ -252,7 +260,7 @@
     "Is HP computed as size*k at runtime, or tabulated per panel? Naruto 4-koma=144=4*36; if size*k then size5=180, size6=216, size7=252, size8=288. One reading settles it."
   ],
   "notes": "Iteration 146 done (delegated + verified). THREE closures: (a) 0x800's polarity is category ROUTING, not a contradiction -- 0x020801D4 is loop-continue, 0x0207F7C8 is the next category check; (b) record+0x34 is NOT write-once -- a four-function flag API (0x0207D064/0x0207D0BC/0x0207CF18/0x0207CF78) mirrors changes into +0x38 and the +0x08 node list, and the destructor 0x0207CCD4 memsets 0x188; (c) P144's 0x6FF puzzle SOLVED -- ov6 ORs [record+0x150]&0xFF into +0x34, and 0x6FF covers bits 0-7, so the test reads runtime bits not the 0x100 construction seed. Top task: read record+0x150, which now drives the whole category gate. STANDING: query.py mis-bins functions in this module (4 leaves here, 8 in P125, 2 in P126) -- verify any address before trusting its size or container. The +0x5C base-confusion trap has 7 instances; on +0x34 (1092 hits) the base register is the ONLY struct identifier. CHARTER: updated in P146b on the user's direct authorization. North star = docs/PROJECT-GOAL.md (master, f47d63d); Mission 2's current focus is the entity/projectile subsystems. justoolkit-06 is the designated runtime validator -- send them struct-field hypotheses and breakpoint requests rather than leaving questions unresolved; that is the only route to dynamic evidence without breaking the static-only rule.",
-  "last_wake": "2026-08-14",
+  "last_wake": "2026-08-17 iteration 147",
   "wakeup_default_seconds": 1800,
   "consecutive_no_progress_wakes": 0,
   "k1c_helper_passives": {
@@ -651,7 +659,15 @@
     "element_stride_0x40_CONFIRMED": "CONFIRMED at runtime by justoolkit-06: 12 allocations from 0x02082C34 returned pointers exactly 0x40 apart (0x0220C208..0x0220C388); container 0x0220B740; first element at container+0xAC8; (0xAC8-0x648)/0x40 = 18 with no remainder. Validates the +0x648 base AND the 0x40 stride together, and proves the +0x3E struct is the region's element type.",
     "entity_call_sites_not_attack_path": "0x02164F0C and 0x02164F48 are both in ov6 0x02164D48 (772B), bracketed by BattleMapLoadItem 0x021644E8 and BattleMapItemInit 0x02165368 => map items. 0x02168E44 is in ov6 0x02168CF4 (616B), just above Battle_ObjCtrlManCreate 0x02168BA0 => object control. PLAUSIBLE (proximity). Plain melee B allocates ZERO elements (runtime-verified).",
     "projectile_subsystem_target": "Battle_ObjShotManCreate ov6 0x0216A7D4, 0x3FD4 bytes, BattleObjShot.cpp -- the real projectile/shot subsystem, UNTRACED as of P146c",
-    "xy_arg_is_stack_temp": "CONFIRMED at runtime: r2 at the allocator call was DTCM 0x027C394C -- matches add r2,sp,#0 in the installer. No persistent xy struct exists in RAM."
+    "xy_arg_is_stack_temp": "CONFIRMED at runtime: r2 at the allocator call was DTCM 0x027C394C -- matches add r2,sp,#0 in the installer. No persistent xy struct exists in RAM.",
+    "objshot_manager_size": "0x3FD4 (alloc r0 + memset len, Battle_ObjShotManCreate 0x0216A7BC)",
+    "objshot_element_stride": "0x6C (free-list build loop at 0x0216A884)",
+    "objshot_element_count": "0x48 = 72 (cmp r6, #0x48 at 0x0216A894)",
+    "objshot_manager_singleton": "0x021729EC (stored at 0x0216A8A8)",
+    "objshot_kind_table": "0x02172864, 27 entries for kinds 0x00-0x1A; upper bound is the \"BattleObjShot.cpp\" string at 0x021728D0",
+    "objshot_resource_id": "0x88000 (manager+0x18, vtable slot 0xA0)",
+    "objshot_default_lifetime": "0x1E = 30 frames (element+0x18 when [params+6] is zero, 0x0216ADA4)",
+    "objshot_ctor_line": "0x118 = 280 (BattleObjShot.cpp __LINE__)"
   },
   "combat_phase_spillover": [
     "status-effect enum = 10 values, contiguous IDs 0x19-0x22 (Shock/Freeze/Burn/Confusion/Poison/Judgment/Paralysis/Blindness/Speed-Down/Battle+Support Seal). Likely an immunity BITMASK on character state struct.",
@@ -676,8 +692,8 @@
     },
     "shapes_per_size": "available (1,2,6,12,14,14,13,4); used by koma.bin (1,2,6,12,13,14,12,4). Size 5 uses 13 -- EXACTLY matches the owner size-5 screenshot count of 13.",
     "panels_per_size": "size1:312 size2:188 size3:184 size4:62 size5:61 size6:55 size7:16 size8:12",
-    "naruto_verified": "Naruto = characterId 184, seriesIdx 24 (\"na\"), 9 panels idx 497-505, sizes [1,2,3,4,4,5,6,7,8], matches owner reference table exactly. Sizes 7-8 switch abilityId 24 (vs 20 for 4-6) = the \u4e5d\u5c3e label. Both size-4 panels share abilityId 20.",
-    "NEGATIVE_RESULT": "NATURE IS NOT IN koma.bin. Refutes P1. Proof: Naruto size-2 panel is \u7b11 Laughter and size-3 is \u529b Power, yet both have byte-identical flags=0x30 and identical panelType. Two different natures, identical bytes => no koma.bin field encodes nature. Also not purely per-character (Naruto two size-4 panels differ in nature but share characterId 184).",
+    "naruto_verified": "Naruto = characterId 184, seriesIdx 24 (\"na\"), 9 panels idx 497-505, sizes [1,2,3,4,4,5,6,7,8], matches owner reference table exactly. Sizes 7-8 switch abilityId 24 (vs 20 for 4-6) = the 九尾 label. Both size-4 panels share abilityId 20.",
+    "NEGATIVE_RESULT": "NATURE IS NOT IN koma.bin. Refutes P1. Proof: Naruto size-2 panel is 笑 Laughter and size-3 is 力 Power, yet both have byte-identical flags=0x30 and identical panelType. Two different natures, identical bytes => no koma.bin field encodes nature. Also not purely per-character (Naruto two size-4 panels differ in nature but share characterId 184).",
     "piece_bin": "35183 bytes, ODD - no stride yields 890 records, so NOT a fixed-stride per-koma table. Variable-length or offset-indexed; needs a header read not a stride guess."
   },
   "predictions_status": {
@@ -715,23 +731,23 @@
     "output": "docs/research/findings/abilities-all-57-named.md",
     "new_files_found": "jus_files/ripped_jus_files/bin/ability.bin (228B = 57 x 4: u8 group, u8 sub, s8 param, u8 pad) and ability_t.bin (3788B = 57 x 12: three relative s32 string pointers Title/Desc1/Desc2, Shift-JIS). Index-parallel, both 57 entries. NEITHER was in the K1 survey.",
     "pointer_gotcha": "ability_t.bin relative pointer base = offset OF the pointer field, NOT after it (src/JUS.Tool/Texts/JusText.cs:90 evaluates Stream.Position before ReadInt32 advances). Getting it wrong shifts every string 4 bytes and truncates 2 leading chars - looks like \"shared string tails\" rather than a bug.",
-    "HEADLINE": "index 52 = \uff2a\u9b42\u6700\u5927\u5024\uff0b (\"J-soul max value +\") with param +8. \uff2a\u9b42 (J-soul) IS THE HP STAT - this verifies the owner's half-remembered \"j soul\" term. The +8 that Leader and relationship adjacency both grant is literally this table entry, which is why they share a constant and stack to +32. Index 53 = \u5fc5\u6bba\u9b42\u6700\u5927\u5024\uff0b = the SP gauge.",
+    "HEADLINE": "index 52 = Ｊ魂最大値＋ (\"J-soul max value +\") with param +8. Ｊ魂 (J-soul) IS THE HP STAT - this verifies the owner's half-remembered \"j soul\" term. The +8 that Leader and relationship adjacency both grant is literally this table entry, which is why they share a constant and stack to +32. Index 53 = 必殺魂最大値＋ = the SP gauge.",
     "id_space_resolved": "group0 (idx 0-37, sub 0x00-0x25) == cheat-code IDs 0x00-0x25 by NAME one-for-one. group1 (idx 38-48, sub 0x05-0x0F, 11 entries) == cheat IDs 0x26-0x30 (also 11). group2 (idx 49-56, 8 entries) was NEVER in the cheat table - which is exactly why koma.bin helper abilityId reaches 55 while that table stopped at 0x30. Prediction CONFIRMED.",
     "all_10_unknowns_named": {
-      "0x0B": "\u6253\u6483\u5f31\u70b9 blunt WEAKNESS (takes MORE)",
-      "0x0C": "\u65ac\u6483\u5f31\u70b9 slash WEAKNESS",
-      "0x11": "\u6d6a\u8cbb waste",
-      "0x13": "\u5927\u98df\u3044 big eater",
-      "0x14": "\u6a5f\u68b0 machine",
-      "0x15": "\u76f4\u6483 direct hit",
-      "0x17": "\u91cd\u91cf\u7d1a heavyweight",
-      "0x18": "\u8efd\u91cf\u7d1a lightweight",
-      "0x24": "\u30d7\u30e9\u30b9\u52b9\u679c\u7121\u52b9 nullify enemy buffs",
-      "0x25": "\u5fc5\u6bba\u6280\u7121\u5236\u9650 unlimited specials"
+      "0x0B": "打撃弱点 blunt WEAKNESS (takes MORE)",
+      "0x0C": "斬撃弱点 slash WEAKNESS",
+      "0x11": "浪費 waste",
+      "0x13": "大食い big eater",
+      "0x14": "機械 machine",
+      "0x15": "直撃 direct hit",
+      "0x17": "重量級 heavyweight",
+      "0x18": "軽量級 lightweight",
+      "0x24": "プラス効果無効 nullify enemy buffs",
+      "0x25": "必殺技無制限 unlimited specials"
     },
-    "my_slot_guesses_REFUTED": "I predicted the owner's 4 unclaimed categories sat in 0x13-0x18 / 0x24-0x25. WRONG - all four are in group2: cat24=idx52 \uff2a\u9b42\u6700\u5927\u5024\uff0b(+8), cat27=idx53 \u5fc5\u6bba\u9b42\u6700\u5927\u5024\uff0b, cat23=idx54 \u81ea\u5df1\u56de\u5fa9(+1), cat40=idx55 \u95d8\u4e89\u5fc3(+3). The reasoning (stat boosts cluster near 0x16 Guard) was sound but assumed the ID space ended at 0x30.",
-    "deck_bonus_lead": "PLAUSIBLE: group2 idx 49-51 are \u53cb\u60c5\u30b3\u30de/\u52aa\u529b\u30b3\u30de/\u52dd\u5229\u30b3\u30de (friendship/effort/victory - Weekly Shonen Jump's three principles), the only abilities named \"koma\" rather than after an effect. Best lead yet for the long-unexplained \"+1 SP helpers affect the whole deck\" / nature deck-bonus note in Deck-System.md. Not proven.",
-    "negative_ability": "idx 56 = \u5fc5\u6bba\u30b2\u30fc\u30b8\u30b8\u30ef\u30b8\u30ef\u6e1b\u5c11 param -3: SP gauge DRAINS. So this table holds debuffs too."
+    "my_slot_guesses_REFUTED": "I predicted the owner's 4 unclaimed categories sat in 0x13-0x18 / 0x24-0x25. WRONG - all four are in group2: cat24=idx52 Ｊ魂最大値＋(+8), cat27=idx53 必殺魂最大値＋, cat23=idx54 自己回復(+1), cat40=idx55 闘争心(+3). The reasoning (stat boosts cluster near 0x16 Guard) was sound but assumed the ID space ended at 0x30.",
+    "deck_bonus_lead": "PLAUSIBLE: group2 idx 49-51 are 友情コマ/努力コマ/勝利コマ (friendship/effort/victory - Weekly Shonen Jump's three principles), the only abilities named \"koma\" rather than after an effect. Best lead yet for the long-unexplained \"+1 SP helpers affect the whole deck\" / nature deck-bonus note in Deck-System.md. Not proven.",
+    "negative_ability": "idx 56 = 必殺ゲージジワジワ減少 param -3: SP gauge DRAINS. So this table holds debuffs too."
   },
   "k2c_plan": [
     "1. chr_b.bin is exactly 74 x 60 bytes (4440). I searched every 2-byte-aligned offset for 9216 and got NO clean hit => HP is NOT a plain u16 at a fixed chr_b offset. Try: nibble/packed encodings, per-size arrays, or a separate stat file.",
@@ -743,7 +759,7 @@
   "cards_written": "docs/research/Human-Testing-Queue.md gained 5 harness cards (A1 nature location, F1 HP scaling, B1 nature multiplier, E1 ability IDs, D1 helper facing) in the peer format. E1 is now marked CLOSED STATICALLY.",
   "jus_files_is_now_a_submodule": "jus_files/ is a git SUBMODULE (git@github.com:drj613/jus_files.git, private). Commits to anything under it need `git -C jus_files add/commit/push`; committing from the root only moves the POINTER. Raw .nds/.sav are gitignored inside the subrepo. Also: a stale `jus_files` entry in .git/info/exclude used to silently block submodule add - if you hit \"path is ignored\", check .git/info/exclude, it is NOT in .gitignore.",
   "nature_EXCLUSIONS": {
-    "koma.bin": "REFUTED - Naruto size-2 (\u7b11) and size-3 (\u529b) byte-identical except image/shape/ordinal",
+    "koma.bin": "REFUTED - Naruto size-2 (笑) and size-3 (力) byte-identical except image/shape/ordinal",
     "komatxt.bin": "REFUTED - parallel per-koma (890 x 12) but Unk1/Unk2 CONSTANT across all 9 Naruto panels",
     "arm9 flat per-koma": "REFUTED - scanned all 692568 bytes for any 890-long window with 3-5 distinct values: ZERO hits. Also zero for 445-byte nibble-packed.",
     "arm9 flat per-char": "REFUTED for nature - one 312-long candidate at file 0x0A8640 / runtime 0x020A8640, inside deck RAM region, reads like uninitialised data. And nature is per-PANEL not per-character.",
@@ -758,28 +774,28 @@
   "new_confirmations": {
     "chr_s.bin": "CONFIRMED 193 entries x 20 bytes (3860B); 193 == distinct support abilityId count in koma.bin",
     "chr_b.bin": "CONFIRMED 74 entries x 60 bytes (4440B); 74 == documented battle-character count",
-    "komatxt.bin_holds_names": "CONFIRMED - first pointer is the panel DISPLAY NAME. Naruto 497-503 = \u30ca\u30eb\u30c8, 504-505 = \u30ca\u30eb\u30c8\uff08\u4e5d\u5c3e\uff09. Settles the open question from koma-format-decoded.md: names are PER-PANEL, so a character can change display name at larger sizes with no koma.bin change. Unk2 = characterId - 1.",
-    "stacking_confirmed_in_text": "Index 52 \uff2a\u9b42\u6700\u5927\u5024\uff0b description ends \u203b\u8907\u6570\u6709\u52b9 = \"multiple instances are effective\" = STACKS. Independently confirms the owner +32 observation: four applications of a +8 ability the data explicitly marks stackable. The +8 was never special-cased. Index 53 carries the same note."
+    "komatxt.bin_holds_names": "CONFIRMED - first pointer is the panel DISPLAY NAME. Naruto 497-503 = ナルト, 504-505 = ナルト（九尾）. Settles the open question from koma-format-decoded.md: names are PER-PANEL, so a character can change display name at larger sizes with no koma.bin change. Unk2 = characterId - 1.",
+    "stacking_confirmed_in_text": "Index 52 Ｊ魂最大値＋ description ends ※複数有効 = \"multiple instances are effective\" = STACKS. Independently confirms the owner +32 observation: four applications of a +8 ability the data explicitly marks stackable. The +8 was never special-cased. Index 53 carries the same note."
   },
-  "GAME_DATA_BUG": "ability_t.bin index 12 \u65ac\u6483\u5f31\u70b9 (slash WEAKNESS) has the WRONG description - it is a verbatim copy of index 10 \u65ac\u6483\u8010\u6027\uff35\uff30 (slash resistance UP), saying damage is \u8efd\u6e1b\u3055\u308c\u308b (reduced). Title says weakness, text says resistance. Index 11 \u6253\u6483\u5f31\u70b9 is correctly labelled \u30de\u30a4\u30ca\u30b9\u80fd\u529b. MATTERS: the harness confirmed Luffy carries 0x0C, so anyone resolving the sign from the description would conclude Luffy RESISTS slashing when he is weak to it.",
-  "ability_descriptions": "All 57 decoded to docs/research/findings/ability-descriptions-57.txt. Resistance MAGNITUDES ARE NOT IN THE TEXT - only 3 of 57 entries contain any number (idx 1, 15, 53). So the resistance multiplier is hardcoded in the damage path; the runtime experiment is the only route. Only qualitative hint anywhere: idx 11 says \u5c11\u3057 (\"slightly\") larger.",
+  "GAME_DATA_BUG": "ability_t.bin index 12 斬撃弱点 (slash WEAKNESS) has the WRONG description - it is a verbatim copy of index 10 斬撃耐性ＵＰ (slash resistance UP), saying damage is 軽減される (reduced). Title says weakness, text says resistance. Index 11 打撃弱点 is correctly labelled マイナス能力. MATTERS: the harness confirmed Luffy carries 0x0C, so anyone resolving the sign from the description would conclude Luffy RESISTS slashing when he is weak to it.",
+  "ability_descriptions": "All 57 decoded to docs/research/findings/ability-descriptions-57.txt. Resistance MAGNITUDES ARE NOT IN THE TEXT - only 3 of 57 entries contain any number (idx 1, 15, 53). So the resistance multiplier is hardcoded in the damage path; the runtime experiment is the only route. Only qualitative hint anywhere: idx 11 says 少し (\"slightly\") larger.",
   "hp_findings": {
     "output": "docs/research/findings/hp-per-size-chr_b.md",
     "my_prediction_REFUTED": "size*36 => size5=180 is dead. Harness read all 8 deck slots: every HP is an exact multiple of 64 raw / 8 displayed, and 180/8=22.5. HP carries no fraction; the 1/64 units exist for DAMAGE only, so the 1.250 hit is manufactured by the damage path and is not table data.",
-    "HP_QUANTUM": "8 displayed units (= 512 raw). Matches ability index 52 \uff2a\u9b42\u6700\u5927\u5024\uff0b granting +8 and being \u203b\u8907\u6570\u6709\u52b9.",
+    "HP_QUANTUM": "8 displayed units (= 512 raw). Matches ability index 52 Ｊ魂最大値＋ granting +8 and being ※複数有効.",
     "candidate": "chr_b.bin has five u8 fields at 0x10, 0x14, 0x18, 0x1C, 0x20 (stride 4). ALL 370 of those bytes (74 x 5) are multiples of 8 - CONFIRMED, not coincidence. +16 is the dominant step (131 occurrences vs 63 zeros).",
     "abilityId_indexes_chr_b": "CONFIRMED by arithmetic: battle abilityId has 74 distinct values in 0..73, chr_b has 74 entries.",
-    "naruto_ladder": "chr_b[20] = [144,160,176,144,144]; chr_b[24] (\u4e5d\u5c3e) = [80,96,112,192,208]. Taking sizes 4/5/6 from entry20 slots 0/1/2 and sizes 7/8 from entry24 slots 3/4 gives 144,160,176,192,208 - a clean +16 ladder. 144 matches the harness RAM reading EXACTLY. Sizes 7-8 coming from a different chr_b entry also explains the komatxt rename to \u30ca\u30eb\u30c8\uff08\u4e5d\u5c3e\uff09, and 208 matches \"8-koma have the most HP\".",
+    "naruto_ladder": "chr_b[20] = [144,160,176,144,144]; chr_b[24] (九尾) = [80,96,112,192,208]. Taking sizes 4/5/6 from entry20 slots 0/1/2 and sizes 7/8 from entry24 slots 3/4 gives 144,160,176,192,208 - a clean +16 ladder. 144 matches the harness RAM reading EXACTLY. Sizes 7-8 coming from a different chr_b entry also explains the komatxt rename to ナルト（九尾）, and 208 matches \"8-koma have the most HP\".",
     "WEAKNESS": "Only 19/74 entries are non-decreasing across the five slots (e.g. chr_b[66]=[104,64,152,64,224]). Either (A) slots are per-size HP but only the sizes a character owns are meaningful and the rest is filler, or (B) my stride-4 grouping is wrong and I am reading one byte from each of five different fields that happen to share the multiple-of-8 property. Reading these as u16 gives high bytes 1,4,5,16,20,22 (not constant), which favours B for the field boundaries. Confidence PLAUSIBLE, not confirmed.",
     "FALSIFIABLE": "Naruto size-5 panel (koma.bin record 502): mine says 160 (raw 10240), harness says 152 (raw 9728), my old guess said 180 (dead). One exact u16 read decides between two live hypotheses."
   },
   "HP_SOLVED": {
     "output": "docs/research/findings/hp-all-74-characters.md",
-    "formula": "max_HP = chr_b[index][size-4] + 8 * (active \uff2a\u9b42+ sources). index = koma.bin byte 0x7 (abilityId) for battle panels. Per-size array = five u8 slots at 0x10/0x14/0x18/0x1C/0x20 (stride 4) indexed by size-4. Battle sizes are 4-8 = exactly five slots.",
+    "formula": "max_HP = chr_b[index][size-4] + 8 * (active Ｊ魂+ sources). index = koma.bin byte 0x7 (abilityId) for battle panels. Per-size array = five u8 slots at 0x10/0x14/0x18/0x1C/0x20 (stride 4) indexed by size-4. Battle sizes are 4-8 = exactly five slots.",
     "verified": "Harness cross-checked 6 populated RAM deck slots against chr_b[index][0]: six for six, with +8 on exactly the two ACTIVE characters and 0 on the four benched. Battle struct carries the chr_b index at hp_addr + 0x29.",
     "F1_ANSWER": "Naruto size-5 = 160 displayed = raw 10240. My iteration-7 prediction CONFIRMED. Both size*36 (180) and 8*(14+size) (152) REFUTED.",
-    "filler_resolved": "Iteration-7 reading (A) is CORRECT. Of 370 slots only 174 are meaningful (one per character+owned-size pair); the other 196 are filler, which is exactly why 55/74 entries looked non-monotonic. Example: chr_b[0] \u609f\u7a7a owns sizes 4-5 = [152,168,168,168,168], and RAM showed Goku active at 160 = 152+8.",
-    "192_208_attribution": "Both true. chr_b[12] = [144,160,176,192,208] is a complete ladder for a character owning all five sizes. chr_b[24] = [80,96,112,192,208] and is reached ONLY by koma records 504/505 (both \u30ca\u30eb\u30c8\uff08\u4e5d\u5c3e\uff09, sizes 7-8), so its slots 3-4 really are Naruto size-7/8 HP. HP values are shared across characters so identical arrays are common.",
+    "filler_resolved": "Iteration-7 reading (A) is CORRECT. Of 370 slots only 174 are meaningful (one per character+owned-size pair); the other 196 are filler, which is exactly why 55/74 entries looked non-monotonic. Example: chr_b[0] 悟空 owns sizes 4-5 = [152,168,168,168,168], and RAM showed Goku active at 160 = 152+8.",
+    "192_208_attribution": "Both true. chr_b[12] = [144,160,176,192,208] is a complete ladder for a character owning all five sizes. chr_b[24] = [80,96,112,192,208] and is reached ONLY by koma records 504/505 (both ナルト（九尾）, sizes 7-8), so its slots 3-4 really are Naruto size-7/8 HP. HP values are shared across characters so identical arrays are common.",
     "caveats": [
       "Cannot separate \"is leader\" from \"is currently active\" - both actives had exactly one +8 source. The +8 is confirmed, its trigger is not.",
       "slot->size rests on the structural argument plus one observed anchor (Naruto size4=144); sizes 5-8 not yet observed in RAM.",
@@ -794,7 +810,7 @@
     "CRITICAL_FOR_WATCHPOINTS": "ov00-ov09 ALL load at 0x0214CD20 - mutually exclusive, one per game mode. A RAM address in that window means different things in different modes. ov10/ov11 at 0x02172A60, ov12/ov13 at 0x021AC1C0.",
     "manifest": "jus_files/overlays/overlays.json"
   },
-  "nature_P1b_REFUTED": "Nature is NOT a per-koma-indexed table anywhere in the ROM binaries. Exhaustive: every byte offset, 3 encodings (u8 / nibble / 2-bit), across arm9.bin + all 26 bin/ files + all 14 overlays. Zero candidates. Constraint used: all 312 helper indices must share one value (owner: helpers are always \u306a\u3057) AND the 578 non-helpers must hold >=3 other values each appearing >=50 times.",
+  "nature_P1b_REFUTED": "Nature is NOT a per-koma-indexed table anywhere in the ROM binaries. Exhaustive: every byte offset, 3 encodings (u8 / nibble / 2-bit), across arm9.bin + all 26 bin/ files + all 14 overlays. Zero candidates. Constraint used: all 312 helper indices must share one value (owner: helpers are always なし) AND the 578 non-helpers must hold >=3 other values each appearing >=50 times.",
   "nature_REFRAME": "Deck-System.md says nature variants REUSE the same battle data and specials still use the base nature. So panel nature is NOT a combat property - it is deck-building only, used for deck bonuses. That means it need not sit near chr_b/chr_s at all, and only has to exist where the deck editor + deck-bonus calc run: the deckmake overlay data, or inside the .aar archives that only that mode loads.",
   "nature_remaining_ranked": [
     "1. Inside the .aar archives - InfoDeck.aar (570KB, ~130 entries) is the koma-browser data with a working parser (Binary2InfoDeckDeck); its NON-STRING fields have never been examined. Also deckmake.aar, Deck.aar.",
@@ -803,22 +819,22 @@
   ],
   "METHOD_NOTE": "THE GROUP IS THE SIGNATURE, NOT THE ELEMENT. My first nature scan used Naruto 9-panel nature pattern -> 224 candidates, all noise (in 2-bit data only 4 values exist so a 9-element equality pattern matches constantly). The 312-way invariant dropped it to zero. Harness hit the identical lesson in RAM: a single 0x50 slot matched 1167 times in 4MB, four consecutive slots at stride 0x50 was unique. A wide invariant beats a clever pattern.",
   "ADDRESSES_ARE_SESSION_LOCAL": "CRITICAL: absolute battle addresses shift between sessions - harness saw the player array at 0x021DF1D4 in one battle and 0x021DF1B4 in another (0x20 shift, same deck). Fails SILENTLY: the stale address returned 62072 from an unrelated array whose neighbours decremented by a tidy 48. Always discover via scripts/emu/find_battle_structs.py. Slot structure (portable): HP u16 +0x00, ability count +0x02, ability IDs +0x03, chr_b index +0x29, slot stride 0x50. CORRECTED 2026-08-14: +0x61C (player->opponent) IS valid after all - the earlier warning was the peer applying it to a stale base from a different session. GDB gave both structs directly: player 0x021df19c, opponent 0x021df7b8, difference exactly 0x61C, and struct +0x18 = HP confirmed live. The scanner base equals struct+0x18. In that savestate opponent HP was at 0x021DF7D0, NOT 0x021DF7F0 - watching the latter was reading garbage, which is what made the opponent side look flat. Human-Testing-Queue.md header updated with this warning.",
-  "leader_vs_active_still_open": "Harness tried 3 routes, all dead ends: (1) touching the in-battle koma grid never switches the active chr_b index (touch injection itself verified working), (2) poking HP to 0 cannot force a KO because training regen outruns the death check, (3) J Arena index 2 is local wireless multiplayer not vs-CPU - \u30e9\u30f3\u30ad\u30f3\u30b0 (index 0) is the vs-CPU ladder and is the right target. \"+8 on the active character\" now reproduces across two sessions.",
+  "leader_vs_active_still_open": "Harness tried 3 routes, all dead ends: (1) touching the in-battle koma grid never switches the active chr_b index (touch injection itself verified working), (2) poking HP to 0 cannot force a KO because training regen outruns the death check, (3) J Arena index 2 is local wireless multiplayer not vs-CPU - ランキング (index 0) is the vs-CPU ladder and is the right target. \"+8 on the active character\" now reproduces across two sessions.",
   "nature_P1c_REFUTED": "The compacted 578-entry model (non-helpers only, koma-index order) is ALSO refuted: 578-byte windows with exactly 3-4 distinct values each appearing >=80 times, u8 encoding, across all 26 bin/ files + 14 overlays + arm9.bin. Zero candidates.",
   "PERF_NOTE": "Sliding-window scans over these files: use a ROLLING HISTOGRAM (add entering byte, drop leaving byte) for O(n). The naive O(offsets x window) version got killed before finishing; the rolling version completes in seconds.",
   "nature_P1d_PLAUSIBLE": {
     "model": "panel nature = character BASE nature (chr_b/chr_s offset 0x00), OVERRIDDEN on panels whose koma.bin flags byte 0xB has bit 0x10 CLEAR",
     "why_it_explains_the_refutations": "Only 26 panels need an override; the other 864 inherit from the character. That is exactly why no per-koma nature table exists anywhere (P1b/P1c exhaustively refuted).",
-    "base_nature_candidate": "chr_b.bin offset 0x00 = {0:35, 1:22, 2:17} (74 entries); chr_s.bin offset 0x00 = {0:63, 1:67, 2:63} (193 entries). Both exactly 3-valued = \u529b/\u77e5/\u7b11 with \u306a\u3057 excluded (helpers have no entry in either file). Support split is near-perfectly even. Naruto chr_b[20], \u4e5d\u5c3e chr_b[24] and \u609f\u7a7a chr_b[0] all read 0 and all three are \u529b characters, consistent with 0=\u529b but 3 same-value samples cannot prove the mapping.",
-    "alt_flag_CONFIRMED_MEANING": "koma.bin byte 0xB bit 0x10 CLEAR marks the ALTERNATE of a same-size pair. 26 panels total (flags 0x00 x9, 0x01 x3, 0x20 x11, 0x21 x2, 0x42 x1); 25 of 26 pair with a same-character same-size sibling; 25 of the 33 duplicated-size groups have exactly ONE member alt-flagged. Naruto \u7b11 size-4 = koma record 501 is alt-flagged, its \u529b sibling 500 is not.",
-    "THE_ONE_MISSING_PIECE": "What the override RESOLVES TO. Naruto base=0 and his alternate shows \u7b11. If 0=\u529b,1=\u77e5,2=\u7b11 then that is base+2 mod 3, but one sample cannot separate \"+2 mod 3\" from \"always \u7b11\" from \"a 26-entry lookup\".",
-    "cheapest_test": "ONE data point from a character whose base nature is NOT \u529b. If a \u77e5 character alternate is \u529b, the rule is base+2 mod 3 (each nature alternates to the one it loses to). If every alternate is \u7b11 regardless of base, it is a constant. 22 battle characters read 1 at offset 0x00 and 17 read 2 - those are the discriminating ones."
+    "base_nature_candidate": "chr_b.bin offset 0x00 = {0:35, 1:22, 2:17} (74 entries); chr_s.bin offset 0x00 = {0:63, 1:67, 2:63} (193 entries). Both exactly 3-valued = 力/知/笑 with なし excluded (helpers have no entry in either file). Support split is near-perfectly even. Naruto chr_b[20], 九尾 chr_b[24] and 悟空 chr_b[0] all read 0 and all three are 力 characters, consistent with 0=力 but 3 same-value samples cannot prove the mapping.",
+    "alt_flag_CONFIRMED_MEANING": "koma.bin byte 0xB bit 0x10 CLEAR marks the ALTERNATE of a same-size pair. 26 panels total (flags 0x00 x9, 0x01 x3, 0x20 x11, 0x21 x2, 0x42 x1); 25 of 26 pair with a same-character same-size sibling; 25 of the 33 duplicated-size groups have exactly ONE member alt-flagged. Naruto 笑 size-4 = koma record 501 is alt-flagged, its 力 sibling 500 is not.",
+    "THE_ONE_MISSING_PIECE": "What the override RESOLVES TO. Naruto base=0 and his alternate shows 笑. If 0=力,1=知,2=笑 then that is base+2 mod 3, but one sample cannot separate \"+2 mod 3\" from \"always 笑\" from \"a 26-entry lookup\".",
+    "cheapest_test": "ONE data point from a character whose base nature is NOT 力. If a 知 character alternate is 力, the rule is base+2 mod 3 (each nature alternates to the one it loses to). If every alternate is 笑 regardless of base, it is a constant. 22 battle characters read 1 at offset 0x00 and 17 read 2 - those are the discriminating ones."
   },
   "chr_b_record_map": {
     "0x00": "PLAUSIBLE base nature (3 values)",
     "0x10/0x14/0x18/0x1C/0x20": "CONFIRMED per-size max HP (u8, sizes 4-8), displayed units, all multiples of 8",
     "0x24 halfword array": "NOT nature - 16-38 distinct per slot, values up to 12337, look like packed move/animation IDs",
-    "0x2C/0x2D/0x2E": "CONFIRMED percentage thresholds - every value a multiple of 5, ranges 25..100 / 0..40 / 0..30, feeding the max*pct/100 routine the harness disassembled. Almost certainly low-HP triggers for \u5e95\u529b / \u95d8\u4e89\u5fc3.",
+    "0x2C/0x2D/0x2E": "CONFIRMED percentage thresholds - every value a multiple of 5, ranges 25..100 / 0..40 / 0..30, feeding the max*pct/100 routine the harness disassembled. Almost certainly low-HP triggers for 底力 / 闘争心.",
     "0x2F": "2-value flag {0:70, 1:4}",
     "0x41": "chr_b index within the RUNTIME battle struct (not the file record) per harness disasm"
   },
@@ -838,7 +854,7 @@
     "+0x18": "current HP s16 (LDRSH)",
     "+0x41": "chr_b index",
     "+0x49": "regen rate, set per character at init",
-    "note": "0x02077DA4 does current += [+0x49]*2 clamped to max, matching the measured ~64 raw per ~2 frames if rate=32. So \u81ea\u5df1\u56de\u5fa9 and the training auto-heal share this machinery and the mode selects the rate."
+    "note": "0x02077DA4 does current += [+0x49]*2 clamped to max, matching the measured ~64 raw per ~2 frames if rate=32. So 自己回復 and the training auto-heal share this machinery and the mode selects the rate."
   },
   "damage_apply_function": {
     "core": "0x02078488 - HP = clamp(current + delta, 0, max), returns 1 alive / 0 dead. Damage is just a NEGATIVE DELTA.",
@@ -851,20 +867,20 @@
   "other_HP_writers": {
     "0x02078474": "current = max * r7 / 100 (same mov r1,#0x64 divide) - supports the chr_b +0x2C percentage reading",
     "0x02078778": "signed halve-HP idiom",
-    "0x02078604": "multiplicative HP change (smulbb then divide) - worth a look for \u5e95\u529b"
+    "0x02078604": "multiplicative HP change (smulbb then divide) - worth a look for 底力"
   },
   "NATURE_SOLVED": {
     "output": "docs/research/findings/nature-SOLVED.md; implemented in scripts/analysis/dump_koma.py resolve_natures()",
     "accessor": "0x0214E480 in the overlay disassembled as jus_files/analysis/disasm/ov5.txt; copies in arm9.txt at 0x02076F70 and 0x02078CB8",
-    "ENUM": "0 = \u529b Power, 1 = \u77e5 Knowledge, 2 = \u7b11 Laughter, 3 = \u306a\u3057 Neutral",
+    "ENUM": "0 = 力 Power, 1 = 知 Knowledge, 2 = 笑 Laughter, 3 = なし Neutral",
     "RULE": "helper (panelType 2) -> 3. battle (panelType 0) -> nib=(flags>>4)&0xF; nature=nib if nib!=3 else chr_b[abilityId*60 + 0x00]. support (panelType 1) -> chr_s[abilityId*20 + (kshapeGroup-1)*8].",
     "KEY_TRICK": "3 in the high nibble is a NO-OVERRIDE SENTINEL, not a value. Nature is COMPUTED, not stored - which is why no value-space search over files could ever find it.",
     "VERIFIED": "All 9 of Naruto koma 497-505 reproduce the owner observed table exactly (9/9).",
-    "distribution": "890 panels: \u529b 226, \u77e5 183, \u7b11 169, \u306a\u3057 312. battle(206): \u529b96/\u77e557/\u7b1153. support(372): \u529b130/\u77e5126/\u7b11116. helper(312): all \u306a\u3057. Only 32 battle panels carry an explicit override (nibbles {0:12,1:7,2:13}); all supports and helpers are nibble 3.",
+    "distribution": "890 panels: 力 226, 知 183, 笑 169, なし 312. battle(206): 力96/知57/笑53. support(372): 力130/知126/笑116. helper(312): all なし. Only 32 battle panels carry an explicit override (nibbles {0:12,1:7,2:13}); all supports and helpers are nibble 3.",
     "corollary": "chr_s offsets 0x00 AND 0x08 are per-size nature slots (support path indexes (kshapeGroup-1)*8), which is why offset 0x00 showed a near-even 3-way split - it was one of two nature columns."
   },
   "MY_ERRORS_CORRECTED": [
-    "Iteration 4 \"nature is not in koma.bin\" was WRONG. I argued Naruto size-2 (\u7b11) and size-3 (\u529b) were byte-identical except image/shape/ordinal, so no field could encode nature. The error was DISMISSING THE DIFFERING FIELDS: kshapeGroup differs and is a lookup input. Lesson: \"the differing fields are incidental\" is a claim needing evidence, not a default.",
+    "Iteration 4 \"nature is not in koma.bin\" was WRONG. I argued Naruto size-2 (笑) and size-3 (力) were byte-identical except image/shape/ordinal, so no field could encode nature. The error was DISMISSING THE DIFFERING FIELDS: kshapeGroup differs and is a lookup input. Lesson: \"the differing fields are incidental\" is a claim needing evidence, not a default.",
     "Iterations 9-10 \"exhaustively REFUTED\" was OVERSTATED. The searches were sound and there is no DEDICATED table, but they only tested dedicated tables (byte/nibble/2-bit at every offset). They never tested a nibble of an existing field plus sentinel-and-fallback. The word \"exhaustive\" claimed more coverage than the method had.",
     "Iteration 10 P1d mechanism REFUTED: the test is high-nibble==3, not bit 0x10 clear. My bit test caught nibbles 0 and 2 (25 records) and missed nibble 1 (7 records) - close for the wrong reason. 32 override panels, not 26. The SHAPE of P1d (base + override) was right."
   ],
@@ -898,14 +914,14 @@
       "piece.bin (per-series grouping)",
       "nature matchup multiplier (~1.5x, hardcoded in damage path)",
       "helper facing coverage (one neighbour or a line)",
-      "deck-level nature bonuses / \u53cb\u60c5-\u52aa\u529b-\u52dd\u5229"
+      "deck-level nature bonuses / 友情-努力-勝利"
     ]
   },
   "combat_phase_entry_points": {
     "scope": "combat code = arm9.bin + overlay ov06 ONLY (byte-verified resident). bl 0x020783CC appears 8x in ov06, 0x in arm9.bin.",
     "nature_in_combat": "RESOLVED, and it is NOT the multiplier. 0x021540AA (ov06, Thumb) calls the nature predicate 0x02078CB8 purely to choose an ASSET FILENAME: predicate true -> \"battle/chr/??_?_??_b.aar\" with VRAM allowance 0x005F2000; false -> \"battle/chr/??_?_??.aar\" with 0x005F1000. So a panel with an explicit nature override loads the _b sprite archive - correct for the alternate-nature variants having different art. No damage arithmetic at the site. This is the ONLY use of the predicate in ov06 (confirmed by my own Thumb-aware scan). See docs/research/findings/c0-nature-in-battle.md",
     "damage_apply": "0x02078488 core (HP = clamp(current+delta,0,max)); public entry 0x020783CC; list variant 0x020783DC. 8 call sites in ov06 listed in state. Delta arrives ALREADY COMPUTED, so resistance is upstream - trace the producers of r1.",
-    "hp_writers": "0x02078474 (max*pct/100), 0x02078778 (halve), 0x02078604 (smulbb multiplicative - relevant to \u5e95\u529b)",
+    "hp_writers": "0x02078474 (max*pct/100), 0x02078778 (halve), 0x02078604 (smulbb multiplicative - relevant to 底力)",
     "method_note": "Static value search finds TABLES. It cannot find FUNCTIONS. Reach for disassembly sooner in this phase - the koma sprint lost several iterations to that lesson.",
     "MY_ERROR_4": "\"In arm9.bin\" does NOT mean \"runs in this mode\". arm9 is always-resident and mode-agnostic; only the CALLER identifies the mode. Use scripts/find_callers.py (peer) BEFORE assuming a function participates in a phase.",
     "METHOD_LESSON_SHARPENED": "Value-space search cannot find a computation, AND text-grep cannot find an ABSENCE. \"Zero callers\" is only meaningful once you have the COMPLETE binary set - grepping the 9 dumped disasm files would have missed it, and overlays sharing a load address make \"which file is this in?\" ambiguous. The absence of a caller is as informative as the presence of one.",
@@ -916,7 +932,7 @@
     "damage_bypass_SUGGESTIVE_NOT_PROVEN": "Across 14736 breakpoint hits on the HP-apply function 0x02078488, EVERY delta was +128 (+2.0 displayed) from one Thumb caller - the training auto-heal, once per character per frame. ZERO negative deltas. BUT the peer could not confirm a melee hit landed during that window (the constant per-frame heal pins HP at max, so a damage dip is invisible), so this is SUGGESTIVE that melee damage bypasses 0x02078488, not proof.",
     "HP_APPLY_HAS_14_CALLERS_NOT_8": "My Thumb-aware scan found SIX Thumb blx callers of 0x020783CC that the earlier ARM-only list missed: 0x02150DD8, 0x021513D8, 0x021513EE, 0x021514E6, 0x021515B2, 0x02151636 - plus the 8 known ARM sites. All 14 in ov06, none elsewhere. VALIDATED AGAINST HARDWARE: the peer GDB captured lr = 0x02150ddd, and my thumb-blx at 0x02150DD8 has return address 0x02150DDC | 1 = 0x02150DDD. Exact match, so 0x02150DD8 is the training auto-heal caller they hit 14736 times.",
     "melee_damage_lead": "The FIVE remaining new Thumb sites (0x021513D8, 0x021513EE, 0x021514E6, 0x021515B2, 0x02151636) are the best candidates for melee damage. The peer 14736-hit observation saw deltas from only ONE caller and suggested melee bypasses 0x02078488; a simpler explanation is that melee comes through one of these five previously-unknown sites and none fired because no melee hit landed in that window.",
-    "TRIANGLE_CONFIRMED_IN_CODE": "0x02160944-0x021609B8 (ov06, ARM) loops over characters comparing nature at runtime struct +0x13 via chain [r2]->+0x118->+0x56C. Pairs tested: (mine 0, theirs 2), (mine 1, theirs 0), (mine 2, theirs 1) - i.e. every pair is \"theirs beats mine\" under Power>Knowledge>Laughter>Power. This CONFIRMS FROM INSTRUCTIONS both the enum mapping 0=\u529b/1=\u77e5/2=\u7b11 and the triangle direction. It accumulates a COUNT into [r7,#0x60], so it is a counter not a multiplier. Likely consumer: the SP-gain passive \"increase SP vs opposing nature\" (owner category 36), a deck-level nature bonus, or an AI heuristic. Whoever reads [r7,#0x60] settles it.",
+    "TRIANGLE_CONFIRMED_IN_CODE": "0x02160944-0x021609B8 (ov06, ARM) loops over characters comparing nature at runtime struct +0x13 via chain [r2]->+0x118->+0x56C. Pairs tested: (mine 0, theirs 2), (mine 1, theirs 0), (mine 2, theirs 1) - i.e. every pair is \"theirs beats mine\" under Power>Knowledge>Laughter>Power. This CONFIRMS FROM INSTRUCTIONS both the enum mapping 0=力/1=知/2=笑 and the triangle direction. It accumulates a COUNT into [r7,#0x60], so it is a counter not a multiplier. Likely consumer: the SP-gain passive \"increase SP vs opposing nature\" (owner category 36), a deck-level nature bonus, or an AI heuristic. Whoever reads [r7,#0x60] settles it.",
     "nature_read_sites_unexamined": "Nature is read at 10 sites in ov06 via struct +0x13. Two clusters explained; still unexamined: 0x021548F4, 0x0215DD7C, 0x0215F594, 0x02160260, 0x02163DFC, 0x021672D8",
     "new_tool": "scripts/decomp/find_callers.py - cross-binary caller scan handling ARM BL and Thumb BL/BLX, validated against the live GDB lr observation. Fixes the connectivity blind spot from C2.",
     "THUMB_WARNING": "ov6.txt mis-decodes Thumb regions and all of C0 evidence is in Thumb code. Read raw overlay bytes, not the text listing. TWO separate wrong conclusions this session came from tools that silently handled only ARM."
@@ -964,8 +980,8 @@
     "4. Cross-check against the 8 known ov6 damage sites; if the nature branch feeds any of them, that is the resistance/multiplier path the peer cannot find from the delta side.",
     "NOTE: ov6.txt disassembly is ARM-oriented; this site is THUMB, so the existing listing may mis-decode it. Verify against ov06.bin bytes directly."
   ],
-  "training_menu": "Peer found an in-battle training menu (START during a deck-maker test battle): row1 COM\u8a2d\u5b9a \u306a\u306b\u3082\u3057\u306a\u3044/\u6226\u3046 (defaults to DO NOTHING), row2 \u81ea\u52d5\u56de\u5fa9 ON/OFF (the auto-heal), row3 \u76f8\u624b\u306e\u5c5e\u6027 \u529b/\u77e5/\u7b11 (SETS THE OPPONENT NATURE), row4 back to editor, row5 retry. A cycles a value. Row 3 is a direct lever for the nature-damage question - fix everything else, cycle the three natures, measure damage 3x. WARNING: while the menu is open ALL bridge input goes to the menu, not the battle, so plans report ok:true while every attack misses - and RIGHT presses may silently change menu values.",
-  "regen_confirmed": "My regen tip confirmed twice: struct +0x49 (= hp_addr +0x31) read 1, and poking it to 0 stopped healing dead. Cleaner route is the menu \u81ea\u52d5\u56de\u5fa9 OFF, which makes damage cumulative (verified 10240 -> 8704 from two hits, held). Subtlety: menu OFF leaves +0x49 still reading 1, so the setting gates whether the regen ROUTINE RUNS rather than zeroing the rate - two mechanisms, same observable. Arithmetic closes: rate 1 -> 1*2=2 displayed -> *64 = 128 raw, matching the +128 deltas.",
+  "training_menu": "Peer found an in-battle training menu (START during a deck-maker test battle): row1 COM設定 なにもしない/戦う (defaults to DO NOTHING), row2 自動回復 ON/OFF (the auto-heal), row3 相手の属性 力/知/笑 (SETS THE OPPONENT NATURE), row4 back to editor, row5 retry. A cycles a value. Row 3 is a direct lever for the nature-damage question - fix everything else, cycle the three natures, measure damage 3x. WARNING: while the menu is open ALL bridge input goes to the menu, not the battle, so plans report ok:true while every attack misses - and RIGHT presses may silently change menu values.",
+  "regen_confirmed": "My regen tip confirmed twice: struct +0x49 (= hp_addr +0x31) read 1, and poking it to 0 stopped healing dead. Cleaner route is the menu 自動回復 OFF, which makes damage cumulative (verified 10240 -> 8704 from two hits, held). Subtlety: menu OFF leaves +0x49 still reading 1, so the setting gates whether the regen ROUTINE RUNS rather than zeroing the rate - two mechanisms, same observable. Arithmetic closes: rate 1 -> 1*2=2 displayed -> *64 = 128 raw, matching the +128 deltas.",
   "first_clean_damage": "With auto-heal off the CPU landed 768 raw = 12.000 displayed, twice identically - the first uncontaminated cumulative damage figure from the harness.",
   "C3_ROOT_CAUSE": {
     "output": "docs/research/findings/c3-hitbox-priority-round2.md; Battle-Engine-Map.md hitbox-priority section annotated",
@@ -987,24 +1003,24 @@
   ],
   "NATURE_DOES_NOT_SCALE_DAMAGE": {
     "verdict": "CONFIRMED by two independent methods.",
-    "peer_controlled_test": "Deterministic savestate (COM\u8a2d\u5b9a \u6226\u3046, \u81ea\u52d5\u56de\u5fa9 OFF) reproducing bit-identically 3/3 (hits 192, 2304 raw every time). Poked ONLY the opponent nature byte at runtime struct +0x13, verified it took, re-measured: nature 0 \u529b -> 192, 2304; nature 1 \u77e5 -> 192, 2304; nature 2 \u7b11 -> 192, 2304. Identical to the raw unit, ratio 1.00.",
+    "peer_controlled_test": "Deterministic savestate (COM設定 戦う, 自動回復 OFF) reproducing bit-identically 3/3 (hits 192, 2304 raw every time). Poked ONLY the opponent nature byte at runtime struct +0x13, verified it took, re-measured: nature 0 力 -> 192, 2304; nature 1 知 -> 192, 2304; nature 2 笑 -> 192, 2304. Identical to the raw unit, ratio 1.00.",
     "my_static_agreement": "Matches my C0 reading that the only in-battle nature reader accumulates a COUNT into [r7,#0x60] rather than scaling anything, and that the other in-battle use merely selects a _b.aar sprite.",
     "CAVEAT_ON_RECORD": "This proves the runtime byte is not consulted AT DAMAGE TIME. It does NOT rule out nature feeding a multiplier computed at CHARACTER LOAD - exactly the pattern already documented for resistances, where rewriting the ability array mid-battle also changed damage by exactly zero. A load-time path stays untested and poking cannot test it."
   },
-  "LESSON_appealing_ratio": "The peer nearly reported a x1.5 nature multiplier: 12.000 incoming with opponent \u529b vs 18.000 with \u7b11, and 18/12 = 1.5 matching the owner independent guess exactly. It was TWO DIFFERENT CPU ATTACKS, not one move under two natures - the determinism check exposed it when a reload produced 3.0 and 36.0, values absent from both earlier runs. LESSON: an appealing ratio between two UNCONTROLLED numbers is not a measurement, and a number that matches an independent guess deserves MORE scrutiny, not less. Same trap as my chr_s \"too clean to be noise\" 3-way split, which I resisted only because the abilityId sharing made it impossible.",
+  "LESSON_appealing_ratio": "The peer nearly reported a x1.5 nature multiplier: 12.000 incoming with opponent 力 vs 18.000 with 笑, and 18/12 = 1.5 matching the owner independent guess exactly. It was TWO DIFFERENT CPU ATTACKS, not one move under two natures - the determinism check exposed it when a reload produced 3.0 and 36.0, values absent from both earlier runs. LESSON: an appealing ratio between two UNCONTROLLED numbers is not a measurement, and a number that matches an independent guess deserves MORE scrutiny, not less. Same trap as my chr_s \"too clean to be noise\" 3-way split, which I resisted only because the abilityId sharing made it impossible.",
   "harness_is_deterministic": "DOWNGRADED by the peer: reloading a savestate WITHIN a session reproduces bit-identically, but CROSS-LAUNCH reproducibility is NOT established - a fresh launch gave zero hits and a different active fighter in the HUD. I had recorded this as the determinism criterion being met; that was too strong.",
   "JOIN_VERIFIED": {
     "output": "docs/research/findings/chr_b-join-verified.md",
     "checks": [
       "Self-consistency: every chr_b index is reached by battle panels from EXACTLY ONE series - 0 of 74 span more than one. A scrambled join would mix series.",
-      "Two live RAM identifications match exactly: chr_b[0]=\u609f\u7a7a base 152 (observed 160=152+8), chr_b[12]=\u30eb\u30d5\u30a3 base 144 (observed 152=144+8), chr_b[20]=\u30ca\u30eb\u30c8 base 144 (observed 144, benched).",
+      "Two live RAM identifications match exactly: chr_b[0]=悟空 base 152 (observed 160=152+8), chr_b[12]=ルフィ base 144 (observed 152=144+8), chr_b[20]=ナルト base 144 (observed 144, benched).",
       "The apparent discrepancy is explained by the peer OWN second finding (slot != active fighter), not by a bad join."
     ],
     "inapplicable_check": "battle-chars-passives.json gave ZERO name overlap - but it uses English uppercase romanisations while komatxt.bin is Japanese. Inapplicable, not negative. Joining those datasets would need a romanisation table that does not exist."
   },
   "MAX_HP_IS_DYNAMIC": "The peer watched one slot max HP go 160.0 -> 176.0 mid-battle (+16 = two more +8 sources coming online). So in max = chr_b[idx][size-4] + 8*sources, SOURCES IS DYNAMIC DURING PLAY, not fixed at battle start. Fits 0x020784B8 (add-to-max, clamp 0x4000) firing when a source activates. Any comparison of max HP across time needs this caveat; the BASE table is unaffected.",
   "SLOT_IS_NOT_ACTIVE": "A battle slot is a DECK SLOT in deck order, NOT \"the active character\". Which fighter is out is tracked elsewhere (candidate flags at struct +0x0F / +0x47, mapping NOT established). Every earlier \"P active\" label rested on that character happening to be both slot 0 and active when first measured. Consequence: a fixed address reliably holds \"deck slot N\", never \"the active character\".",
-  "gdb_run_INCONCLUSIVE": "Breakpoint on 0x02078488 with \u81ea\u52d5\u56de\u5fa9 OFF: zero applies, zero damage, because no hit landed. Explicitly NOT evidence for the bypass reading - zero applies is equally consistent with \"melee bypasses\" and \"no damage happened\". Recorded as a wasted connection, not a finding.",
+  "gdb_run_INCONCLUSIVE": "Breakpoint on 0x02078488 with 自動回復 OFF: zero applies, zero damage, because no hit landed. Explicitly NOT evidence for the bypass reading - zero applies is equally consistent with \"melee bypasses\" and \"no damage happened\". Recorded as a wasted connection, not a finding.",
   "C6_plan": [
     "Peer request and the cheapest remaining path: the 8 ARM script-effect handlers take their delta from a data record via ldrsh r1,[r1,#4], so THE RECORD FORMAT IS THE DAMAGE TABLE.",
     "1. Decode the 8 ARM sites and find what produces r1 - the record pointer source.",
@@ -1015,13 +1031,13 @@
   "RESISTANCE_IS_FLAT": {
     "verdict": "CONFIRMED by the peer with the two-move design we specified. The reduction is FLAT (-2), NOT a multiplier.",
     "data": "Same attacker (Goku chr_b[0]), same buttons, two moves. B: 6.000 unresisted vs 4.000 on Luffy. DOWN+B: 5.000 vs 3.000. Difference constant at -2.0; ratio NOT constant (0.6667 vs 0.6000). A multiplier preserves the ratio; a flat subtraction preserves the difference.",
-    "unresisted_target": "chr_b index 70 = \u30b3\u30de\u30ec\u30c3\u30c9 (Koma Red, a mascot). Empty ability array (count read, not assumed). Its four ID slots are all zero. Base HP 104; the peer read 112.0, i.e. one +8 source active.",
+    "unresisted_target": "chr_b index 70 = コマレッド (Koma Red, a mascot). Empty ability array (count read, not assumed). Its four ID slots are all zero. Base HP 104; the peer read 112.0, i.e. one +8 source active.",
     "external_validation": "6.000 is exactly what the OWNER independently reported a punch doing - validating the whole chain (HP scale, address derivation, dip-minimum reading) against a human observation predating the tooling.",
     "consequence_for_the_queue_formula": "damage = damage1/5 + (tier-2) having an ADDITIVE term now looks LESS suspicious. Still worth re-deriving against u16, but the additive shape matches.",
     "NOT_established": "That the -2 comes specifically from ability 0x09. The two targets are DIFFERENT CHARACTERS and could differ in a per-character defence value. Blunt resistance is likely, not proven. The clean test (one target with and without the ability) is impossible from runtime since resistance resolves at load.",
     "cross_session_caveat": "The 4.000/3.000 came from an earlier battle than the 6.000/5.000. Same attacker and moves, but reproducibility is only established within a session."
   },
-  "I_CHECKED_FOR_A_DEFENCE_FIELD": "Compared chr_b[70] (ability-free) against chr_b[12] (Luffy) across all 60 bytes. Four fields differ by exactly 2 (0x31, 0x33, 0x35, 0x37) but they are the HIGH BYTES of u16 values at 0x30/0x32/0x34/0x36, not standalone stats - read as u16 they are 536,537,538,539 for Luffy and 0,0,0,0 for \u30b3\u30de\u30ec\u30c3\u30c9. No other column looks like a flat defence. This WEAKLY supports attributing the -2 to ability 0x09 rather than a per-character stat - weakly, because absence of an obvious field is not proof and I compared only two records.",
+  "I_CHECKED_FOR_A_DEFENCE_FIELD": "Compared chr_b[70] (ability-free) against chr_b[12] (Luffy) across all 60 bytes. Four fields differ by exactly 2 (0x31, 0x33, 0x35, 0x37) but they are the HIGH BYTES of u16 values at 0x30/0x32/0x34/0x36, not standalone stats - read as u16 they are 536,537,538,539 for Luffy and 0,0,0,0 for コマレッド. No other column looks like a flat defence. This WEAKLY supports attributing the -2 to ability 0x09 rather than a per-character stat - weakly, because absence of an obvious field is not proof and I compared only two records.",
   "C6_PARTIAL": {
     "output": "docs/research/findings/c6-damage-delta-partial.md",
     "what_the_8_ARM_sites_are": "Cases in ONE dispatcher, all identical: ldr r0,[r5,#0x1B4] (target pointer); mov r1,r4 (delta); bl 0x020783CC; b <switch exit>. So r5+0x1B4 is the target and r4 is the delta, set up BEFORE the switch rather than per-case.",
@@ -1030,7 +1046,7 @@
     "VERIFICATION_TARGET": "Goku B = 6.000 (384 raw), DOWN+B = 5.000 (320 raw) against an ability-free target. UP+B is a MULTI-HIT string (1.0, 2.0, 1.0, 1.0), so any table must distinguish per-hit values from string totals - several records or a repeat count. Damage is authored in DISPLAYED units (apply sites do lsl #6), so a real table should hold literal 6 and 5.",
     "OVER_FIT_I_BACKED_OUT_OF": "The four u16s at chr_b +0x30..+0x36 looked like base+0,1,2,3 (Naruto 362-365, Luffy 536-539). Across all 74: only 15 sequential, 8 all-zero, 51 NEITHER (Goku is 337,0,338,0). So they are four independent IDs that happen to be contiguous for some characters. Failed to match the non-zero count to owned panel sizes. Recorded as an unresolved field, not a pattern."
   },
-  "peer_positioning_solved": "What unblocked their measurement, neither clever: (1) use the PASSIVE CPU (COM\u8a2d\u5b9a \u306a\u306b\u3082\u3057\u306a\u3044, the training default) so positions are fixed - they had been fighting the \u6226\u3046 AI wandering for rounds, and the DEFAULT was the better experiment; (2) SWEEP the approach distance instead of reasoning about it - 0/20 frames too far, 40/60/80/100 all landed 2 hits at 6.000 each, 140/180/240 walked past facing away. Wide window, identical damage, so no frame-perfect timing needed. Sweeping nine values took four minutes after rounds of trying to deduce it.",
+  "peer_positioning_solved": "What unblocked their measurement, neither clever: (1) use the PASSIVE CPU (COM設定 なにもしない, the training default) so positions are fixed - they had been fighting the 戦う AI wandering for rounds, and the DEFAULT was the better experiment; (2) SWEEP the approach distance instead of reasoning about it - 0/20 frames too far, 40/60/80/100 all landed 2 hits at 6.000 each, 140/180/240 walked past facing away. Wide window, identical damage, so no frame-perfect timing needed. Sweeping nine values took four minutes after rounds of trying to deduce it.",
   "C6b_STATUS_OPCODES": {
     "output": "docs/research/findings/c6b-poison-burn-opcodes.md",
     "FINDING": "ov06 has a family of script-opcode handlers sharing the prologue push{...}; mov r2,#ID; ...; bl 0x0215986C (validator). Nine found, and their opcode IDs are EXACTLY the status-effect enum 0x19-0x22.",
@@ -1042,7 +1058,7 @@
     "not_established": "Two other sites read the same ldrsh ...,#4 shape (0x02159274, 0x021592D0) but sit in functions my prologue scan did not classify - possibly a sibling family (different target, or SP rather than HP). Not claimed."
   },
   "MEASURED_DAMAGE_TABLE": {
-    "source": "peer sweep, Goku vs \u30b3\u30de\u30ec\u30c3\u30c9 (chr_b[70], empty ability array), 4 attempts per row from an identical savestate",
+    "source": "peer sweep, Goku vs コマレッド (chr_b[70], empty ability array), 4 attempts per row from an identical savestate",
     "table": "B: 2 hits, 6.0 each (384 raw). forward+B: 2 hits, 5.0 (320). back+B: 2 hits, 6.0 (384) - same as B because pressing away TURNS the character rather than selecting a move. up+B: 6 hits, string 1.0/2.0/1.0/1.0/2.0 (64,128). down+B: 2 hits, 5.0 (320). X: 1 hit, 2.0 (128). down+X: 1 hit, 2.0. Y: 6 hits, string 2.0/2.0/4.0/2.0/2.0 (128,256). A and all A-variants, R, L, up+X: ZERO.",
     "A_IS_JUMP": "Every A variant deals zero damage - A is JUMP, B is ATTACK. Settles the control mapping empirically; prior work had assumed it.",
     "STRUCTURAL_CONSTRAINT_FOR_C6": "up+B and Y are MULTI-HIT STRINGS (6 dips from 4 attempts, small per-hit values). So a move-damage record cannot be one number per move - the format must express per-hit values plus a hit count, or use several records per move.",
@@ -1120,7 +1136,7 @@
     "route_forward": "Tier-2 D0.3 headless Ghidra provides exactly the missing capability - data-flow analysis resolves register-offset stores by tracking what the offset register held. Cheap alternative belongs to the harness: +0x134 goes non-zero one frame before the drop, so BISECTING that frame names the writer in a logarithmic number of runs."
   },
   "DAMAGE_NUMBERS_CORRECTED": {
-    "the_error": "EVERY damage figure recorded before 2026-08-14 was NET OF ONE FRAME of the +2.0 training auto-heal, which fires in the same frame as the hit. The pending field reads 512 (8.000) on a hit whose observed dip was 384 (6.000). Confirmed three ways: the field value, r4=512 at the load, r1=512 at the drain call, then re-measured with \u81ea\u52d5\u56de\u5fa9 OFF giving 512 raw per hit cumulatively.",
+    "the_error": "EVERY damage figure recorded before 2026-08-14 was NET OF ONE FRAME of the +2.0 training auto-heal, which fires in the same frame as the hit. The pending field reads 512 (8.000) on a hit whose observed dip was 384 (6.000). Confirmed three ways: the field value, r4=512 at the load, r1=512 at the drain call, then re-measured with 自動回復 OFF giving 512 raw per hit cumulatively.",
     "corrected_targets": "B = 8.000 (measured), DOWN+B = 7.000 (measured), X = 4.000 (INFERRED as listed+2.0, not measured). Multi-hit strings need per-hit accounting nobody has done.",
     "flat_minus_2_SURVIVES": "A constant offset on both sides cancels in a difference, which is exactly why the two-move design was robust to an error neither session spotted. Differences still exactly -2.0; ratios still non-constant.",
     "MY_CLAIM_WEAKENED": "I repeated that the owner independent \"a punch does 6\" validated the whole measurement chain. It matches the NET figure - the owner was also watching training mode with the heal on. It still validates the HP scale, address derivation and dip-reading method; it does NOT independently confirm raw move damage. An external check is only as strong as the conditions it shares with your own measurement."
@@ -1154,7 +1170,7 @@
   "K3b_CONSOLIDATION": {
     "output": "docs/research/Character-State-Struct.md consolidated; findings/k3-chr_b-to-battle-copy.md refined",
     "what": "Merged the K3 copy map into Character-State-Struct.md, filling part of the 0x0000-0x003F region that doc lists as \"Unknown\" plus two fields in the 0x0040-0x0069 gap.",
-    "TWO_STRONG_CANDIDATES": "chr_b[0x02] -> battle +0x10 holds 5 values 2..6, which under the existing damage formula term (tier-2) gives 0..4 - a strong candidate for the \"tier\" in floor(damage1/5)+(tier-2). And chr_b[0x01] -> battle +0x11 holds 3 values {1:11, 2:56, 3:7}, a strong candidate for WEIGHT CLASS since the game has \u91cd\u91cf\u7d1a heavyweight (ability 0x17) and \u8efd\u91cf\u7d1a lightweight (0x18). Both PLAUSIBLE.",
+    "TWO_STRONG_CANDIDATES": "chr_b[0x02] -> battle +0x10 holds 5 values 2..6, which under the existing damage formula term (tier-2) gives 0..4 - a strong candidate for the \"tier\" in floor(damage1/5)+(tier-2). And chr_b[0x01] -> battle +0x11 holds 3 values {1:11, 2:56, 3:7}, a strong candidate for WEIGHT CLASS since the game has 重量級 heavyweight (ability 0x17) and 軽量級 lightweight (0x18). Both PLAUSIBLE.",
     "regen_is_uniformly_1": "CORRECTION to my last-wake claim. Restricted to owned sizes (174 records) the regen field is {1:174} - uniformly 1, no exceptions. The odd values 4,5,16,20,22 I attributed to it came from FILLER slots for unowned sizes. The field ID holds; my account of the odd values did not. Also means the init moveq r3,#0x4 default never fires for a real panel, and the harness live rate of 1 is universal.",
     "iteration20_overfit_EXPLAINED": "The four u16s at chr_b +0x30/+0x32/+0x34/+0x36 that looked like base+0,1,2,3 are actually chr_b[0x30] (a single halfword) followed by a PER-SIZE ARRAY at chr_b[0x32] stride 2. Never four parallel fields - one standalone ID plus an array, read through the wrong frame. Goku 337,0,338,0 is that array with filler in unowned slots. SAME SHAPE OF ERROR as the physics window: reading an array through the wrong stride makes it look like unrelated fields.",
     "doc_errors_annotated": "Character-State-Struct.md cites 0x021DF1D5 as \"Player 1 HP\" - that is the HIGH BYTE of a u16 (the 1/4-scale reading) AND a session-local address. Annotated with the correction and a pointer to find_battle_structs.py. Also added a struct-identity caveat: that doc derives from GDB on 0x021E2A7C+ (wifi mode) while my table is static from the init function; plausibly the same type, not proven - same as Battle-Engine-Map open question B10.",
@@ -1163,8 +1179,8 @@
   "RESISTANCE_ATTRIBUTION_STRENGTHENED": {
     "output": "docs/research/findings/defence-candidates-ruled-out.md",
     "the_caveat_it_closes": "The harness measured resistance as a flat -2 but could not prove the cause: \"the two targets are different characters and may also differ in a per-character defence value\". They could not test it from runtime because resistance resolves at character load.",
-    "THE_TEST": "The K3 init copy gives exactly two per-character scalar candidates: chr_b[0x01] -> battle +0x11 and chr_b[0x02] -> battle +0x10. Both are IDENTICAL between the two damage targets: \u30b3\u30de\u30ec\u30c3\u30c9 (70) has [0x01]=2 [0x02]=5, \u30eb\u30d5\u30a3 (12) has [0x01]=2 [0x02]=5. Neither can produce a 2-point difference.",
-    "result": "The flat -2 is attributable to ability 0x09 (\u6253\u6483\u8010\u6027\uff35\uff30 blunt resistance), which Luffy has and \u30b3\u30de\u30ec\u30c3\u30c9 with an empty ability array does not. Moves my earlier wording from WEAKLY SUPPORTED (\"absence of an obvious defence field is not proof\") to WELL SUPPORTED (the two fields that exist are equal).",
+    "THE_TEST": "The K3 init copy gives exactly two per-character scalar candidates: chr_b[0x01] -> battle +0x11 and chr_b[0x02] -> battle +0x10. Both are IDENTICAL between the two damage targets: コマレッド (70) has [0x01]=2 [0x02]=5, ルフィ (12) has [0x01]=2 [0x02]=5. Neither can produce a 2-point difference.",
+    "result": "The flat -2 is attributable to ability 0x09 (打撃耐性ＵＰ blunt resistance), which Luffy has and コマレッド with an empty ability array does not. Moves my earlier wording from WEAKLY SUPPORTED (\"absence of an obvious defence field is not proof\") to WELL SUPPORTED (the two fields that exist are equal).",
     "stated_precisely": "This rules out the two per-character scalars the INIT FUNCTION COPIES. A defence value living somewhere the init does not copy would still be missed.",
     "neither_tracks_HP": "[0x02] mean size-4 HP by value: 2->118.0, 3->124.0, 4->130.5, 5->129.0, 6->128.8 - rises then plateaus, and [0x02]=5 spans HP 64..224. [0x01]: 1->110.5, 2->133.0, 3->105.1 - NON-MONOTONIC with 2 holding 56 of 74. That shape fits a 3-way category with a dominant default, i.e. light/medium/heavy weight class. Both stay PLAUSIBLE; neither is a stat proxy.",
     "formula_consistency_check": "Whichever side supplies tier in floor(damage1/5)+(tier-2), it is CONSTANT across the two measured moves (same attacker, same defender): B=8.000 and DOWN+B=7.000 differ by exactly 1, so the whole difference sits in floor(damage1/5) and the two moves damage values differ by about 5. Consistent with the formula shape. Cannot distinguish attacker-side (Goku [0x02]=3 -> damage1 in 35..39) from defender-side (targets [0x02]=5 -> damage1 in 25..29) without the per-move damage value, which lives in move script data nobody has located."
@@ -1191,7 +1207,7 @@
     "chr_b_0x02_now_unknown": "REFUTED as tier, returns to unknown. NEW LEAD from the doc: it says walk speed is in chr_b.bin as a \"statC field, threshold/tier-based\" - worth testing against [0x02] five values."
   },
   "MUTUAL_VALIDATION_74_of_74": "The doc has a full chr_b index -> character -> series -> classId -> jpower-block table derived from the ARM9 string table at 0x0924B0. My join goes a different route (koma abilityId -> chr_b index, names from komatxt, series from Koma.NameTable). SERIES CODE AGREES ON ALL 74 ROWS - two independent derivations of the same index space with zero disagreement.",
-  "NARROW_CORRECTION_chr_b_24": "The doc lists chr_b[24] as Kakashi (na_b_05) and chr_b[21] as Kyuubi Naruto. THREE independent lines say chr_b[24] is Kyuubi Naruto: (1) koma records 504/505 sizes 7-8 carry abilityId 24; (2) komatxt names those panels \u30ca\u30eb\u30c8\uff08\u4e5d\u5c3e\uff09; (3) chr_b[24] per-size HP slots 3/4 are 192,208 - exactly the owner observed Naruto size-7/8 HP, where chr_b[21] gives 176,192. So the NAME-WITHIN-SERIES ordering is off for these rows while the series column is right. Likely cause: the doc assumes the 0x020924B0 string-table index equals the chr_b index, and Battle-Engine-Map already DEMOTED that assumption (its 6-bit-id = classId claim was refuted on a range mismatch), so the alignment was never verified. Correction banner added.",
+  "NARROW_CORRECTION_chr_b_24": "The doc lists chr_b[24] as Kakashi (na_b_05) and chr_b[21] as Kyuubi Naruto. THREE independent lines say chr_b[24] is Kyuubi Naruto: (1) koma records 504/505 sizes 7-8 carry abilityId 24; (2) komatxt names those panels ナルト（九尾）; (3) chr_b[24] per-size HP slots 3/4 are 192,208 - exactly the owner observed Naruto size-7/8 HP, where chr_b[21] gives 176,192. So the NAME-WITHIN-SERIES ordering is off for these rows while the series column is right. Likely cause: the doc assumes the 0x020924B0 string-table index equals the chr_b index, and Battle-Engine-Map already DEMOTED that assumption (its 6-bit-id = classId claim was refuted on a range mismatch), so the alignment was never verified. Correction banner added.",
   "COLLISION_DATA_EXTRACTED": {
     "output": "docs/research/findings/collision-data-extracted.md; new tool scripts/analysis/extract_alar.py; Battle-Engine-Map hitbox-priority open question annotated",
     "HOW_FOUND": "Went to open state.bin (flagged by the sweep) and the docs-first procedure led somewhere better: docs/articles/specs/summary.md is a WHOLE-ROM FILE CLASSIFICATION I had never read. It lists chr/ChrBin.aar/chr/col/*, chr/ai/*, chr/ai/move/*, chr/shot/*, chr/effect/* - paths I did not know existed because I had only inventoried bin/.",
@@ -1603,9 +1619,24 @@
     "P146c: a runtime index that divides with NO REMAINDER validates a base and a stride simultaneously. (0xAC8-0x648)/0x40 = 18 exactly; a wrong base or stride would almost certainly not divide evenly. One measurement, two claims.",
     "P146c: before asking the runtime side to sweep inputs, check whether the address is even on the path. The three entity-constructor call sites sit in map-item and object-control code, so an attack-input sweep against them could only ever return zero -- which is exactly what 06 measured.",
     "P146c: census-named neighbours bracketing an unnamed function is enough to redirect a search, but not enough to claim the function's module. Kept as PLAUSIBLE while still acting on it.",
-    "P146c: the partner session's empirical zeros corroborated two of my static findings for free -- the destructor memset showed up as elements reading back zero, and the stack-temp xy argument showed up as a DTCM pointer. Ask for field dumps even when the fields are expected to be empty."
+    "P146c: the partner session's empirical zeros corroborated two of my static findings for free -- the destructor memset showed up as elements reading back zero, and the stack-temp xy argument showed up as a DTCM pointer. Ask for field dumps even when the fields are expected to be empty.",
+    "P147: a function's identity can be read straight off the allocator's __FILE__/__FUNCTION__ args at the call site -- the strongest attribution available under static-only rules, and stronger than the module-range proximity the projectile section had been relying on. Look for it before reaching for ranges.",
+    "P147: a dispatch table's arity can be pinned without any bound check in the code -- the next data object after it (here the \"BattleObjShot.cpp\" string at 0x021728D0) is the upper bound. 0x02172864..0x021728CF = 0x6C = 27 entries exactly."
   ],
   "open_questions_for_owner": [
     "Note-kind bucketing: the engine keeps at most 7 simultaneous \"notes\" per character, and 7 of the 17 kinds share one slot (kinds 6,7,8,9,10,14,15) so they should be mutually exclusive in play. Does starting one of those effects visibly cancel another?"
-  ]
+  ],
+  "objshot_subsystem": {
+    "manager_ctor": "0x0216A7BC (Battle_ObjShotManCreate, BattleObjShot.cpp:280) -- CONFIRMED by its own __FILE__/__FUNCTION__ args, not proximity",
+    "manager_size": "0x3FD4",
+    "singleton": "0x021729EC",
+    "manager_fields": "+0x00 active list head, +0x10 free list head, +0x18 resource obj (0x02026F94, id 0x88000), +0x1C element array, +0x1E7C..0x3FD4 unaccounted",
+    "element": "0x6C bytes, 72 of them; link node at offset 0",
+    "frame_pass": "0x0216AF04 (registered via 0x02028384) -- NOT YET READ",
+    "element_init": "0x0216ACC8",
+    "spawn_entry": "0x0216A944 (two arms, selected by byte at [[r1+0x10]+slot*32] == 0xF)",
+    "kind_dispatch_table": "0x02172864, 27 entries (kinds 0x00-0x1A), bounded by the \"BattleObjShot.cpp\" string at 0x021728D0",
+    "kinds_without_entity": "0x01, 0x05, 0x0E, 0x17, 0x18, 0x19 (per 0x0216A910)",
+    "chain_reconfirmed": "0x0216B3D8 and 0x0216B740 are byte-identical leaves proving entity+0x10 -> record, record+0x5C -> element, element+0x0C -> position"
+  }
 }

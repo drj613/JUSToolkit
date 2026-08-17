@@ -82,10 +82,15 @@ def plausible(hs, base, site):
             return 'push'
         if 0xBD00 <= h <= 0xBDFF:             # pop {..., pc}
             return 'pop'
-    for j in (i - 2, i + 2):                  # another call adjacent
-        if 0 <= j < len(hs) - 1 and 0xF000 <= hs[j] <= 0xF7FF:
-            if 0xE800 <= hs[j + 1] <= 0xFFFF:
-                return 'call'
+    # Another call nearby. Iteration 147 found this window was ±2 halfwords
+    # while the marker scan above is ±8 -- so two REAL blx sites 14 bytes (7
+    # halfwords) apart could not see each other, and both scored NONE. The two
+    # ov6 manager constructors are exactly that case. Same window as above.
+    for j in range(max(0, i - 8), min(len(hs) - 1, i + 8)):
+        if j == i:                            # don't count ourselves
+            continue
+        if 0xF000 <= hs[j] <= 0xF7FF and 0xE800 <= hs[j + 1] <= 0xFFFF:
+            return 'call'
     return None
 
 
@@ -173,7 +178,14 @@ def main():
                                           'functions.json')))['functions']
         zero = {int(f['addr'], 16): f for f in fns
                 if f.get('mode') == 'arm' and not f.get('callers')}
+        # Iteration 147: this used to require plausible() and silently drop
+        # everything else, so the printed count read as a census when it was a
+        # floor. Impossible edges (invalid_edge) are still dropped -- those are
+        # decode-level impossibilities, not heuristic doubt. But a hit that only
+        # fails the neighbourhood heuristic now goes in its own bucket, because
+        # both ov6 manager constructors are real and score NONE.
         found = {}
+        unscored = {}
         rejected = 0
         for region in REGIONS:
             try:
@@ -181,20 +193,38 @@ def main():
             except Exception:
                 continue
             for site, tgt, kind in hits:
-                if tgt in zero and plausible(hs, base, site):
-                    if invalid_edge(kind, zero[tgt].get('mode'), region,
-                                    zero[tgt]['provenance']):
-                        rejected += 1
-                        continue
-                    found.setdefault(tgt, []).append((region, site, kind))
+                if tgt not in zero:
+                    continue
+                if invalid_edge(kind, zero[tgt].get('mode'), region,
+                                zero[tgt]['provenance']):
+                    rejected += 1
+                    continue
+                bucket = found if plausible(hs, base, site) else unscored
+                bucket.setdefault(tgt, []).append((region, site, kind))
+        only_unscored = {t: v for t, v in unscored.items() if t not in found}
         print(f'{len(zero)} ARM functions have no ARM caller; '
-              f'{len(found)} of them have an ACCEPTED Thumb caller '
-              f'({rejected} edges rejected as bl-to-ARM or phantom-overlay)\n')
+              f'{len(found)} of them have a Thumb caller that also passes the '
+              f'neighbourhood heuristic '
+              f'({rejected} edges rejected as bl-to-ARM or phantom-overlay)')
+        print(f'PLUS {len(only_unscored)} more whose only Thumb callers score '
+              f'plausibility NONE -- these are NOT dismissed. The heuristic '
+              f'wants a 46c0/b5xx/bdxx marker or another call within 8 '
+              f'halfwords; real code can lack all four. Confirm individually '
+              f'with --to and a Thumb disassembly.')
+        print(f'FLOOR {len(found)} / CEILING {len(found) + len(only_unscored)} '
+              f'caller-less ARM functions actually reached from Thumb.\n')
         for tgt in sorted(found):
             f = zero[tgt]
             print(f'  {tgt:#010x} ({f["provenance"]}, size {f.get("size")}):')
             for region, site, kind in found[tgt][:3]:
                 print(f'       <- {region} {site:#010x} {kind}')
+        if only_unscored:
+            print('\n  --- plausibility NONE, unconfirmed either way ---')
+            for tgt in sorted(only_unscored):
+                f = zero[tgt]
+                print(f'  {tgt:#010x} ({f["provenance"]}, size {f.get("size")}):')
+                for region, site, kind in only_unscored[tgt][:3]:
+                    print(f'       <- {region} {site:#010x} {kind} [NONE]')
         return 0
 
     ap.error('pass --to ADDR, --audit, or --selftest')

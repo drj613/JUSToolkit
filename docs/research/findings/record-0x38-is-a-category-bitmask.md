@@ -111,7 +111,7 @@ practice** — which explains why the tail's elaborate bit-shuffling produces no
 | `arg2`/`arg3` pass through the constructor unchanged | **CONFIRMED_STATIC** — `0x020834F0`/`0x020834F8` then `0x02083554`/`0x02083548` |
 | The argument numbering is right | **CONFIRMED_STATIC** — both frames' arithmetic matches the offsets each function reads |
 | `arg3` takes single-bit values | **CONFIRMED_STATIC** — `0x8000`, `0x4000`, `0x800`, and `0` |
-| `record+0x38` is a category or layer mask | **PLAUSIBLE** — four data points, three distinct bits; no consumer read yet |
+| `record+0x38` is a category or layer mask | **CONFIRMED_STATIC** *(upgraded iteration 142)* — four consumer sites `tst` it against `0x4000`/`0x8000` in `0x02081DDC`; see `category-mask-confirmed-selects-an-axis.md` |
 | Any ov6 site sets `arg2`'s low nibble | **REFUTED** — two pass `0x100`, the third `bic`s the nibble off |
 | The installer's `orrne`/`0x400000` branch is dead | **not claimed** — `0x0208363C`'s `r2` is untraced |
 | `record+0x3C` at the two `0x100` sites is `arg5 \| 0x20C000 \| 0x30000` | **CONFIRMED_STATIC** — `0x100 & 0x00FCFFFF` is non-zero |

@@ -1,10 +1,10 @@
 {
-  "iteration": 132,
+  "iteration": 133,
   "phase": "combat",
   "current_task": "name the pool-node owner from its size and field shape",
   "queue": [
-    "read 0x0204B0C8 (36B, the parent's +0x18) -- if it allocates and copies, +0x18=Clone holds at both levels and P129's 'notify' label falls; settles the P132 conflict",
-    "read 0x0206D010 (20B) and 0x0206CFA4 (28B) -- the other two overridden slots, naming +0x00 and +0x04",
+    "extend alloc_census.py to scan 0x0201A228 as well as the 0x0201A21C veneer, reporting which entry each site used -- the one change that could materially grow the census",
+    "read 0x0201B244 (36B, 40 callers) to confirm operator delete and retire a PLAUSIBLE",
     "dump the base vtables set by 0x02021960 and 0x020240A4 and diff the whole 4-level chain -- would name every overridden slot",
     "add a --line column to alloc_census.py now that r3 is known to be __LINE__ (docstring already corrected in P131)",
     "read 0x020240A4 -- the grandparent copy ctor; should end the hierarchy and add more members",
@@ -155,7 +155,8 @@
     "P129: read 0x02024C3C -- a dirty-flag OR-setter on byte +0x24, vtable +0x18 notify fires only on clear->set, and |0x30 is set silently. Bit 0x01 marks a THREE-WORD vector at +0x0C/+0x10/+0x14 (two independent sites; 0x02024BE4 resets it as one 0xC-byte unit). This strengthens P128: the negation flipped ONE axis of three = a single-axis mirror. Verified 0x02051890 = memcpy(dst=r0,src=r1,n=r2).",
     "P130: queued bits task FAILED (+0x24 unattributable: 1838 ROM-wide hits, 64 in the library region, 3 near the setter and all inside it). Delivered instead: the arm9 library/game boundary is 0x0206ADB8 -- 62 tagged arm9 sites, lowest is 0x0206ADB8, ZERO below it, so everything under it is middleware and unnameable by census. CommonEffect's class is 0x84 bytes (0x0206C590 + 0x0206CFD8, same file+size). The facing chain is bracketed inside CommonEffect.h code (PLAUSIBLE). Lead: lsl #0x19/lsrs #0x1f isolates bit 0x40 of a +0x24 byte at 0x020219F4 and 0x02021C4C, bases untraced.",
     "P131: read CreateImpFunc 0x0206C57C + CloneMain 0x0206CFC0. CORRECTED the allocator signature for all 732 sites -- r3 is __LINE__, not a tag (CommonHSV_Create's five sites give 45,66,67,72,73: increasing with two adjacent pairs); alloc_census.py docstring fixed. The 0x84 CommonEffect object is a 3-deep class: vtable ptr at +0x00 set by each level, parent adds a byte at +0x78 (vtable 0x0209C30C), derived adds a halfword at +0x80 (vtable 0x0209E114); parent copy bumps a counter at 0x020A0C80.",
-    "P132: dumped and diffed vtables 0x0209C30C (parent) and 0x0209E114 (derived), 44 slots each. Exactly 3 differ: +0x00, +0x04, +0x18; the derived +0x18 IS 0x0206CFC0 = CloneMain, so slot +0x18 = the virtual Clone, named with zero disassembly. Two inherited slots are Thumb (+0x08, +0x10). Hierarchy is FOUR deep (0x02021960 -> 0x020240A4 -> 0x02015DD4 -> 0x0206CFC0); 0x020240A4 builds a subobject at +0x6C. P130's bit-0x40 site 0x020219F4 is inside 0x02021960, this family's base copy ctor. CONFLICT recorded with P129's '+0x18 = notify' label."
+    "P132: dumped and diffed vtables 0x0209C30C (parent) and 0x0209E114 (derived), 44 slots each. Exactly 3 differ: +0x00, +0x04, +0x18; the derived +0x18 IS 0x0206CFC0 = CloneMain, so slot +0x18 = the virtual Clone, named with zero disassembly. Two inherited slots are Thumb (+0x08, +0x10). Hierarchy is FOUR deep (0x02021960 -> 0x020240A4 -> 0x02015DD4 -> 0x0206CFC0); 0x020240A4 builds a subobject at +0x6C. P130's bit-0x40 site 0x020219F4 is inside 0x02021960, this family's base copy ctor. CONFLICT recorded with P129's '+0x18 = notify' label.",
+    "P133: named all three overridden vtable slots -- +0x00 destructor, +0x04 deleting destructor (via 0x0201B244 = operator delete), +0x18 Clone (confirmed at BOTH levels; parent allocates 0x80, derived 0x84, corroborating the +0x80 halfword). MAJOR: 0x0201A21C is only a 12-byte LINKER VENEER; the real allocator is 0x0201A228 (72B, size split at 0x100, manager [global+0x1A4]), and it DISCARDS the file/function/line args (r1/r2 clobbered immediately, r3 never read). Census unaffected (call-site evidence) but it scans only the veneer. Six sampled direct callers pass size only, all below 0x0206ADB8 -- P130's boundary is a COMPILATION boundary. Dropped P129's 'notify' label."
   ],
   "stuck": {},
   "required_reading_for_koma_tasks": [
@@ -213,7 +214,7 @@
     "L/R sticker bindings are per-deck fields not yet located in RAM",
     "Is HP computed as size*k at runtime, or tabulated per panel? Naruto 4-koma=144=4*36; if size*k then size5=180, size6=216, size7=252, size8=288. One reading settles it."
   ],
-  "notes": "Iteration 132 done. Slot +0x18 = virtual Clone, established by DIFFING the parent/derived vtables (only 3 of 44 slots differ) and looking the differing entry up in the census. CommonEffect's hierarchy is four deep: 0x02021960 -> 0x020240A4 -> 0x02015DD4 -> 0x0206CFC0. Two vtable slots are Thumb (+0x08, +0x10). OPEN CONFLICT: P129 called vtable +0x18 a 'notify' (inferred from call position, never read); here it is Clone. Reading 0x0204B0C8 is the cheapest way to settle it. P130's bit-0x40 lead now sits in this family's base class. Conventional-offset list: +0x08, +0x10, +0x18, +0x20, +0x24, +0x48.",
+  "notes": "Iteration 133 done. TWO corrections to long-held foundations: (1) 0x0201A21C is a 12-byte LINKER VENEER, not the allocator -- the real one is 0x0201A228; (2) the __FILE__/__FUNCTION__/__LINE__ args are DISCARDED at runtime (r1/r2 clobbered, r3 unread), so the tagging is a debug macro left in a retail build. The census stays valid because its evidence is the call site. Census blind spot to fix: it scans only the veneer, never 0x0201A228 directly. P130's boundary is a COMPILATION boundary -- two entry points, one allocator. CommonEffect's override set is fully named: +0x00 destructor, +0x04 deleting destructor, +0x18 Clone. P129's 'notify' label is dropped. Conventional-offset list: +0x08, +0x10, +0x18, +0x20, +0x24, +0x48.",
   "last_wake": "2026-08-14",
   "wakeup_default_seconds": 1800,
   "consecutive_no_progress_wakes": 0,
@@ -529,7 +530,14 @@
     "vtable_thumb_slots": "+0x08 = 0x020102D1 and +0x10 = 0x020119E5 -- odd addresses, so Thumb targets 0x020102D0 and 0x020119E4; inherited unchanged",
     "CommonEffect_hierarchy": "FOUR levels: 0x02021960 (496B, base copy ctor, 9 callers) -> 0x020240A4 (528B) -> 0x02015DD4 (56B) -> 0x0206CFC0 CloneMain",
     "subobject_0x6C": "0x020240A4 constructs an embedded member at +0x6C via 0x0201CF08, then 0x02010970(obj+0x6C, 4)",
-    "func_0x02021BB8": "496 bytes, 1 caller, same size and shape as 0x02021960 -- likely operator= (PLAUSIBLE, not read); contains the other bit-0x40 site 0x02021C4C"
+    "func_0x02021BB8": "496 bytes, 1 caller, same size and shape as 0x02021960 -- likely operator= (PLAUSIBLE, not read); contains the other bit-0x40 site 0x02021C4C",
+    "allocator_real_entry": "0x0201A228 -- the REAL allocator, 72 bytes, size split at 0x100, manager from [global+0x1A4]",
+    "allocator_veneer": "0x0201A21C is a 12-byte LINKER VENEER: ldr ip,[pc]; bx ip; .word 0x0201A228. Not the allocator.",
+    "allocator_tags_are_dead": "0x0201A228 clobbers r1 at 0x0201A22C and r2 at 0x0201A230 and never reads r3, so __FILE__/__FUNCTION__/__LINE__ are computed per call site and DISCARDED at runtime (debug macro in a retail build). Census evidence is the call site, so it is unaffected.",
+    "vtable_slot_0x00": "destructor -- 0x0206D010: base dtor 0x02015ED8, returns this",
+    "vtable_slot_0x04": "deleting destructor -- 0x0206CFA4: base dtor 0x02015ED8, then 0x0201B244 (operator delete, PLAUSIBLE), returns this",
+    "vtable_slot_0x18_parent": "0x0204B0C8 -- Clone: allocates 0x80, copy-constructs via 0x02015E14, returns the new object",
+    "func_0x02015ED8": "the parent/base destructor, 48 bytes, 2 callers (both CommonEffect dtor variants)"
   },
   "combat_phase_spillover": [
     "status-effect enum = 10 values, contiguous IDs 0x19-0x22 (Shock/Freeze/Burn/Confusion/Poison/Judgment/Paralysis/Blindness/Speed-Down/Battle+Support Seal). Likely an immunity BITMASK on character state struct.",
@@ -1396,7 +1404,14 @@
     "P132: an ODD function pointer in a vtable means a Thumb target. Do not treat it as a corrupt word; subtract 1.",
     "P132: my own inferred LABELS are the weakest links in the chain and the ones to attack first. 'Notify' for vtable +0x18 came from call position, never from reading the target, and it now conflicts with hard evidence. Label slots by offset until the target is read.",
     "P132: a stale lead can be revived by a later structural fact rather than new searching -- P130's untraced bit-0x40 site resolved the moment I knew 0x02021960 was this family's base copy ctor. Re-check parked leads after every hierarchy discovery.",
-    "P132: the token diff caught a benign edit (a repeated +0x18 replaced by 'that slot'). Verify what the guard flags rather than trusting or dismissing it -- both a real drop and a stylistic one look identical in the count."
+    "P132: the token diff caught a benign edit (a repeated +0x18 replaced by 'that slot'). Verify what the guard flags rather than trusting or dismissing it -- both a real drop and a stylistic one look identical in the count.",
+    "P133: I used 0x0201A21C as 'the allocator' for ~100 iterations without ever disassembling it. It is 12 bytes and a veneer. Read the thing you cite, however obvious it seems -- especially a foundation every other finding rests on.",
+    "P133: `ldr ip,[pc]; bx ip; .word target` is a linker long-branch veneer. Recognise it before attributing behaviour to the address; the semantics live at the target.",
+    "P133: a wrong runtime model can coexist with correct findings. The tags are discarded at runtime, yet every census name is still valid -- because the evidence was the CALL SITE, not the callee. Know which end of a call your evidence comes from.",
+    "P133: allocation SIZES from two different levels of a hierarchy cross-check a member offset for free. 0x80 (parent clone) + a halfword at +0x80 = 0x84 (derived clone), all read independently.",
+    "P133: the C++ ABI gives away the first two vtable slots -- two near-identical bodies where the second adds a free call are the destructor and the deleting destructor. Look for that pair at +0x00/+0x04 in any vtable.",
+    "P133: a mis-identified helper can hide a whole second code path. Because 0x0201A21C looked like the allocator, the census never scanned 0x0201A228 -- a blind spot that existed for ~100 iterations and is invisible until you read the veneer.",
+    "P133: the mandatory edit pass timed out at 120s on an 8KB doc. Verify the file is unchanged before retrying, and allow ~420s -- a partial in-place edit would be far worse than a slow one."
   ],
   "open_questions_for_owner": [
     "Note-kind bucketing: the engine keeps at most 7 simultaneous \"notes\" per character, and 7 of the 17 kinds share one slot (kinds 6,7,8,9,10,14,15) so they should be mutually exclusive in play. Does starting one of those effects visibly cancel another?"

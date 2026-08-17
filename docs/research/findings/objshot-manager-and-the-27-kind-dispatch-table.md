@@ -192,6 +192,65 @@ index `[r6+0x1D] - 0xC8`; `0xDC` and up → `[element+0x22]` with index `- 0xDC`
 `+0x22` and `+0x24` are sound-id banks, and `0xC8`/`0xDC` partition the parameter
 block's byte `0x1D` into three sound modes.
 
+## Reachability — CONFIRMED_STATIC, and a tool blind spot
+
+`query.py xrefs-to 0x0216A7BC` returns **zero** references — no branch, no literal
+load, no `functions.json` caller. The constructor looks dead. It is not. The xref
+index has a gap.
+
+Three sweeps over `arm9` plus all 15 overlays:
+
+1. **Raw data-word search** for `0x0216A7BC` little-endian: **0 hits**. The constructor
+   is not in an init table. (Control: `0x0216AF04` gives exactly **1** hit, in
+   `ov06.bin` at file offset `121760` — the literal pool entry the constructor loads.
+   The search works.)
+2. **ARM `bl` decode** of every word: **0 sites** for `0x0216A7BC` and **0** for
+   `Battle_ObjCtrlManCreate` `0x02168B88`. (Control: `Battle_MoveManCreate`
+   `0x02082A38` gives exactly **1** site, `arm9 0x020833D0`, encoding `0xEBFFFD98`.)
+3. **Thumb `BL`/`BLX(1)` decode** at 2-byte alignment: **1 site each.**
+
+```
+0x0214D818: f01b e9b6  blx #0x02168b88   ; Battle_ObjCtrlManCreate
+0x0214D81C: ldr r1, [pc, #0x108]         ; = 0x0214D928
+0x0214D81E: ldr r2, [r1, #0x0]
+0x0214D820: mov r1, #0x43
+0x0214D822: lsl r1, r1, #2               ; 0x43 << 2 = 0x10C
+0x0214D824: str r0, [r2, r1]             ; -> battle root +0x10C
+
+0x0214D826: f01c efca  blx #0x0216a7bc   ; Battle_ObjShotManCreate
+0x0214D82A: ldr r1, [pc, #0xfc]          ; = 0x0214D928
+0x0214D82C: mov r2, #0x11
+0x0214D82E: ldr r3, [r1, #0x0]
+0x0214D830: lsl r2, r2, #4               ; 0x11 << 4 = 0x110
+0x0214D832: str r0, [r3, r2]             ; -> battle root +0x110
+```
+
+Both sites are **Thumb code in `ov6`**, 14 bytes apart in a single battle-init routine.
+Each stores its manager pointer into the battle root through the global root pointer at
+**`0x0214D928`**:
+
+| Manager | Battle-root slot |
+|---------|------------------|
+| ObjCtrl (`0x02168B88`) | `+0x10C` |
+| ObjShot (`0x0216A7BC`) | `+0x110` |
+
+Both slots sit inside the battle root's known `0x170` bytes — a consistency check, not
+a coincidence. Two BLX pairs 14 bytes apart, landing on two independently-named manager
+constructors, each followed by a coherent pointer-store sequence, rules out
+data-misread-as-code.
+
+**The blind spot:** `xrefs.json` does not record Thumb `BLX(1)` → ARM call sites. A
+`query.py xrefs-to` result of "0 references" on an ARM function does **not** mean
+unreachable — it means no *ARM* caller. This compounds the already-recorded hazard that
+`callers` double-counts. `thumb_disasm.py`'s own docstring notes that iterations 95–96
+hit this wall with `Battle_CharaCreate`'s sole caller — this is the second confirmed
+instance and the first time the cause has been named. Any past claim of "0 callers,
+therefore a function pointer" or "therefore vestigial" needs re-checking against a
+Thumb sweep.
+
+The ObjShot manager **is** constructed on every battle init. It can be reached from the
+battle root at `+0x110`, not only through the singleton `0x021729EC`.
+
 ## Open questions
 
 1. **`0x2158` bytes of the manager are unaccounted.** Elements end at `+0x1E7C`; the

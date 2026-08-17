@@ -1,8 +1,10 @@
 {
-  "iteration": 147,
+  "iteration": 147.5,
   "phase": "combat",
-  "current_task": "READ 0x0216AF04 (760 bytes) -- the obj-shot per-frame pass, registered via 0x02028384. Highest-value next step in this module: it drives all 72 elements and will name the lifetime/position fields.",
+  "current_task": "RE-CHECK the seven vestigial systems and 0x0207E864 against a Thumb BLX(1) sweep -- the P147b blind spot means 'no ARM caller' was mistaken for 'unreachable'. HIGH priority: this may retract published claims.",
   "queue": [
+    "RE-CHECK the seven vestigial systems and 0x0207E864 against a Thumb BLX(1) sweep -- the P147b blind spot means 'no ARM caller' was mistaken for 'unreachable'. HIGH priority: this may retract published claims.",
+    "PATCH the Thumb BLX(1) blind spot -- either extend xrefs.json's branch index or add a thumb-callers mode to query.py, so 'xrefs-to' stops silently under-reporting. find_thumb_callers.py may already do part of this; check it.",
     "READ 0x0216AF04 (760 bytes) -- the obj-shot per-frame pass, registered via 0x02028384. Highest-value next step in this module: it drives all 72 elements and will name the lifetime/position fields.",
     "READ 0x0216EEF4 -- shared by kinds 0x00/0x0F/0x15/0x16; tells us whether those four are stubs or a real default handler. Then 0x0216B4F4 (kinds 0x01/0x03/0x04).",
     "ACCOUNT for the 0x2158 unexplained bytes of the obj-shot manager (elements end at +0x1E7C, manager is 0x3FD4). search-imm 0x1e7c is ROM-wide zero, so nothing addresses the boundary with a literal. Not divisible by 72.",
@@ -54,7 +56,8 @@
     "read 0x02076D00 -- table at [deck+0x38], stride 0x18, indexed from two signed bytes at +0x8/+0x9",
     "RE-AUDIT every map claim on char+0xNNN above 0x200 -- player-slot fields reached via +0x1b4",
     "B11 IS A HARNESS QUESTION: read [[char+0x1a8]+0x10]+0xE8 on a landed hit.",
-    "D0.3 Ghidra import -- BLOCKED, needs the user's go-ahead"
+    "D0.3 Ghidra import -- BLOCKED, needs the user's go-ahead",
+    "READ the ov6 Thumb battle-init routine around 0x0214D7F0-0x0214D840 -- it constructs ObjCtrl and ObjShot back to back and fills battle-root slots +0x10C/+0x110; likely constructs the other managers too, giving a full battle-root slot map."
   ],
   "done": [
     "K1-koma-data-survey",
@@ -667,7 +670,10 @@
     "objshot_kind_table": "0x02172864, 27 entries for kinds 0x00-0x1A; upper bound is the \"BattleObjShot.cpp\" string at 0x021728D0",
     "objshot_resource_id": "0x88000 (manager+0x18, vtable slot 0xA0)",
     "objshot_default_lifetime": "0x1E = 30 frames (element+0x18 when [params+6] is zero, 0x0216ADA4)",
-    "objshot_ctor_line": "0x118 = 280 (BattleObjShot.cpp __LINE__)"
+    "objshot_ctor_line": "0x118 = 280 (BattleObjShot.cpp __LINE__)",
+    "objshot_manager_root_slot": "battle root +0x110 (0x11 << 4), stored at ov6 0x0214D832",
+    "objctrl_manager_root_slot": "battle root +0x10C (0x43 << 2), stored at ov6 0x0214D824",
+    "battle_root_global_ptr": "0x0214D928 (ov6 Thumb init routine)"
   },
   "combat_phase_spillover": [
     "status-effect enum = 10 values, contiguous IDs 0x19-0x22 (Shock/Freeze/Burn/Confusion/Poison/Judgment/Paralysis/Blindness/Speed-Down/Battle+Support Seal). Likely an immunity BITMASK on character state struct.",
@@ -1621,7 +1627,9 @@
     "P146c: census-named neighbours bracketing an unnamed function is enough to redirect a search, but not enough to claim the function's module. Kept as PLAUSIBLE while still acting on it.",
     "P146c: the partner session's empirical zeros corroborated two of my static findings for free -- the destructor memset showed up as elements reading back zero, and the stack-temp xy argument showed up as a DTCM pointer. Ask for field dumps even when the fields are expected to be empty.",
     "P147: a function's identity can be read straight off the allocator's __FILE__/__FUNCTION__ args at the call site -- the strongest attribution available under static-only rules, and stronger than the module-range proximity the projectile section had been relying on. Look for it before reaching for ranges.",
-    "P147: a dispatch table's arity can be pinned without any bound check in the code -- the next data object after it (here the \"BattleObjShot.cpp\" string at 0x021728D0) is the upper bound. 0x02172864..0x021728CF = 0x6C = 27 entries exactly."
+    "P147: a dispatch table's arity can be pinned without any bound check in the code -- the next data object after it (here the \"BattleObjShot.cpp\" string at 0x021728D0) is the upper bound. 0x02172864..0x021728CF = 0x6C = 27 entries exactly.",
+    "P147b: query.py xrefs-to reporting 0 references does NOT mean unreachable -- xrefs.json misses Thumb BLX(1)->ARM calls. Always run a Thumb sweep before calling an ARM function vestigial or function-pointer-only. Use a positive control (a target you KNOW has a caller) to prove the sweep works before trusting a zero.",
+    "P147b: reciprocity with the runtime validator paid off immediately -- checking that my own requested address was actually on the path turned up a bigger result than the sweep would have, plus a tool blind spot. Verify reachability BEFORE asking for a run, every time."
   ],
   "open_questions_for_owner": [
     "Note-kind bucketing: the engine keeps at most 7 simultaneous \"notes\" per character, and 7 of the 17 kinds share one slot (kinds 6,7,8,9,10,14,15) so they should be mutually exclusive in play. Does starting one of those effects visibly cancel another?"
@@ -1637,6 +1645,17 @@
     "spawn_entry": "0x0216A944 (two arms, selected by byte at [[r1+0x10]+slot*32] == 0xF)",
     "kind_dispatch_table": "0x02172864, 27 entries (kinds 0x00-0x1A), bounded by the \"BattleObjShot.cpp\" string at 0x021728D0",
     "kinds_without_entity": "0x01, 0x05, 0x0E, 0x17, 0x18, 0x19 (per 0x0216A910)",
-    "chain_reconfirmed": "0x0216B3D8 and 0x0216B740 are byte-identical leaves proving entity+0x10 -> record, record+0x5C -> element, element+0x0C -> position"
+    "chain_reconfirmed": "0x0216B3D8 and 0x0216B740 are byte-identical leaves proving entity+0x10 -> record, record+0x5C -> element, element+0x0C -> position",
+    "reachability": "CONFIRMED -- Thumb blx at ov6 0x0214D826; manager pointer stored to battle root +0x110 via global root ptr 0x0214D928",
+    "objctrl_sibling": "Battle_ObjCtrlManCreate 0x02168B88 called by Thumb blx at ov6 0x0214D818; stored to battle root +0x10C"
+  },
+  "TOOL_BLIND_SPOT_thumb_blx": {
+    "severity": "HIGH -- may invalidate past reasoning",
+    "what": "xrefs.json's branch index does not record Thumb BLX(1) -> ARM call sites. query.py xrefs-to on an ARM function returning '0 references' means 'no ARM caller', NOT 'unreachable'.",
+    "how_found": "P147b: 0x0216A7BC reported 0 refs but is called by Thumb blx at ov6 0x0214D826; 0x02168B88 by ov6 0x0214D818.",
+    "controls_used": "raw data-word search finds 1 hit for 0x0216AF04 (ov06.bin+121760); ARM bl decode finds 1 site for Battle_MoveManCreate 0x02082A38 (arm9 0x020833D0, 0xEBFFFD98). Both controls positive, so the sweeps work.",
+    "prior_instance": "thumb_disasm.py docstring: iterations 95-96 hit this on Battle_CharaCreate's sole caller. Second instance; first time the cause is named.",
+    "action_required": "Re-check every claim of the form '0 callers therefore function pointer' or 'therefore vestigial' with a Thumb sweep -- notably the seven vestigial systems and 0x0207E864.",
+    "method": "Decode halfword pairs h1 in 0xF000-0xF7FF with h2 in 0xE800-0xEFFF (BLX->ARM) or 0xF800-0xFFFF (BL->Thumb), at 2-byte alignment, per region base."
   }
 }

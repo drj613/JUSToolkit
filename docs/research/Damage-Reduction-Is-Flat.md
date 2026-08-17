@@ -105,6 +105,16 @@ mid-battle changes damage by exactly zero, because resistance is resolved when
 the character loads (see `HP-And-Damage-Runtime-Findings.md` §2c). A load-time
 route would be needed.
 
+**Update 2026-08-17 — the cached-bitset route was tried and it fails.**
+`Ability-Bitset-Is-Not-Resistance.md` pokes the bitset at `entity+0x128` rather
+than the ability array, on one target, so there is no cross-character confound.
+All 32 bits, one at a time: only bit 4 (Auto-Guard) changes blunt damage taken,
+and it drives it to zero. Bit 9 (blunt resistance) changes it by exactly nothing,
+as do blunt weakness, slash resistance and status resistance. The instrument is
+demonstrably live, so this is a real null. **The attribution above therefore stays
+unproven, and a per-character defence value is now the leading explanation rather
+than a caveat.**
+
 **Cross-session caveat:** the 4.000 and 3.000 figures come from an earlier battle
 against Luffy, not from the same battle as the 6.000 and 5.000. Same attacker and
 same moves, but not the same session, and savestate reproducibility is only

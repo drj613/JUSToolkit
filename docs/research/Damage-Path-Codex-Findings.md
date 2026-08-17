@@ -115,6 +115,19 @@ not:
 3. Conversely, **set** bit `0x200` on the ability-free dummy (コマレッド,
    `chr_b[70]`) and confirm its damage taken drops by 2.0.
 
+**Run 2026-08-17 — see `Ability-Bitset-Is-Not-Resistance.md`.** Steps 1 and 3
+both came back negative. The bitset is exactly as described here (Goku reads
+`0x00008080` for abilities `[7, 15]`), and it *is* consulted during combat —
+setting bit 4, Auto-Guard, makes the target take zero damage. But bit `0x200` on
+the ability-free dummy does not reduce blunt damage by 2.0, or by anything at
+all, and neither do blunt weakness or slash resistance. The mechanism described
+below is real; it just isn't where resistance is applied.
+
+One correction: `entity + 0x56C = char_struct` does not hold as a subtraction —
+it puts the opponent's entity inside the player's deck array. Derive the entity
+as `char_struct = hp_block − 0x18`, then find the object holding a pointer to
+`char_struct + 0x10`.
+
 Either direction settles it. Note `entity` here is the object at
 `char_struct − 0x56C`-ish level; use the resolved `r6`/entity chain from
 `Nature-System-Consolidated.md` and the element work rather than assuming.

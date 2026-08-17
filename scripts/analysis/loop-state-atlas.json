@@ -1,9 +1,10 @@
 {
-  "iteration": 134,
+  "iteration": 135,
   "phase": "combat",
   "current_task": "name the pool-node owner from its size and field shape",
   "queue": [
-    "sweep the 403 newly-visible DIRECT allocator sites for large allocations in the library region -- untagged, but size + call site can still identify a manager",
+    "read the six 0x80 constructors (0x0202B4A8, 0x02015D70, 0x0203ABD4, 0x020445F4, 0x0202B520, 0x02015E14) and record the vtable each installs at +0x00 -- settles overloads vs sibling classes",
+    "resolve the 83 direct sites with no resolved size, to test whether 0xE4 really is the untagged ceiling",
     "read 0x0201B244 (36B, 40 callers) to confirm operator delete and retire a PLAUSIBLE",
     "dump the base vtables set by 0x02021960 and 0x020240A4 and diff the whole 4-level chain -- would name every overridden slot",
     "add a --line column to alloc_census.py now that r3 is known to be __LINE__ (docstring already corrected in P131)",
@@ -157,7 +158,8 @@
     "P131: read CreateImpFunc 0x0206C57C + CloneMain 0x0206CFC0. CORRECTED the allocator signature for all 732 sites -- r3 is __LINE__, not a tag (CommonHSV_Create's five sites give 45,66,67,72,73: increasing with two adjacent pairs); alloc_census.py docstring fixed. The 0x84 CommonEffect object is a 3-deep class: vtable ptr at +0x00 set by each level, parent adds a byte at +0x78 (vtable 0x0209C30C), derived adds a halfword at +0x80 (vtable 0x0209E114); parent copy bumps a counter at 0x020A0C80.",
     "P132: dumped and diffed vtables 0x0209C30C (parent) and 0x0209E114 (derived), 44 slots each. Exactly 3 differ: +0x00, +0x04, +0x18; the derived +0x18 IS 0x0206CFC0 = CloneMain, so slot +0x18 = the virtual Clone, named with zero disassembly. Two inherited slots are Thumb (+0x08, +0x10). Hierarchy is FOUR deep (0x02021960 -> 0x020240A4 -> 0x02015DD4 -> 0x0206CFC0); 0x020240A4 builds a subobject at +0x6C. P130's bit-0x40 site 0x020219F4 is inside 0x02021960, this family's base copy ctor. CONFLICT recorded with P129's '+0x18 = notify' label.",
     "P133: named all three overridden vtable slots -- +0x00 destructor, +0x04 deleting destructor (via 0x0201B244 = operator delete), +0x18 Clone (confirmed at BOTH levels; parent allocates 0x80, derived 0x84, corroborating the +0x80 halfword). MAJOR: 0x0201A21C is only a 12-byte LINKER VENEER; the real allocator is 0x0201A228 (72B, size split at 0x100, manager [global+0x1A4]), and it DISCARDS the file/function/line args (r1/r2 clobbered immediately, r3 never read). Census unaffected (call-site evidence) but it scans only the veneer. Six sampled direct callers pass size only, all below 0x0206ADB8 -- P130's boundary is a COMPILATION boundary. Dropped P129's 'notify' label.",
-    "P134: extended alloc_census.py to scan BOTH allocator entries (veneer 0x0201A21C + direct 0x0201A228): 732 -> 1135 sites. Answered P133's open question NO -- 0 of 403 direct sites carry a real source filename vs 572 of 732 veneer sites, so the tagged/untagged split is clean. Direct rows now reported UNTAGGED (their 'names' were stale registers; <0x020a0c34> is P131's instance counter). BUG FOUND: the ARM pass had no size plausibility bound (only Thumb did) -- 0x020462EC reported 0x2096568 (34MB); bounded both at 0x100000 and widened the selftest. Regression: 659 old rows vs 659 new veneer rows, diff empty."
+    "P134: extended alloc_census.py to scan BOTH allocator entries (veneer 0x0201A21C + direct 0x0201A228): 732 -> 1135 sites. Answered P133's open question NO -- 0 of 403 direct sites carry a real source filename vs 572 of 732 veneer sites, so the tagged/untagged split is clean. Direct rows now reported UNTAGGED (their 'names' were stale registers; <0x020a0c34> is P131's instance counter). BUG FOUND: the ARM pass had no size plausibility bound (only Thumb did) -- 0x020462EC reported 0x2096568 (34MB); bounded both at 0x100000 and widened the selftest. Regression: 659 old rows vs 659 new veneer rows, diff empty.",
+    "P135: swept the 403 direct-entry sites. NEGATIVE RESULT -- largest is 0xE4, so P134 extended coverage not reach; every large allocation in the ROM is tagged. Distribution is tiny-object dominated (0x14 x46, 0x8 x42, 0x24 x34). Sweep independently rediscovered 0x0204B0D4 = P133's parent Clone (found originally via a vtable diff). Seven sites allocate exactly 0x80 (the parent CommonEffect size) via six distinct constructors; overloads vs sibling classes NOT resolved. Extracted a reusable allocate-then-construct signature that names constructors/clones straight from the census."
   ],
   "stuck": {},
   "required_reading_for_koma_tasks": [
@@ -215,7 +217,7 @@
     "L/R sticker bindings are per-deck fields not yet located in RAM",
     "Is HP computed as size*k at runtime, or tabulated per panel? Naruto 4-koma=144=4*36; if size*k then size5=180, size6=216, size7=252, size8=288. One reading settles it."
   ],
-  "notes": "Iteration 134 done. The census is now complete over both allocator entry points: 1135 sites (was 732). The tagged/untagged split is CLEAN -- 572 of 732 veneer sites name a source file, 0 of 403 direct sites do -- which settles P133's open question and confirms P130's boundary is a compilation boundary. Fixed a real bug: the ARM pass had no size plausibility bound (only Thumb did since P101). Both are now bounded at 0x100000 and the selftest covers all rows. Regression-verified additive: 659 old rows vs 659 new veneer rows, diff empty. Conventional-offset list: +0x08, +0x10, +0x18, +0x20, +0x24, +0x48.",
+  "notes": "Iteration 135 done. NEGATIVE RESULT worth remembering: the untagged/direct allocator entry allocates only SMALL objects (max 0xE4), so P134 added coverage but no new large structures -- every big allocation in the ROM is tagged and was already visible. Do not re-mine the direct entry for managers. Sweep self-validated by rediscovering 0x0204B0D4 (P133's parent Clone, originally found via a vtable diff). New method: the allocate-then-construct signature names constructors and clones straight from the census. Seven 0x80 sites reach six distinct constructors -- overloads vs siblings still open. Conventional-offset list: +0x08, +0x10, +0x18, +0x20, +0x24, +0x48.",
   "last_wake": "2026-08-14",
   "wakeup_default_seconds": 1800,
   "consecutive_no_progress_wakes": 0,
@@ -542,7 +544,12 @@
     "census_site_count": "1135 total allocator sites (869 ARM + 266 Thumb): 732 via the 0x0201A21C veneer + 403 direct to 0x0201A228",
     "census_tagged_split": "572 of 732 veneer sites resolve to a real .cpp/.h; 0 of 403 direct sites do -- the tagged/untagged split is clean, no overlap",
     "census_size_bound": "0x100000 -- plausibility bound now applied to BOTH ARM and Thumb passes (largest genuine allocation in the ROM is 0x4000C)",
-    "census_bogus_site": "0x020462EC reported size 0x2096568 (34MB) before the ARM bound existed -- a stale pc-relative literal"
+    "census_bogus_site": "0x020462EC reported size 0x2096568 (34MB) before the ARM bound existed -- a stale pc-relative literal",
+    "direct_entry_max_size": "0xE4 -- the largest untagged/direct allocation in the ROM (320 of 403 direct sites have a resolved size). Every LARGE allocation comes through the tagged veneer path.",
+    "direct_size_distribution": "tiny-object dominated: 0x14 x46, 0x8 x42, 0x24 x34, 0x40 x19, 0x78 x17, 0x6c x14, 0x70 x13, 0x30 x11, 0x2c x11, 0x20 x10",
+    "class_0x80_alloc_sites": "seven direct sites allocate 0x80 (parent CommonEffect size): 0x02034C38, 0x02034C5C, 0x02041DE0, 0x02044334, 0x02046270, 0x02049C94, 0x0204B0D4",
+    "class_0x80_constructors": "six distinct: 0x0202B4A8, 0x02015D70, 0x0203ABD4, 0x020445F4 (x2 sites), 0x0202B520, 0x02015E14 -- overloads vs sibling classes NOT resolved",
+    "alloc_then_construct_signature": "constant size -> NULL-check -> call one function with the new object as arg0 -> return it = a CONSTRUCTOR, and the constant is the class size; if arg1 is a same-type object it is a CLONE"
   },
   "combat_phase_spillover": [
     "status-effect enum = 10 values, contiguous IDs 0x19-0x22 (Shock/Freeze/Burn/Confusion/Poison/Judgment/Paralysis/Blindness/Speed-Down/Battle+Support Seal). Likely an immunity BITMASK on character state struct.",
@@ -1421,7 +1428,12 @@
     "P134: after widening a scan, DIFF the old output against the corresponding subset of the new. '659 old rows vs 659 new veneer rows, diff empty' proves the change was additive -- far stronger than re-running a selftest that only checks anchors.",
     "P134: printing an unresolved address in a column headed 'file' reads as data even when the tool is being honest about not knowing. Suppress it and say UNTAGGED, but pair the suppression with an assertion that fires if real data ever shows up there.",
     "P134: answering an explicitly-parked 'not claimed' question is worth a whole wake. P133 asked whether tagged calls reach the allocator directly; the answer (0 of 403) turned a caveat into a clean structural fact.",
-    "P134: the stale-register false positive recurs across every register the back-scanner resolves -- sizes (P101), Thumb names, and now r1/r2 at untagged sites. Assume any register the caller did not visibly set holds garbage."
+    "P134: the stale-register false positive recurs across every register the back-scanner resolves -- sizes (P101), Thumb names, and now r1/r2 at untagged sites. Assume any register the caller did not visibly set holds garbage.",
+    "P135: a negative result is worth publishing when it BOUNDS something. 'Largest direct allocation is 0xE4' retires the whole idea that big structures were hiding behind the untagged entry, and it took one sweep.",
+    "P135: distinguish a tool change that adds COVERAGE from one that adds REACH. P134 added 403 sites and zero new large objects; saying so stops a future wake from re-mining the same seam expecting managers.",
+    "P135: the best validation of a widened scan is that it independently rediscovers something found by a DIFFERENT method. The sweep hit 0x0204B0D4, which P133 reached via a vtable diff -- stronger evidence than any selftest anchor.",
+    "P135: an allocation SIZE is a class fingerprint. Grouping census sites by size found seven callers of one 0x80 class immediately, which is a cheaper way into a class family than following pointers.",
+    "P135: when one size has several distinct constructors, do not choose between 'overloads' and 'sibling classes' without the vtable store at +0x00. Both explain the shape equally well."
   ],
   "open_questions_for_owner": [
     "Note-kind bucketing: the engine keeps at most 7 simultaneous \"notes\" per character, and 7 of the 17 kinds share one slot (kinds 6,7,8,9,10,14,15) so they should be mutually exclusive in play. Does starting one of those effects visibly cancel another?"

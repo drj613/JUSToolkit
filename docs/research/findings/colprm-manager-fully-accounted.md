@@ -60,7 +60,8 @@ holds `0x2C`-byte nodes and `+0x10`/`+0x18`/`+0x20` are list heads.
 
 | span | contents | size |
 |---|---|---|
-| `+0x0000`–`+0x0453` | header (43 mapped offsets, all below `+0x360`) | `0x454` |
+| `+0x0000`–`+0x0153` | header (43 mapped offsets) | `0x154` |
+| `+0x0154`–`+0x0453` | **contact array**, 4 rows × `0xC0` *(corrected iteration 122 — this doc wrongly folded it into the header)* | `0x300` |
 | `+0x0454`–`+0xC853` | **128 ColPrm records × `0x188`** | `0xC400` |
 | `+0xC854`–`+0xDE53` | `0x80` nodes × `0x2C` → free list `+0x18` | `0x1600` |
 | `+0xDE54`–`+0xE353` | 80 nodes × `0x10` → free list `+0x20` | `0x500` |

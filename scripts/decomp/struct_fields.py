@@ -415,10 +415,58 @@ def scaled_array(words: list[int], base: int, addr: int, x: int, reg: int,
     return None
 
 
+def combine_adds(words: list[int], base: int, addr: int, dest: int, first: int):
+    """Guard 13: follow `add rY, rD, #M` chains so a split base reports its REAL offset.
+
+    An address past ARM's rotated-immediate reach is built in two steps, and the
+    second step often targets a DIFFERENT register:
+
+        add r0, r4, #0x354
+        add r5, r0, #0xe000      ; the real offset is 0xE354
+
+    Guard 8 sees only the first add and reports `+0x354`, a field that does not
+    exist. That produced three phantom fields on the ColPrm manager (iteration
+    119) and one on the ComicDeck player slot (iteration 104).
+
+    Returns the accumulated offset and the register finally holding the address,
+    so the caller can report `+0xE354` instead of `+0x354`.
+    """
+    off, reg = first, dest
+    i = (addr - base) // 4
+    for _ in range(3):                       # at most three chained adds
+        found = False
+        for k in range(1, 4):
+            j = i + k
+            if j >= len(words):
+                break
+            y = words[j]
+            if ((y >> 28) & 0xF) != 0xF and (y & 0x0FF00000) == 0x02800000 \
+                    and ((y >> 16) & 0xF) == reg:
+                v, r = y & 0xFF, (y >> 8) & 0xF
+                add = ((v >> (2 * r)) | (v << (32 - 2 * r))) & 0xFFFFFFFF if r else v
+                rd2 = (y >> 12) & 0xF
+                if rd2 == 15:
+                    break
+                off += add
+                reg = rd2
+                i = j
+                found = True
+                break
+            if access(y, reg) or writes(y, reg):
+                break
+        if not found:
+            break
+    return off, reg
+
+
 def emit_taken(words: list[int], base: int, addr: int, word: int, hit,
                starts: list[int] | None = None):
     """An address-taken field, with split bases and strided head groups resolved."""
     dest = (word >> 12) & 0xF
+    combined, creg = combine_adds(words, base, addr, dest, hit[1])   # guard 13
+    if combined != hit[1]:
+        yield addr, "addr/combined", combined
+        return
     parts = split_base(words, base, addr, dest)
     if parts:
         for kind, off in parts:
@@ -531,6 +579,21 @@ def selftest() -> int:
     if is_bl(word_at(0x02076CA4)) is not None:
         ok = False
         print("FAIL: is_bl accepted a non-bl")
+
+    # guard 13 anchor: the ColPrm manager's three pool bases are built as
+    # `add r0,r4,#0x354` then `add r5,r0,#0xe000` -- guard 8 alone reported the
+    # phantom +0x354 (iteration 119). The combined offset is +0xE354.
+    cw, cb = load("arm9")
+    cs = func_starts(cw, cb)
+    offs = {o for _a, _k, o in walk(cw, cb, 0x0207C4E4, 4, cs)}
+    for phantom in (0x054, 0x254, 0x354):
+        if phantom in offs:
+            ok = False
+            print(f"FAIL: phantom split-base field +{phantom:#x} still reported")
+    for real in (0xC854, 0xDE54, 0xE354):
+        if real not in offs:
+            ok = False
+            print(f"FAIL: combined pool base +{real:#x} not recovered")
 
     # guard 12 anchor: KomaList's six-word array at +0x14, reached as
     # `addne r0, r4, r3, lsl #2` then `strne r2, [r0, #0x14]` (iteration 116).

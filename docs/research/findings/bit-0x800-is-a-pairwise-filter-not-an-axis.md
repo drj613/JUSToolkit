@@ -96,7 +96,7 @@ neither operand is traced — they are set before the window I read. **Not claim
 | The record is reached via `+0xC` in both sites | **CONFIRMED_STATIC** — matches iteration 142's `[r7+0xC]` |
 | `+0x38` holds only layer/category bits | **REFUTED** — it mixes axis selectors with behavioural control |
 | `0x0207F794`'s `tst r1, r0` is a layer-versus-layer test | **not claimed** — neither operand traced |
-| Why the polarity differs | **not claimed** — the two are different operations; nothing read decides it |
+| Why the polarity differs | **RESOLVED in iteration 146** — not a contradiction. `0x020801D4` is the loop-continue point, so group 1 is *exclude from the generic pass*; `0x0207F7C8` is the next category check, so group 2 is *include in category `0x800`'s own bucket*. One meaning, two routings. See `record-0x34-is-a-mutable-flag-api-and-0x800-is-category-routing.md`. |
 
 ## Next angles, ranked
 

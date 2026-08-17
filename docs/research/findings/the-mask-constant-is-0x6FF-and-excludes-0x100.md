@@ -98,7 +98,7 @@ The element qualifies via `ldrhne r0, [r0, #0xc]` on `[r5+8]` — a halfword tes
 | `0x6FF` includes bit `0x100` | **REFUTED** — bits 0–7, 9, 10 only |
 | The two known callers' `record+0x34` fails the test | **CONFIRMED_STATIC** — `0x100 & 0x6FF == 0` |
 | Their `0x800` bypass also fails | **CONFIRMED_STATIC** — `arg3` was `0x8000`/`0x4000` |
-| Those objects are excluded at runtime | **not claimed** — the stated reason (`0x0207EF1C`) was retracted in iteration 145, but `+0x34` still has 85 untraced writers |
+| Those objects are excluded at runtime | **REFUTED in iteration 146** — ov6 battle code ORs `[record+0x150] & 0xFF` into `+0x34` via the flag API `0x0207D064` (verified at `0x02165FB0`–`0x02165FB8`), and `0x6FF` covers bits 0–7. The `0x6FF` test reads runtime bits, not the construction seed. |
 | `record+0x34` is write-once | **RETRACTED in iteration 145** — `0x0207EF1C`'s base is `[record+0x5C]`, the *element*, so it is not a second writer of `record+0x34`. Still **not claimed** write-once (85 untraced writers). See `the-snapshot-suppressor-is-the-reposition-function.md`. |
 | Bucket nodes move from `+0xD8` to `+0xB0` | **CONFIRMED_STATIC** — `unlink(r6+0xD8)` then `link(r6+0xB0)` |
 | `+0xB0` is a hardcoded bucket index | **CONFIRMED_STATIC** — `add r0, r6, #0xb0` is a constant, so always bucket 17 |

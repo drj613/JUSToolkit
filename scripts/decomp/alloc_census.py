@@ -3,7 +3,7 @@
 
 The game's allocator is called as
 
-    r0 = size, r1 = "SourceFile.cpp", r2 = "Function_name", r3 = tag
+    r0 = size, r1 = "SourceFile.cpp", r2 = "Function_name", r3 = __LINE__
     bl 0x0201A21C
 
 so every allocation site names itself. That binding is at the CALL SITE, which

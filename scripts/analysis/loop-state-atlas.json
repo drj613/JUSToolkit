@@ -1,10 +1,12 @@
 {
-  "iteration": 130,
+  "iteration": 131,
   "phase": "combat",
   "current_task": "name the pool-node owner from its size and field shape",
   "queue": [
+    "dump the two vtables 0x0209C30C (parent) and 0x0209E114 (derived) -- turns the vtable SLOT OFFSETS guessed in P127-P129 into named function pointers",
+    "add a --line column to alloc_census.py now that r3 is known to be __LINE__ (docstring already corrected in P131)",
+    "read 0x020240A4 -- the grandparent copy ctor; should end the hierarchy and add more members",
     "trace the bases of the 64 +0x24 ldrb/strb sites in 0x0200-0x0206 -- the REAL bits task; first candidates 0x020219F4 and 0x02021C4C (both isolate bit 0x40)",
-    "read 0x0206C57C (44B, CreateImpFunc) and 0x0206CFC0 (68B, CloneMain) -- both allocate the 0x84 CommonEffect object; should give its field layout",
     "confirm whether 0x0206CA8C is inside CommonEffect.cpp via a string/assert reference naming the file -- would upgrade P130's PLAUSIBLE",
     "read 0x0206CA8C (1004 bytes, 0 callers) -- installs the 0x0206CEAC callback plus 11 other callees; the setup routine for whatever subsystem S is",
     "name Q -- reached as [[arg0+4]+0x64], has a vtable, a boolean at +0x48 and a vtable method at +0x5C; use the size-and-shape route that named ColObj",
@@ -149,7 +151,8 @@
     "P127: read 0x0206CF28 -- a 4-instruction pure boolean getter *(u8*)(*(*(arg0+4)+0x64)+0x48), 21 refs / 7 callers. Closed iteration 125's ne/eq asymmetry: DESIGN not a bug, the mirrored pair recurs at 0x0207F410/0x0207F448 and every site compares only to 0. Found Q's vtable method at slot +0x5C taking (Q, boolean). Did NOT bound the field's value set -- +0x48 has 644 hits.",
     "P128: read 0x0206CEAC whole + helpers 0x02024D44/0x02011B38. Apply-if-changed callback: fixes Q vtable +0x5C as the SETTER for Q+0x48, then NEGATES a coordinate in place at [[P+0x50]+0x0C] and notifies via 0x02024C3C. The geometric mirror makes +0x48 a facing/flip bit (PLAUSIBLE), weakening P127's side/team guess. Recorded: the [P+0x44]==0 path calls 0x0206CF28 with NULL.",
     "P129: read 0x02024C3C -- a dirty-flag OR-setter on byte +0x24, vtable +0x18 notify fires only on clear->set, and |0x30 is set silently. Bit 0x01 marks a THREE-WORD vector at +0x0C/+0x10/+0x14 (two independent sites; 0x02024BE4 resets it as one 0xC-byte unit). This strengthens P128: the negation flipped ONE axis of three = a single-axis mirror. Verified 0x02051890 = memcpy(dst=r0,src=r1,n=r2).",
-    "P130: queued bits task FAILED (+0x24 unattributable: 1838 ROM-wide hits, 64 in the library region, 3 near the setter and all inside it). Delivered instead: the arm9 library/game boundary is 0x0206ADB8 -- 62 tagged arm9 sites, lowest is 0x0206ADB8, ZERO below it, so everything under it is middleware and unnameable by census. CommonEffect's class is 0x84 bytes (0x0206C590 + 0x0206CFD8, same file+size). The facing chain is bracketed inside CommonEffect.h code (PLAUSIBLE). Lead: lsl #0x19/lsrs #0x1f isolates bit 0x40 of a +0x24 byte at 0x020219F4 and 0x02021C4C, bases untraced."
+    "P130: queued bits task FAILED (+0x24 unattributable: 1838 ROM-wide hits, 64 in the library region, 3 near the setter and all inside it). Delivered instead: the arm9 library/game boundary is 0x0206ADB8 -- 62 tagged arm9 sites, lowest is 0x0206ADB8, ZERO below it, so everything under it is middleware and unnameable by census. CommonEffect's class is 0x84 bytes (0x0206C590 + 0x0206CFD8, same file+size). The facing chain is bracketed inside CommonEffect.h code (PLAUSIBLE). Lead: lsl #0x19/lsrs #0x1f isolates bit 0x40 of a +0x24 byte at 0x020219F4 and 0x02021C4C, bases untraced.",
+    "P131: read CreateImpFunc 0x0206C57C + CloneMain 0x0206CFC0. CORRECTED the allocator signature for all 732 sites -- r3 is __LINE__, not a tag (CommonHSV_Create's five sites give 45,66,67,72,73: increasing with two adjacent pairs); alloc_census.py docstring fixed. The 0x84 CommonEffect object is a 3-deep class: vtable ptr at +0x00 set by each level, parent adds a byte at +0x78 (vtable 0x0209C30C), derived adds a halfword at +0x80 (vtable 0x0209E114); parent copy bumps a counter at 0x020A0C80."
   ],
   "stuck": {},
   "required_reading_for_koma_tasks": [
@@ -207,7 +210,7 @@
     "L/R sticker bindings are per-deck fields not yet located in RAM",
     "Is HP computed as size*k at runtime, or tabulated per panel? Naruto 4-koma=144=4*36; if size*k then size5=180, size6=216, size7=252, size8=288. One reading settles it."
   ],
-  "notes": "Iteration 130 done. STRUCTURAL: the arm9 library/game boundary is 0x0206ADB8 -- nothing below it carries an allocation tag, so memcpy/memset/list-lib/0x02024C3C/0x02024BE4/0x02011B38 are permanently nameless by that route. CommonEffect's class is 0x84 bytes; the iteration 125-129 facing chain is bracketed inside CommonEffect.h code (PLAUSIBLE, proximity-based). The +0x24 bits task is reframed as a base-tracing task over 64 sites, with bit 0x40 as a recorded lead. Conventional-offset list: +0x08, +0x10, +0x18, +0x20, +0x24, +0x48.",
+  "notes": "Iteration 131 done. MAJOR CORRECTION: the allocator's 4th argument is __LINE__, not a tag -- affects all 732 census sites; docstring fixed, --line column queued. The 0x84 CommonEffect object is a 3-deep C++ class with vtable at +0x00, parent byte at +0x78, derived halfword at +0x80, and real vtable addresses now in hand: 0x0209C30C (parent) and 0x0209E114 (derived). Dumping those two vtables is the top task -- it converts every vtable slot offset guessed in P127-P129 into a named pointer. Conventional-offset list: +0x08, +0x10, +0x18, +0x20, +0x24, +0x48.",
   "last_wake": "2026-08-14",
   "wakeup_default_seconds": 1800,
   "consecutive_no_progress_wakes": 0,
@@ -510,7 +513,14 @@
     "arm9_library_game_boundary": "0x0206ADB8 -- lowest tagged allocation site in arm9 (CommonPaletteAnime_Create, CommonPaletteAnime.cpp); 0x02000000-0x0206ADB7 has ZERO tagged allocations = middleware/SDK, unnameable by census",
     "arm9_tagged_site_count": "62 tagged allocation call sites in arm9 (of 732 ROM-wide)",
     "CommonEffect_class_size": "0x84 bytes -- allocated by CreateImpFunc (site 0x0206C590, function 0x0206C57C) and CloneMain (site 0x0206CFD8, function 0x0206CFC0), both tagged CommonEffect.h",
-    "bit_extract_idiom": "lsl #N then lsr/lsrs #0x1f isolates bit (31-N); N=0x19 -> bit 6 = 0x40"
+    "bit_extract_idiom": "lsl #N then lsr/lsrs #0x1f isolates bit (31-N); N=0x19 -> bit 6 = 0x40",
+    "allocator_signature": "0x0201A21C(r0=size, r1=__FILE__, r2=__FUNCTION__, r3=__LINE__) -- r3 CORRECTED from 'tag' in P131; applies to all 732 sites",
+    "CommonEffect_vtable_derived": "0x0209E114 -- stored to +0x00 by CloneMain at 0x0206CFF0 (the final vtable)",
+    "CommonEffect_vtable_parent": "0x0209C30C -- stored to +0x00 by the parent copy ctor 0x02015DD4 at 0x02015DEC",
+    "CommonEffect_layout": "0x84 bytes; +0x00 vtable ptr (written by all 3 ctor levels); +0x78 byte (parent member); +0x80 halfword (derived member, last field, +0x82/+0x83 padding)",
+    "CommonEffect_copy_chain": "derived CloneMain 0x0206CFC0 -> parent 0x02015DD4 -> grandparent 0x020240A4; each: call base, set own vtable at +0x00, copy own members",
+    "instance_counter": "0x020A0C80 (= 0x020A0C34 + 0x4C) -- incremented by the PARENT copy ctor 0x02015DD4, so it counts parent-class instances",
+    "func_0x0206CA4C": "the CommonEffect constructor; CreateImpFunc calls it as 0x0206CA4C(obj, 0x02024A30)"
   },
   "combat_phase_spillover": [
     "status-effect enum = 10 values, contiguous IDs 0x19-0x22 (Shock/Freeze/Burn/Confusion/Poison/Judgment/Paralysis/Blindness/Speed-Down/Battle+Support Seal). Likely an immunity BITMASK on character state struct.",
@@ -1366,7 +1376,12 @@
     "P130: 0x0206ADB8 is the boundary. Every nameless helper this investigation leaned on (memcpy, memset, list link/unlink, 0x02024C3C, 0x02024BE4, 0x02011B38) is below it. Do not spend another wake trying to name sub-0x0206ADB8 functions from tags -- there are none by construction.",
     "P130: two allocation sites sharing a FILE tag AND a SIZE pin a class size by call-site binding, which is much stronger than the nearest-symbol heuristic. Look for create/clone pairs.",
     "P130: bracketed containment (between two sites naming the same file) beats nearest-neighbour proximity but is still proximity -- a .cpp boundary can fall in the gap. Keep it PLAUSIBLE.",
-    "P130: `lsl #N; lsr #0x1f` is the compiler's single-bit test. Decode it as bit (31-N) rather than skipping it as shift noise -- it names a flag bit for free."
+    "P130: `lsl #N; lsr #0x1f` is the compiler's single-bit test. Decode it as bit (31-N) rather than skipping it as shift noise -- it names a flag bit for free.",
+    "P131: a repeated-argument value is identifiable by looking at MULTIPLE sites in ONE function. Five allocations in CommonHSV_Create settled 'tag vs __LINE__' instantly: tags repeat, line numbers increase and come in adjacent pairs. One site alone could never have shown it.",
+    "P131: I had used alloc_census.py for ~30 wakes while its own docstring mis-described argument 4. Tool documentation is a claim like any other and deserves the same evidence standard -- re-derive it when a cheap test exists.",
+    "P131: a C++ copy-constructor chain is a free class hierarchy AND a free member map. Each level calls its base, overwrites the vptr at +0x00, then copies exactly its own members -- so reading one clone function upward names every level and its fields.",
+    "P131: an ARM immediate that is not encodable gets built by arithmetic on a register that already holds a nearby value (add r3, r0, #0xf1 for 0x111). Treat COMPUTED in a census as 'the compiler was clever here', not 'the tool failed'.",
+    "P131: dumping the constants (vtable addresses, counter globals) at the moment they appear turns a structural finding into follow-up tasks with concrete addresses. 0x0209C30C and 0x0209E114 now make the P127-P129 vtable slot offsets resolvable."
   ],
   "open_questions_for_owner": [
     "Note-kind bucketing: the engine keeps at most 7 simultaneous \"notes\" per character, and 7 of the 17 kinds share one slot (kinds 6,7,8,9,10,14,15) so they should be mutually exclusive in play. Does starting one of those effects visibly cancel another?"

@@ -1,9 +1,10 @@
 {
-  "iteration": 125,
+  "iteration": 126,
   "phase": "combat",
   "current_task": "name the pool-node owner from its size and field shape",
   "queue": [
-    "read 0x0207DF60 whole -- undetected function, phase-table target, 7-case table with cases 2-5 sharing 0x0207DF9C",
+    "name the four words of the 0x10 struct -- +0x8/+0xC are a signed extent (P125), [r2]/+0x4 an origin; find a CONSUMER that reads it",
+    "re-run function detection over 0x0207D9A4..0x0207E018 and record true boundaries -- two records known merged, three functions missing",
     "name the other bits of B+0x78 -- only 0x1000000 (left wall) and 0x2000000 (right wall) known",
     "read 0x0206CF28 -- the callee BOTH wall arms consult, and the reason their conditions differ (ne vs eq)",
     "re-audit functions.json sizes for other MERGED records among phase-table targets -- one 540-byte record hid 8 functions",
@@ -139,7 +140,8 @@
     "ColPrm-manager-layout-CLOSED:-no-unexamined-span;-the-0xF4-gap-was-the-contact-array-tail",
     "all-19-ColPrm-phase-table-handlers-recovered;-+0x0F4-is-the-ColJoint-manager;-80-node-count-now-read",
     "CORRECTED-the-phase-table:-17-entry-points-across-~6-bodies,-not-15-handlers;-only-two-substantial",
-    "P125: read 0x0207DD40 in full -- it is 8 functions not 1 (walker + 7 bx-lr leaves, +540 = literal pool 0x0207DF5C); arena bounds 0x4000/0x3C000/0x20000 in 24.8 fixed point (64/960/512); B+0x78 bits 0x1000000 left-wall, 0x2000000 right-wall; rect getter 0x0207DE88 +0x8/+0xC are a signed extent; 0x0207DF60 is a function functions.json missed"
+    "P125: read 0x0207DD40 in full -- it is 8 functions not 1 (walker + 7 bx-lr leaves, +540 = literal pool 0x0207DF5C); arena bounds 0x4000/0x3C000/0x20000 in 24.8 fixed point (64/960/512); B+0x78 bits 0x1000000 left-wall, 0x2000000 right-wall; rect getter 0x0207DE88 +0x8/+0xC are a signed extent; 0x0207DF60 is a function functions.json missed",
+    "P126: read 0x0207DF60..0x0207E018 -- CORRECTED iteration 125's jump-table case map (addls pc,pc uses pc+8, so the branch after it is the default and every index shifts by one); 6 more functions here, 3 absent from functions.json, 0x0207DFF4 size=36 covers two; the phase interface's shared data shape is a 0x10-byte four-word struct, out pointer in r2 for two slots and r3 for a third"
   ],
   "stuck": {},
   "required_reading_for_koma_tasks": [
@@ -197,7 +199,7 @@
     "L/R sticker bindings are per-deck fields not yet located in RAM",
     "Is HP computed as size*k at runtime, or tabulated per panel? Naruto 4-koma=144=4*36; if size*k then size5=180, size6=216, size7=252, size8=288. One reading settles it."
   ],
-  "notes": "Iteration 125 done. Arena bounds found: 0x4000/0x3C000/0x20000 in 24.8 fixed point. Standing hazard: functions.json merges pointer-table targets into one oversized record -- 0x0207DD40 held 8 functions and 0x0207DF60 is missing entirely. Open asymmetry: the two wall arms at 0x0207DD8C and 0x0207DDB4 use opposite conditions (ne/eq) on the same 0x0206CF28 result; not resolved, not guessed.",
+  "notes": "Iteration 126 done. The phase interface's shared data shape is a 0x10-byte four-word struct, but the out pointer sits in r2 for some slots and r3 for others -- not one uniform signature. Corrected iteration 125's jump-table case map (pc+8 indexing). Standing hazard, now measured: over 0x0207D9A4..0x0207E018 functions.json has 3 missing functions, 2 merged records, and 1 exactly-right record -- inconsistent, so verify per address. Still open: 0x0206CF28 (the ne/eq asymmetry) and the other 30 bits of B+0x78.",
   "last_wake": "2026-08-14",
   "wakeup_default_seconds": 1800,
   "consecutive_no_progress_wakes": 0,
@@ -475,7 +477,13 @@
     "flag_B_0x78_left_wall": "0x1000000 -- orrne at 0x0207DD94",
     "flag_B_0x78_right_wall": "0x2000000 -- orreq at 0x0207DDBC",
     "func_0x0207DF60": "real ARM function absent from functions.json; 7-case jump table, cases 2-5 -> 0x0207DF9C; loaded at 0x0207C734",
-    "literal_pool_0x0207DF5C": "one word 0x000003FF, loaded by 0x0207DEB8 (pc+0x9C) and 0x0207DF3C (pc+0x18)"
+    "literal_pool_0x0207DF5C": "one word 0x000003FF, loaded by 0x0207DEB8 (pc+0x9C) and 0x0207DF3C (pc+0x18)",
+    "phase_iface_out_struct": "0x10 bytes / 4 words; zeroed by 0x0207DFD8 (ptr in r3) and 0x0207DFF4 (ptr in r2); filled by rect getter 0x0207DE88 (r2)",
+    "func_0x0207DFC0": "mov r0,#4; bx lr -- absent from functions.json",
+    "func_0x0207DFC8": "returns 1 iff r1==0 -- absent from functions.json",
+    "func_0x0207DFD8": "memset(r3,0,0x10) then return 0; functions.json size=28, exact",
+    "func_0x0207DFF4": "memset(r2,0,0x10) then return 0; functions.json size=36 WRONG -- also covers 0x0207E010 (mov r0,#0; bx lr)",
+    "region_code_wall_values": "r1 in {1,2} = the two wall regions; tested at 0x0207DF88 and complemented at 0x0207DFA4, matching rect getter cases 1 and 2"
   },
   "combat_phase_spillover": [
     "status-effect enum = 10 values, contiguous IDs 0x19-0x22 (Shock/Freeze/Burn/Confusion/Poison/Judgment/Paralysis/Blindness/Speed-Down/Battle+Support Seal). Likely an immunity BITMASK on character state struct.",
@@ -1305,7 +1313,12 @@
     "P125: pointer-table targets are exactly the case where a function detector merges bodies -- nothing branches between them, so only the table reveals the boundaries. Suspect every large record whose interior addresses appear in a table.",
     "P125: `lsl #8` next to a comparison constant identifies the fixed-point scale, which converts opaque hex into a readable bound (0x3C000 -> 960). Look for the shift before guessing what a magic number means.",
     "P125: two independent uses of the same constant (a test in one function, an emitted rect in another) is what upgrades `magic number` to `bound`. One use alone would not have.",
-    "P125: `mvn r0,#0x3bc00` = -(0x3C000-0x3FF) decided a struct layout question (signed extent, not second corner). A negative literal in a field is strong evidence that field is a delta."
+    "P125: `mvn r0,#0x3bc00` = -(0x3C000-0x3FF) decided a struct layout question (signed extent, not second corner). A negative literal in a field is strong evidence that field is a delta.",
+    "P126: `addls pc, pc, rN, lsl #2` indexes from pc+8, i.e. the SECOND word after the addls. The branch immediately following it is the out-of-range default, not case 0. I read the list positionally last wake and shifted every case by one. Always write out the pc+8 arithmetic before assigning case indices.",
+    "P126: a wrong-but-plausible case map produced a confident published claim ('cases 2,3,4,5 share one target') that no gate caught, because every address in it was real. Address-level checks cannot catch index-level errors -- only re-deriving the arithmetic can.",
+    "P126: functions.json is INCONSISTENT here, not uniformly wrong -- 0x0207DFD8 is listed at exactly the right size while its three neighbours are missing and 0x0207DFF4 is merged. Do not infer a blanket rule about the database from one bad record; check each.",
+    "P126: two functions independently agreeing on the meaning of a value (r1 in {1,2} tested here, emitted as wall rects by the getter) is the same corroboration pattern that upgraded the arena bounds in P125. Look for the second, independent use.",
+    "P126: near-duplicate functions differing only in WHICH argument register holds the out pointer (r2 vs r3) prove a pointer table is not one uniform virtual interface. Do not assume a shared signature across slots."
   ],
   "open_questions_for_owner": [
     "Note-kind bucketing: the engine keeps at most 7 simultaneous \"notes\" per character, and 7 of the 17 kinds share one slot (kinds 6,7,8,9,10,14,15) so they should be mutually exclusive in play. Does starting one of those effects visibly cancel another?"

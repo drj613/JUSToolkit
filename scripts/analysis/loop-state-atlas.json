@@ -1,9 +1,11 @@
 {
-  "iteration": 129,
+  "iteration": 130,
   "phase": "combat",
   "current_task": "name the pool-node owner from its size and field shape",
   "queue": [
-    "name the other bits of +0x24 -- 0x01 = the three-word vector, 0x10/0x20 = the silent pair set outside the notify scheme; five bits open, both known callers only pass 1",
+    "trace the bases of the 64 +0x24 ldrb/strb sites in 0x0200-0x0206 -- the REAL bits task; first candidates 0x020219F4 and 0x02021C4C (both isolate bit 0x40)",
+    "read 0x0206C57C (44B, CreateImpFunc) and 0x0206CFC0 (68B, CloneMain) -- both allocate the 0x84 CommonEffect object; should give its field layout",
+    "confirm whether 0x0206CA8C is inside CommonEffect.cpp via a string/assert reference naming the file -- would upgrade P130's PLAUSIBLE",
     "read 0x0206CA8C (1004 bytes, 0 callers) -- installs the 0x0206CEAC callback plus 11 other callees; the setup routine for whatever subsystem S is",
     "name Q -- reached as [[arg0+4]+0x64], has a vtable, a boolean at +0x48 and a vtable method at +0x5C; use the size-and-shape route that named ColObj",
     "name the four words of the 0x10 struct -- +0x8/+0xC are a signed extent (P125), [r2]/+0x4 an origin; find a CONSUMER that reads it",
@@ -146,7 +148,8 @@
     "P126: read 0x0207DF60..0x0207E018 -- CORRECTED iteration 125's jump-table case map (addls pc,pc uses pc+8, so the branch after it is the default and every index shifts by one); 6 more functions here, 3 absent from functions.json, 0x0207DFF4 size=36 covers two; the phase interface's shared data shape is a 0x10-byte four-word struct, out pointer in r2 for two slots and r3 for a third",
     "P127: read 0x0206CF28 -- a 4-instruction pure boolean getter *(u8*)(*(*(arg0+4)+0x64)+0x48), 21 refs / 7 callers. Closed iteration 125's ne/eq asymmetry: DESIGN not a bug, the mirrored pair recurs at 0x0207F410/0x0207F448 and every site compares only to 0. Found Q's vtable method at slot +0x5C taking (Q, boolean). Did NOT bound the field's value set -- +0x48 has 644 hits.",
     "P128: read 0x0206CEAC whole + helpers 0x02024D44/0x02011B38. Apply-if-changed callback: fixes Q vtable +0x5C as the SETTER for Q+0x48, then NEGATES a coordinate in place at [[P+0x50]+0x0C] and notifies via 0x02024C3C. The geometric mirror makes +0x48 a facing/flip bit (PLAUSIBLE), weakening P127's side/team guess. Recorded: the [P+0x44]==0 path calls 0x0206CF28 with NULL.",
-    "P129: read 0x02024C3C -- a dirty-flag OR-setter on byte +0x24, vtable +0x18 notify fires only on clear->set, and |0x30 is set silently. Bit 0x01 marks a THREE-WORD vector at +0x0C/+0x10/+0x14 (two independent sites; 0x02024BE4 resets it as one 0xC-byte unit). This strengthens P128: the negation flipped ONE axis of three = a single-axis mirror. Verified 0x02051890 = memcpy(dst=r0,src=r1,n=r2)."
+    "P129: read 0x02024C3C -- a dirty-flag OR-setter on byte +0x24, vtable +0x18 notify fires only on clear->set, and |0x30 is set silently. Bit 0x01 marks a THREE-WORD vector at +0x0C/+0x10/+0x14 (two independent sites; 0x02024BE4 resets it as one 0xC-byte unit). This strengthens P128: the negation flipped ONE axis of three = a single-axis mirror. Verified 0x02051890 = memcpy(dst=r0,src=r1,n=r2).",
+    "P130: queued bits task FAILED (+0x24 unattributable: 1838 ROM-wide hits, 64 in the library region, 3 near the setter and all inside it). Delivered instead: the arm9 library/game boundary is 0x0206ADB8 -- 62 tagged arm9 sites, lowest is 0x0206ADB8, ZERO below it, so everything under it is middleware and unnameable by census. CommonEffect's class is 0x84 bytes (0x0206C590 + 0x0206CFD8, same file+size). The facing chain is bracketed inside CommonEffect.h code (PLAUSIBLE). Lead: lsl #0x19/lsrs #0x1f isolates bit 0x40 of a +0x24 byte at 0x020219F4 and 0x02021C4C, bases untraced."
   ],
   "stuck": {},
   "required_reading_for_koma_tasks": [
@@ -204,7 +207,7 @@
     "L/R sticker bindings are per-deck fields not yet located in RAM",
     "Is HP computed as size*k at runtime, or tabulated per panel? Naruto 4-koma=144=4*36; if size*k then size5=180, size6=216, size7=252, size8=288. One reading settles it."
   ],
-  "notes": "Iteration 129 done. The dirty-flag scheme is now clear: byte +0x24, bit 0x01 = the three-word vector at +0x0C/+0x10/+0x14, notify via vtable +0x18 on clear->set only, 0x10/0x20 silent. P128's facing reading is strengthened to a single-axis mirror (still PLAUSIBLE -- nothing names it). memcpy arg order is now VERIFIED, not assumed. Conventional-offset list: +0x08, +0x10, +0x18, +0x20, +0x24, +0x48 -- check hit counts before any field-writer hunt.",
+  "notes": "Iteration 130 done. STRUCTURAL: the arm9 library/game boundary is 0x0206ADB8 -- nothing below it carries an allocation tag, so memcpy/memset/list-lib/0x02024C3C/0x02024BE4/0x02011B38 are permanently nameless by that route. CommonEffect's class is 0x84 bytes; the iteration 125-129 facing chain is bracketed inside CommonEffect.h code (PLAUSIBLE, proximity-based). The +0x24 bits task is reframed as a base-tracing task over 64 sites, with bit 0x40 as a recorded lead. Conventional-offset list: +0x08, +0x10, +0x18, +0x20, +0x24, +0x48.",
   "last_wake": "2026-08-14",
   "wakeup_default_seconds": 1800,
   "consecutive_no_progress_wakes": 0,
@@ -503,7 +506,11 @@
     "vector_0x0C": "three-word vector at +0x0C/+0x10/+0x14, handled as one 0xC-byte unit (mov r2,#0xc at 0x02024C08); +0x0C is the axis P128 negated",
     "func_0x02024BE4": "resets the three-word vector to zero and marks bit 0x01; arg0 (r0) is never read",
     "memcpy_arg_order": "0x02051890 = memcpy(dst=r0, src=r1, n=r2) -- VERIFIED at 0x020518A0-0x020518B4, not assumed",
-    "orphan_0x02024C78": "bx lr inside the 0x02024C3C size=64 record, past the pop; 0 indexed refs, but vtable contents are not indexed so callers are not claimed"
+    "orphan_0x02024C78": "bx lr inside the 0x02024C3C size=64 record, past the pop; 0 indexed refs, but vtable contents are not indexed so callers are not claimed",
+    "arm9_library_game_boundary": "0x0206ADB8 -- lowest tagged allocation site in arm9 (CommonPaletteAnime_Create, CommonPaletteAnime.cpp); 0x02000000-0x0206ADB7 has ZERO tagged allocations = middleware/SDK, unnameable by census",
+    "arm9_tagged_site_count": "62 tagged allocation call sites in arm9 (of 732 ROM-wide)",
+    "CommonEffect_class_size": "0x84 bytes -- allocated by CreateImpFunc (site 0x0206C590, function 0x0206C57C) and CloneMain (site 0x0206CFD8, function 0x0206CFC0), both tagged CommonEffect.h",
+    "bit_extract_idiom": "lsl #N then lsr/lsrs #0x1f isolates bit (31-N); N=0x19 -> bit 6 = 0x40"
   },
   "combat_phase_spillover": [
     "status-effect enum = 10 values, contiguous IDs 0x19-0x22 (Shock/Freeze/Burn/Confusion/Poison/Judgment/Paralysis/Blindness/Speed-Down/Battle+Support Seal). Likely an immunity BITMASK on character state struct.",
@@ -1353,7 +1360,13 @@
     "P129: spend the one command to verify an argument order when the two readings differ in KIND. memcpy(dst,src) made 0x02024BE4 a reset; the reverse would have made it a set-from-caller. Rival readings that differ in kind justify the detour; ones that differ in detail do not.",
     "P129: a re-read of a field after a callback (0x02024C64 reloading +0x24 instead of reusing r2) is evidence about the CALLBACK -- it says the handler is allowed to modify that field. Redundant-looking loads carry information.",
     "P129: bits set OUTSIDE a transition test are a deliberate design signal, not sloppiness. 0x30 is or'd in after the cmp, so those two bits never notify -- worth recording as a property of the flag scheme.",
-    "P129: the merged-record hazard now spans 540 bytes (P125), 36 bytes (P126) and ONE instruction (P129). Size is no guide to whether a record is merged; check the terminator every time."
+    "P129: the merged-record hazard now spans 540 bytes (P125), 36 bytes (P126) and ONE instruction (P129). Size is no guide to whether a record is merged; check the terminator every time.",
+    "P130: when a task fails, MEASURE why and publish the measurement. '3 accesses near the setter, all inside it; 64 unattributed candidates' turns a dead end into a scoped next task; 'I could not find it' would not.",
+    "P130: the census answers RANGE questions, not just size questions. Sorting its sites by address instead of size produced the library/game boundary -- a structural fact about the binary from a tool I had been using for one purpose only.",
+    "P130: 0x0206ADB8 is the boundary. Every nameless helper this investigation leaned on (memcpy, memset, list link/unlink, 0x02024C3C, 0x02024BE4, 0x02011B38) is below it. Do not spend another wake trying to name sub-0x0206ADB8 functions from tags -- there are none by construction.",
+    "P130: two allocation sites sharing a FILE tag AND a SIZE pin a class size by call-site binding, which is much stronger than the nearest-symbol heuristic. Look for create/clone pairs.",
+    "P130: bracketed containment (between two sites naming the same file) beats nearest-neighbour proximity but is still proximity -- a .cpp boundary can fall in the gap. Keep it PLAUSIBLE.",
+    "P130: `lsl #N; lsr #0x1f` is the compiler's single-bit test. Decode it as bit (31-N) rather than skipping it as shift noise -- it names a flag bit for free."
   ],
   "open_questions_for_owner": [
     "Note-kind bucketing: the engine keeps at most 7 simultaneous \"notes\" per character, and 7 of the 17 kinds share one slot (kinds 6,7,8,9,10,14,15) so they should be mutually exclusive in play. Does starting one of those effects visibly cancel another?"

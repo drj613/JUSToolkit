@@ -38,7 +38,13 @@ ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import struct_fields as SF                                        # noqa: E402
 DISASM = os.path.join(ROOT, 'jus_files', 'analysis', 'disasm')
-ALLOC = 0x0201A21C
+# 0x0201A21C is NOT the allocator -- it is a 12-byte linker long-branch veneer
+# (`ldr ip,[pc]; bx ip; .word 0x0201A228`), found in iteration 133. The real
+# allocator is 0x0201A228. Callers far from it go through the veneer; callers
+# in range `bl` it directly, and scanning only the veneer made every one of
+# those invisible for ~100 iterations. Scan BOTH, and record which was used.
+ALLOC_ENTRIES = {0x0201A21C: 'veneer', 0x0201A228: 'direct'}
+ALLOC = 0x0201A21C          # kept: the veneer is still the tagged front door
 WINDOW = 14
 REGIONS = ['arm9'] + [f'ov{i}' for i in range(15)]
 
@@ -176,7 +182,8 @@ def thumb_census(strings):
             off = ((hi & 0x7FF) << 12) | ((lo & 0x7FF) << 1)
             if off & 0x400000:
                 off -= 0x800000
-            if ((base + i * 2 + 4 + off) & ~3) != ALLOC:
+            entry = ALLOC_ENTRIES.get((base + i * 2 + 4 + off) & ~3)
+            if entry is None:
                 continue
 
             val, dead = {}, set()
@@ -256,11 +263,26 @@ def thumb_census(strings):
                 'size_cond': None,
                 'size_note': '' if 0 in val else ('CLOBBERED' if 0 in dead
                                                   else 'NOT_FOUND'),
-                'cpp': name(1),
-                'func': name(2),
+                'cpp': _tag_fields(entry, name(1), name(2))[0],
+                'func': _tag_fields(entry, name(1), name(2))[1],
                 'isa': 'thumb',
+                'entry': entry,
             })
     return out
+
+
+def _tag_fields(entry, cpp, func):
+    """Iteration 134: the DIRECT entry 0x0201A228 takes a size only. Library
+    callers never set r1/r2, and the allocator clobbers them itself (iteration
+    133), so anything the back-scan finds there is a STALE register -- the same
+    false-positive class the Thumb size guard exists for. Measured: 0 of 403
+    direct sites resolve to a real source filename, while 572 of 732 veneer sites
+    do. So report direct sites as UNTAGGED instead of printing a bare address
+    that reads like data. 0x020A0C34 in particular is the instance counter from
+    iteration 131, not a filename."""
+    if entry == 'direct':
+        return 'UNTAGGED', 'UNTAGGED'
+    return cpp, func
 
 
 def census():
@@ -270,7 +292,10 @@ def census():
         rows, idx = load_region(region)
         for i, (addr, _w, text) in enumerate(rows):
             m = BL_ALLOC.match(text)
-            if not m or int(m.group(2), 16) != ALLOC:
+            if not m:
+                continue
+            entry = ALLOC_ENTRIES.get(int(m.group(2), 16))
+            if entry is None:
                 continue
             f = resolve(rows, idx, i)
             size = f.get(0, (None, None))
@@ -290,13 +315,21 @@ def census():
                 # immediate: Battle_ObjManCreate loads 0x42D8 that way, and
                 # discarding 'lit' hid the second-largest battle allocation in
                 # the ROM (iteration 101).
-                'size': size[1] if size[0] in ('imm', 'lit') else None,
+                # Iteration 134: the ARM pass had NO plausibility bound, only the
+                # Thumb one did. Adding the direct entry surfaced site 0x020462EC
+                # reporting 0x2096568 (34 MB) -- a stale pc-relative literal read
+                # as a size. The largest real allocation in the ROM is 0x4000C, so
+                # bound at the same 0x100000 the Thumb guard uses.
+                'size': (size[1] if size[0] in ('imm', 'lit')
+                         and size[1] is not None and size[1] <= 0x100000
+                         else None),
             'size_cond': size[1] if size[0] == 'cond' else None,
                 'size_note': {'computed': 'COMPUTED', 'cond': 'CONDITIONAL',
                               None: 'NOT_FOUND'}.get(size[0], ''),
-                'cpp': name(cpp),
-                'func': name(fn),
+                'cpp': _tag_fields(entry, name(cpp), name(fn))[0],
+                'func': _tag_fields(entry, name(cpp), name(fn))[1],
                 'isa': 'arm',
+                'entry': entry,
             })
     out.extend(thumb_census(strings))          # iteration 99
     return out
@@ -320,14 +353,38 @@ def selftest():
     assert ba[0]['size'] == 0x170, f"selftest: Battle_Add size {ba[0]['size']!r} != 0x170"
     assert ba[0]['func'] == 'Battle_Add', f"selftest: func {ba[0]['func']!r}"
     assert ba[0]['cpp'] == 'Battle.cpp', f"selftest: cpp {ba[0]['cpp']!r}"
-    bad = [r for r in thumb if r['size'] is not None and r['size'] > 0x100000]
-    assert not bad, ('selftest: implausible Thumb sizes (stale register?): '
+    bad = [r for r in rows if r['size'] is not None and r['size'] > 0x100000]
+    assert not bad, ('selftest: implausible sizes (stale register?): '
                      + str([(hex(r['site']), hex(r['size'])) for r in bad[:4]]))
-    named = [r for r in rows if r['func'] not in ('IMM', 'COMPUTED', 'NOT_FOUND')
+    named = [r for r in rows
+             if r['func'] not in ('IMM', 'COMPUTED', 'NOT_FOUND', 'CLOBBERED',
+                                  'CONDITIONAL', 'UNTAGGED')
              and not r['func'].startswith('<')]
     assert len(rows) > 400, f'selftest: only {len(rows)} sites'
+    # iteration 134: BOTH allocator entry points must be seen. 0x0201A21C is only
+    # a veneer to 0x0201A228 (iteration 133); scanning one hid the other.
+    entries = {r.get('entry') for r in rows}
+    assert entries == {'veneer', 'direct'}, f'selftest: entries seen = {entries}'
+    assert h['entry'] == 'veneer', f"selftest: CharaCreate entry {h['entry']!r}"
+    assert ba[0]['entry'] == 'veneer', f"selftest: Battle_Add entry {ba[0]['entry']!r}"
+    # a known direct caller, hand-read in iteration 133: mov r0,#0x78 then bl
+    d = [r for r in rows if r['site'] == 0x02010DA4]
+    assert d, 'selftest: direct site 0x02010DA4 not found'
+    assert d[0]['entry'] == 'direct', f"selftest: 0x02010DA4 entry {d[0]['entry']!r}"
+    assert d[0]['size'] == 0x78, f"selftest: 0x02010DA4 size {d[0]['size']!r} != 0x78"
+    direct = [r for r in rows if r.get('entry') == 'direct']
+    tagged_direct = [r for r in direct
+                     if '.cpp' in r['cpp'] or '.h' in r['cpp']]
+    assert not tagged_direct, ('selftest: a direct-entry site resolved to a real '
+                               'filename -- _tag_fields would be suppressing real '
+                               'data: ' + str([hex(r['site']) for r in tagged_direct[:4]]))
+    assert all(r['cpp'] == 'UNTAGGED' for r in direct), 'selftest: direct sites not marked UNTAGGED'
+    vreal = [r for r in rows if r.get('entry') == 'veneer'
+             and ('.cpp' in r['cpp'] or '.h' in r['cpp'])]
+    assert len(vreal) > 500, f'selftest: only {len(vreal)} veneer sites with a real filename'
     print(f'selftest OK: {len(rows)} sites ({len(thumb)} Thumb), '
-          f'{len(named)} with a resolved name; Battle_Add resolves to 0x170')
+          f'{len(named)} with a resolved name; Battle_Add resolves to 0x170; '
+          f'both allocator entry points observed')
     return 0
 
 
@@ -351,16 +408,26 @@ def main():
     keep.sort(key=lambda r: -r['size'])
     arm = sum(1 for r in rows if r.get('isa') == 'arm')
     thumb = total - arm
+    ven = sum(1 for r in rows if r.get('entry') == 'veneer')
+    dir_ = sum(1 for r in rows if r.get('entry') == 'direct')
+    dir_named = sum(1 for r in rows if r.get('entry') == 'direct'
+                    and ('.cpp' in r['cpp'] or '.h' in r['cpp']))
+    print(f'entry points: {ven} via the 0x0201A21C veneer + {dir_} direct to '
+          f'0x0201A228 = {total}; of the direct ones {dir_named} carry a resolved '
+          f'name (iteration 133/134: the direct entry takes a size only, so those '
+          f'are reported UNTAGGED).')
     print(f'{arm} ARM + {thumb} Thumb = ', end='')
     print(f'{total} allocator calls; {len(sized)} with an unconditional immediate '
           f'size; {len(cond)} whose size is set CONDITIONALLY (a real idiom -- two '
           f'possible sizes, so neither is claimed); '
           f'{total - len(sized) - len(cond)} computed or unresolved. '
           f'Only the {len(sized)} appear below.')
-    print(f'{"size":>8}  {"site":<12} {"region":<6} {"isa":<5} {"function":<34} file')
+    print(f'{"size":>8}  {"site":<12} {"region":<6} {"isa":<5} {"entry":<7} '
+          f'{"function":<34} file')
     for r in keep:
         print(f'{r["size"]:#8x}  {r["site"]:#010x}  {r["region"]:<6} '
-              f'{r.get("isa","arm"):<5} {r["func"]:<34} {r["cpp"]}')
+              f'{r.get("isa","arm"):<5} {r.get("entry","?"):<7} '
+              f'{r["func"]:<34} {r["cpp"]}')
     return 0
 
 

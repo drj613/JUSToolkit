@@ -1,9 +1,11 @@
 {
-  "iteration": 142,
+  "iteration": 143,
   "phase": "combat",
   "current_task": "name the pool-node owner from its size and field shape",
   "queue": [
-    "find a consumer that tests category bit 0x800 -- two of three bits now map to an axis; 0x800 is the one 0x02168E44 passes and nothing tests",
+    "trace 0x0207F794's r1 and r0 -- if both come from +0x38 that is a mask-against-mask layer test and would explain the whole field at once",
+    "read 0x020801D4, the shared reject target in 0x0207FBD0 -- confirming 'skip this pair and continue' would settle the 0x800 polarity question from the other end",
+    "identify 0x0207F480 (1736 bytes, 0 callers, so installed as a function pointer) -- the largest unexamined function in the ColPrm module",
     "identify 0x02081DDC (992B, 1 caller) -- the first function found consuming the category mask; its caller would name the whole pass",
     "trace 0x02083624's caller -- the only remaining path to arg2's low nibble, and it decides whether the installer's 0x400000 branch is dead",
     "identify the three ov6 callers 0x02164F0C / 0x02164F48 / 0x02168E44 -- in the battle overlay, so the census should name them",
@@ -177,7 +179,8 @@
     "P139: read the installer's arg setup before 0x0207CA08. element+0x08 = the OWNER object; +0x0C/+0x10 = the owner's transform x/y asr 4, from ip = [[owner+4]+0x50] -- a THIRD independent sighting of P128/P129's transform node, first to read +0x0C/+0x10/+0x14 together. REFUTED my own P138 claim that 0x10000 = 1.0-in-16.16 = a scale pair: these are POSITION components, so it is a default position. Also refuted my own prediction that this would settle P137's ip/lr ambiguity -- it does not, and the consumer's list is NOT the container+0x00 list.",
     "P140: scanned all 111 instructions of the ColObj installer 0x0207C988. The three-word buffer at sp+8 is ENTIRELY DEAD -- written at 3 sites, read nowhere; 0x0201899C's output is overwritten and its return clobbered. REFUTES my P139 guess that a later call consumes the raw x/y/z. Seventh vestigial finding. record+0x5C = the BattleMove element; [sb+0xEC] = ColObj factory container, [sb+0xF0] = element container (long-carried queue item resolved). record+0x34 = installer arg2, +0x38 = arg3, +0x3C = a flags word from arg5|0x20C000 plus arg2-derived bits; installer takes >=6 args. record+0x184/+0x186 init to 0x100. record+0x175 is stored twice, first store dead.",
     "P141: traced record+0x34/+0x38's values up two levels to four real call sites. arg2/arg3 pass through the constructor untouched; argument numbering verified by frame arithmetic in BOTH frames. arg3 observed as 0, 0x800, 0x4000, 0x8000 -- zero or one bit every time, so record+0x38 is a CATEGORY/LAYER MASK (PLAUSIBLE, no consumer read yet). arg2 = 0x100 at two sites and bic r3,#0xf at a third, so arg2's low nibble is zero everywhere visible and the installer's 0x0207CA58-0x0207CA68 branch has no observed live caller (NOT claimed dead -- 0x0208363C's r2 untraced). 0x02083624 is a thin wrapper forcing arg3=0. arg6 = 0 at all three ov6 sites, so record+0x175's packed fields are zero in practice.",
-    "P142: CONFIRMED record+0x38 as a bitmask (upgraded from P141's PLAUSIBLE). Four consumer sites in 0x02081DDC tst it against 0x4000/0x8000 -- exactly the bits real callers write, so writer and reader agree from opposite ends. The bit selects WHICH AXIS moves (0x4000 -> r3, 0x8000 -> sb); gating flags are sign pairs (0x200/0x20000 for r3, 0x100/0x10000 for sb). Base values are signed bytes at [[r7+0x10]+4]/+5 scaled lsl #8 (24.8, second sighting after P125), and the adjustment is lsl #7 = HALF the base, i.e. +/-50%. Refuted: fp is [[r6+0xC]+0x44], NOT the record's +0x40 flags. Not claimed: sl+0x48 as MoveMan's link array (+0x48 is conventional)."
+    "P142: CONFIRMED record+0x38 as a bitmask (upgraded from P141's PLAUSIBLE). Four consumer sites in 0x02081DDC tst it against 0x4000/0x8000 -- exactly the bits real callers write, so writer and reader agree from opposite ends. The bit selects WHICH AXIS moves (0x4000 -> r3, 0x8000 -> sb); gating flags are sign pairs (0x200/0x20000 for r3, 0x100/0x10000 for sb). Base values are signed bytes at [[r7+0x10]+4]/+5 scaled lsl #8 (24.8, second sighting after P125), and the adjustment is lsl #7 = HALF the base, i.e. +/-50%. Refuted: fp is [[r6+0xC]+0x44], NOT the record's +0x40 flags. Not claimed: sl+0x48 as MoveMan's link array (+0x48 is conventional).",
+    "P143: found bit 0x800's consumers -- three sites, filtered from 13 tst #0x800 candidates by requiring an immediately preceding +0x38 load. 0x800 is NOT an axis bit: at 0x0207FFCC-0x0207FFE8 it is tested on BOTH members of a pair ([[r5+0xC]+0x38] and [[r6+0xC]+0x38]) and either one set vetoes (branch to 0x020801D4); at 0x0207F7A0 the polarity is OPPOSITE -- set proceeds, as an OR-bypass after tst r1,r0. Recorded unreconciled. So +0x38 mixes axis selectors (0x4000/0x8000) with behavioural control (0x800). Both paths reach the +0xD8 bucket free list."
   ],
   "stuck": {},
   "required_reading_for_koma_tasks": [
@@ -235,7 +238,7 @@
     "L/R sticker bindings are per-deck fields not yet located in RAM",
     "Is HP computed as size*k at runtime, or tabulated per panel? Naruto 4-koma=144=4*36; if size*k then size5=180, size6=216, size7=252, size8=288. One reading settles it."
   ],
-  "notes": "Iteration 142 done. record+0x38 is CONFIRMED a bitmask -- four consumers tst it against 0x4000/0x8000, matching what callers write. The bit picks WHICH AXIS may move (0x4000 -> r3, 0x8000 -> sb), while direction flags at [[r6+0xC]+0x44] pick the sign in pairs (0x200/0x20000, 0x100/0x10000). Two independent gates on one adjustment. Values are signed bytes scaled lsl #8 (24.8 -- second sighting after P125) and the adjustment is lsl #7 = HALF, so +/-50%. Refuted: fp at +0x44 is NOT the record's +0x40 flags (different base, overlapping bit values only) -- do not merge them. Open: nothing tests category bit 0x800, which 0x02168E44 passes. Conventional-offset list: +0x08, +0x10, +0x18, +0x20, +0x24, +0x34 (1092), +0x38 (927), +0x48.",
+  "notes": "Iteration 143 done. Category bit 0x800 is a CONTROL bit, not an axis: at 0x0207FFCC-0x0207FFE8 it is a pairwise veto tested on BOTH participants, while at 0x0207F7A0 the polarity is OPPOSITE (set proceeds, an OR-bypass). Recorded unreconciled -- P127 is the precedent for not labelling asymmetry early. So +0x38 mixes axis selectors (0x4000/0x8000) with behavioural control (0x800); do not assume a new bit is another axis. Both paths reach the +0xD8 bucket free list. Top lead: trace 0x0207F794's tst r1,r0 -- if both operands are +0x38 masks that is a layer-versus-layer test and explains the field at once. Conventional-offset list: +0x08, +0x10, +0x18, +0x20, +0x24, +0x34 (1092), +0x38 (927), +0x48.",
   "last_wake": "2026-08-14",
   "wakeup_default_seconds": 1800,
   "consecutive_no_progress_wakes": 0,
@@ -610,7 +613,12 @@
     "direction_flag_pairs": "gating flags at [[r6+0xC]+0x44]: 0x200 (r3 +=), 0x20000 (r3 -=), 0x100 (sb +=), 0x10000 (sb -=) -- sign pairs per axis",
     "signed_byte_offsets": "ldrsb at [[r7+0x10]+4] and +5, scaled by lsl #8 to 24.8; the conditional adjustment is lsl #7 = HALF the base (+/-50%)",
     "flags_word_0x44": "[[r6+0xC]+0x44] -- a DIRECTIONAL flags word, NOT the ColPrm record's +0x40 flags despite sharing bit values 0x100/0x200",
-    "func_0x02081DDC": "992 bytes, 1 caller; the first function found that consumes the +0x38 category mask"
+    "func_0x02081DDC": "992 bytes, 1 caller; the first function found that consumes the +0x38 category mask",
+    "record_0x38_bit_0x800": "a CONTROL bit, not an axis selector. Tested at 0x0207F7A0, 0x0207FFD4, 0x0207FFE4. At 0x0207FFCC-0x0207FFE8 it is a PAIRWISE VETO on both participants; at 0x0207F7A0 it is an OR-BYPASS (opposite polarity). Not reconciled.",
+    "record_0x38_bit_roles": "0x4000/0x8000 = axis selectors (iteration 142); 0x800 = behavioural control (iteration 143). The field is NOT a pure layer mask.",
+    "func_0x0207F480": "1736 bytes, 0 callers -> installed as a function pointer; largest unexamined function in the ColPrm module; contains the 0x800 OR-bypass at 0x0207F7A0",
+    "func_0x0207FBD0": "1572 bytes, 1 caller; contains the pairwise 0x800 veto at 0x0207FFD4/0x0207FFE4 and the shared reject target 0x020801D4",
+    "pair_veto_reaches_bucket_list": "both 0x800 paths lead to the +0xD8 bucket free list ([r8+0xD8] at 0x0207FFEC, [r6+0xD8] at 0x0207F7A8) -- the allocation-heavy pool from iterations 68-69"
   },
   "combat_phase_spillover": [
     "status-effect enum = 10 values, contiguous IDs 0x19-0x22 (Shock/Freeze/Burn/Confusion/Poison/Judgment/Paralysis/Blindness/Speed-Down/Battle+Support Seal). Likely an immunity BITMASK on character state struct.",
@@ -1535,7 +1543,12 @@
     "P142: a field can be one of TWO independent gates on the same operation. Here direction flags and the category mask both have to pass; reading only one of them would have produced a half-right story.",
     "P142: `lsl #7` next to a `lsl #8` base is not a different format, it is HALF. Compare shift amounts within one expression before reaching for a fixed-point interpretation.",
     "P142: adjacent offsets with overlapping bit values are a trap worth recording explicitly. fp at +0x44 uses 0x100/0x200 just like the record's +0x40 flags, on a different base and with different meanings -- I wrote down that they must not be merged.",
-    "P142: when two of three observed values for a field are explained, say which one is not. 0x800 has a writer and no reader, and naming that gap is what makes it the next task."
+    "P142: when two of three observed values for a field are explained, say which one is not. 0x800 has a writer and no reader, and naming that gap is what makes it the next task.",
+    "P143: filter a common-immediate search by the instruction that must PRECEDE it. 13 `tst #0x800` candidates became 3 by requiring a `+0x38` load one instruction earlier -- most of the rest were a different field's flags at +0x40.",
+    "P143: a bit tested on BOTH participants of a pair, where either one vetoes, is a different kind of flag from one tested on a single object. Note which side of an interaction a flag is read from.",
+    "P143: do not force one meaning onto a bit whose polarity differs between sites. Set means 'branch away' at one site and 'proceed' at another; both are recorded, neither is reconciled, because iteration 127 showed what labelling an asymmetry early costs.",
+    "P143: one field can mix categories of bit. +0x38 holds axis selectors AND behavioural control, so 'it is a layer mask' was too tidy -- check each new bit's role rather than extending the field's label to it.",
+    "P143: `tst rX, rY` (register against register) is the shape of a mask-against-mask test and would be a major find, but operands set outside the read window must stay untraced. Name the shape, withhold the claim."
   ],
   "open_questions_for_owner": [
     "Note-kind bucketing: the engine keeps at most 7 simultaneous \"notes\" per character, and 7 of the 17 kinds share one slot (kinds 6,7,8,9,10,14,15) so they should be mutually exclusive in play. Does starting one of those effects visibly cancel another?"

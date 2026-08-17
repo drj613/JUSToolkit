@@ -41,6 +41,8 @@ Anchor `0x0207C4E4:r4`, size `0xFB54`:
 | `+0x254` | addr — **new** |
 | `+0x354` | addr — **new** |
 
+**Correction (iteration 119):** `+0x054`, `+0x254` and `+0x354` are **not fields**. They are the low halves of split immediates reaching the three node pools at `+0xC854`, `+0xDE54` and `+0xE354`. See `colprm-manager-three-node-pools.md`.
+
 `+0x154` (contact array) is absent — the accumulators write it (iteration 56), not the
 constructor.
 

@@ -46,6 +46,11 @@ mask deliberately omits the one bit the two known callers set.
 turned up in iteration 138's companion scan. So the field is not write-once, and its value when
 `0x0207F794` runs is **not statically determined**.
 
+> **RETRACTED in iteration 145.** `r2` is loaded from `[r4+0x5C]`, and `record+0x5C` is the BattleMove
+> element (iteration 140) — so `0x0207EF1C` writes `element+0x34`, not `record+0x34`. I trusted the scan's
+> `base=r2` without tracing it. The conclusion below still stands (`+0x34` has 85 untraced writers ROM-wide),
+> but this particular reason for it was wrong.
+
 The honest statement is narrower than the tempting one:
 
 - **Confirmed:** the constant is `0x6FF`, and it excludes `0x100`.
@@ -93,8 +98,8 @@ The element qualifies via `ldrhne r0, [r0, #0xc]` on `[r5+8]` — a halfword tes
 | `0x6FF` includes bit `0x100` | **REFUTED** — bits 0–7, 9, 10 only |
 | The two known callers' `record+0x34` fails the test | **CONFIRMED_STATIC** — `0x100 & 0x6FF == 0` |
 | Their `0x800` bypass also fails | **CONFIRMED_STATIC** — `arg3` was `0x8000`/`0x4000` |
-| Those objects are excluded at runtime | **not claimed** — `0x0207EF1C` also writes `+0x34` |
-| `record+0x34` is write-once | **REFUTED** — a second writer exists at `0x0207EF1C` |
+| Those objects are excluded at runtime | **not claimed** — the stated reason (`0x0207EF1C`) was retracted in iteration 145, but `+0x34` still has 85 untraced writers |
+| `record+0x34` is write-once | **RETRACTED in iteration 145** — `0x0207EF1C`'s base is `[record+0x5C]`, the *element*, so it is not a second writer of `record+0x34`. Still **not claimed** write-once (85 untraced writers). See `the-snapshot-suppressor-is-the-reposition-function.md`. |
 | Bucket nodes move from `+0xD8` to `+0xB0` | **CONFIRMED_STATIC** — `unlink(r6+0xD8)` then `link(r6+0xB0)` |
 | `+0xB0` is a hardcoded bucket index | **CONFIRMED_STATIC** — `add r0, r6, #0xb0` is a constant, so always bucket 17 |
 | `node+0x8` holds the element that earned the bucket | **CONFIRMED_STATIC** — `str r5, [r7, #8]` at `0x0207F778` |

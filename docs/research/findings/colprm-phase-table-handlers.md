@@ -34,7 +34,7 @@ derived by tiling (iteration 119), is now read directly from a `cmp`.
 | `+0x144` | `0x0207DFD8` | shared with `+0x140` |
 | `+0x148` | `0x0207E010` | |
 
-19 slots, **17 unique** targets, **15 real** handlers — contiguous in
+19 slots, **17 unique** targets *(corrected iteration 124: these are NOT 15 separate handlers — seven are interior entry points inside `0x0207DD40`, one inside `0x0207DFF4`, three sit in an uncatalogued gap, and only two targets are substantial; see `phase-table-is-mostly-tiny-accessors.md`)* — contiguous in
 `0x0207D9A4`–`0x0207E010`, none with an assert-string name.
 
 `+0x130` absent, per iteration 118.
@@ -78,7 +78,7 @@ routes agree.
 | All 19 phase-table slots hold function pointers from constructor literals | **CONFIRMED_STATIC** — 19 recovered by pairing each `ldr rD,[pc]` with its store |
 | Two pairs of slots share a target | **CONFIRMED_STATIC** — `0x0207DE08` at `+0x110`/`+0x120`; `0x0207DFD8` at `+0x140`/`+0x144` |
 | `+0x0FC` and `+0x100` are `bx lr` no-ops | **CONFIRMED_STATIC** — single-instruction stubs, four bytes apart |
-| All 19 slots hold distinct real handlers | **REFUTED** — 17 unique, 15 real |
+| All 19 slots hold distinct real handlers | **REFUTED** — 17 unique; and per iteration 124 those are entry points across ~6 bodies, not 15 handlers |
 | `+0x0F4` holds the ColJoint manager | **CONFIRMED_STATIC** — `bl #0x207bd40`; `str r0,[r4,#0xf4]` |
 | `Battle_ColJointManCreate` receives `[manager+0xE0]` | **CONFIRMED_STATIC** — `ldr r0,[r4,#0xe0]` immediately before the call |
 | The `0x10` pool's 80-node count was only derivable | **REFUTED** *(iteration 119)* — `cmp r6,#0x50` reads it directly |

@@ -66,6 +66,11 @@ consumer handle **the same object type**.
 than a position. **PLAUSIBLE** — the value is certain, the interpretation is not, and iteration 125 found a
 *different* module using 24.8.
 
+> **REFUTED in iteration 139.** Wrong. `+0x0C`/`+0x10` are the owner's transform x/y (`asr` 4), read from
+> `[[owner+4]+0x50]` at the call site — so `0x10000` is a default **position**, not a unit scale. The error
+> was reasoning from a recognisable constant instead of reading where the data comes from. Kept here rather
+> than deleted; see `element-0x0C-is-the-owners-world-position.md`.
+
 ## 3. The field at `+0x3E` — why this matters most
 
 ```
@@ -143,7 +148,7 @@ I read. **Not claimed** either way.
 | The element reaches `+0x3E` | **CONFIRMED_STATIC** — `strb r1,[r4,#0x3e]` at `0x02082CF4` |
 | The element is `0x40` bytes | **PLAUSIBLE** *(strengthened)* — needs ≥ `0x3F`, `0x40` is the smallest aligned fit and the only stride that tiles; still no `base + i*0x40` |
 | `+0x0C`/`+0x10` default to `0x10000` when `arg2` is NULL | **CONFIRMED_STATIC** — `0x02082C9C`, `0x02082CAC`, `0x02082CB0` |
-| `0x10000` means `1.0` in 16.16, i.e. a scale pair | **PLAUSIBLE** — the value is certain, the format is inferred |
+| `0x10000` means `1.0` in 16.16, i.e. a scale pair | **REFUTED** *(iteration 139)* — `+0x0C`/`+0x10` are the owner's transform x/y (`asr` 4); `0x10000` is a default **position**. See `element-0x0C-is-the-owners-world-position.md`. |
 | The ColObj installer allocates a BattleMove element | **CONFIRMED_STATIC** — `0x0207CA08` inside `0x0207C988` |
 | `[installer_arg0+0xF0]` is `ColPrmMan+0xF0` | **not claimed** — same offset, identity never established |
 | `0x100` belongs to repositioning rather than creation | **SPECULATIVE** — the allocator snapshots on every branch, so creation does not need it |

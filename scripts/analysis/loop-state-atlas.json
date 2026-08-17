@@ -1,8 +1,11 @@
 {
-  "iteration": 135,
+  "iteration": 136,
   "phase": "combat",
   "current_task": "name the pool-node owner from its size and field shape",
   "queue": [
+    "map MoveMan +0x648..+0x2647 (0x2000 bytes) -- the bulk of the manager, untouched by surviving constructor code; consumers will have to name it",
+    "read the two MoveMan callbacks 0x02082E10 and 0x0208317C -- per-track entry points in BattleMove.cpp, so the census can name them",
+    "read 0x02083204, MoveMan's sole caller -- says who owns the move manager",
     "read the six 0x80 constructors (0x0202B4A8, 0x02015D70, 0x0203ABD4, 0x020445F4, 0x0202B520, 0x02015E14) and record the vtable each installs at +0x00 -- settles overloads vs sibling classes",
     "resolve the 83 direct sites with no resolved size, to test whether 0xE4 really is the untagged ceiling",
     "read 0x0201B244 (36B, 40 callers) to confirm operator delete and retire a PLAUSIBLE",
@@ -20,7 +23,6 @@
     "read 0x0207D9AC (916 bytes, the largest phase target) -- calls memcpy 0x02051890, memset 0x020517FC and 0x0201899C; touches arg0 +0x0/+0x2/+0x4/+0x6/+0x28/+0x50",
     "enumerate the other record+0x40 bits -- 0x200 (free) and 0x800 (gates delta application) are known",
     "trace ColPrmMan +0x0EC and +0x0F0's objects -- both set beside the ColJoint manager",
-    "read Battle_MoveManCreate 0x02082A50 -- 0x2648, BattleMove.cpp, never examined",
     "read the deck's other three list heads +0x18D4, +0x18D8, +0x18E0",
     "read KomaList +0x04C (9 accesses) and the +0x3F0 mode's other values",
     "read 0x02076D00 -- table at [deck+0x38], stride 0x18, indexed from two signed bytes at +0x8/+0x9",
@@ -159,7 +161,8 @@
     "P132: dumped and diffed vtables 0x0209C30C (parent) and 0x0209E114 (derived), 44 slots each. Exactly 3 differ: +0x00, +0x04, +0x18; the derived +0x18 IS 0x0206CFC0 = CloneMain, so slot +0x18 = the virtual Clone, named with zero disassembly. Two inherited slots are Thumb (+0x08, +0x10). Hierarchy is FOUR deep (0x02021960 -> 0x020240A4 -> 0x02015DD4 -> 0x0206CFC0); 0x020240A4 builds a subobject at +0x6C. P130's bit-0x40 site 0x020219F4 is inside 0x02021960, this family's base copy ctor. CONFLICT recorded with P129's '+0x18 = notify' label.",
     "P133: named all three overridden vtable slots -- +0x00 destructor, +0x04 deleting destructor (via 0x0201B244 = operator delete), +0x18 Clone (confirmed at BOTH levels; parent allocates 0x80, derived 0x84, corroborating the +0x80 halfword). MAJOR: 0x0201A21C is only a 12-byte LINKER VENEER; the real allocator is 0x0201A228 (72B, size split at 0x100, manager [global+0x1A4]), and it DISCARDS the file/function/line args (r1/r2 clobbered immediately, r3 never read). Census unaffected (call-site evidence) but it scans only the veneer. Six sampled direct callers pass size only, all below 0x0206ADB8 -- P130's boundary is a COMPILATION boundary. Dropped P129's 'notify' label.",
     "P134: extended alloc_census.py to scan BOTH allocator entries (veneer 0x0201A21C + direct 0x0201A228): 732 -> 1135 sites. Answered P133's open question NO -- 0 of 403 direct sites carry a real source filename vs 572 of 732 veneer sites, so the tagged/untagged split is clean. Direct rows now reported UNTAGGED (their 'names' were stale registers; <0x020a0c34> is P131's instance counter). BUG FOUND: the ARM pass had no size plausibility bound (only Thumb did) -- 0x020462EC reported 0x2096568 (34MB); bounded both at 0x100000 and widened the selftest. Regression: 659 old rows vs 659 new veneer rows, diff empty.",
-    "P135: swept the 403 direct-entry sites. NEGATIVE RESULT -- largest is 0xE4, so P134 extended coverage not reach; every large allocation in the ROM is tagged. Distribution is tiny-object dominated (0x14 x46, 0x8 x42, 0x24 x34). Sweep independently rediscovered 0x0204B0D4 = P133's parent Clone (found originally via a vtable diff). Seven sites allocate exactly 0x80 (the parent CommonEffect size) via six distinct constructors; overloads vs sibling classes NOT resolved. Extracted a reusable allocate-then-construct signature that names constructors/clones straight from the census."
+    "P135: swept the 403 direct-entry sites. NEGATIVE RESULT -- largest is 0xE4, so P134 extended coverage not reach; every large allocation in the ROM is tagged. Distribution is tiny-object dominated (0x14 x46, 0x8 x42, 0x24 x34). Sweep independently rediscovered 0x0204B0D4 = P133's parent Clone (found originally via a vtable diff). Seven sites allocate exactly 0x80 (the parent CommonEffect size) via six distinct constructors; overloads vs sibling classes NOT resolved. Extracted a reusable allocate-then-construct signature that names constructors/clones straight from the census.",
+    "P136: COURSE CORRECTION back to Mission 2 after nine wakes of middleware drift. Read Battle_MoveManCreate = 0x02082A38 (NOT 0x02082A50, which is the alloc site). It owns TWO NoteTracks at +0x20 (id 0xA1000, cb 0x02082E10) and +0x24 (id 0xA6000, cb 0x0208317C), each via the same six-step block -- independently reproducing iteration 54's ColPrm +0xE4/+0xE8 pattern. HALF THE CONSTRUCTOR IS DEAD: 8 word clears + a 128x0xC strided loop, both wiped by memset(obj,0,0x2648) (literal verified, no branch skips it). The dead loop still documents 128 records of 0xC at +0x48. +0x2C = halfword 0x29. OOM path calls memset(NULL,0,0x2648) -- 2nd instance of the P128 shape."
   ],
   "stuck": {},
   "required_reading_for_koma_tasks": [
@@ -217,7 +220,7 @@
     "L/R sticker bindings are per-deck fields not yet located in RAM",
     "Is HP computed as size*k at runtime, or tabulated per panel? Naruto 4-koma=144=4*36; if size*k then size5=180, size6=216, size7=252, size8=288. One reading settles it."
   ],
-  "notes": "Iteration 135 done. NEGATIVE RESULT worth remembering: the untagged/direct allocator entry allocates only SMALL objects (max 0xE4), so P134 added coverage but no new large structures -- every big allocation in the ROM is tagged and was already visible. Do not re-mine the direct entry for managers. Sweep self-validated by rediscovering 0x0204B0D4 (P133's parent Clone, originally found via a vtable diff). New method: the allocate-then-construct signature names constructors and clones straight from the census. Seven 0x80 sites reach six distinct constructors -- overloads vs siblings still open. Conventional-offset list: +0x08, +0x10, +0x18, +0x20, +0x24, +0x48.",
+  "notes": "Iteration 136 done. BACK ON MISSION 2 after nine wakes of middleware drift -- watch for that signal (consecutive wakes sharing no addresses with battle subsystems). Battle_MoveManCreate is 0x02082A38, not 0x02082A50 (that is the alloc site, mis-quoted in ~12 docs). It owns two NoteTracks at +0x20/+0x24 with ids 0xA1000/0xA6000, built by the SAME six-step block as ColPrm's +0xE4/+0xE8 -- mutual corroboration across two unrelated managers. Half its constructor is dead (wiped by memset(obj,0,0x2648)), but the dead loop documents 128 records of 0xC at +0x48. 0x2000 bytes at +0x648 remain unexplored -- the top task. Conventional-offset list: +0x08, +0x10, +0x18, +0x20, +0x24, +0x48.",
   "last_wake": "2026-08-14",
   "wakeup_default_seconds": 1800,
   "consecutive_no_progress_wakes": 0,
@@ -549,7 +552,14 @@
     "direct_size_distribution": "tiny-object dominated: 0x14 x46, 0x8 x42, 0x24 x34, 0x40 x19, 0x78 x17, 0x6c x14, 0x70 x13, 0x30 x11, 0x2c x11, 0x20 x10",
     "class_0x80_alloc_sites": "seven direct sites allocate 0x80 (parent CommonEffect size): 0x02034C38, 0x02034C5C, 0x02041DE0, 0x02044334, 0x02046270, 0x02049C94, 0x0204B0D4",
     "class_0x80_constructors": "six distinct: 0x0202B4A8, 0x02015D70, 0x0203ABD4, 0x020445F4 (x2 sites), 0x0202B520, 0x02015E14 -- overloads vs sibling classes NOT resolved",
-    "alloc_then_construct_signature": "constant size -> NULL-check -> call one function with the new object as arg0 -> return it = a CONSTRUCTOR, and the constant is the class size; if arg1 is a same-type object it is a CLONE"
+    "alloc_then_construct_signature": "constant size -> NULL-check -> call one function with the new object as arg0 -> return it = a CONSTRUCTOR, and the constant is the class size; if arg1 is a same-type object it is a CLONE",
+    "Battle_MoveManCreate": "0x02082A38, 408 bytes, 1 caller 0x02083204 (bl at 0x020833D0); allocates 0x2648 at site 0x02082A50, BattleMove.cpp line 50",
+    "MoveMan_notetracks": "+0x20 (id 0xA1000, callback 0x02082E10) and +0x24 (id 0xA6000, callback 0x0208317C), both via Battle_NoteTrackCreate 0x02026F94",
+    "MoveMan_dead_init": "8 word clears at +0x00..+0x1C and a 128 x 0xC strided loop over +0x48..+0x647 are BOTH wiped by memset(obj,0,0x2648) at 0x02082AAC -- literal 0x02082BD4 = 0x2648, no branch skips it",
+    "MoveMan_intended_array": "128 records of 0xC bytes at +0x48..+0x647, each with a field at +0x8 -- same record count as the ColPrm manager",
+    "MoveMan_0x2C": "halfword = 0x29 (mov r0,#0x29; strh r0,[r4,#0x2c] at 0x02082B6C)",
+    "notetrack_id_space": "0x1000-aligned ids, four now known: 0xA0000, 0xA1000 (MoveMan A), 0xA5000, 0xA6000 (MoveMan B); iteration 54 counted 12 distinct across arm9",
+    "notetrack_six_step_block": "0x02026F94 factory -> store handle -> 0x02012940(track,&id) -> 0x02028384(..,callback) -> vtable[+0x24](track,owner) self-register -> vtable[+0x94](track,0x2000000)"
   },
   "combat_phase_spillover": [
     "status-effect enum = 10 values, contiguous IDs 0x19-0x22 (Shock/Freeze/Burn/Confusion/Poison/Judgment/Paralysis/Blindness/Speed-Down/Battle+Support Seal). Likely an immunity BITMASK on character state struct.",
@@ -1433,7 +1443,13 @@
     "P135: distinguish a tool change that adds COVERAGE from one that adds REACH. P134 added 403 sites and zero new large objects; saying so stops a future wake from re-mining the same seam expecting managers.",
     "P135: the best validation of a widened scan is that it independently rediscovers something found by a DIFFERENT method. The sweep hit 0x0204B0D4, which P133 reached via a vtable diff -- stronger evidence than any selftest anchor.",
     "P135: an allocation SIZE is a class fingerprint. Grouping census sites by size found seven callers of one 0x80 class immediately, which is a cheaper way into a class family than following pointers.",
-    "P135: when one size has several distinct constructors, do not choose between 'overloads' and 'sibling classes' without the vtable store at +0x00. Both explain the shape equally well."
+    "P135: when one size has several distinct constructors, do not choose between 'overloads' and 'sibling classes' without the vtable store at +0x00. Both explain the shape equally well.",
+    "P136: I drifted nine wakes from Mission 2 into middleware, each step locally reasonable. Re-read the mission when several consecutive wakes share no addresses with the mission's own subsystems -- that is the drift signal.",
+    "P136: a queue entry naming an ALLOCATION SITE is not naming the function. 'Battle_MoveManCreate 0x02082A50' was wrong in a dozen docs; the function starts 0x18 earlier. Resolve a site to its function before quoting it as an entry point.",
+    "P136: when a reading is surprising (a memset undoing the initialisation before it), check the three things that could make it wrong -- the literal's value, whether any branch skips it, whether the register was rewritten -- before publishing. All three held here.",
+    "P136: DEAD code is still a layout document. The wiped loop gave 128 records of 0xC at +0x48, which nothing in the surviving code reveals.",
+    "P136: finding the same six-step construction block in two managers reached from opposite directions corroborates BOTH readings at once. Recognising a shape already documented is worth more than a new one-off.",
+    "P136: 'the null check jumps into shared cleanup instead of returning' is now confirmed twice (P128, P136). Treat it as this codebase's habit and expect NULL-deref-on-OOM rather than graceful failure."
   ],
   "open_questions_for_owner": [
     "Note-kind bucketing: the engine keeps at most 7 simultaneous \"notes\" per character, and 7 of the 17 kinds share one slot (kinds 6,7,8,9,10,14,15) so they should be mutually exclusive in play. Does starting one of those effects visibly cancel another?"

@@ -233,9 +233,12 @@ def address_taken(x: int, reg: int):
     node list at `+0x08` or the scratch region at `+0xA4`.
 
     Reported as kind `addr` so it is never confused with a read or a write.
-    Requires an unconditional `add` with a rotate-encoded immediate and S clear.
+
+    The condition is NOT required to be AL. Guard 12 (iteration 117) showed this
+    ROM writes optional copies as `addne`/`addeq` arms, and the same shape appears
+    for address-taken fields; demanding AL here silently narrowed the guard.
     """
-    if (x >> 28) & 0xF != 0xE:
+    if (x >> 28) & 0xF == 0xF:
         return None
     if (x & 0x0FF00000) != 0x02800000:      # add Rd, Rn, #imm, S clear
         return None

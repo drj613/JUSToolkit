@@ -80,6 +80,37 @@ def in_battle():
     return max(hits, key=lambda h: h[2])[0]
 
 
+def build_steps(mode, deck_index):
+    """The (name, buttons, tail_frames) sequence from title screen to battle.
+
+    Split out so other tools can walk the same sequence -- notably
+    capture_boot_trace.py, which needs to dump RAM after each step to learn what
+    each screen looks like. Two copies of this list would drift apart, and the
+    whole problem with this navigation is that a single wrong step is silent.
+    """
+    steps = [
+        ("skip_intro", ["START"], 600),   # Start skips the opening
+        # Top menu starts on Jギャラクシー (index 0); Jアリーナ is index 1, so
+        # exactly one RIGHT. Pressing LEFT here lands back on Jギャラクシー and
+        # the next A drops you into story mode.
+        ("to_arena", ["RIGHT"], 120),
+        ("enter_arena", ["A"], 300),
+    ]
+    for n in range(ARENA_INDEX[mode]):
+        steps.append(("arena_down%d" % n, ["DOWN"], 40))
+    steps.append(("choose_mode", ["A"], 300))
+    # Pick a different deck to get a different attacker: the deck-select list
+    # starts on deck 1, so N DOWNs choose deck N+1.
+    for n in range(deck_index):
+        steps.append(("deck_down%d" % n, ["DOWN"], 40))
+    steps += [
+        ("deck_select", ["A"], 300),
+        ("stage_select", ["A"], 400),
+        ("rule_start", ["START"], 600),   # "バトルスタート"
+    ]
+    return steps
+
+
 def main():
     mode = "training"
     slot = None
@@ -106,28 +137,7 @@ def main():
     print("  waiting for ROM boot ...")
     press("boot_wait", [], 600)
 
-    steps = [
-        ("skip_intro", ["START"], 600),   # Start skips the opening
-        # Top menu starts on Jギャラクシー (index 0); Jアリーナ is index 1, so
-        # exactly one RIGHT. Pressing LEFT here lands back on Jギャラクシー and
-        # the next A drops you into story mode.
-        ("to_arena", ["RIGHT"], 120),
-        ("enter_arena", ["A"], 300),
-    ]
-    for n in range(ARENA_INDEX[mode]):
-        steps.append(("arena_down%d" % n, ["DOWN"], 40))
-    steps += [
-        ("choose_mode", ["A"], 300),
-    ]
-    # Pick a different deck to get a different attacker: the deck-select list
-    # starts on deck 1, so N DOWNs choose deck N+1.
-    for n in range(DECK_INDEX):
-        steps.append(("deck_down%d" % n, ["DOWN"], 40))
-    steps += [
-        ("deck_select", ["A"], 300),
-        ("stage_select", ["A"], 400),
-        ("rule_start", ["START"], 600),   # "バトルスタート"
-    ]
+    steps = build_steps(mode, DECK_INDEX)
 
     for name, buttons, tail in steps:
         print("  %-14s %-8s (tail %d)" % (name, "+".join(buttons), tail))

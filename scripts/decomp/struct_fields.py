@@ -367,6 +367,51 @@ def strided_group(words: list[int], base: int, addr: int, dest: int, first: int,
     return []
 
 
+def scaled_array(words: list[int], base: int, addr: int, x: int, reg: int,
+                 starts: list[int]):
+    """Guard 12: `add rD, reg, rI, lsl #n` then `[rD, #imm]` -- an ARRAY at +imm.
+
+    The third split form in this ROM, after the constant `add` (guard 9) and the
+    8-bit offsets of ldrsb/ldrsh/strh. KomaList's six-word array at +0x14 is
+    reached as `addne r0, r4, r3, lsl #2` then `strne r2, [r0, #0x14]`, and no
+    offset scan reports +0x14 at all without this.
+
+    Element size is 1 << n. The extent comes from the guarding `cmp rI, #N` that
+    bounds the index -- the same trick guard 11 uses for strides. These adds are
+    frequently CONDITIONAL (the null-source arm of an optional copy), so the
+    condition is not required to be AL.
+    """
+    if (x >> 28) & 0xF == 0xF:
+        return None
+    if (x & 0x0FF00000) != 0x00800000:        # ADD, register form, S clear
+        return None
+    if (x & 0x70) != 0:                       # LSL only, immediate shift
+        return None
+    if ((x >> 16) & 0xF) != reg:
+        return None
+    rd, ri = (x >> 12) & 0xF, x & 0xF
+    if rd == 15 or ri == 15 or rd == reg:
+        return None
+    shift = (x >> 7) & 0x1F
+    for k in range(1, 7):                     # the access off rD
+        j = (addr - base) // 4 + k
+        if j >= len(words):
+            break
+        hit = access(words[j], rd)
+        if hit:
+            count = None
+            i0 = (addr - base) // 4
+            for m in range(max(0, i0 - 12), min(len(words), i0 + 12)):
+                y = words[m]
+                if (y & 0x0FF0F000) == 0x03500000 and ((y >> 16) & 0xF) == ri:
+                    v, r = y & 0xFF, (y >> 8) & 0xF
+                    count = ((v >> (2 * r)) | (v << (32 - 2 * r))) & 0xFFFFFFFF if r else v
+            return hit[0], hit[1], 1 << shift, count
+        if writes(words[j], rd):
+            break
+    return None
+
+
 def emit_taken(words: list[int], base: int, addr: int, word: int, hit,
                starts: list[int] | None = None):
     """An address-taken field, with split bases and strided head groups resolved."""
@@ -389,6 +434,10 @@ def walk(words: list[int], base: int, anchor: int, reg: int, starts: list[int]):
     hi = starts[i + 1] if i + 1 < len(starts) else base + len(words) * 4
 
     w0 = words[(anchor - base) // 4]
+    arr0 = scaled_array(words, base, anchor, w0, reg, starts)
+    if arr0:
+        _k, _o, _e, _c = arr0
+        yield anchor, f"{_k}/array[{_c if _c is not None else '?'}]x{_e:#x}", _o
     hit = access(w0, reg)
     if hit and not is_vtable_load(words, base, anchor, reg):
         yield anchor, hit[0], hit[1]
@@ -413,6 +462,11 @@ def walk(words: list[int], base: int, anchor: int, reg: int, starts: list[int]):
             hit = address_taken(x, reg)                           # guard 8
             if hit:
                 yield from emit_taken(words, base, a, x, hit, starts)  # guards 9, 11
+            arr = scaled_array(words, base, a, x, reg, starts)         # guard 12
+            if arr:
+                kind, off, elem, count = arr
+                label = f"{kind}/array[{count if count is not None else '?'}]x{elem:#x}"
+                yield a, label, off
 
 
 # Verified NoteTrack facts, from iterations 49 and 50. The selftest asserts the
@@ -474,6 +528,15 @@ def selftest() -> int:
     if is_bl(word_at(0x02076CA4)) is not None:
         ok = False
         print("FAIL: is_bl accepted a non-bl")
+
+    # guard 12 anchor: KomaList's six-word array at +0x14, reached as
+    # `addne r0, r4, r3, lsl #2` then `strne r2, [r0, #0x14]` (iteration 116).
+    kw, kb = load("ov5")
+    ks = func_starts(kw, kb)
+    arr = [(k, o) for _a, k, o in walk(kw, kb, 0x0214F5E0, 4, ks) if "array" in k]
+    if not any(o == 0x14 and "[6]x0x4" in k for k, o in arr):
+        ok = False
+        print(f"FAIL: KomaList +0x14 six-word array not recovered, got {arr}")
 
     # guard 11 anchor: the detach routine walks three adjacent list heads with one
     # pointer (add r6,sl,#0x10 / add r6,r6,#8 / cmp r8,#3), so +0x18 and +0x20 are

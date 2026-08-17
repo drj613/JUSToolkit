@@ -15,6 +15,7 @@ other bails out on a different flag bit. `+0x3C` is a flags word with four bits 
 | offset | kind | notes |
 |---|---|---|
 | `+0x000` | ldr | list next pointer (`ldr ip,[ip]`) |
+| `+0x008` | str | *(added iteration 117 — omitted here by a truncated scan read; receives a table lookup indexed by `node+0x40`)* |
 | `+0x00C` | strh, addr | initialised to `-1` by the slot allocator |
 | `+0x00E` | strb | |
 | `+0x00F` | ldrb, strb | bit `0x10` gates the halving |

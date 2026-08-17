@@ -242,11 +242,44 @@ data-misread-as-code.
 **The blind spot:** `xrefs.json` does not record Thumb `BLX(1)` → ARM call sites. A
 `query.py xrefs-to` result of "0 references" on an ARM function does **not** mean
 unreachable — it means no *ARM* caller. This compounds the already-recorded hazard that
-`callers` double-counts. `thumb_disasm.py`'s own docstring notes that iterations 95–96
-hit this wall with `Battle_CharaCreate`'s sole caller — this is the second confirmed
-instance and the first time the cause has been named. Any past claim of "0 callers,
-therefore a function pointer" or "therefore vestigial" needs re-checking against a
-Thumb sweep.
+`callers` double-counts.
+
+**Retraction.** The first draft of this section claimed this was "the first time the
+cause has been named." That is **wrong, and retracted.** `findings/thumb-caller-audit.md`
+already named, tooled, and measured the blind spot (`find_thumb_callers.py`, iterations
+95–96), reporting the same ROM-wide **187** of **3691** figure reproduced here. This
+pass discovers nothing about the gap itself. The error is recorded rather than deleted,
+per the loop's standing rule.
+
+**What *is* new: `--audit` and `--to` disagree on real callers.** Running
+`find_thumb_callers.py --to` on either constructor finds both sites and marks them
+**ACCEPTED**:
+
+```
+ov6   0x0214d826 thumb blx -> 0x0216a7bc [plausibility: NONE]  ACCEPTED
+ov6   0x0214d818 thumb blx -> 0x02168b88 [plausibility: NONE]  ACCEPTED
+```
+
+Neither address appears in `--audit`'s output. The cause is at
+`find_thumb_callers.py:184`: `--audit` gates on `plausible(...)` returning truthy,
+while `--to` reports plausibility but accepts on the impossible-edge filters alone.
+**`--audit` therefore silently drops every genuine Thumb caller whose neighbourhood
+lacks a `46c0` nop, a `b5xx` push, or a `bdxx` pop.** Both sites here score
+`plausibility: NONE` yet are unambiguously real — the full Thumb disassembly above is
+coherent instruction-for-instruction, and two BLX pairs 14 bytes apart landing on two
+independently-named manager constructors is not a bit-pattern coincidence.
+
+This means the audit's **187** ROM-wide and **16** in-battle-code counts are a
+**floor, not a census**. The in-battle figure is demonstrably short by at least these
+two. The audit doc's own hedge — "the 16 battle targets are all genuine" marked *not
+claimed* — was the right call, but the gap cuts both ways: it also misses real callers.
+Any past claim of "0 callers, therefore a function pointer" or "therefore vestigial"
+needs a Thumb re-check, and `--audit` alone is not sufficient to clear it; `--to` on
+the specific address is.
+
+Spot-checked directly, and **not** rescued by any Thumb caller: `0x0207E864`,
+`0x0207F7C8`, `0x0207DD40`, `0x0216B2A0` — zero hits each. The standing "`0x0207E864`
+has 0 callers, therefore a function pointer" claim survives this pass.
 
 The ObjShot manager **is** constructed on every battle init. It can be reached from the
 battle root at `+0x110`, not only through the singleton `0x021729EC`.

@@ -1,10 +1,11 @@
 {
-  "iteration": 127,
+  "iteration": 128,
   "phase": "combat",
   "current_task": "name the pool-node owner from its size and field shape",
   "queue": [
+    "read 0x02024C3C (64 bytes, 2 callers) -- the notify fired right after the in-place negation, with arg1=1; should say what the mirror invalidates",
+    "read 0x0206CA8C (1004 bytes, 0 callers) -- installs the 0x0206CEAC callback plus 11 other callees; the setup routine for whatever subsystem S is",
     "name Q -- reached as [[arg0+4]+0x64], has a vtable, a boolean at +0x48 and a vtable method at +0x5C; use the size-and-shape route that named ColObj",
-    "read 0x0206CEAC -- fetches the +0x48 byte from TWO objects and returns early when they match; strongest lead on what the flag means",
     "name the four words of the 0x10 struct -- +0x8/+0xC are a signed extent (P125), [r2]/+0x4 an origin; find a CONSUMER that reads it",
     "re-run function detection over 0x0207D9A4..0x0207E018 and record true boundaries -- two records known merged, three functions missing",
     "name the other bits of B+0x78 -- only 0x1000000 (left wall) and 0x2000000 (right wall) known",
@@ -143,7 +144,8 @@
     "CORRECTED-the-phase-table:-17-entry-points-across-~6-bodies,-not-15-handlers;-only-two-substantial",
     "P125: read 0x0207DD40 in full -- it is 8 functions not 1 (walker + 7 bx-lr leaves, +540 = literal pool 0x0207DF5C); arena bounds 0x4000/0x3C000/0x20000 in 24.8 fixed point (64/960/512); B+0x78 bits 0x1000000 left-wall, 0x2000000 right-wall; rect getter 0x0207DE88 +0x8/+0xC are a signed extent; 0x0207DF60 is a function functions.json missed",
     "P126: read 0x0207DF60..0x0207E018 -- CORRECTED iteration 125's jump-table case map (addls pc,pc uses pc+8, so the branch after it is the default and every index shifts by one); 6 more functions here, 3 absent from functions.json, 0x0207DFF4 size=36 covers two; the phase interface's shared data shape is a 0x10-byte four-word struct, out pointer in r2 for two slots and r3 for a third",
-    "P127: read 0x0206CF28 -- a 4-instruction pure boolean getter *(u8*)(*(*(arg0+4)+0x64)+0x48), 21 refs / 7 callers. Closed iteration 125's ne/eq asymmetry: DESIGN not a bug, the mirrored pair recurs at 0x0207F410/0x0207F448 and every site compares only to 0. Found Q's vtable method at slot +0x5C taking (Q, boolean). Did NOT bound the field's value set -- +0x48 has 644 hits."
+    "P127: read 0x0206CF28 -- a 4-instruction pure boolean getter *(u8*)(*(*(arg0+4)+0x64)+0x48), 21 refs / 7 callers. Closed iteration 125's ne/eq asymmetry: DESIGN not a bug, the mirrored pair recurs at 0x0207F410/0x0207F448 and every site compares only to 0. Found Q's vtable method at slot +0x5C taking (Q, boolean). Did NOT bound the field's value set -- +0x48 has 644 hits.",
+    "P128: read 0x0206CEAC whole + helpers 0x02024D44/0x02011B38. Apply-if-changed callback: fixes Q vtable +0x5C as the SETTER for Q+0x48, then NEGATES a coordinate in place at [[P+0x50]+0x0C] and notifies via 0x02024C3C. The geometric mirror makes +0x48 a facing/flip bit (PLAUSIBLE), weakening P127's side/team guess. Recorded: the [P+0x44]==0 path calls 0x0206CF28 with NULL."
   ],
   "stuck": {},
   "required_reading_for_koma_tasks": [
@@ -201,7 +203,7 @@
     "L/R sticker bindings are per-deck fields not yet located in RAM",
     "Is HP computed as size*k at runtime, or tabulated per panel? Naruto 4-koma=144=4*36; if size*k then size5=180, size6=216, size7=252, size8=288. One reading settles it."
   ],
-  "notes": "Iteration 127 done. 0x0206CF28's ne/eq asymmetry is closed as deliberate design. Q is now the most valuable unnamed object in the collision path: reached as [[arg0+4]+0x64], carries a vtable, a boolean at +0x48, and a method at vtable slot +0x5C. Conventional-offset list now: +0x08, +0x10, +0x18, +0x20, +0x48. Check hit counts before any field-writer hunt.",
+  "notes": "Iteration 128 done. The +0x48 byte is most likely a FACING/horizontal-flip bit (PLAUSIBLE): its setter is Q vtable +0x5C, and a change negates the coordinate at [[P+0x50]+0x0C] in place. Q remains unnamed but is now well characterised: vtable at head, boolean at +0x48, setter at vtable +0x5C, lazy child at +0x18 via vtable +0x14. Conventional-offset list: +0x08, +0x10, +0x18, +0x20, +0x48 -- check hit counts before any field-writer hunt.",
   "last_wake": "2026-08-14",
   "wakeup_default_seconds": 1800,
   "consecutive_no_progress_wakes": 0,
@@ -489,7 +491,12 @@
     "func_0x0206CF28": "pure getter, size=16, 21 refs/7 callers: return *(u8*)(*(*(arg0+4)+0x64)+0x48); all readers treat it as a boolean",
     "Q_bool_field": "Q+0x48, a byte read only via 0x0206CF28; Q = [[arg0+4]+0x64]",
     "Q_vtable_slot_0x5C": "virtual method taking (Q, boolean); called at 0x0207E7D8 and 0x0208167C",
-    "getter_arg_route": "[caller_obj+0x30] is the standard arg0 for 0x0206CF28 -- 0x0207DD80, 0x0207F40C, 0x0207F444"
+    "getter_arg_route": "[caller_obj+0x30] is the standard arg0 for 0x0206CF28 -- 0x0207DD80, 0x0207F40C, 0x0207F444",
+    "Q_vtable_slot_0x5C_role": "SETTER for Q+0x48 -- called as Q->vtable[+0x5C](Q, desired) at 0x0206CEF8 only after the changed-check",
+    "func_0x0206CEAC": "apply-if-changed callback, 124 bytes, 0 callers; registered via 0x02028384 from literal load 0x0206CC2C inside 0x0206CA8C",
+    "func_0x02024D44": "getter, 16 bytes: out = *(*(P+0x50)+0x0C)",
+    "func_0x02011B38": "lazy-init cached-child accessor, 40 bytes, 31 callers: if([r0+0x18]==0) r0->vtable[+0x14](r0); return [r0+0x18]",
+    "mirror_coordinate": "[[P+0x50]+0x0C] -- negated in place (rsb r2,r1,#0; str r2,[r0,#0xc]) whenever the +0x48 flag changes"
   },
   "combat_phase_spillover": [
     "status-effect enum = 10 values, contiguous IDs 0x19-0x22 (Shock/Freeze/Burn/Confusion/Poison/Judgment/Paralysis/Blindness/Speed-Down/Battle+Support Seal). Likely an immunity BITMASK on character state struct.",
@@ -1329,7 +1336,12 @@
     "P127: an asymmetry seen once is ambiguous; seen twice in independent functions it is an idiom. The 0x0207F410/0x0207F448 pair converted 'bug or design?' into 'design' with no new tooling.",
     "P127: how callers CONSUME a return value bounds its type even when the writers are unfindable. Every one of 21 sites compares to 0, so a ldrb that could carry 0-255 is a boolean in practice -- a real claim that costs nothing.",
     "P127: resist upgrading a good story to a finding. 'Side/team selector' fits the two-object comparison AND the opposite walls, but nothing names it, so it stays SPECULATIVE.",
-    "P127: +0x48 joins +0x08/+0x10/+0x18/+0x20 on the conventional-offset list (644 hits, 18 strb). Check the hit count BEFORE planning a field-writer hunt -- it decides whether the hunt is a task or a dead end."
+    "P127: +0x48 joins +0x08/+0x10/+0x18/+0x20 on the conventional-offset list (644 hits, 18 strb). Check the hit count BEFORE planning a field-writer hunt -- it decides whether the hunt is a task or a dead end.",
+    "P128: to tell a vtable slot's DIRECTION (getter vs setter), find a call site where the argument was computed from somewhere ELSE and guarded by a changed-check. Iteration 127 saw the same slot called with a freshly-read value and could not tell; one better call site settled it.",
+    "P128: what the code DOES in response to a flag change identifies the flag better than any of its readers. 21 readers only proved it was a boolean; one in-place negation made it a facing bit.",
+    "P128: a redundant `moveq r0,#0` after `cmp r0,#0` is the compiler materialising a ternary's NULL branch -- it means the guard PRODUCES the null rather than skipping the call. Do not read a compare-against-zero as a guard without checking where control actually goes.",
+    "P128: reading a 16-byte and a 40-byte helper cost almost nothing and converted the tail of the caller from opaque to exact. Read the tiny callees before theorising about the caller.",
+    "P128: prefer between two rival readings by their DISCRIMINATOR, and say what it is. 'Facing beats team because the response is a geometric mirror' is checkable; 'facing fits better' is not."
   ],
   "open_questions_for_owner": [
     "Note-kind bucketing: the engine keeps at most 7 simultaneous \"notes\" per character, and 7 of the 17 kinds share one slot (kinds 6,7,8,9,10,14,15) so they should be mutually exclusive in play. Does starting one of those effects visibly cancel another?"

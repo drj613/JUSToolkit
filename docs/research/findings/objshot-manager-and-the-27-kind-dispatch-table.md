@@ -164,6 +164,67 @@ head — writes `+0x0C`, `+0x10`, `+0x22`, `+0x24`, and calls the initializer
 
 `record+0x17C` is a field not previously in the ColPrm map.
 
+### The 4-bit nibble in `record+0x34` is compared attacker-against-target
+
+Arm A pulls a 4-bit value out of the **attacker's** ColPrm record and checks it against
+three fields in each **target's** record. The full sequence, both sides:
+
+```
+; attacker: sl = arg0, [sl+0x10] = attacker's ColPrm record
+0x0216A990: ldr  r0, [r1, #0x38]
+0x0216A994: ldr  r1, [r1, #0x34]
+0x0216A998: tst  r0, #0x800
+0x0216A99C: andne r0, r1, #0xf0
+0x0216A9A0: orrne r1, r1, r0, lsr #4
+0x0216A9A8: and  r5, r1, #0xf        ; r5 = attacker's 4-bit value
+
+; target: r1 = [payload+0x10] = target's ColPrm record
+0x0216A9DC: ldr  r0, [r1, #0x34]
+0x0216A9E4: and  r0, r0, #0xf        ; target's 4-bit value
+0x0216A9E8: tst  r2, #0x800          ; target's +0x38
+0x0216A9EC: bne  skip                ; target in category 0x800 -> skip outright
+0x0216A9F0: ldr  r2, [r1, #0x3c]
+0x0216A9F4: and  r2, r2, #0xf
+0x0216A9F8: tst  r5, r2
+0x0216A9FC: bne  skip                ; any bit overlap -> skip
+0x0216AA00: ldr  r2, [r1, #0x17c]
+0x0216AA04: cmp  r2, #0
+0x0216AA08: cmpne r5, r0
+0x0216AA0C: beq  skip                ; skip if +0x17C == 0 OR attacker nibble == target nibble
+```
+
+The upshot: a target only gets a shot spawned against it when `+0x17C != 0` **and** the
+attacker's nibble differs from the target's nibble **and** nothing overlaps in
+`+0x3C & 0xF`.
+
+Three things here matter structurally, because they are exactly the shape a
+per-move-attribute hypothesis would need to fit:
+
+1. **`record+0x34`'s low byte packs two 4-bit fields, not one.** When `0x800` is set in
+   the attacker's `+0x38`, the upper nibble (`0xF0`) gets shifted down and OR'd into the
+   low nibble before masking. A second 4-bit field, folded in conditionally on category.
+2. **`+0x3C & 0xF` acts as a mask** (tested with `tst`), but the same `r5` is also used
+   as an **equality operand** (`cmpne`) against the target's nibble. Using the same value
+   both ways forces it into a small bitfield where "equal" really means "the same single
+   bit is set".
+3. The comparison genuinely runs **attacker-side value against target-side fields** — the
+   exact layout any "attribute of the move versus attribute of the defender" model would
+   require.
+
+**The semantics push back hard against calling this nibble an attack nature, though, and
+I am not claiming it is one.** The test *drops the target from the spawn set entirely*
+when the two nibbles match. A nature-versus-nature system would **scale damage** — it
+would not erase the target from the candidate list outright. Removing everything that
+shares your own value looks like a **team/side filter**: don't fire a projectile at
+your own side. Under that reading, `+0x3C & 0xF` becomes "sides or categories this
+record ignores" — an immunity mask in form, but a targeting mask by where it sits in the
+code. All of this runs at *spawn selection*, before any damage arithmetic has started.
+
+Confidence: the instruction-level facts above are **CONFIRMED_STATIC**. The team/side
+filter interpretation is **PLAUSIBLE**. Attack nature is **not claimed** — and on this
+evidence it is the weaker reading. If a per-move nature field exists somewhere, this
+spawn filter is the wrong place for it; the place to look is a damage-scaling site.
+
 ### The chain, independently confirmed
 
 Two byte-identical leaves, `0x0216B3D8` and `0x0216B740`, do exactly this:

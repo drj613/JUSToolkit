@@ -1,11 +1,13 @@
 {
-  "iteration": 147.6,
+  "iteration": 147.7,
   "phase": "combat",
   "current_task": "FIX find_thumb_callers.py --audit: line 184 gates on plausible(), so the audit silently drops real Thumb callers that --to accepts (both ov6 manager ctors are counterexamples). Either report NONE-plausibility hits in a separate bucket or drop the gate and report the score. Then re-run --audit and correct the 187/16 figures in findings/thumb-caller-audit.md.",
   "queue": [
     "FIX find_thumb_callers.py --audit: line 184 gates on plausible(), so the audit silently drops real Thumb callers that --to accepts (both ov6 manager ctors are counterexamples). Either report NONE-plausibility hits in a separate bucket or drop the gate and report the score. Then re-run --audit and correct the 187/16 figures in findings/thumb-caller-audit.md.",
     "RE-CHECK the seven vestigial systems with --to (NOT --audit) now that --audit is known to under-report. Note 0x0207E864/0x0207F7C8/0x0207DD40/0x0216B2A0 are already cleared -- zero Thumb hits each.",
     "HUNT a static mode/screen-ID global to hand justoolkit-ed: find the overlay-load call sites in arm9 and any global written with small constants 0-13 nearby. Would turn their golden-trace RAM diff into a handful of targeted address checks, AND correlating the byte's value against Overlay-Map.md resolves ov05_mode_UNIDENTIFIED (which mode loads ov05).",
+    "TEST the per-move-attack-nature lead properly: find a DAMAGE-SCALING site that reads a move-side attribute, not a spawn filter. Start from the damage core 0x02078488 / entry 0x020783CC and look for a per-move field read on the delta path. The record+0x34 nibble is NOT it (P147c).",
+    "READ ColPrm record+0x3C's low nibble writers -- used as an ignore/immunity mask in the arm-A filter. Pairs with the +0x34 nibble; find_field_writers.py with the companion filter.",
     "PATCH the Thumb BLX(1) blind spot -- either extend xrefs.json's branch index or add a thumb-callers mode to query.py, so 'xrefs-to' stops silently under-reporting. find_thumb_callers.py may already do part of this; check it.",
     "READ 0x0216AF04 (760 bytes) -- the obj-shot per-frame pass, registered via 0x02028384. Highest-value next step in this module: it drives all 72 elements and will name the lifetime/position fields.",
     "READ 0x0216EEF4 -- shared by kinds 0x00/0x0F/0x15/0x16; tells us whether those four are stubs or a real default handler. Then 0x0216B4F4 (kinds 0x01/0x03/0x04).",
@@ -1632,7 +1634,8 @@
     "P147: a dispatch table's arity can be pinned without any bound check in the code -- the next data object after it (here the \"BattleObjShot.cpp\" string at 0x021728D0) is the upper bound. 0x02172864..0x021728CF = 0x6C = 27 entries exactly.",
     "P147b: reciprocity with the runtime validator paid off immediately -- checking that my own requested address was actually on the path turned up a bigger result than the sweep would have, plus a tool blind spot. Verify reachability BEFORE asking for a run, every time.",
     "P147b: before writing 'first time X is named', grep the findings dir for X. I re-derived findings/thumb-caller-audit.md's whole result and briefly published it as novel. The 145-file findings dir is a searchable prior-art index -- use it as one BEFORE claiming novelty, not after.",
-    "P147b: a tool's strict mode can be quietly stricter than its targeted mode. find_thumb_callers.py --audit gates on a plausibility heuristic that --to skips, so --audit's census is a floor. When a broad audit and a targeted query disagree, read the filter -- don't average them."
+    "P147b: a tool's strict mode can be quietly stricter than its targeted mode. find_thumb_callers.py --audit gates on a plausibility heuristic that --to skips, so --audit's census is a floor. When a broad audit and a targeted query disagree, read the filter -- don't average them.",
+    "P147c: an uncredentialed external lead (a 2007 community guide) is still useful as a place to point the disassembler -- but check whether the CODE SEMANTICS match the mechanic, not just the data shape. record+0x34's nibble has exactly the attacker-vs-target shape a per-move nature needs, and still almost certainly isn't one, because it excludes targets rather than scaling damage."
   ],
   "open_questions_for_owner": [
     "Note-kind bucketing: the engine keeps at most 7 simultaneous \"notes\" per character, and 7 of the 17 kinds share one slot (kinds 6,7,8,9,10,14,15) so they should be mutually exclusive in play. Does starting one of those effects visibly cancel another?"
@@ -1664,5 +1667,13 @@
     "what_is_actually_new": "find_thumb_callers.py --audit UNDER-REPORTS vs --to. Line 184 gates --audit on plausible(); --to accepts on the impossible-edge filters alone. Both ov6 ctors score 'plausibility: NONE' yet are real (coherent Thumb disasm, two BLX pairs 14 bytes apart onto two named ctors), so --audit lists neither. The published 187 ROM-wide / 16 in-battle counts are a FLOOR, not a census.",
     "clearing_rule": "--audit alone CANNOT clear a '0 callers' claim. Run --to on the specific address.",
     "checked_not_rescued": "0x0207E864, 0x0207F7C8, 0x0207DD40, 0x0216B2A0 -- zero Thumb hits each, so the '0x0207E864 is a function pointer' claim survives."
+  },
+  "record_0x34_nibble": {
+    "CONFIRMED_STATIC": "0x0216A944 arm A computes a 4-bit value from the ATTACKER's record+0x34 low nibble (merging the 0xF0 nibble via lsr #4 when attacker's +0x38 has 0x800) and tests it against each TARGET's record: skip if target +0x38 & 0x800; skip if (r5 tst target+0x3C & 0xF); skip if target+0x17C == 0 OR attacker nibble == target nibble.",
+    "two_fields": "record+0x34's low BYTE holds two 4-bit fields, not one -- the 0xF0 nibble is conditionally folded into the low nibble.",
+    "dual_use": "the same r5 is used as a bitmask (tst against +0x3C&0xF) AND as an equality operand (cmpne against target nibble) -- constrains it to a small bitfield where equal means same single bit.",
+    "PLAUSIBLE": "team/side filter -- don't spawn onto your own side. Matching values EXCLUDE the target.",
+    "not_claimed": "per-move attack nature. justoolkit-47 relayed a 2007 GameFAQs guide claim that each move has its own Attack Nature. The shape here (attacker value vs target fields) is what that needs, but the SEMANTICS argue against it: a nature-vs-nature rule would SCALE DAMAGE, not delete the target from the spawn set. This is spawn selection, before any damage arithmetic. If a per-move nature field exists, look at a damage-scaling site, not here.",
+    "source_of_lead": "justoolkit-47 relaying a community guide, explicitly NOT code-verified"
   }
 }

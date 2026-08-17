@@ -2,6 +2,12 @@
 
 Loop-Atlas iteration 129. Static.
 
+> **Conflict flagged in iteration 132.** Below I call the vtable `+0x18` call a *notify*. That was an
+> inference from where the call sits, **not** a reading of the target. Iteration 132 diffed the CommonEffect
+> vtables `0x0209C30C`/`0x0209E114` and found slot `+0x18` there is **`Clone`** (`0x0206CFC0`, `CloneMain`).
+> Either these are different vtables or the label here is wrong. See
+> `vtable-diff-names-slot-0x18-as-clone.md` section 5; unresolved.
+
 Read `0x02024C3C` (64 bytes) — the notify fired right after iteration 128's in-place negation — plus its
 other caller. Results:
 

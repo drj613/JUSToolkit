@@ -1,9 +1,11 @@
 {
-  "iteration": 131,
+  "iteration": 132,
   "phase": "combat",
   "current_task": "name the pool-node owner from its size and field shape",
   "queue": [
-    "dump the two vtables 0x0209C30C (parent) and 0x0209E114 (derived) -- turns the vtable SLOT OFFSETS guessed in P127-P129 into named function pointers",
+    "read 0x0204B0C8 (36B, the parent's +0x18) -- if it allocates and copies, +0x18=Clone holds at both levels and P129's 'notify' label falls; settles the P132 conflict",
+    "read 0x0206D010 (20B) and 0x0206CFA4 (28B) -- the other two overridden slots, naming +0x00 and +0x04",
+    "dump the base vtables set by 0x02021960 and 0x020240A4 and diff the whole 4-level chain -- would name every overridden slot",
     "add a --line column to alloc_census.py now that r3 is known to be __LINE__ (docstring already corrected in P131)",
     "read 0x020240A4 -- the grandparent copy ctor; should end the hierarchy and add more members",
     "trace the bases of the 64 +0x24 ldrb/strb sites in 0x0200-0x0206 -- the REAL bits task; first candidates 0x020219F4 and 0x02021C4C (both isolate bit 0x40)",
@@ -152,7 +154,8 @@
     "P128: read 0x0206CEAC whole + helpers 0x02024D44/0x02011B38. Apply-if-changed callback: fixes Q vtable +0x5C as the SETTER for Q+0x48, then NEGATES a coordinate in place at [[P+0x50]+0x0C] and notifies via 0x02024C3C. The geometric mirror makes +0x48 a facing/flip bit (PLAUSIBLE), weakening P127's side/team guess. Recorded: the [P+0x44]==0 path calls 0x0206CF28 with NULL.",
     "P129: read 0x02024C3C -- a dirty-flag OR-setter on byte +0x24, vtable +0x18 notify fires only on clear->set, and |0x30 is set silently. Bit 0x01 marks a THREE-WORD vector at +0x0C/+0x10/+0x14 (two independent sites; 0x02024BE4 resets it as one 0xC-byte unit). This strengthens P128: the negation flipped ONE axis of three = a single-axis mirror. Verified 0x02051890 = memcpy(dst=r0,src=r1,n=r2).",
     "P130: queued bits task FAILED (+0x24 unattributable: 1838 ROM-wide hits, 64 in the library region, 3 near the setter and all inside it). Delivered instead: the arm9 library/game boundary is 0x0206ADB8 -- 62 tagged arm9 sites, lowest is 0x0206ADB8, ZERO below it, so everything under it is middleware and unnameable by census. CommonEffect's class is 0x84 bytes (0x0206C590 + 0x0206CFD8, same file+size). The facing chain is bracketed inside CommonEffect.h code (PLAUSIBLE). Lead: lsl #0x19/lsrs #0x1f isolates bit 0x40 of a +0x24 byte at 0x020219F4 and 0x02021C4C, bases untraced.",
-    "P131: read CreateImpFunc 0x0206C57C + CloneMain 0x0206CFC0. CORRECTED the allocator signature for all 732 sites -- r3 is __LINE__, not a tag (CommonHSV_Create's five sites give 45,66,67,72,73: increasing with two adjacent pairs); alloc_census.py docstring fixed. The 0x84 CommonEffect object is a 3-deep class: vtable ptr at +0x00 set by each level, parent adds a byte at +0x78 (vtable 0x0209C30C), derived adds a halfword at +0x80 (vtable 0x0209E114); parent copy bumps a counter at 0x020A0C80."
+    "P131: read CreateImpFunc 0x0206C57C + CloneMain 0x0206CFC0. CORRECTED the allocator signature for all 732 sites -- r3 is __LINE__, not a tag (CommonHSV_Create's five sites give 45,66,67,72,73: increasing with two adjacent pairs); alloc_census.py docstring fixed. The 0x84 CommonEffect object is a 3-deep class: vtable ptr at +0x00 set by each level, parent adds a byte at +0x78 (vtable 0x0209C30C), derived adds a halfword at +0x80 (vtable 0x0209E114); parent copy bumps a counter at 0x020A0C80.",
+    "P132: dumped and diffed vtables 0x0209C30C (parent) and 0x0209E114 (derived), 44 slots each. Exactly 3 differ: +0x00, +0x04, +0x18; the derived +0x18 IS 0x0206CFC0 = CloneMain, so slot +0x18 = the virtual Clone, named with zero disassembly. Two inherited slots are Thumb (+0x08, +0x10). Hierarchy is FOUR deep (0x02021960 -> 0x020240A4 -> 0x02015DD4 -> 0x0206CFC0); 0x020240A4 builds a subobject at +0x6C. P130's bit-0x40 site 0x020219F4 is inside 0x02021960, this family's base copy ctor. CONFLICT recorded with P129's '+0x18 = notify' label."
   ],
   "stuck": {},
   "required_reading_for_koma_tasks": [
@@ -210,7 +213,7 @@
     "L/R sticker bindings are per-deck fields not yet located in RAM",
     "Is HP computed as size*k at runtime, or tabulated per panel? Naruto 4-koma=144=4*36; if size*k then size5=180, size6=216, size7=252, size8=288. One reading settles it."
   ],
-  "notes": "Iteration 131 done. MAJOR CORRECTION: the allocator's 4th argument is __LINE__, not a tag -- affects all 732 census sites; docstring fixed, --line column queued. The 0x84 CommonEffect object is a 3-deep C++ class with vtable at +0x00, parent byte at +0x78, derived halfword at +0x80, and real vtable addresses now in hand: 0x0209C30C (parent) and 0x0209E114 (derived). Dumping those two vtables is the top task -- it converts every vtable slot offset guessed in P127-P129 into a named pointer. Conventional-offset list: +0x08, +0x10, +0x18, +0x20, +0x24, +0x48.",
+  "notes": "Iteration 132 done. Slot +0x18 = virtual Clone, established by DIFFING the parent/derived vtables (only 3 of 44 slots differ) and looking the differing entry up in the census. CommonEffect's hierarchy is four deep: 0x02021960 -> 0x020240A4 -> 0x02015DD4 -> 0x0206CFC0. Two vtable slots are Thumb (+0x08, +0x10). OPEN CONFLICT: P129 called vtable +0x18 a 'notify' (inferred from call position, never read); here it is Clone. Reading 0x0204B0C8 is the cheapest way to settle it. P130's bit-0x40 lead now sits in this family's base class. Conventional-offset list: +0x08, +0x10, +0x18, +0x20, +0x24, +0x48.",
   "last_wake": "2026-08-14",
   "wakeup_default_seconds": 1800,
   "consecutive_no_progress_wakes": 0,
@@ -520,7 +523,13 @@
     "CommonEffect_layout": "0x84 bytes; +0x00 vtable ptr (written by all 3 ctor levels); +0x78 byte (parent member); +0x80 halfword (derived member, last field, +0x82/+0x83 padding)",
     "CommonEffect_copy_chain": "derived CloneMain 0x0206CFC0 -> parent 0x02015DD4 -> grandparent 0x020240A4; each: call base, set own vtable at +0x00, copy own members",
     "instance_counter": "0x020A0C80 (= 0x020A0C34 + 0x4C) -- incremented by the PARENT copy ctor 0x02015DD4, so it counts parent-class instances",
-    "func_0x0206CA4C": "the CommonEffect constructor; CreateImpFunc calls it as 0x0206CA4C(obj, 0x02024A30)"
+    "func_0x0206CA4C": "the CommonEffect constructor; CreateImpFunc calls it as 0x0206CA4C(obj, 0x02024A30)",
+    "vtable_slot_0x18": "the virtual Clone method -- derived CommonEffect overrides it with 0x0206CFC0 (CloneMain); parent's entry is 0x0204B0C8 (36B)",
+    "vtable_diff_C30C_vs_E114": "44 slots each; ONLY +0x00 (0x02015E54->0x0206D010), +0x04 (0x02015E88->0x0206CFA4), +0x18 (0x0204B0C8->0x0206CFC0) differ",
+    "vtable_thumb_slots": "+0x08 = 0x020102D1 and +0x10 = 0x020119E5 -- odd addresses, so Thumb targets 0x020102D0 and 0x020119E4; inherited unchanged",
+    "CommonEffect_hierarchy": "FOUR levels: 0x02021960 (496B, base copy ctor, 9 callers) -> 0x020240A4 (528B) -> 0x02015DD4 (56B) -> 0x0206CFC0 CloneMain",
+    "subobject_0x6C": "0x020240A4 constructs an embedded member at +0x6C via 0x0201CF08, then 0x02010970(obj+0x6C, 4)",
+    "func_0x02021BB8": "496 bytes, 1 caller, same size and shape as 0x02021960 -- likely operator= (PLAUSIBLE, not read); contains the other bit-0x40 site 0x02021C4C"
   },
   "combat_phase_spillover": [
     "status-effect enum = 10 values, contiguous IDs 0x19-0x22 (Shock/Freeze/Burn/Confusion/Poison/Judgment/Paralysis/Blindness/Speed-Down/Battle+Support Seal). Likely an immunity BITMASK on character state struct.",
@@ -1381,7 +1390,13 @@
     "P131: I had used alloc_census.py for ~30 wakes while its own docstring mis-described argument 4. Tool documentation is a claim like any other and deserves the same evidence standard -- re-derive it when a cheap test exists.",
     "P131: a C++ copy-constructor chain is a free class hierarchy AND a free member map. Each level calls its base, overwrites the vptr at +0x00, then copies exactly its own members -- so reading one clone function upward names every level and its fields.",
     "P131: an ARM immediate that is not encodable gets built by arithmetic on a register that already holds a nearby value (add r3, r0, #0xf1 for 0x111). Treat COMPUTED in a census as 'the compiler was clever here', not 'the tool failed'.",
-    "P131: dumping the constants (vtable addresses, counter globals) at the moment they appear turns a structural finding into follow-up tasks with concrete addresses. 0x0209C30C and 0x0209E114 now make the P127-P129 vtable slot offsets resolvable."
+    "P131: dumping the constants (vtable addresses, counter globals) at the moment they appear turns a structural finding into follow-up tasks with concrete addresses. 0x0209C30C and 0x0209E114 now make the P127-P129 vtable slot offsets resolvable.",
+    "P132: DIFF a derived vtable against its parent, then look the differing entries up in the census. That named slot +0x18 as Clone without disassembling one instruction of it -- the cheapest naming route found so far.",
+    "P132: 41 of 44 identical slots is not noise, it IS the finding -- it proves the two tables are parent/child and isolates the override set to three slots. Sameness can be the evidence.",
+    "P132: an ODD function pointer in a vtable means a Thumb target. Do not treat it as a corrupt word; subtract 1.",
+    "P132: my own inferred LABELS are the weakest links in the chain and the ones to attack first. 'Notify' for vtable +0x18 came from call position, never from reading the target, and it now conflicts with hard evidence. Label slots by offset until the target is read.",
+    "P132: a stale lead can be revived by a later structural fact rather than new searching -- P130's untraced bit-0x40 site resolved the moment I knew 0x02021960 was this family's base copy ctor. Re-check parked leads after every hierarchy discovery.",
+    "P132: the token diff caught a benign edit (a repeated +0x18 replaced by 'that slot'). Verify what the guard flags rather than trusting or dismissing it -- both a real drop and a stylistic one look identical in the count."
   ],
   "open_questions_for_owner": [
     "Note-kind bucketing: the engine keeps at most 7 simultaneous \"notes\" per character, and 7 of the 17 kinds share one slot (kinds 6,7,8,9,10,14,15) so they should be mutually exclusive in play. Does starting one of those effects visibly cancel another?"

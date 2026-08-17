@@ -1,9 +1,11 @@
 {
-  "iteration": 139,
+  "iteration": 140,
   "phase": "combat",
   "current_task": "name the pool-node owner from its size and field shape",
   "queue": [
-    "read the rest of 0x0207C988 past 0x0207CA18 -- the raw unshifted x/y/z at sp+8..sp+0x10 are prepared and never used by 0x02082C34, so a later call consumes them",
+    "read 0x0201899C -- called with a buffer whose contents are thrown away; would settle whether P140's dead block is leftover code or a compiler artefact",
+    "find the installer 0x0207C988's caller and read its six arguments -- arg2 feeds BOTH record+0x34 and the +0x3C flags, so naming arg2 names two fields",
+    "decode record+0x175's 2-bit fields packed from [sp+0x34] -- the installer's tail packs at least three",
     "read 0x0201899C -- called with r0 = sp+8 and its three words are immediately overwritten; either a constructor or dead",
     "establish the transform node's fixed-point format -- would give the element's coordinates real units (P125 proved 24.8 for arena bounds, different module)",
     "search for orr ..,#0x100 on a base with companions 0x0C/0x14/0x34 -- the direct hunt for the snapshot suppressor, now that the allocator is ruled out",
@@ -27,7 +29,6 @@
     "re-audit functions.json sizes for other MERGED records among phase-table targets -- one 540-byte record hid 8 functions",
     "read 0x0207D9AC (916 bytes, the largest phase target) -- calls memcpy 0x02051890, memset 0x020517FC and 0x0201899C; touches arg0 +0x0/+0x2/+0x4/+0x6/+0x28/+0x50",
     "enumerate the other record+0x40 bits -- 0x200 (free) and 0x800 (gates delta application) are known",
-    "trace ColPrmMan +0x0EC and +0x0F0's objects -- both set beside the ColJoint manager",
     "read the deck's other three list heads +0x18D4, +0x18D8, +0x18E0",
     "read KomaList +0x04C (9 accesses) and the +0x3F0 mode's other values",
     "read 0x02076D00 -- table at [deck+0x38], stride 0x18, indexed from two signed bytes at +0x8/+0x9",
@@ -170,7 +171,8 @@
     "P136: COURSE CORRECTION back to Mission 2 after nine wakes of middleware drift. Read Battle_MoveManCreate = 0x02082A38 (NOT 0x02082A50, which is the alloc site). It owns TWO NoteTracks at +0x20 (id 0xA1000, cb 0x02082E10) and +0x24 (id 0xA6000, cb 0x0208317C), each via the same six-step block -- independently reproducing iteration 54's ColPrm +0xE4/+0xE8 pattern. HALF THE CONSTRUCTOR IS DEAD: 8 word clears + a 128x0xC strided loop, both wiped by memset(obj,0,0x2648) (literal verified, no branch skips it). The dead loop still documents 128 records of 0xC at +0x48. +0x2C = halfword 0x29. OOM path calls memset(NULL,0,0x2648) -- 2nd instance of the P128 shape.",
     "P137: MoveMan +0x648..+0x2647 resolved as 128 x 0x40 elements (PLAUSIBLE -- tiles exactly, elements need >=0x38, but no code computes base+i*0x40). Offset scanning found 0 writers because 0x648 is not an encodable ARM immediate and the constructor used it only as a LOOP BOUND; the region is reached by POINTER via node+0x8. +0x48..+0x647 = 128 x 0xC links (next/prev/payload) CONFIRMED. Callback 0x02082E10 walks that list and is a FRAME SNAPSHOT: AND +0x34 with 0x0003FFFF, then bit 0x100 set -> clear it, else copy +0x0C->+0x14 and +0x10->+0x18 (previous-value pair for deltas).",
     "P138: hunted +0x34 bit 0x100's writer -- FAILED (target still unknown). Found instead the ELEMENT ALLOCATOR 0x02082C34 (248B, 1 caller): free list at container+0x08, active at +0x00, graceful NULL on exhaustion, +0x08 = arg1, and iteration 137's snapshot on all three branches (confirms shared object type). +0x0C/+0x10 from [arg2]/[arg2+4] or default 0x10000. CRITICAL: strb to +0x3C/+0x3D/+0x3E means the element reaches +0x3E and needs >=0x3F -- strengthens the 0x40 stride. New +0x34 bits: 0x1, 0x200 (if [container+0x28]&1), 0x8. Cross-module: sole caller is the ColObj installer 0x0207C988 at 0x0207CA08 with arg0 = [installer_arg0+0xF0].",
-    "P139: read the installer's arg setup before 0x0207CA08. element+0x08 = the OWNER object; +0x0C/+0x10 = the owner's transform x/y asr 4, from ip = [[owner+4]+0x50] -- a THIRD independent sighting of P128/P129's transform node, first to read +0x0C/+0x10/+0x14 together. REFUTED my own P138 claim that 0x10000 = 1.0-in-16.16 = a scale pair: these are POSITION components, so it is a default position. Also refuted my own prediction that this would settle P137's ip/lr ambiguity -- it does not, and the consumer's list is NOT the container+0x00 list."
+    "P139: read the installer's arg setup before 0x0207CA08. element+0x08 = the OWNER object; +0x0C/+0x10 = the owner's transform x/y asr 4, from ip = [[owner+4]+0x50] -- a THIRD independent sighting of P128/P129's transform node, first to read +0x0C/+0x10/+0x14 together. REFUTED my own P138 claim that 0x10000 = 1.0-in-16.16 = a scale pair: these are POSITION components, so it is a default position. Also refuted my own prediction that this would settle P137's ip/lr ambiguity -- it does not, and the consumer's list is NOT the container+0x00 list.",
+    "P140: scanned all 111 instructions of the ColObj installer 0x0207C988. The three-word buffer at sp+8 is ENTIRELY DEAD -- written at 3 sites, read nowhere; 0x0201899C's output is overwritten and its return clobbered. REFUTES my P139 guess that a later call consumes the raw x/y/z. Seventh vestigial finding. record+0x5C = the BattleMove element; [sb+0xEC] = ColObj factory container, [sb+0xF0] = element container (long-carried queue item resolved). record+0x34 = installer arg2, +0x38 = arg3, +0x3C = a flags word from arg5|0x20C000 plus arg2-derived bits; installer takes >=6 args. record+0x184/+0x186 init to 0x100. record+0x175 is stored twice, first store dead."
   ],
   "stuck": {},
   "required_reading_for_koma_tasks": [
@@ -228,7 +230,7 @@
     "L/R sticker bindings are per-deck fields not yet located in RAM",
     "Is HP computed as size*k at runtime, or tabulated per panel? Naruto 4-koma=144=4*36; if size*k then size5=180, size6=216, size7=252, size8=288. One reading settles it."
   ],
-  "notes": "Iteration 139 done. element+0x08 = the OWNER; +0x0C/+0x10 = the owner's transform x/y asr 4, with +0x14/+0x18 their previous values -- the element tracks a position and its previous position. SELF-CORRECTION: P138's '0x10000 = 1.0 in 16.16 = scale pair' is REFUTED; these are positions, so it is a default position. Lesson: read the source, do not interpret the constant. Also refuted my own prediction that this read would settle P137's ip/lr ambiguity -- it does not, and the consumer's list [[[arg0+4]+0x10]+0x10] is NOT the allocator's container+0x00 list. [[owner+4]+0x50] is now a THIRD independent sighting of P128/P129's transform node. Conventional-offset list: +0x08, +0x10, +0x18, +0x20, +0x24, +0x34 (1092 hits), +0x48.",
+  "notes": "Iteration 140 done. The ColObj installer's three-word buffer at sp+8 is ENTIRELY DEAD (written 3x, read 0x, and 0x0201899C's call contributes nothing) -- refuting my own P139 guess. record+0x5C = the BattleMove element, sitting directly below +0x60 the ColObj. [sb+0xEC] and [sb+0xF0] are the ColObj and element containers -- a long-carried queue item, now resolved (sb is still NOT proven to be ColPrmMan). record+0x34/+0x38 = the installer's arg2/arg3; record+0x3C is a flags word from arg5|0x20C000 plus arg2-derived bits, so arg2 does double duty. The installer takes >=6 args. Top task: read 0x0201899C, then find the installer's caller to name arg2 (which names two record fields at once). Conventional-offset list: +0x08, +0x10, +0x18, +0x20, +0x24, +0x34 (1092 hits), +0x48.",
   "last_wake": "2026-08-14",
   "wakeup_default_seconds": 1800,
   "consecutive_no_progress_wakes": 0,
@@ -583,7 +585,15 @@
     "MoveMan_element_0x0C_0x10": "the owner's transform x/y, asr #4 (signed): read from ip = [[owner+4]+0x50] at +0x0C/+0x10, shifted at 0x0207C9E4/0x0207C9F4",
     "MoveMan_element_position_pair": "+0x0C/+0x10 = current position, +0x14/+0x18 = previous position (P137's snapshot) -- the element tracks a position and its previous value",
     "transform_node_third_sighting": "[[owner+4]+0x50] at 0x0207C9D4 -- same chain as P128's [[S+4]+0x50] and P129's three-word vector; first site to read +0x0C/+0x10/+0x14 together",
-    "element_units_vs_node": "element coordinates are 16x coarser than the transform node's (asr #4). The node's fixed-point format is NOT established."
+    "element_units_vs_node": "element coordinates are 16x coarser than the transform node's (asr #4). The node's fixed-point format is NOT established.",
+    "installer_dead_buffer": "0x0207C988's sp+8/sp+0xC/sp+0x10: written at 0x0207C9E0/0x0207C9EC/0x0207C9F8 and read NOWHERE in 111 instructions; 0x0201899C(sp+8,..) output overwritten, return clobbered at 0x0207C9AC. Seventh vestigial finding.",
+    "record_0x5C": "the BattleMove element pointer -- str r0,[r4,#0x5c] at 0x0207CA0C, immediately after bl 0x02082C34; sits directly below +0x60 (the ColObj)",
+    "installer_arg0_0xEC": "[sb+0xEC] = the container passed to Battle_ColObjCreate 0x0207AEDC (0x0207CA10)",
+    "installer_arg0_0xF0": "[sb+0xF0] = the container passed to the element allocator 0x02082C34 (0x0207CA04)",
+    "record_0x34_0x38_source": "record+0x34 = the installer's arg2 (r7) at 0x0207CA64; record+0x38 = arg3 (r6) at 0x0207CA6C -- the same fields the pool allocator reads (iteration 70/72)",
+    "record_0x3C_formula": "arg5 ([sp+0x30]) | 0x20C000, plus 0x30000 if arg2 & 0x00FCFFFF, plus ((arg2 & 0xF) << 4) | 0x400000 if arg2's low nibble is set",
+    "installer_arg_count": "0x0207C988 takes at least 6 arguments: r0-r3 plus [sp+0x30] and [sp+0x34]",
+    "record_0x184_0x186": "both initialise to 0x100 (strh at 0x0207CA98/0x0207CA9C via add r0,r4,#0x100 -- 0x186 is not an encodable ARM immediate)"
   },
   "combat_phase_spillover": [
     "status-effect enum = 10 values, contiguous IDs 0x19-0x22 (Shock/Freeze/Burn/Confusion/Poison/Judgment/Paralysis/Blindness/Speed-Down/Battle+Support Seal). Likely an immunity BITMASK on character state struct.",
@@ -1490,7 +1500,13 @@
     "P139: when a value's meaning is uncertain, the caller that supplies it is usually one read away. Prefer chasing the source over interpreting the bit pattern.",
     "P139: I predicted this read would settle P137's ambiguity and it did not. Record the failed prediction next to the finding -- otherwise the ambiguity quietly looks resolved because a wake was spent on it.",
     "P139: two functions touching the same offsets are not necessarily on the same list. The consumer reaches its list via [[[arg0+4]+0x10]+0x10] while the allocator links onto container+0x00 -- different chains, so shared offsets prove nothing about shared structure.",
-    "P139: a third independent sighting of the same pointer chain ([[owner+4]+0x50]) is worth noting explicitly. Repeated arrival at one object from unrelated modules is how a structure earns confidence."
+    "P139: a third independent sighting of the same pointer chain ([[owner+4]+0x50]) is worth noting explicitly. Repeated arrival at one object from unrelated modules is how a structure earns confidence.",
+    "P140: to prove a stack slot is dead, grep the WHOLE function for loads from it rather than reading forward until you get bored. One scan of 111 instructions settled what P139 had guessed wrong about.",
+    "P140: a call can be dead code too. 0x0201899C's buffer is overwritten and its return value clobbered, so the call contributes nothing -- I had been treating 'there is a bl' as evidence that something happens.",
+    "P140: read a constructor for what it stores from its ARGUMENTS, not just what it stores. record+0x34/+0x38 had been known as fields the allocator reads since iteration 70; the installer named their source in two instructions.",
+    "P140: one argument feeding two fields in different encodings (arg2 stored whole at +0x34, its low nibble re-encoded into +0x3C bits 4-7 with a 0x400000 marker) means naming that argument pays twice. Prioritise arguments that appear more than once.",
+    "P140: a split immediate (add #0x100 then offset +0x86) is the signature of an offset above 0xFFF or otherwise unencodable -- the same mechanism that hid +0x648 in P137. Expect it for every field past +0xFF in a large struct.",
+    "P140: two stores to the same offset back to back (strb r7 then strb r2 at record+0x175) is a dead store. Note it; do not silently report only the surviving value."
   ],
   "open_questions_for_owner": [
     "Note-kind bucketing: the engine keeps at most 7 simultaneous \"notes\" per character, and 7 of the 17 kinds share one slot (kinds 6,7,8,9,10,14,15) so they should be mutually exclusive in play. Does starting one of those effects visibly cancel another?"

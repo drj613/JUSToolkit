@@ -33,7 +33,9 @@ import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
+import json             # noqa: E402
 import nav              # noqa: E402
+import screen_fp as FP  # noqa: E402
 import screenlib as SL  # noqa: E402
 import boot_to_battle as B  # noqa: E402
 
@@ -64,6 +66,57 @@ STEPS = [
     ("stage_select", [("btn", ["A"])],                          "rule_select"),
     ("rule_select",  [("btn", ["START"])],                      "battle"),
 ]
+
+# Items and gimmicks are ON by default and both inject randomness into a fight, so
+# every measurement run turns them off. The target state is specific: both OFF with
+# ギミック focused, captured in rules_target.json.
+#
+# Why a whole-row reference instead of reading each toggle: at 16x20 over the whole
+# bottom screen, items/gimmicks ON versus both OFF differ by just 0.67 against a
+# tolerance of 4.00 -- indistinguishable, so a naive check would pass with items
+# still ON. Cropping to individual pills does not work either, because the focus
+# highlight moves the crop MORE than the value does (48.1 versus 21.5). The toggle
+# row as a whole, at higher resolution, separates cleanly.
+#
+# Retrying taps IS safe here, unlike the confirm buttons: a toggle is reversible and
+# the state is checked after every single tap, so overshooting is recoverable rather
+# than a one-way trip to an unknown screen.
+TAP_ITEMS = (73, 51)
+TAP_GIMMICK = (165, 51)
+RULES_TARGET = os.path.join(HERE, "rules_target.json")
+
+
+def _rules_cfg():
+    with open(RULES_TARGET) as f:
+        return json.load(f)
+
+
+def rules_distance(cfg):
+    p, _ = nav.shot("rules_row")
+    fp = FP.fingerprint_crop(p, cfg["crop"], cfg["grid"][0], cfg["grid"][1])
+    return min(FP.distance(fp, s) for s in cfg["samples"])
+
+
+def rules_off(max_rounds=5):
+    """Tap until items and gimmicks are both OFF. Returns the number of taps."""
+    cfg = _rules_cfg()
+    d = rules_distance(cfg)
+    if d <= cfg["tol"]:
+        return 0, d
+    taps = 0
+    for _ in range(max_rounds):
+        for target in (TAP_ITEMS, TAP_GIMMICK):
+            nav.tap(target[0], target[1], settle=90)
+            taps += 1
+            d = rules_distance(cfg)
+            if d <= cfg["tol"]:
+                return taps, d
+    raise RuntimeError(
+        "could not get items and gimmicks both OFF after %d taps (nearest %.2f, "
+        "tol %.2f). A tap SELECTS an unfocused control and TOGGLES a focused one, "
+        "so the count needed varies; see /tmp/jus_nav/rules_row.ppm"
+        % (taps, d, cfg["tol"]))
+
 
 # Extra frames after the source screen is recognised, so an entry animation that
 # the fingerprint cannot see has finished before we press.
@@ -100,6 +153,10 @@ def boot(slot):
     for src, actions, dst in STEPS:
         ds = SL.wait_for(src)
         nav.advance(PRE_PRESS_SETTLE)
+        if src == "rule_select":
+            taps, rd = rules_off()
+            print("  items+gimmicks OFF after %d taps (row distance %.2f)"
+                  % (taps, rd))
         for a in actions:
             act(a)
         d = SL.wait_for(dst, max_frames=1500)

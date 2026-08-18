@@ -89,6 +89,30 @@ def fingerprint(png):
     return fp
 
 
+def fingerprint_crop(png, crop, gw, gh):
+    """Fingerprint an arbitrary crop at an arbitrary resolution.
+
+    Needed because whole-bottom-screen fingerprints cannot see small text changes.
+    Measured: the rule screen with items/gimmicks ON versus both OFF differ by only
+    0.67 at 16x20 over the whole screen, against a tolerance of 4.00 -- i.e. the two
+    states are indistinguishable, and a check built on that would have silently
+    passed with items still ON. Cropping to the toggle row and raising the grid
+    makes the difference dominate instead of averaging away.
+
+    Crop is an ImageMagick geometry string in PPM pixel space, where the PPM is
+    256x384 with the bottom screen starting at y=192.
+    """
+    r = subprocess.run(["magick", png, "-crop", crop, "+repage",
+                        "-colorspace", "Gray", "-resize", "%dx%d!" % (gw, gh),
+                        "-depth", "8", "gray:-"], capture_output=True)
+    if r.returncode != 0:
+        raise RuntimeError("magick failed: %s" % r.stderr.decode()[:300])
+    fp = r.stdout
+    if len(fp) != gw * gh:
+        raise RuntimeError("expected %d bytes, got %d" % (gw * gh, len(fp)))
+    return fp
+
+
 def grab(tmp="/tmp/jus_fp.ppm"):
     return fingerprint(capture(tmp))
 

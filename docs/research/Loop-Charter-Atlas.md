@@ -66,6 +66,12 @@ Naruto 4力-vs-4笑 test case. Designer-facing twin:
 - **Protect the main context.** The orchestrator never Reads disassembly, large JSON, or
   binary dumps directly. All heavy reading goes to subagents that return short summaries.
   Keep per-wake orchestrator output under ~2k tokens.
+- **Check the record before writing anything up as new** (added iteration 161, after making the
+  same mistake twice). Before drafting a finding, `grep -rl` the claim's key address through
+  `docs/research/findings/` AND `Battle-Engine-Map.md`. Do NOT rely on the state file for this —
+  it is hundreds of keys of my own summaries, and it is where I keep re-finding my own open
+  questions instead of the record's answers. P157 drafted an already-documented census as new;
+  P160 spent a wake reaching PLAUSIBLE on something a finding had at CONFIRMED_STATIC.
 - **Evidence discipline** (carried over from Phase 0): every claim gets a confidence label
   (CONFIRMED / PLAUSIBLE / SPECULATIVE) and a pointer to the query.py command or file offset
   that supports it. Refuted hypotheses get recorded, not deleted.

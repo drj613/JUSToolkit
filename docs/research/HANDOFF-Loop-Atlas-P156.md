@@ -68,7 +68,7 @@ no entity. Eleven element fields mapped incl. a `0x1E`-frame default lifetime.
 
 **Reachability and the battle root.** ObjShot/ObjCtrl constructors are called from **Thumb**
 in ov6 (`0x0214D826`, `0x0214D818`), storing their managers into the battle root via global
-**`0x0214D928`** — ObjShot at `root+0x110`, ObjCtrl at `root+0x10C`. P151 independently hit
+**`0x02172960`** (**P161 correction:** this handoff's `0x0214D928` is the literal *pool word*, not the global) — ObjShot at `root+0x110`, ObjCtrl at `root+0x10C`. P151 independently hit
 the same global from the other direction (the chara setup loop's bound is `[root+0x158]`, the
 character count).
 
@@ -239,7 +239,7 @@ ov05 residency re-measurement that closed our contradiction (`9f836c2`, tool at
 `scripts/emu/overlay_residency.py`).
 
 **Sent to them:** the ObjShot manager address, element layout, and the better anchor —
-`[0x0214D928]` → root → `[root+0x110]` → manager, rather than the singleton. The
+`[0x02172960]` → root → `[root+0x110]` → manager, rather than the singleton (**P161 correction:** sent to them as `[0x0214D928]`, which is the pool word; corrected to the peer in P161). The
 `0x0215D3B4`-is-a-function correction. The `entity+0x128`-fills-a-static-gap convergence. Two
 boot-trace cautions (Start skips the intro; the in-battle training menu swallows all bridge
 input so plans report `ok:true` while nothing happens).

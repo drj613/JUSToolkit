@@ -83,9 +83,9 @@ So `+0x08`/`+0x0C` get filled by **`0x02173004`/`0x02173014`**, or **`0x020875B0
 0x0214D79A: bge #0x0214D79E
 ```
 
-The loop runs `r5` from `0` while `r5 < [root + 0x158]`, where `root = [0x0214D928]`.
+The loop runs `r5` from `0` while `r5 < [root + 0x158]`, where `root = [0x02172960]`. (**P161 correction:** earlier drafts wrote `root = [0x0214D928]`. `0x0214D928` is a literal *pool word* whose value is `0x02172960`; the global is `0x02172960`.)
 
-**`0x0214D928` is the same battle-root global** that iteration 147b found holding the ObjShot manager at `root+0x110` and the ObjCtrl manager at `root+0x10C`. Two unrelated passes — one tracing projectile manager construction, one re-reading a character setup loop — landed on the same global from different directions. That also pins down the original document's unexplained "`ldr r3,[r2,#0x158]` — a count on `r2`": `r2` is the battle root, and `+0x158` is the character count.
+**The same battle-root global is reached here** (via the pool word at `0x0214D928`, value `0x02172960`) that iteration 147b found holding the ObjShot manager at `root+0x110` and the ObjCtrl manager at `root+0x10C`. Two unrelated passes — one tracing projectile manager construction, one re-reading a character setup loop — landed on the same global from different directions. That also pins down the original document's unexplained "`ldr r3,[r2,#0x158]` — a count on `r2`": `r2` is the battle root, and `+0x158` is the character count.
 
 ## Not claimed
 

@@ -1,9 +1,10 @@
 {
- "iteration": 160,
+ "iteration": 161,
  "phase": "combat",
- "current_task": "P160 done: [0x02172960] is a 368-byte ov6 object (2-write lifecycle); P158's 'stat block' label REFUTED; xrefs.json misses 89% of Thumb literal loads. Next: 0x0214D928's writer + alloc size.",
+ "current_task": "P161 done: 0x0214D928 is a POOL WORD (value 0x02172960); [0x02172960] IS the battle root, CONFIRMED; +0x4C/+0x158/+0x15C added to the root map; +0x4C contradiction sent to justoolkit-ed.",
  "queue": [
-  "FIND 0x0214D928's writer and its ALLOCATION SIZE. If 0x170, it is the same object as [0x02172960] and two campaign threads merge. Cheap and decisive.",
+  "AWAIT justoolkit-ed's runtime read of root+0x4C..+0x6C / +0x158 / +0x15C / +0x110 / +0x10C and [battleObj+0x1E0]. It settles the +0x4C multiplier-vs-index contradiction, which gates the meaning of the campaign's only non-constant formula.",
+  "APPLY the new charter rule retroactively: grep the findings dir for every 'open question' in this state file's open_questions / next_leads and drop the ones already answered. The state file has been reproducing my own uncertainty.",
   "RE-MEASURE every campaign literal-load count that involves Thumb code, starting with [0x020AFE90+0x28]'s '149 literal loads'. The 89% Thumb gap makes those numbers untrustworthy as stated.",
   "IDENTIFY what the +0x4C word array holds now that 'stat' is retracted. Read arm9 0x020854C4 whole -- 244 bytes, 0 recorded callers -- since it compares an entry against a character index.",
   "FIX or document xrefs.json's Thumb literal-load indexing -- the single largest measured gap in the toolchain; it silently weakens any global's reference census.",
@@ -240,7 +241,8 @@
   "P157: r1-producer census at all 10 HP-adjust sites; ov6 0x02171168 42-entry dispatch table; status 0x20 handlers found; multiplier ruled out at the HP boundary; Codex cold decode caught the HP=1 special case.",
   "P158: dispatcher 0x02158ED0; [param+0x4] writer is a pointer store to static table data (chain-scaling location REFUTED); status-duration formula duration = base + (base/10)*(stat*2); my P157 'key' claim refuted; Codex refuted by encoding bits.",
   "P159: two effect-selection routes (0x0217215C operand table; staged X+0x172/+0x173 on-hit ids); complete 42-row effect-id table; id space confirmed 1-41 by a third method; status subsystem CLEARED of chain scaling.",
-  "P160: [0x02172960] = 368-byte ov6 object, 2-write lifecycle, only +0x00 accessed, cross-overlay handle read by ov11; P158's 'per-character stat' label REFUTED; xrefs.json Thumb literal-load gap measured at 89%."
+  "P160: [0x02172960] = 368-byte ov6 object, 2-write lifecycle, only +0x00 accessed, cross-overlay handle read by ov11; P158's 'per-character stat' label REFUTED; xrefs.json Thumb literal-load gap measured at 89%.",
+  "P161: 0x0214D928 proved to be a pool word holding 0x02172960 (three representations); [0x02172960] confirmed as the battle root; root map extended 11 -> 14 slots; record normalised; process failure recorded and a charter rule added."
  ],
  "stuck": {},
  "required_reading_for_koma_tasks": [
@@ -299,7 +301,7 @@
   "Is HP computed as size*k at runtime, or tabulated per panel? Naruto 4-koma=144=4*36; if size*k then size5=180, size6=216, size7=252, size8=288. One reading settles it."
  ],
  "notes": "Iteration 146 done (delegated + verified). THREE closures: (a) 0x800's polarity is category ROUTING, not a contradiction -- 0x020801D4 is loop-continue, 0x0207F7C8 is the next category check; (b) record+0x34 is NOT write-once -- a four-function flag API (0x0207D064/0x0207D0BC/0x0207CF18/0x0207CF78) mirrors changes into +0x38 and the +0x08 node list, and the destructor 0x0207CCD4 memsets 0x188; (c) P144's 0x6FF puzzle SOLVED -- ov6 ORs [record+0x150]&0xFF into +0x34, and 0x6FF covers bits 0-7, so the test reads runtime bits not the 0x100 construction seed. Top task: read record+0x150, which now drives the whole category gate. STANDING: query.py mis-bins functions in this module (4 leaves here, 8 in P125, 2 in P126) -- verify any address before trusting its size or container. The +0x5C base-confusion trap has 7 instances; on +0x34 (1092 hits) the base register is the ONLY struct identifier. CHARTER: updated in P146b on the user's direct authorization. North star = docs/PROJECT-GOAL.md (master, f47d63d); Mission 2's current focus is the entity/projectile subsystems. justoolkit-06 is the designated runtime validator -- send them struct-field hypotheses and breakpoint requests rather than leaving questions unresolved; that is the only route to dynamic evidence without breaking the static-only rule.",
- "last_wake": "2026-08-18 P160",
+ "last_wake": "2026-08-18 P161",
  "wakeup_default_seconds": 900,
  "consecutive_no_progress_wakes": 0,
  "k1c_helper_passives": {
@@ -1966,5 +1968,30 @@
   "SUPERSEDES": "the figure on record was '465 of 4941 arm9 ARM pc-relative loads unrecorded = 9.4%'. For Thumb-heavy overlay code it is an order of magnitude worse.",
   "CONSEQUENCE": "every campaign 'N literal loads' count for a global that Thumb code touches is a SEVERE FLOOR, not an estimate. Re-measure before reasoning from one. The handoff's '[0x020AFE90+0x28], 149 literal loads' is exactly such a figure."
  },
- "P160_CODEX": "Agreed on every load-bearing item in both Thumb fragments: 0x17<<4 = 0x170 for both the alloc size and the memset length, r3=0x7F, both blx pairs being single 32-bit instructions, and the store of the allocator's return into the global. IT ADDED SOMETHING I MISSED: in the teardown the two literal loads use DIFFERENT displacements (0x3C, 0x34) at addresses 8 bytes apart, and Codex proved from the displacement arithmetic alone that Align(B+4,4)+0x3C == Align(B+0xC,4)+0x34 -- so free and the null-store provably hit the SAME pool word, established with no address knowledge at all. Relative-vs-absolute cross-check reached from the weaker representation unaided."
+ "P160_CODEX": "Agreed on every load-bearing item in both Thumb fragments: 0x17<<4 = 0x170 for both the alloc size and the memset length, r3=0x7F, both blx pairs being single 32-bit instructions, and the store of the allocator's return into the global. IT ADDED SOMETHING I MISSED: in the teardown the two literal loads use DIFFERENT displacements (0x3C, 0x34) at addresses 8 bytes apart, and Codex proved from the displacement arithmetic alone that Align(B+4,4)+0x3C == Align(B+0xC,4)+0x34 -- so free and the null-store provably hit the SAME pool word, established with no address knowledge at all. Relative-vs-absolute cross-check reached from the weaker representation unaided.",
+ "P161_ROOT_GLOBAL_NOTATION_FIX": {
+  "fact": "CONFIRMED_STATIC: 0x0214D928 is a literal POOL WORD inside ov6 at file offset 0xC08 of ov06.bin; its four bytes are 60 29 17 02 = 0x02172960. The campaign misread the disassembler's comment convention -- 'ldr r0,[pc,#0x198] ; = 0x0214D928' prints the ADDRESS OF THE POOL WORD, not its contents.",
+  "so": "every note reading 'the global 0x0214D928' means 'the pool word at 0x0214D928, whose value is the global 0x02172960'. [0x02172960] IS the battle root, and the root IS the 368-byte object from P160. P160's PLAUSIBLE is promoted to CONFIRMED_STATIC.",
+  "zero_sites_was_a_TRUE_negative": "base_offset_scan.py on 0x0214D928 returns ZERO load sites, and that is correct: nothing loads that value because it is not a value, it is a slot things load FROM. The P155 'never accept a clean negative without checking' discipline turned an empty scan into the answer.",
+  "three_representations": "(1) raw bytes at the file offset; (2) Thumb Align(pc+4,4)+imm8*4 from both cited sites (0x0214D78E imm 0x198, 0x0214D81C imm 0x108) both landing on 0x0214D928; (3) cold Codex given an address-free byte blob with offsets only -- it deduced the blob loads at A = 2 mod 4, computed the literal at blob offset 0x019A, read out 0x02172960, confirmed both loads share the word, AND spotted a third site sharing it that I had not listed. It also refused to answer when I mangled the prompt and omitted the data rather than inventing a decode.",
+  "record_normalised": "fixed the misleading prose in Battle-Engine-Map.md, HANDOFF-Loop-Atlas-P156.md, and findings/chara-setup-loop-has-three-descriptor-paths.md. Left the raw disasm comments in findings/objshot-manager-and-the-27-kind-dispatch-table.md alone -- '; = 0x0214D928' is the tool's own correct output; the prose built on it was what was wrong."
+ },
+ "P161_PROCESS_FAILURE_TWICE": {
+  "what": "findings/battle-add-root-object-map.md ALREADY said '0x0214D668 and 0x0214D928 both hold 0x02172960 -- both literal pools reach the same global', already called [0x02172960] the root object, already knew the 0x170 size, and already mapped 11 subsystem slots in it. P160 spent a wake reaching PLAUSIBLE on a question the record had at CONFIRMED_STATIC, and queued a 'cheap decisive discriminator' for something already decided.",
+  "SECOND_TIME_IN_FIVE_WAKES": "P157 drafted a census of the HP-delta path as new before checking Battle-Engine-Map.md, which already had most of it. Same failure mode, same five-second fix skipped twice.",
+  "NEW_HARD_RULE_added_to_charter": "before drafting anything as new, grep -rl the claim's key address through docs/research/findings/ AND Battle-Engine-Map.md. Do NOT use this state file for that purpose -- it is hundreds of keys of my own summaries and it is where I keep re-finding my own open questions instead of the record's answers.",
+  "what_still_has_value": "the independent three-way verification of the pool-word fact is a genuine cross-check of a claim the entire root map rests on. It should have been framed as confirming a known result, not resolving an open one."
+ },
+ "P161_NEW_ROOT_SLOTS": {
+  "context": "battle-add-root-object-map.md recovered 11 offsets, all subsystem pointers in +0x0D0-+0x128. These three are not among them, so the root map goes 11 -> 14.",
+  "+0x4C": "base of a per-character word array, stride 4, indexed by a character index. ov6 0x02158F78, arm9 0x0208552C.",
+  "+0x158": "character count; used as count-1 to clamp a character index. arm9 0x0208550C, and P151's setup-loop bound -- now a cross-check rather than a coincidence, since both sides are confirmed to be the same object.",
+  "+0x15C": "an index into the +0x4C array. arm9 0x02085524."
+ },
+ "P161_0x4C_CONTRADICTION": {
+  "the_conflict": "ov6 0x02158F78 uses root+0x4C[i] as a MULTIPLIER (duration = base + (base/10)*(V*2), the campaign's only non-constant scaling formula). arm9 0x0208552C COMPARES an entry for equality against a character index clamped to [root+0x158]-1, then makes a vtable call with 1 or 0. A magnitude does not support the second use; an index does not sensibly support the first.",
+  "status": "not claimed either way. P160's retraction of the 'per-character stat' label stands and no replacement is offered. One of the two readings is wrong and static analysis cannot tell which.",
+  "SENT_TO_PEER": "asked justoolkit-ed for a live read of root+0x4C..+0x6C, root+0x158, root+0x15C, root+0x110, root+0x10C, and [battleObj+0x1E0]. Small values in 0..N-1 mean it is an index array and the duration formula is stranger than it looks; stat-shaped values mean I misread the arm9 site. Reachability verified before asking, per the standing agreement.",
+  "ALSO_CORRECTED_TO_PEER": "I had previously sent them the anchor [0x0214D928] -> root -> [root+0x110] -> ObjShot manager. The pointer chain was right, the global was not; corrected to [0x02172960]. Also passed on the P160 caution that our 'N literal loads' figures are severe floors wherever Thumb touches an address."
+ }
 }

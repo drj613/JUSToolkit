@@ -698,6 +698,9 @@ string. Any hand-parse of these files from the old description produces garbage 
 | Twelve poked modes (0,1,2,3,4,5,7,9,16,17,19,21) each land at their own table index | runtime `jus-hsc` / `jus-wbo` | **`CROSS_CONFIRMED`** |
 | Byte-identical records: `(9,22)`, `(16,30)`, `(25,28)` — nothing else repeats | ov6 `0x02170EAC` | `CONFIRMED_STATIC` |
 | `root+0x08` is **not** a copy of `0x020AFEA0`: the training path runs table entry 8 with the settings byte at 0 | runtime `jus-wbo` | **`CROSS_CONFIRMED`** |
+| `root+0x08` read directly across 5 paths: battle path is **identity** (`0→0`, `1→1`, `2→2`, `12→12`); only training substitutes (`0→8`) | runtime `jus-j1k` | **`CROSS_CONFIRMED`** |
+| `root+0xC8` observed `0` at mode 12 with `root+0x000` = `0x02150F65`, the default handler named statically beforehand | runtime `jus-j1k` | **`CROSS_CONFIRMED`** |
+| The installer `0x0214F91C` is **gated** — mode 12 reaches `root+0x08` = 12 and still gets the default. The gate is what stands between a poked settings byte and rule 12 actually playing | ov6 | `not claimed` |
 
 `REFUTED` (mine, same wake it was filed): rulemess text-duplicate entries do **not** share handler code.
 `not claimed`: whether they behave identically in play, and whether the ov1 rulemess index and this ov6

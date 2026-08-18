@@ -67,55 +67,72 @@ STEPS = [
     ("rule_select",  [("btn", ["START"])],                      "battle"),
 ]
 
-# Items and gimmicks are ON by default and both inject randomness into a fight, so
-# every measurement run turns them off. The target state is specific: both OFF with
-# ギミック focused, captured in rules_target.json.
+# Items and gimmicks are both ON by default and both inject randomness into a fight,
+# so every measurement run turns them off.
 #
-# Why a whole-row reference instead of reading each toggle: at 16x20 over the whole
-# bottom screen, items/gimmicks ON versus both OFF differ by just 0.67 against a
-# tolerance of 4.00 -- indistinguishable, so a naive check would pass with items
-# still ON. Cropping to individual pills does not work either, because the focus
-# highlight moves the crop MORE than the value does (48.1 versus 21.5). The toggle
-# row as a whole, at higher resolution, separates cleanly.
+# THE OLD PIXEL CHECK PASSED WITH GIMMICKS STILL ON, and it did so on every run since
+# it was written. The owner caught it: the stage in these matches spawns projectiles
+# as its gimmick, which damage and knock down, and that is where the unexplained
+# damage in a なにもしない training match was coming from.
+#
+# The mechanism is the two-tap rule. A tap on an UNFOCUSED pill only moves focus to
+# it; a tap on a focused one toggles it. アイテム starts focused, so the first tap
+# turned items off and the second merely focused ギミック. The check then compared the
+# toggle row against a stored reference that had been captured in that same
+# half-done state, so it agreed with itself. Two whole sessions of measurements ran
+# with the stage gimmick live.
+#
+# The lesson is not "the tolerance was too loose". It is that a reference captured
+# from the state you are trying to verify cannot verify it -- and that a rendered
+# label was the wrong representation to read. The pill's ON/OFF glyphs are 2 versus
+# 3 characters inside a rounded box whose focus border pulses, and every pixel
+# statistic tried on it (near-white count, dark-ink count, glyph-column count)
+# overlapped between the two states.
+#
+# So read the flags instead. Each toggle is a byte, found by alternating the toggle
+# five times and diffing all of main RAM for a byte that followed the pattern -- one
+# clean boolean out of 4MB, sitting 7 and 8 bytes past the known deck_active_slot at
+# 0x020AFEB4. Confirmed in both directions: with the screen reading ON/ON the bytes
+# read 1/1, and toggling either one moves only its own byte.
 #
 # Retrying taps IS safe here, unlike the confirm buttons: a toggle is reversible and
-# the state is checked after every single tap, so overshooting is recoverable rather
+# the flag is checked after every single tap, so overshooting is recoverable rather
 # than a one-way trip to an unknown screen.
 TAP_ITEMS = (73, 51)
 TAP_GIMMICK = (165, 51)
-RULES_TARGET = os.path.join(HERE, "rules_target.json")
+RULE_FLAGS = [("items", 0x020AFEBB, TAP_ITEMS),
+              ("gimmick", 0x020AFEBC, TAP_GIMMICK)]
 
 
-def _rules_cfg():
-    with open(RULES_TARGET) as f:
-        return json.load(f)
+def rule_flag(addr):
+    """Read one rule toggle. 1 is ON, 0 is OFF."""
+    out = subprocess.run([sys.executable, os.path.join(HERE, "jusemu.py"), "peek",
+                          hex(addr), "1"], capture_output=True, text=True, cwd=HERE)
+    if out.returncode != 0:
+        raise RuntimeError("peek %s failed: %s%s" % (hex(addr), out.stdout, out.stderr))
+    return json.loads(out.stdout)["result"]["value"]
 
 
-def rules_distance(cfg):
-    p, _ = nav.shot("rules_row")
-    fp = FP.fingerprint_crop(p, cfg["crop"], cfg["grid"][0], cfg["grid"][1])
-    return min(FP.distance(fp, s) for s in cfg["samples"])
+def rules_off(max_taps=6):
+    """Tap until items and gimmicks both read OFF in RAM. Returns (taps, flags).
 
-
-def rules_off(max_rounds=5):
-    """Tap until items and gimmicks are both OFF. Returns the number of taps."""
-    cfg = _rules_cfg()
-    d = rules_distance(cfg)
-    if d <= cfg["tol"]:
-        return 0, d
+    The flag is re-read after every tap, which is what makes the first tap on an
+    unfocused pill (focus only, no toggle) harmless rather than fatal.
+    """
     taps = 0
-    for _ in range(max_rounds):
-        for target in (TAP_ITEMS, TAP_GIMMICK):
-            nav.tap(target[0], target[1], settle=90)
+    for name, addr, target in RULE_FLAGS:
+        for _ in range(max_taps):
+            if rule_flag(addr) == 0:
+                break
+            nav.tap(target[0], target[1], settle=140)
             taps += 1
-            d = rules_distance(cfg)
-            if d <= cfg["tol"]:
-                return taps, d
-    raise RuntimeError(
-        "could not get items and gimmicks both OFF after %d taps (nearest %.2f, "
-        "tol %.2f). A tap SELECTS an unfocused control and TOGGLES a focused one, "
-        "so the count needed varies; see /tmp/jus_nav/rules_row.ppm"
-        % (taps, d, cfg["tol"]))
+        else:
+            raise RuntimeError(
+                "%s is still ON after %d taps at %s (flag 0x%08X). A tap on an "
+                "unfocused pill only moves focus, so two taps per toggle is normal; "
+                "six means the taps are not landing."
+                % (name, max_taps, target, addr))
+    return taps, [rule_flag(a) for _, a, _ in RULE_FLAGS]
 
 
 # Extra frames after the source screen is recognised, so an entry animation that
@@ -154,9 +171,8 @@ def boot(slot):
         ds = SL.wait_for(src)
         nav.advance(PRE_PRESS_SETTLE)
         if src == "rule_select":
-            taps, rd = rules_off()
-            print("  items+gimmicks OFF after %d taps (row distance %.2f)"
-                  % (taps, rd))
+            taps, flags = rules_off()
+            print("  items+gimmicks OFF after %d taps (flags %s)" % (taps, flags))
         for a in actions:
             act(a)
         d = SL.wait_for(dst, max_frames=1500)

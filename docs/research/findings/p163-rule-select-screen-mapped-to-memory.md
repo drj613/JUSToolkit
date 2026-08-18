@@ -69,7 +69,7 @@ The cross-check comes from unrelated code. ov6 `0x02150AE6` writes the same fiel
 
 `0x00004650` = **18000** = 300 s × 60 fps = **exactly 5:00**. A round wall-clock default from separate code, same field, same units. Frame count is the only interpretation where both `value * 60` and `18000` make sense.
 
-`not claimed`: path B, `(value+1) * 144 - 1`. 144 isn't a frame-rate multiple of anything obvious, so at least one mode reads じかん as something other than seconds. The discriminator `0x0216446C(mode)` returning 1 is unread.
+`not claimed`: path B, `(value+1) * 144 - 1`. 144 isn't a frame-rate multiple of anything obvious, so at least one mode reads じかん as something other than seconds. The discriminator `0x0216446C` (**ov1** — P164)(mode)` returning 1 is unread.
 
 `PLAUSIBLE`: `+0x10` is the mode. It receives `[r7+0x76]`, which gates the time conversion — exactly the kind of setting that changes how another setting is read.
 

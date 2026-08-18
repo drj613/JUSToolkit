@@ -1,9 +1,11 @@
 {
-  "iteration": 154,
+  "iteration": 155,
   "phase": "combat",
-  "current_task": "WRITE a liveness-tracking variant of the base-offset scan -- stop the forward walk when the base register is reassigned. Needed before any offset of 0x0214CCF8 beyond +0x00 can be claimed, and reusable for every struct-field sweep in the campaign.",
+  "current_task": "RE-RUN base_offset_scan.py against the campaign's other static-base claims -- any 'struct at fixed address X has fields at ...' conclusion drawn from an untracked forward walk is now suspect. Grep findings for fixed-address field maps and re-verify each.",
   "queue": [
-    "WRITE a liveness-tracking variant of the base-offset scan -- stop the forward walk when the base register is reassigned. Needed before any offset of 0x0214CCF8 beyond +0x00 can be claimed, and reusable for every struct-field sweep in the campaign.",
+    "RE-RUN base_offset_scan.py against the campaign's other static-base claims -- any 'struct at fixed address X has fields at ...' conclusion drawn from an untracked forward walk is now suspect. Grep findings for fixed-address field maps and re-verify each.",
+    "IDENTIFY [0x020AFE90 + 0x28] -- still the unknown other term of path predicate 0x02086BD4; 149 literal loads. base_offset_scan.py can now do this properly.",
+    "READ 0x021671E4 -- called right after the session teardown nulls the pointer; likely the real destructor or comms shutdown.",
     "IDENTIFY [0x020AFE90 + 0x28] -- still the unknown other term of path predicate 0x02086BD4. 149 literal loads, so a major global; its byte at +0x28 forces Path B even with no network session.",
     "READ 0x021671E4 -- called immediately after the session teardown nulls the pointer; likely the object's real destructor or a comms shutdown.",
     "IDENTIFY [0x020AFE90 + 0x28] -- the OTHER term of the path predicate 0x02086BD4, still unknown. 0x020AFE90 has 149 literal loads, so it is a major global; the byte at +0x28 forces Path B even with no network session.",
@@ -278,7 +280,7 @@
     "Is HP computed as size*k at runtime, or tabulated per panel? Naruto 4-koma=144=4*36; if size*k then size5=180, size6=216, size7=252, size8=288. One reading settles it."
   ],
   "notes": "Iteration 146 done (delegated + verified). THREE closures: (a) 0x800's polarity is category ROUTING, not a contradiction -- 0x020801D4 is loop-continue, 0x0207F7C8 is the next category check; (b) record+0x34 is NOT write-once -- a four-function flag API (0x0207D064/0x0207D0BC/0x0207CF18/0x0207CF78) mirrors changes into +0x38 and the +0x08 node list, and the destructor 0x0207CCD4 memsets 0x188; (c) P144's 0x6FF puzzle SOLVED -- ov6 ORs [record+0x150]&0xFF into +0x34, and 0x6FF covers bits 0-7, so the test reads runtime bits not the 0x100 construction seed. Top task: read record+0x150, which now drives the whole category gate. STANDING: query.py mis-bins functions in this module (4 leaves here, 8 in P125, 2 in P126) -- verify any address before trusting its size or container. The +0x5C base-confusion trap has 7 instances; on +0x34 (1092 hits) the base register is the ONLY struct identifier. CHARTER: updated in P146b on the user's direct authorization. North star = docs/PROJECT-GOAL.md (master, f47d63d); Mission 2's current focus is the entity/projectile subsystems. justoolkit-06 is the designated runtime validator -- send them struct-field hypotheses and breakpoint requests rather than leaving questions unresolved; that is the only route to dynamic evidence without breaking the static-only rule.",
-  "last_wake": "2026-08-18 iteration 154 (autonomous tick)",
+  "last_wake": "2026-08-18 iteration 155 (autonomous tick)",
   "wakeup_default_seconds": 1800,
   "consecutive_no_progress_wakes": 0,
   "k1c_helper_passives": {
@@ -1668,7 +1670,10 @@
     "P153: running the raw scan ALONGSIDE the database query (not instead of it) is now paying off every time. Here the DB gave 4 and the truth was 9, on the one global the whole finding rested on. With a measured 9.4% index gap, never let a DB count be the last word on a load-bearing question.",
     "P154: check heap-vs-static BEFORE reaching for the allocation census. 0x021AA0D8 is static RAM between two overlay images, so it has no allocator call site and therefore no tag -- the census hypothesis I queued was unfalsifiable by construction, not merely unproductive. A tool that works by attributing call sites cannot see objects that were never allocated.",
     "P154: some confidence labels have a CEILING set by the evidence type, not by how much evidence accumulates. The networking reading now has address, size, init, teardown and overlay provenance and still cannot exceed PLAUSIBLE, because static allocation guarantees no symbol will ever name it. Say so explicitly instead of implying more evidence would promote it.",
-    "P154: state a scan's limitation BEFORE presenting its numbers, not in a footnote. My offset histogram does not track register liveness, and the largest offsets it reports are exactly where that flaw would show. Presenting the +0xC40 figures without the caveat would have invited a wrong structural claim about overlay RAM reuse."
+    "P154: state a scan's limitation BEFORE presenting its numbers, not in a footnote. My offset histogram does not track register liveness, and the largest offsets it reports are exactly where that flaw would show. Presenting the +0xC40 figures without the caveat would have invited a wrong structural claim about overlay RAM reuse.",
+    "P155: a scan whose interesting answer is 'nothing survived' MUST have a positive control, or a broken scan is indistinguishable from a clean negative. My suspicion about the naive histogram happened to be correct, so a silently-empty tool would have 'confirmed' it and I would have published a right conclusion for a wrong reason.",
+    "P155: never pick a binary by sorted(glob(...))[0]. sorted() put arm7.bin ahead of arm9.bin and the tool silently scanned the wrong CPU's image. My earlier ad-hoc scans were correct only by luck of unsorted directory order. Name the file.",
+    "P155: hedging the SUSPICIOUS part of a result is not enough -- I flagged P154's large offsets and let the small ones pass, and the small ones were equally bogus. When a method is unsound, distrust ALL of its output, not just the implausible-looking tail."
   ],
   "open_questions_for_owner": [
     "Note-kind bucketing: the engine keeps at most 7 simultaneous \"notes\" per character, and 7 of the 17 kinds share one slot (kinds 6,7,8,9,10,14,15) so they should be mutually exclusive in play. Does starting one of those effects visibly cancel another?"
@@ -1793,5 +1798,12 @@
     "P153_REFINEMENTS": "(1) the '245' figure counted pool WORDS, not accesses; actual load instructions are 117 in ov7 + 381 in ov10 = 498. Both numbers measure different things; the earlier wording conflated them. (2) 0x0214CCF8 is a STRUCT BASE, not a bare pointer slot; field +0x00 is the session pointer.",
     "asymmetry": "field +0x00: ov7 148 accesses / 2 stores; ov10 436 accesses / 0 stores. The online overlay only READS the session pointer; both writers are in local-wireless ov7.",
     "HISTOGRAM_LIMITATION": "the offset scan walks up to 8 instructions forward from each base load and does NOT track register liveness, so a reassigned base misattributes later accesses. Concretely: 0x0214CCF8 is only 0x28 bytes below ov6's base 0x0214CD20, so any offset >= 0x28 lands inside ov6's region. The histogram reports offsets up to +0xC40 in ov10. Cannot distinguish 'networking reuses ov6 RAM as scratch' from 'register reuse in the scan window'. NOTHING claimed beyond the first few words. +0x00 is robust (148/436 hits, two writers read instruction-by-instruction, plus arm9's independent accessor cluster)."
+  },
+  "P155_LIVENESS_SCAN": {
+    "tool": "scripts/decomp/base_offset_scan.py -- finds pc-relative loads of a target ADDRESS (ARM ldr Rd,[pc,#imm] and Thumb ldr Rd,[pc,#imm8]), walks forward up to 24 instructions recording accesses through the loaded register, and STOPS the walk the moment the base could have changed. Conservative: stops on any write to the base, any branch/call/return, any ldm/pop, on calls when the base is in r0-r3 or r12 (AAPCS), and on any encoding it cannot prove safe. Under-reports rather than misattributes.",
+    "RESULT": "0x0214CCF8 is accessed ONLY at +0x00 -- ov10 394 accesses/0 stores, ov7 153 accesses/2 stores (0x021661C0 init, 0x02166372 teardown). 547 reads, 2 writes. Every other offset in P154's histogram (+0x04 through +0xC40) was REGISTER REUSE.",
+    "MY_P154_CLAIM_RETRACTED": "P154 said '0x0214CCF8 is a struct base, not a bare pointer slot'. WRONG, retracted. P153's original 'global pointer slot' was correct and my refinement made the record worse. I hedged the LARGE offsets in P154 and let the SMALL ones through unchallenged -- there were no other offsets at all.",
+    "ARM7_BUG_caught_by_positive_control": "the tool's first version reported ZERO hits for 0x0214CCF4, a base whose accessors I hand-read in P153. Cause: the arm9 image was chosen with sorted(glob(...))[0], and sorting puts arm7.bin ahead of arm9.bin -- it was scanning the ARM7 binary. My earlier ad-hoc scans used an UNSORTED glob and got arm9.bin only by luck of directory order. Fixed by naming arm9.bin explicitly and raising if absent.",
+    "selftest": "asserts (a) both hand-read ov7 writers of +0x00 are found, (b) no offset >= 0xC40 survives, (c) POSITIVE CONTROL: recovers +0x00/+0x01/+0x04 for 0x0214CCF4 from 9 arm9 sites. Those 9 also match P153's raw-scan 9 pool words vs xrefs.json's 4, so the tool clears the index gap for this case."
   }
 }

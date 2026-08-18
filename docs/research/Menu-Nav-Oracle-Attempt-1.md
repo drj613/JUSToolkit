@@ -6,6 +6,9 @@
 > per-step tables. The title-screen measurement survives. Read the correction at
 > the end before using any number here.
 
+Superseded by `Menu-Nav-Verified-From-Pixels.md`, which does work: pixel
+fingerprints from the emulator's own framebuffer, 3/3 cold boots.
+
 This is attempt 1 and it failed. The failure tells us something useful, so it's written up instead of deleted.
 
 ## What was measured

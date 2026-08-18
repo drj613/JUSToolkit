@@ -1,7 +1,7 @@
 # Session Ledger
 
 What each active session is doing, where things live, and what they've delivered.
-Last updated: 2026-08-18 (handoff cycle)
+Last updated: 2026-08-18 (final check before clear)
 
 ## Ultimate goal
 
@@ -13,7 +13,7 @@ Lock down JUS battle mechanics well enough to rebuild the system in a new game. 
 
 **Focus:** Runtime research via the agentic melonDS harness.
 
-**Status:** Handoff written. `docs/HANDOFF-2026-08-18.md`, commit `e6b1c96`. Branch `re/ability-bitset-not-resistance`, 17 commits ahead of master, nothing pushed. Items 1-2 done, item 3 mostly done (koma placement works, full multi-koma build not yet end-to-end), item 4 not started.
+**Status:** Handoff written + post-handoff commits. Branch `re/ability-bitset-not-resistance`. Handoff at `docs/HANDOFF-2026-08-18.md` (`e6b1c96`). Post-handoff: confirmed DOWN+B IS Forced Change but an ordinary attack (`16bf9f6`), savestates preserved to jus_files (`2a16ae1`), stale commit-count fix (`e5628d0`). Items 1-2 done, item 3 mostly done, item 4 not started.
 
 **Assignments:**
 1. ~~Resistance attribution~~ — **SETTLED** (both directions null)
@@ -54,7 +54,7 @@ Lock down JUS battle mechanics well enough to rebuild the system in a new game. 
 
 **Branch location:** `.claude/worktrees/battle-engine-atlas/`
 
-**Status:** Handoff written. `docs/research/HANDOFF-Loop-Atlas-P156.md`, commit `f94403d`. 24 commits ahead of origin, nothing pushed (never authorised). Session covers P147–P156.
+**Status:** Handoff written + post-handoff commits. Handoff at `docs/research/HANDOFF-Loop-Atlas-P156.md` (`f94403d`). Post-handoff: corrected push status — owner pushed f634bec..f94403d, origin is current (`7ad111d`). Also P155 (`f7c713b`): added liveness-tracking `base_offset_scan.py`, refuted own P154 struct-base claim. Session covers P147–P156.
 
 **Assignments:**
 1. Entity and projectile subsystems (structural analysis)

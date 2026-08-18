@@ -2,6 +2,10 @@
 
 **Result:** the idea was to record what each menu screen looks like in RAM, then swap `boot_to_battle.py`'s fixed settle timers for "wait until the screen matches what we expect." That can't work across boots, and the numbers show why: **two runs of the exact same button sequence disagree in about 1.6 million bytes of main RAM — and they already disagree by ~974,000 bytes at the title screen, before a single button is pressed.** Measured 2026-08-17.
 
+> **Corrected below.** The runs did not all reach a battle, which confounds the
+> per-step tables. The title-screen measurement survives. Read the correction at
+> the end before using any number here.
+
 This is attempt 1 and it failed. The failure tells us something useful, so it's written up instead of deleted.
 
 ## What was measured
@@ -71,3 +75,24 @@ python3 find_screen_id.py compare
 ```
 
 Dumps land in `/tmp/jus_screens/` at 4MB each, 11 per run.
+
+## Correction (same day): the runs did not all reach a battle
+
+Everything above assumes all three runs reached a real battle and were kept. That's wrong — a screenshot is what caught it.
+
+Once window capture was working, the emulator left over from the third run was photographed sitting on デッキセレクト — the deck management screen, with the options submenu open (編集 / 名前へんこう / コピー / いれかえ / けす / とじる). Not a battle. Yet the same check that passed during the run still reports success on that screen:
+
+    in_battle() says: 0x02291574
+      slot0 hp=10240 (160.0) idx=0
+
+Plausible HP, plausible chr_b index, and completely wrong. The cause isn't bad luck — it's structural: **the deck-select screen holds deck rosters, and a deck roster is HP values plus chr_b indices in 0x50-byte slots — exactly the signature `find_battle_structs.py` looks for.** The scan can't tell a deck roster from a battle character array. That also explains the historical stale-copy false positives that scored 4/4.
+
+What this does to the results above:
+
+- **The per-step tables are confounded.** If runs ended on different screens, the step labels don't describe the same screens across runs. Both the "stable bytes that differ" table and the between-run table mix real cross-boot variation with plain desync. They can't separate the two.
+- **The title-screen number survives.** `00_title` is captured after the boot wait and before any button press, so desync can't reach it. There, run 0 and run 1 differ by 973,944 bytes while runs 1 and 2 differ by 46,573. Cross-boot RAM really isn't portable, and the amount of drift varies a lot between boots.
+- **The headline claim was overstated.** "A cross-boot golden trace cannot work" is stronger than this evidence supports. The honest version: cross-boot RAM fingerprints are unreliable, by a large and inconsistent margin, and this particular experiment can't measure how unreliable because its later steps are invalid.
+
+The conclusion doesn't need rescuing, because the replacement is better anyway. Fingerprinting the *screen* works: two captures of one static screen differ by 0.588, and a single button press moves the fingerprint by 10.266 — a 17.5x separation. See `screen_fp.py`. Pixels are also the only oracle here that can catch the in_battle() false positive, since by definition RAM signatures are exactly what it fools.
+
+**Wider lesson for this project.** A signature scan validated only against RAM can be structurally fooled by a screen that legitimately contains the same kind of data. The existing advice — "verify functionally: land a known attack and confirm HP dips" — is right, and the ability-bitset work followed it, which is why that result stands. This run didn't, and got a false positive within the hour.

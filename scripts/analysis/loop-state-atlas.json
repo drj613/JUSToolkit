@@ -3,6 +3,7 @@
   "phase": "combat",
   "current_task": "P165 DONE: ov1 0x021643A4 = RuleData_Create; mode table = 22x16-byte header of bin/rulemess.bin; +0xC decoded for all 22 modes; bin text pointers are SELF-RELATIVE (1347/1347 verified, 6 files); 0x020AFEA0 + 0x020AFEAC promoted to CROSS_CONFIRMED via runtime bead jus-1g6 (4463 = (30+1)*144-1).",
   "queue": [
+    "P166-READER-CENSUS-of-0x020AFEA0 (promoted to top, P166 was the +0x4C writer): runtime poked the byte to 5 on the rule screen and the pill did not move, but their explanation box follows FOCUS not the mode, so my one-line test could not have passed cleanly (my error, owned in jus-hsc comment). The live question is commit-target vs render-source. Enumerate every READER of 0x020AFEA0 split by overlay: ov1 readers => the menu renders from it (render source); only ov6/arm9 readers => it is a commit target and their null is explained without touching rulemess.bin. Unblocks jus-jto/jus-bfw.",
     "P166-find-the-WRITER-of-root+0x4C: two readers (ov6 0x02158F78 as V, arm9 0x0208552C as index), zero writes known. Runtime dump (jus-45k) says the array is ALL ZERO in three live states, so either the duration formula never varies in ordinary play or the writer did not run. Look for register-offset stores (search-imm cannot see them). Settles multiplier-vs-index without the poke.",
     "P166b-disassemble root+0x000 handler targets 0x0214FDDC (death match) and 0x02150D70 (training) under ov6 -- runtime says +0x000 is an odd Thumb pointer and the ONLY field differing between modes; would be a third rule-mode discriminator (from jus-45k comments).",
     "P166c-static writer of root+0x118 / +0x11C: runtime derives the HP blocks as [+0x118]+0x70 and [+0x11C]+0x70 (delta 0x61C, stride 0x50, 4 slots) but only PLAUSIBLE -- one boot lineage. A static allocation-layout match makes it reboot-proof.",
@@ -2094,6 +2095,6 @@
       "jus-hsc (P165 anchor card, CROSS_CONFIRMED)"
     ],
     "note": "jus-wic/jus-vrz/jus-qsh/jus-q4b from the P164 handoff never existed in the shared db; runtime recreated them as jus-45k/jus-baz/jus-fms/jus-cvx. Do not cite the old ids.",
-    "live_taint": "root+0x4C term V is SPECULATIVE (was PLAUSIBLE) after the all-zero dump. Formula arithmetic unchanged."
+    "live_taint": "root+0x4C term V is SPECULATIVE (was PLAUSIBLE) after the all-zero dump. Formula arithmetic unchanged. | My jus-hsc one-line test was malformed (failure signature fires on a correct card); replaced with a battle-time test that does not depend on the menu render path. Card itself stands at CROSS_CONFIRMED on the 4463 agreement."
   }
 }

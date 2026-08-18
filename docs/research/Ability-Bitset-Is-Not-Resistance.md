@@ -44,9 +44,13 @@ The route that works — verified, not assumed:
    the entity.
 
 This session gave player entity `0x022286E0` and opponent entity
-`0x0224E1E0`. Both share the same vtable pointers at `+0x04` (`0x0215D3B4`) and
-`+0x08` (`0x0215D530`), confirming one class, and each holds a self-pointer at
-`+0x00`.
+`0x0224E1E0`. Both hold the same two code pointers at `+0x04` (`0x0215D3B4`) and `+0x08`
+(`0x0215D530`), and each holds a self-pointer at `+0x00`. Identical code pointers
+across two different characters means the same object type, which is the useful
+part. **They are not a vtable** -- `0x0215D3B4` is itself a 300-byte ARM function
+(`push {r4,lr}` / `mov r4,r0` / `bl`) per functions.json, so these are function
+pointers stored inline, not a pointer to a dispatch table. Thanks to the atlas
+session for that correction.
 
 All of these addresses are **session-local**. Re-derive them every time.
 
@@ -165,7 +169,9 @@ The sweep above added bits to a target that had none. The obvious pushback: mayb
 1. Scan RAM for u32 pointers to `char_struct + 0x10` and grab the object holding one — the same method from the first half of this document.
 2. Compute what the bitset *should* be from the four ability IDs before searching for it: bits 9, 12, 14 and 25 give `0x02005200`. Search 4MB of RAM for that exact word.
 
-Method 2 returns **exactly one match**, at `0x02244308`, implying entity `0x022441E0`. Its `entity+0x04` holds vtable `0x0215D3B4` — the same vtable as both entities identified earlier. One method reasons about pointer topology, the other about a predicted bit pattern, and they converge on the same object. That kind of agreement can't come from shared bias. It also lines up with the atlas session's static finding that `entity+0x10` is the record handle.
+Method 2 returns **exactly one match**, at `0x02244308`, implying entity `0x022441E0`. Its `entity+0x04` holds `0x0215D3B4` — the same code pointer as both entities identified earlier (a function, not a vtable). One method reasons about pointer topology, the other about a predicted bit pattern, and they converge on the same object. That kind of agreement can't come from shared bias.
+
+A second, stronger convergence comes from the atlas session's static work: they had an 8-byte hole in the char layout, with `char+0x120` an 8-byte sub-object ending at `+0x128` and `char+0x130` a separate sub-object. The u32 bitset found here at runtime sits in exactly that gap, `+0x128`–`+0x12F`, colliding with neither. A gap left by static analysis and a value found by runtime search, from completely different directions, describing the same four bytes. It also lines up with their finding that `entity+0x10` is the record handle.
 
 **The measurement.** One B press (a punch — blunt type) per trial, HP read per frame, three reps per condition, savestate reloaded before each.
 

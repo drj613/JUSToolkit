@@ -423,8 +423,8 @@ None of the 5 claims were outright REFUTED by any lens. Claim 5's downgrade is a
 | 14 | `char+0x558`/`+0x55c`/`+0x560`/`+0x564` are zero-initialized together in one startup loop (consistent with a NULL-terminated, per-character list head). Of 37 total load/store hits to immediate `0x558` ROM-wide, only **1 is a store** (the zero-init) — **no node-insertion site was found anywhere in the database** (a split `add`+register-offset store would be invisible to this immediate-based search). | `0x02075FF8`–`0x02076008` | **PLAUSIBLE** |
 
 **P157 update** (`findings/p157-status-dispatch-table-and-hp-delta-census.md`). A 42-entry,
-8-byte-stride dispatch table at ov6 `0x02171168`–`0x021712B7` (`{fn, cat, key, b2, status}`, with
-`key` a gapless unique `0x00`–`0x1F`) names every handler in this family from data rather than from
+8-byte-stride dispatch table at ov6 `0x02171168`-`0x021712B7` names every handler in this family
+from data rather than from code shape.
 code shape. It **promotes claim 5 to CONFIRMED_STATIC**, reproduces all nine status mappings in
 `findings/c6b-poison-burn-opcodes.md` from a different representation, and closes that finding's
 open item: **status `0x20` is handled by `0x021596E0` and `0x021597F8`** (both open
@@ -434,6 +434,24 @@ power of two (`lsl #6`, `lsl #8`), so **no chain-length or other non-constant mu
 at the HP-adjust boundary** — `CONFIRMED_STATIC`. Also: `0x02078428` sets HP to **1** on every
 living character when its `r1` argument is 0 (`strheq r4,[r6,#0x18]`), skipping the percentage
 multiply entirely.
+
+**P158 update** (`findings/p158-status-dispatcher-and-duration-formula.md`). The dispatcher that
+drives that table is ov6 **`0x02158ED0`**`(battleObj, id)`, 532 bytes, 3 callers. It indexes two
+parallel `id`-keyed stride-8 arrays — the handler table and a param array at `[[0x02172984]+4]` —
+and writes `node+0x4 = &paramArray[id]` at `0x02158F18`. That is the **only writer of the
+`[param+0x4]` amount, and it writes a pointer, not a value**: the signed halfword every tick and
+heal handler reads is **static table data**, so `REFUTED` — chain-length damage scaling cannot live
+there. Effect nodes live at `battleObj + 0x7C + slot*0x18`, two slots, slot chosen by bit `0x10` of
+the param flags; `node+0x0` holds the per-frame tick handler, set to `table[id].fn` if the apply
+call returned nonzero and to the stub `0x02159258` otherwise.
+
+**First non-constant scaling formula in the campaign** (`CONFIRMED_STATIC`, `0x02158F44`-`0x02158F88`):
+`duration = base + (base / 10) * (stat * 2)`, where `base` = `paramArray[id]+0x2`, `charIdx` =
+`[battleObj+0x1E0]` (signed byte), and `stat` = `[[0x02172960] + charIdx*4 + 0x4C]`. It scales
+**status duration, not damage**. Also `REFUTED`: P157's claim that the table's `+0x5` byte is its
+key — the index is the caller's `id`; `+0x5` is a value field that happens to be a gapless
+`0x00`-`0x1F` permutation. Entry `+0x4` is a **sound index** (`0x0207342C(0x7A, x)`) and `+0x6`
+indexes a 16-word array at `0x02171128`.
 
 ### Refuted hypotheses (guard-sp-gauges)
 

@@ -1,9 +1,12 @@
 {
- "iteration": 157,
+ "iteration": 158,
  "phase": "combat",
- "current_task": "P157 done: r1-producer census at all 10 HP-adjust sites + the ov6 0x02171168 dispatch table. Next: find the writer of [param+0x4].",
+ "current_task": "P158 done: dispatcher 0x02158ED0 found; [param+0x4] writer resolved (it writes a POINTER to static table data); duration formula found. Next: read the 3 callers of 0x02158ED0.",
  "queue": [
-  "FIND the writer of [param+0x4] -- the signed halfword every status tick and heal reads through [[r1+4]+4]. This is where chain-length scaling would land if it exists. Highest-value item now.",
+  "READ the 3 callers of ov6 0x02158ED0 -- they carry the effect id, so effect SELECTION happens there. Top item: if a dream attack picks a different id by chain length, it shows up in those callers.",
+  "IDENTIFY [0x02172960] -- the per-character stat block whose +0x4C word scales status duration. It is BSS (past the end of ov06.bin), so find its INITIALISER; the +0x4C value is very likely a chr_b record field.",
+  "READ ov6 0x02159B8C(battleObj, taggedId) -- consumer of the 16-word array at 0x02171128.",
+  "CHECK whether any caller bounds the effect id before calling 0x02158ED0; 42 table entries, but the dispatcher itself only checks id != 0.",
   "NAME the 32-member key enum at ov6 0x02171168 (byte[1], 0x00-0x1F, gapless) and the cat byte (0x07/0x09/0x0C/0x0D). 32 named battle effects would be a large block of reimplementation-grade documentation.",
   "FIND the code that INDEXES ov6 0x02171168 -- the key lookup site names the enum's producer and likely the per-move variant selector.",
   "READ arm9 0x02087724 -- the 'cmp r0,#2' gate shared by both status-0x20 handlers (0x021596E0, 0x021597F8).",
@@ -228,7 +231,8 @@
   "P146b: charter updated on the user's direct authorization -- added a North star section referencing docs/PROJECT-GOAL.md (master, f47d63d) and naming justoolkit-06 as this loop's runtime validator; extended Mission 2 with the entity/projectile focus and its known entry points (Battle_ObjManCreate 0x0208321C, Battle_ObjShotManCreate ov6 0x0216A7D4, Battle_ObjCtrlManCreate ov6 0x02168BA0, constructor 0x020834D4, wrapper 0x02083624). All operating rules verified unchanged before and after the opus-4-6 pass.",
   "P146c: RUNTIME CONFIRMATION via justoolkit-06. The 0x40 element stride is empirically CONFIRMED -- 12 live allocations 0x40 apart (0x0220C208..0x0220C388), container 0x0220B740, first element at container+0xAC8, and (0xAC8-0x648)/0x40 = 18 exactly, validating base and stride together. Closes BOTH gaps Codex named. Also confirmed live: r2 is DTCM (a stack temp, no persistent struct), and elements read back zero (the 0x0207CCD4 destructor memset). AND: the three entity-constructor call sites are NOT the attack path -- 0x02164F0C/0x02164F48 are in 0x02164D48 (bracketed by BattleMapLoadItem/BattleMapItemInit = map items), 0x02168E44 is in 0x02168CF4 (just above Battle_ObjCtrlManCreate = object control). Explains 06's verified zero-allocation result for plain B. Projectiles are BattleObjShot ov6 0x0216A7D4.",
   "P147: TRACE Battle_ObjShotManCreate ov6 0x0216A7D4 (0x3FD4, BattleObjShot.cpp) -- the actual projectile subsystem; find its element constructor and spawn sites. justoolkit-06 is BLOCKED on this for their input sweep. -- DONE, see findings/objshot-manager-and-the-27-kind-dispatch-table.md",
-  "P157: r1-producer census at all 10 HP-adjust sites; ov6 0x02171168 42-entry dispatch table; status 0x20 handlers found; multiplier ruled out at the HP boundary; Codex cold decode caught the HP=1 special case."
+  "P157: r1-producer census at all 10 HP-adjust sites; ov6 0x02171168 42-entry dispatch table; status 0x20 handlers found; multiplier ruled out at the HP boundary; Codex cold decode caught the HP=1 special case.",
+  "P158: dispatcher 0x02158ED0; [param+0x4] writer is a pointer store to static table data (chain-scaling location REFUTED); status-duration formula duration = base + (base/10)*(stat*2); my P157 'key' claim refuted; Codex refuted by encoding bits."
  ],
  "stuck": {},
  "required_reading_for_koma_tasks": [
@@ -287,7 +291,7 @@
   "Is HP computed as size*k at runtime, or tabulated per panel? Naruto 4-koma=144=4*36; if size*k then size5=180, size6=216, size7=252, size8=288. One reading settles it."
  ],
  "notes": "Iteration 146 done (delegated + verified). THREE closures: (a) 0x800's polarity is category ROUTING, not a contradiction -- 0x020801D4 is loop-continue, 0x0207F7C8 is the next category check; (b) record+0x34 is NOT write-once -- a four-function flag API (0x0207D064/0x0207D0BC/0x0207CF18/0x0207CF78) mirrors changes into +0x38 and the +0x08 node list, and the destructor 0x0207CCD4 memsets 0x188; (c) P144's 0x6FF puzzle SOLVED -- ov6 ORs [record+0x150]&0xFF into +0x34, and 0x6FF covers bits 0-7, so the test reads runtime bits not the 0x100 construction seed. Top task: read record+0x150, which now drives the whole category gate. STANDING: query.py mis-bins functions in this module (4 leaves here, 8 in P125, 2 in P126) -- verify any address before trusting its size or container. The +0x5C base-confusion trap has 7 instances; on +0x34 (1092 hits) the base register is the ONLY struct identifier. CHARTER: updated in P146b on the user's direct authorization. North star = docs/PROJECT-GOAL.md (master, f47d63d); Mission 2's current focus is the entity/projectile subsystems. justoolkit-06 is the designated runtime validator -- send them struct-field hypotheses and breakpoint requests rather than leaving questions unresolved; that is the only route to dynamic evidence without breaking the static-only rule.",
- "last_wake": "2026-08-18 P157",
+ "last_wake": "2026-08-18 P158",
  "wakeup_default_seconds": 1800,
  "consecutive_no_progress_wakes": 0,
  "k1c_helper_passives": {
@@ -1870,5 +1874,42 @@
   "pending": "CLOSED, not pending. The second Codex run was KILLED when the wake ended - a backgrounded Bash process does not survive the end of a turn in this loop. Not retried: it was redundancy on work the canon map already documents. The table<->C6b agreement carries the load."
  },
  "P157_HONESTY_NOTE": "Most of the r1-producer census was ALREADY in Battle-Engine-Map.md's guard-sp-gauges block (claims 1-14): all 8 sites, the lsl#6/unscaled pair, the x256 sibling 0x02159280, and +0xE8 as a confirmed drain. I drafted them as new, checked the map, and rewrote the finding to credit them. Check the canon doc for the subsystem BEFORE writing up a census of it.",
- "TOOL_LESSON_background_dies_at_turn_end": "A long-running background Bash command (codex exec, a big sweep) is KILLED when the wake's turn ends at ScheduleWakeup. Either wait on it in the foreground inside the same wake (codex exec takes several minutes, so budget for it), or write its output somewhere durable and re-launch next wake. Do not dispatch it and plan to 'read it next wake' - there will be nothing to read."
+ "TOOL_LESSON_background_dies_at_turn_end": "A long-running background Bash command (codex exec, a big sweep) is KILLED when the wake's turn ends at ScheduleWakeup. Either wait on it in the foreground inside the same wake (codex exec takes several minutes, so budget for it), or write its output somewhere durable and re-launch next wake. Do not dispatch it and plan to 'read it next wake' - there will be nothing to read.",
+ "P158_DISPATCHER": {
+  "fn": "ov6 0x02158ED0(battleObj r0, id r1), 532 bytes, 3 callers. Returns 0 immediately if id==0. Found by scanning ov06.bin for any word pointing into 0x02171140-0x021712C0: 5 hits, 0x021590E8 -> 0x02171168 is the table base in this function's literal pool.",
+  "two_parallel_arrays": "indexes BOTH the P157 handler table at 0x02171168 AND a param array at [[0x02172984]+4] with the SAME id at stride 8 (add r4,r3,r8,lsl#3 / add r5,r1,r8,lsl#3).",
+  "node": "battleObj+0x7C holds TWO effect slots of 0x18 bytes; slot = (paramFlags & 0x10) ? 1 : 0, via mla r6,r7,#0x18,r1 at 0x02158F14.",
+  "node_fields": "+0x0 per-frame tick handler (table[id].fn if the apply call returned nonzero, else stub 0x02159258); +0x4 -> &paramArray[id]; +0xC id halfword; +0xE duration (UNSIGNED, ldrh); +0x10 zeroed; +0x12 halfword from [[battleObj+0x1A8]+0x10]+0x182; +0x14/+0x15 both set to 1.",
+  "handler_return_decides_persistence": "0x02158F8C ldr r2,[r4]; blx r2; cmp r0,#0; ldrne r0,[r4]; ldreq r0 -> 0x02159258; str r0,[r6]. One-shot effects return 0 and get stubbed; lasting ones tick. Explains why 0x02159258 is both the table's 7x no-op AND the null tick.",
+  "param_record": "8 bytes: +0x0 flags halfword (bit 0x10 picks the slot); +0x2 base duration halfword; +0x4 SIGNED halfword = the amount every tick/heal applies (signed, so one field is both drain and fill); +0x6 not claimed."
+ },
+ "P158_PARAM_0x4_ANSWERED": {
+  "writer": "0x02158F18 str r5,[r6,#4] -- the ONLY writer, and it writes a POINTER (r5 = paramArrayBase + id*8), not an amount.",
+  "CONSEQUENCE_REFUTED": "[param+0x4] is a CONSTANT read out of a static 8-byte-stride data array keyed by effect id. Nothing computes it at apply time. So P157's reframe -- 'chain scaling must be applied when [param+0x4] is written' -- is REFUTED. Chain-length damage scaling cannot live there.",
+  "where_next": "the 3 callers of 0x02158ED0 carry the id, so effect SELECTION happens there. If a dream attack picks a different id by chain length, it shows up in those callers."
+ },
+ "P158_FIRST_FORMULA": {
+  "claim": "CONFIRMED_STATIC, 0x02158F44-0x02158F88: duration = base + (base/10) * (stat*2).",
+  "terms": "base = paramArray[id]+0x2 (unsigned halfword); charIdx = [battleObj+0x1E0] (SIGNED byte); stat = [[0x02172960] + charIdx*4 + 0x4C] (word); result stored unsigned halfword at node+0xE. 0x0200D12C is the known signed divide, called with r1=0xA.",
+  "WHY_IT_MATTERS": "Every damage-side effect this campaign has measured is FLAT. This is the first place a per-character stat multiplies anything. It scales STATUS DURATION, not damage -- a higher +0x4C stat keeps burn/poison/paralysis running longer, by a fifth of the base per point.",
+  "edge_cases": "duration is UNSIGNED (ldrh) and strh keeps only the low 16 bits, so a large base*stat product WRAPS rather than saturating. Also the ldrh r3,[r6,#0xe] at 0x02158F70 is a FRESH read after the bl, so the formula assumes 0x0200D12C does not touch that memory."
+ },
+ "P158_MY_P157_CLAIM_REFUTED": "I claimed in P157 that the table byte at entry+0x5 'is the table's real key', reasoning from it being a gapless unique permutation of 0x00-0x1F. REFUTED: the dispatcher indexes table + id*8 with the CALLER'S ARGUMENT, so the index is the id and +0x5 is an ordinary value field. The permutation is still a true fact about its contents, but I promoted a striking data pattern to a structural role without first finding the indexing code. LESSON: find the code that indexes a table before naming any field its key.",
+ "P158_ENTRY_LAYOUT_FROM_CODE": {
+  "+0x0": "handler fn pointer (ldr then blx)",
+  "+0x4": "ldrsb, skipped if == -1: SOUND INDEX, passed as 0x0207342C(0x7A, x). Corrects P157's 'cat/category' guess.",
+  "+0x5": "not read by the dispatcher; the 0x00-0x1F enum. SPECULATIVE: parallel enum, icon or message slot (near-monotonic in the index with local swaps).",
+  "+0x6": "ldrsb, skipped if == -1: indexes a 16-WORD array at 0x02171128 (0x02171128-0x02171167, immediately BEFORE the dispatch table), b2*4. Observed values 0x00-0x0E, so the bound fits. Each word is a halfword pair: high 0x0022 or 0x0023, low 0x0001-0x0013. Passed as 0x02159B8C(battleObj, word).",
+  "+0x7": "not read by the dispatcher; status opcode 0x19-0x22 (P157, agrees with C6b).",
+  "0xFF_PROVEN": "P157 asserted 0xFF = 'none' from the data. The code proves it: both bytes are read with ldrsb, compared against mvn r0,#0 (-1), and branch past the work.",
+  "stride_8_second_representation": "P157 got stride 8 from the data (a 42-entry gapless permutation only closes at that stride); the dispatcher gets it from code (add r4,r3,r8,lsl#3). Different representations, same answer."
+ },
+ "P158_CODEX_WAS_WRONG": {
+  "disagreement": "Codex, given raw hex with no addresses before I concluded, read 0x02158F84 as 'mla r2,r0,r3,r2' (r2 = r0*r3 + r2). The listing says 'mla r2,r0,r2,r3' (r2 = r0*r2 + r3).",
+  "settled_by_encoding": "0xE0223290: Rd=bits19-16=r2, Rn=bits15-12=r3, Rs=bits11-8=r2, Rm=bits3-0=r0, bits7-4=1001. ARM MLA is Rd = Rm*Rs + Rn, so r2 = r0*r2 + r3. Codex SWAPPED Rn and Rs. Listing + bit fields agree; Codex is wrong.",
+  "sanity_agreed_too": "Codex's version gives (base/10)*base + 2*stat -- dimensionally incoherent. Mine gives base + (base/10)*(2*stat), a sane percentage scale. Arithmetic sanity pointed the same way as the encoding.",
+  "codex_remarks_that_STAND": "(1) ldrh r3,[r6,#0xe] at 0x02158F70 is a fresh read AFTER the bl, not a reuse of the stored value. (2) duration is unsigned and strh truncates, so the product wraps rather than saturating. (3) my prompt wrongly claimed the fragment had two bl words; it had one, and Codex said so instead of inventing a second -- a wrong framing did not propagate.",
+  "LESSON": "Codex is not an oracle. When it disagrees on a decode, go to the encoding bits -- a third representation neither side controls."
+ },
+ "TOOL_LESSON_codex_stdin": "codex exec \"<prompt>\" READS STDIN even when the prompt is a positional argument, and blocks forever if stdin is an open terminal. P157's call only worked because backgrounding handed it /dev/null; a foreground call in P158 hung for the full 560s timeout and produced 39 bytes. ALWAYS pass < /dev/null. Combined with the P157 lesson (a backgrounded call dies when the turn ends), the only reliable form is: foreground, stdin closed, generous timeout."
 }

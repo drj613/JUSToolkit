@@ -1,61 +1,53 @@
 # Session Ledger — JUS Reverse Engineering
 
-Last updated: 2026-08-18 ~20:15 (ledger wake 1, session `justoolkit-87`)
+Last updated: 2026-08-18 ~20:45 (ledger wake 2, session `justoolkit-87`)
 
 ## 1. Current state
 
 This file is a human catch-up summary — not the system of record. beads (`br`) is the record; protocol in `docs/orchestration/`.
 
 **Live sessions (from ListAgents):**
-- `justoolkit-fa` [cedb9e] — busy, just started. **Runtime** role, branch `re/ability-bitset-not-resistance`.
-- `battle-engine-atlas-76` [2e8ac4] — busy, just started. **Static** role, branch `loop/battle-engine-atlas`. Atlas now at **P164**.
-- `justoolkit-d9` [699d1d] — idle 58 min. Protocol-design coordinator from earlier; unclear if it will persist.
-- Two `test-suite-guardrails` sessions — not part of coordination.
+- `justoolkit-fa` [cedb9e] — busy, 34 min. **Runtime** role, branch `re/ability-bitset-not-resistance`. Did a cold-boot HP derivation test (jus-3vg), ran atlas's rulemess.bin one-liner and replacement test (jus-hsc), resolved jus-jto (pill actuation blocker was path-dependent).
+- `battle-engine-atlas-76` [2e8ac4] — idle, 34 min. **Static** role, branch `loop/battle-engine-atlas`. Now at **P165**. Decoded rulemess.bin (jus-hsc), acknowledged the unsound one-liner, queued ov1 reader census.
+- `justoolkit-d9` [699d1d] — idle 1h. Protocol-design coordinator; contacted me on wake 1, I confirmed my role.
+- One `test-suite-guardrails` session remains.
 
-Previous instances (`justoolkit-ed`, `battle-engine-atlas-5e`) have been replaced. The protocol doc's role table still names the old ones — it says "always resolve via ListAgents" which is correct.
-
-**Coord beads exist (4 open).** See jus-f0v, jus-ovv, jus-6fo, jus-1g6. All carry the `coord` label. **None carry structured `kind:*` / `state:*` / `owner:*` labels** — the protocol's label schema isn't enforced yet. Content is good; machine-sweepable metadata is missing.
+**Protocol adoption: successful.** Both loops are writing coord beads with structured `kind:*` / `state:*` / `owner:*` labels. The system of record is working. 15 coord beads exist (1 closed, 14 open).
 
 ## 2. Open audit flags
 
-### Flag A — Coord beads missing structured labels
-All four coord beads have only the `coord` label. The protocol requires `kind:*`, `state:*`, `owner:*` labels for mechanical sweep (aging, TTL, taint propagation). Without them, every audit check is manual. **Action needed:** whichever loop next touches a coord bead should add the labels per the protocol's write convention.
+### Flag A — RESOLVED: Structured labels adopted
+Both loops now write coord beads with proper labels. Two legacy beads (jus-ovv, jus-6fo) still carry only `coord` — minor, low priority.
 
-### Flag B — jus-1g6 is an aging request
-"Tell atlas: 0x020AFEA0 is CONFIRMED the rule mode" is a `kind:request` that hasn't changed status since creation. Atlas just restarted (`battle-engine-atlas-76`) — this should be in its ingest queue on its first wake. If it's not picked up by atlas's next completed wake, this flag escalates.
+### Flag B — RESOLVED: jus-1g6 closed
+Atlas picked it up, closed it, and superseded it with jus-hsc (the full rulemess.bin decode with CROSS_CONFIRMED status for 0x020AFEA0 and 0x020AFEAC).
 
-### Flag C — Gimmick contamination taint not propagated (carried forward)
-`7145505` revealed the gimmick toggle was never off. jus-f0v was created to re-run the two-move proof, but no taint beads link contaminated measurements to the fix. The flat-damage and resistance-null results *probably* hold (gimmicks spawn projectiles, not alter base damage), but this hasn't been formally re-verified. No back-propagation has happened.
+### Flag C — Gimmick taint NOW PROPAGATED
+jus-f30 is the formal taint notice with proper `kind:retraction` / `state:tainted` labels. jus-f0v is linked as a dependent (re-run the flat-reduction proof). The scope is clear: all pre-2026-08-18 damage measurements. The ability-bitset negative is explicitly excluded from taint. **Remaining gap:** jus-f0v itself is still open — the re-measurement hasn't happened yet.
 
-### Flag D — Atlas retractions without tainted dependents (carried forward)
-- P158 "stat block" label refuted in P160. No downstream bead marked tainted.
-- P154 struct-base claim refuted in P155. Same.
-These are low-severity — no downstream findings explicitly depended on them — but the protocol requires explicit taint marking.
+### Flag D — Atlas retractions without tainted dependents (carried forward, low severity)
+- P158 "stat block" refuted in P160, P154 struct-base refuted in P155. No beads created for these retractions, no taint marks. Low severity because no downstream findings depended on them.
 
-### Flag E — Stale pending asks (carried forward, aging)
-1. ObjShot kind-byte walk — requested pre-handoff, still open. Runtime has nav working so it's unblocked.
-2. Nature resolver in ov06 — atlas was asked to check if ov06 has its own nature reader. No commit addresses this. Still open.
-3. Mode-ID byte read and overlay residency re-measure — may be moot after ov05 closure, status unclear.
+### Flag E — Pending asks, status refreshed
+1. ObjShot kind-byte walk — now tracked as jus-cvx (`state:proposed`). Within first-wake window.
+2. Nature resolver in ov06 — still untracked in beads. No commit addresses it. **Aging.**
+3. Mode-ID byte and overlay residency — superseded by ov05 closure and rulemess.bin decode.
 
-## 3. Role change
+### Flag F — NEW: jus-hsc one-line test was unsound
+Atlas's published one-liner for jus-hsc ("write 5 to 0x020AFEA0, look for target description") fired the failure signature on a correct card. Atlas owned the error in the comment thread and wrote a replacement test that passed. The protocol's "recognizable failure signature" requirement caught this — a test whose failure signature fires on success is not recognizable. No downstream damage, but atlas should update the bead's test section.
 
-Your predecessor was a pull-based commit-message summarizer. You are now the **auditor** of the beads-backed coordination protocol. Each wake:
-1. `br list --label coord` + `git log` on both branches.
-2. Update this narrative file — keep it lossy, link bead IDs instead of duplicating data.
-3. **Flag coordination inconsistencies:** retractions without tainted dependents, requests aged past one wake with no status change, measurements missing conditions, claims past 3-wake TTL, `CROSS_CONFIRMED` claims missing linked runtime evidence.
-4. Nudge idle loops. Relay owner direction. Spin up Fable subagents for blocking questions.
-5. You do NOT write findings, addresses, or measurements.
+### Flag G — NEW: jus-3vg deterministic heap confound
+The cold-boot HP derivation test passed but every address was identical across reboots, meaning the test couldn't have failed. Runtime correctly held it at RUNTIME_CONFIRMED rather than promoting. The discriminating case (a battle where the heap layout differs) is still open. Atlas queued a static-side confirmation path (root+0x118/+0x11C writer + layout proof).
 
-Full charter: `docs/orchestration/Charter-Ledger.md`. Protocol: `docs/orchestration/COORDINATION-PROTOCOL.md`.
-
-Until ed and atlas adopt the beads protocol (on their next restart), fall back to the old method: `git log` + commit messages.
+### Flag H — NEW: atlas idle
+`battle-engine-atlas-76` shows idle at 34 min. Its last commit was P165 addendum (`808fb89`). It queued two tasks (ov1 reader census, root+0x4C writer hunt) but hasn't started either. Not yet a violation — check next wake.
 
 ---
 
-# Session Ledger
+# Per-Session Detail
 
 What each active session is doing, where things live, and what they've delivered.
-Last updated: 2026-08-18 20:15 — ledger wake 1 (auditor mode)
+Last updated: 2026-08-18 20:45 — ledger wake 2
 
 ## Ultimate goal
 

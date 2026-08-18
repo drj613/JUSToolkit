@@ -69,22 +69,20 @@ Naruto 4力-vs-4笑 test case. Designer-facing twin:
 - **Evidence discipline** (carried over from Phase 0): every claim gets a confidence label
   (CONFIRMED / PLAUSIBLE / SPECULATIVE) and a pointer to the query.py command or file offset
   that supports it. Refuted hypotheses get recorded, not deleted.
-- **Convergent verification** (owner rule, standing as of 2026-08-18). For any load-bearing
-  decode or address claim, actively seek a second method that works in a **different
-  representation** — relative displacement against absolute address, encoding-table
-  arithmetic against an empirical ROM sweep, byte offset against instruction index.
-  Agreement across representations cannot be shared bias, so it is the strongest
-  confirmation available under static-only rules. Disagreement is equally useful: one side
-  is wrong and the discrepancy usually says which. This is strictly better than running the
-  same tool twice or having a checker agree from the same angle.
+- **Convergent verification** (owner rule, standing as of 2026-08-18). For every load-bearing
+  decode or address claim, find a second method that uses a **different representation** —
+  relative displacement vs. absolute address, encoding-table arithmetic vs. empirical ROM
+  sweep, byte offset vs. instruction index. Two representations agreeing can't share a bias,
+  so cross-representation match is the strongest confirmation static-only rules allow.
+  Disagreement is just as valuable: one side is wrong, and the mismatch usually reveals which.
+  Never substitute a second run of the same tool or a checker working from the same angle.
   - Worked example, iteration 149: Codex decoded `EB00034E` relatively as a branch to
-    `A + 0xD40` with no address context, `query.py` reported the absolute target
-    `0x0215305C`, and `0x0215231C + 0xD40` = `0x0215305C`. That agreement validated the
-    window's *placement*, which neither tool could establish alone.
+    `A + 0xD40` with no address context; `query.py` reported the absolute target
+    `0x0215305C`; `0x0215231C + 0xD40` = `0x0215305C`. Neither tool alone could confirm the
+    window's placement — their agreement did.
   - **Ask the independent checker BEFORE forming your own conclusion**, not after. Same
-    iteration: concluding first would have hidden a halfword I had mis-transcribed
-    (`0x6668` for `0x66bc`) — asking first got the inconsistency flagged instead of
-    decoded around.
+    iteration: concluding first would have buried a mis-transcribed halfword (`0x6668` for
+    `0x66bc`). Asking first surfaced the inconsistency instead of decoding around it.
 
 ## Delegation plan (use subagents for everything heavy)
 

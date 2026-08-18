@@ -1,11 +1,11 @@
 {
-  "iteration": 165,
+  "iteration": 166,
   "phase": "combat",
-  "current_task": "P165 DONE: ov1 0x021643A4 = RuleData_Create; mode table = 22x16-byte header of bin/rulemess.bin; +0xC decoded for all 22 modes; bin text pointers are SELF-RELATIVE (1347/1347 verified, 6 files); 0x020AFEA0 + 0x020AFEAC promoted to CROSS_CONFIRMED via runtime bead jus-1g6 (4463 = (30+1)*144-1).",
+  "current_task": "P166 DONE: per-mode handler table found at ov6 0x02170EAC, 31 records x 12 bytes, 3 Thumb fn ptrs each. Indexer 0x0214F91C: [root+0x00]=[0x02170EB0+mode*12], [root+0xC8]=1. NEW root fields +0x08 (mode) and +0xC8 (flag). 12 runtime-poked modes land at their own index = CROSS_CONFIRMED. My jus-wbo prediction REFUTED. root+0x08 is NOT a copy of 0x020AFEA0 (training runs entry 8 with the byte at 0).",
   "queue": [
-    "P166-HANDLER-TABLE (bead jus-5id): find the ov6 static table of per-mode battle handlers. Runtime gave 7 (mode -> root+0x000) pairs, Thumb, real addr = value-1: m0 0x0214FA78, m1 0x0214FDDC, m2 0x0215004C, m3 0x0215036C, m5 0x0214FEC8, m9 0x02150468, training 0x02150D70. Non-monotonic in mode => a pointer table, not arithmetic. Search ov06.bin for the LE words, check 4-byte spacing and index alignment. Success = all 22 handlers from 6 anchors.",
-    "P166b-static writer of root+0x118 / +0x11C (runtime top ask, bead jus-3vg): their HP derivation [ptr]+0x70 survived a mode-3 heap relocation (+0x180) while the hardcoded constants produced garbage (990.4 vs a ~200 cap). A static allocation-layout match makes it structural and lets them delete the constants.",
-    "P166c-ov1-vs-ov6 reader census of 0x020AFEA0 -- DEMOTED to P3. Runtime found re-entering rule_select rewrites the byte, which fully explains their null; the census now only answers which side RENDERS, a menu question.",
+    "P167-find-the-WRITER-of-root+0x08: this is the mapping from game path + settings byte onto the mode index. Training path proves it is not a copy of 0x020AFEA0. Settles the ov1-rulemess vs ov6-handler index-space question with zero runtime work.",
+    "P167b-static writer of root+0x118 / +0x11C (runtime top ask, jus-3vg).",
+    "P167c-static writer of root+0x4C (term V; runtime says the array is zero in 4 states / 2 boots).",
     "P166-find-the-WRITER-of-root+0x4C: two readers (ov6 0x02158F78 as V, arm9 0x0208552C as index), zero writes known. Runtime dump (jus-45k) says the array is ALL ZERO in three live states, so either the duration formula never varies in ordinary play or the writer did not run. Look for register-offset stores (search-imm cannot see them). Settles multiplier-vs-index without the poke.",
     "P166b-disassemble root+0x000 handler targets 0x0214FDDC (death match) and 0x02150D70 (training) under ov6 -- runtime says +0x000 is an odd Thumb pointer and the ONLY field differing between modes; would be a third rule-mode discriminator (from jus-45k comments).",
     "P166c-static writer of root+0x118 / +0x11C: runtime derives the HP blocks as [+0x118]+0x70 and [+0x11C]+0x70 (delta 0x61C, stride 0x50, 4 slots) but only PLAUSIBLE -- one boot lineage. A static allocation-layout match makes it reboot-proof.",
@@ -262,7 +262,8 @@
     "P162: 0x020AFE90 identified as the match-settings struct with a real field map; peer's items/gimmick toggles placed at +0x2B/+0x2C and a third unnamed rule found at +0x2D via the bitfield unpacker; +0x28's only ARM store proved to clear it; opposite literal-comment conventions identified as the root cause of P161's four-document error.",
     "P163: rule-select screen mapped to the 0x020AFE90 struct via the settings-copy function 0x0207538C; +0x2D named as チームせん team battle; +0x1C confirmed as a frame-count time limit by two independent constants (value*60 and ov6's 18000 = 5:00).",
     "P164: 0x0216446C attributed to ov1 by five-way overlay disassembly (correcting P163); it is a 4-instruction leaf reading a 16-byte-per-mode descriptor table, so the time-limit conversion is data-driven; menu settings record stride 0xA4 = 164 bytes; destination base and settings+0x4C confirmed.",
-    "P165-mode-table-is-rulemess-bin"
+    "P165-mode-table-is-rulemess-bin",
+    "P166-per-mode-handler-table"
   ],
   "stuck": {},
   "required_reading_for_koma_tasks": [
@@ -2101,7 +2102,12 @@
     "cross_confirmed_this_wake": [
       "0x020AFEA0 indexes the rulemess table AT BATTLE TIME (6 distinct handlers for 6 byte values; poked 1 == hand-built death match)",
       "rulemess mode ORDER (mode 2 = Jシンボル matched the static prediction before runtime knew the table)",
-      "22 modes reachable, not 3 (modes 3/5/9 playable)"
+      "22 modes reachable, not 3 (modes 3/5/9 playable)",
+      "per-mode handler table ov6 0x02170EAC: 12 poked modes land at their own index",
+      "root+0x08 is the mode index and is NOT a copy of 0x020AFEA0 (training path)"
+    ],
+    "my_refutations": [
+      "jus-wbo: rulemess text-duplicate entries do NOT share handler code. Refuted statically the same wake it was filed; runtime independently refuted it by measurement. No dependents tainted -- nothing was built on it."
     ]
   }
 }

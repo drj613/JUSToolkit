@@ -683,3 +683,23 @@ Summarized from `jus_files/analysis/findings/critic.round1.json` — a dedicated
 `docs/articles/specs/texts.md` says. Verified on 1,347 of 1,347 pointers across six files and against
 `src/JUS.Tool/Texts/JusText.cs:90`. Read as absolute, only the first pointer in a file lands on a
 string. Any hand-parse of these files from the old description produces garbage after string one.
+
+### Per-mode rule handlers (P166)
+
+`findings/p166-per-mode-handler-table.md`.
+
+| what | where | confidence |
+|---|---|---|
+| Per-mode handler table: **31 records × 12 bytes**, three Thumb function pointers each | ov6 `0x02170EAC` | `CONFIRMED_STATIC` |
+| Indexing: `handler = [0x02170EB0 + mode*12]`, then `[root+0x00] = handler` and `[root+0xC8] = 1` | ov6 Thumb `0x0214F91C` | `CONFIRMED_STATIC` (Codex-checked independently) |
+| Column accessors: `+0x0` called at `0x0214F872`, `+0x4` installed at `0x0214F91C`, `+0x8` called in a loop at `0x0214F95A` | pools `0x02170EAC` / `0x02170EB0` / `0x02170EB4` | `CONFIRMED_STATIC` |
+| `root+0x08` = the rule mode (word); the index into the table | via `0x0214F91C` | `CONFIRMED_STATIC` |
+| `root+0xC8` = byte flag: `1` = per-mode handler installed, `0` = the fixed default `0x02150F65` (sibling `0x0214F93C`) | via `0x0214F91C` / `0x0214F93C` | `CONFIRMED_STATIC` |
+| Twelve poked modes (0,1,2,3,4,5,7,9,16,17,19,21) each land at their own table index | runtime `jus-hsc` / `jus-wbo` | **`CROSS_CONFIRMED`** |
+| Byte-identical records: `(9,22)`, `(16,30)`, `(25,28)` — nothing else repeats | ov6 `0x02170EAC` | `CONFIRMED_STATIC` |
+| `root+0x08` is **not** a copy of `0x020AFEA0`: the training path runs table entry 8 with the settings byte at 0 | runtime `jus-wbo` | **`CROSS_CONFIRMED`** |
+
+`REFUTED` (mine, same wake it was filed): rulemess text-duplicate entries do **not** share handler code.
+`not claimed`: whether they behave identically in play, and whether the ov1 rulemess index and this ov6
+index share one space for modes ≥ 3. 31 handler slots vs 22 described modes; modes 18 and 20 build no
+battle object at all.

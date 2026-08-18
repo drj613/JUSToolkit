@@ -1,9 +1,9 @@
 {
   "iteration": 149,
   "phase": "combat",
-  "current_task": "TRACE 0x0206BB44's base register (Thumb fn 0x0206BAC8) -- the single surviving game-code Thumb-store candidate for deck+0x30. If it isn't the deck, the deck add-entry-is-dead claim is fully closed against direct Thumb stores.",
+  "current_task": "TRACE 0x0206BB44's base register (Thumb fn 0x0206BAC8) -- the single surviving game-code Thumb-store candidate for deck+0x30. APPLY CONVERGENT VERIFICATION: get the base from a Thumb decode, then confirm the same conclusion from a different representation (e.g. the function's ARM callers' argument setup, or an absolute-vs-relative check on any branch in the same function). Ask the independent checker first.",
   "queue": [
-    "TRACE 0x0206BB44's base register (Thumb fn 0x0206BAC8) -- the single surviving game-code Thumb-store candidate for deck+0x30. If it isn't the deck, the deck add-entry-is-dead claim is fully closed against direct Thumb stores.",
+    "TRACE 0x0206BB44's base register (Thumb fn 0x0206BAC8) -- the single surviving game-code Thumb-store candidate for deck+0x30. APPLY CONVERGENT VERIFICATION: get the base from a Thumb decode, then confirm the same conclusion from a different representation (e.g. the function's ARM callers' argument setup, or an absolute-vs-relative check on any branch in the same function). Ask the independent checker first.",
     "SWEEP Thumb register-offset stores (str rD,[rN,rM], 0x5000-0x51FF) and split add+str bases -- the residual that no sweep in P149 covers, for BOTH 0xE8 and 0x68. This is the last route by which a Thumb writer could exist.",
     "TRIAGE the 16 NEW ov6 Thumb-called functions P148 surfaced (31 now vs 15 before): 0x0214E388 0x0214E828 0x0214F6AC 0x021526B4 0x021537E0 0x021539B8 0x02153BC8 0x02156D74 0x02156F6C 0x02156FB4 0x02167F20 0x02168374 0x02168C90 0x0216A8C8 -- plus the two ctors. 0x0216A8C8 is the obj-shot dtor-ish leaf I read in P147.",
     "CATALOGUE ov6's early Thumb region -- functions.json starts ov6 Thumb at 0x0214DF14 but confirmed callers sit below that (0x0214D65E, 0x0214D818, 0x0214D826). The database is incomplete there; this is now the second iteration to trip on it.",
@@ -1697,5 +1697,12 @@
     "residual_for_all": "register-offset stores (str rD,[rN,rM]) and split add+str bases are outside every sweep, for Thumb exactly as the ARM tool declares for ARM.",
     "INDEPENDENTLY_CONFIRMED": "Codex, given raw hex and no hint of the expected answer, independently agreed on all of it: STR imm5x4 max 0x7C, STRB imm5 max 0x1F, STRH imm5x2 max 0x3E; 0xE8 NOT expressible, 0x68 expressible (imm5=26); E1D266BC = LDRH r6,[r2,#0x6C]; window B = data/pointer sequence. So the ceiling closing B11 is triple-sourced: encoding tables, 46390 empirical pattern matches, and an independent decode.",
     "UNPLANNED_CROSS_CHECK": "Codex decoded EB00034E RELATIVELY as a branch to A+0xD40 without knowing the address. The instruction is at 0x0215231C, and 0x0215231C+0xD40 = 0x0215305C -- exactly the absolute target query.py reports. Two tools, one relative and one absolute, agreeing on the same byte validates the window's PLACEMENT, not just its decode."
+  },
+  "CONVERGENT_VERIFICATION_RULE": {
+    "status": "STANDING owner rule as of 2026-08-18; also in project memory as convergent-verification.md",
+    "rule": "For load-bearing decodes/address claims, seek a second method in a DIFFERENT REPRESENTATION (relative vs absolute, encoding arithmetic vs empirical sweep). Agreement across representations cannot be shared bias. Disagreement identifies which side is wrong.",
+    "order": "Ask the independent checker BEFORE forming your own conclusion, not after -- P149 proved this catches transcription errors that concluding-first hides.",
+    "recorded_in": "docs/research/Loop-Charter-Atlas.md hard rules",
+    "origin": "my own P149b result, elevated by the owner from observation to practice"
   }
 }

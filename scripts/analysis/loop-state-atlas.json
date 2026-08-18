@@ -1835,5 +1835,12 @@
     "FOUND_NOTHING_NEW": "every point matches findings/nature-SOLVED.md. That IS the value: a cold-start corroboration sharing no reasoning with the original.",
     "independently_derived": "byte +0xB packs two 4-bit sub-fields (bits 7:4 and 3:0, each 0-15); 0x02078CB8 and 0x0214E480 extract bits 7:4 with IDENTICAL arithmetic and compare against 3, differing only in consumption (boolean return vs branch); 0x0214E480 reaches the comparison only when byte +6 is zero; 0x02076F70 extracts the LOW nibble, does not compare, and stores it at +0x12 of another struct; and (marked speculation) upper value 3 is a distinguished category -- matching the recorded no-override sentinel.",
     "WORDING_CORRECTION": "nature-SOLVED.md line 9 called 0x02076F70 and 0x02078CB8 both a 'copy' of the resolver. They read DIFFERENT nibbles -- only 0x02078CB8 copies the logic. Doc corrected."
+  },
+  "HANDOFF": {
+    "doc": "docs/research/HANDOFF-Loop-Atlas-P156.md",
+    "written": "2026-08-18, iteration 156, at owner request relayed via justoolkit-47",
+    "covers": "iterations 147-156 only. For phases 0-1, the koma sprint and anything pre-P147, read Research-Status.md and the charter -- do not trust a summary.",
+    "HEAD_at_handoff": "510f46d, tree clean, 24 commits ahead of origin, NOTHING PUSHED (never authorised)",
+    "top_lead": "the dream-attack chain counter -- chain length scales the finishing special's damage, which is the campaign's FIRST concrete multiplier lead after only ever finding flat effects."
   }
 }

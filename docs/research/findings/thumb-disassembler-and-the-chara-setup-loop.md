@@ -36,8 +36,16 @@ Built at `sp+0x48`:
 |---|---|
 | `+0x00` (`sp+0x48`) | `r1`, set earlier in the function |
 | `+0x04` (`sp+0x4C`) | `[[0x0214D680] +0x0] +0x4` |
-| `+0x08` (`sp+0x50`) | return of `blx #0x02173004` |
-| `+0x0C` (`sp+0x54`) | return of `blx #0x02173014` |
+| `+0x08` (`sp+0x50`) | return of `blx #0x02173004` — **one of three sources, see the correction below** |
+| `+0x0C` (`sp+0x54`) | return of `blx #0x02173014` — **one of three sources, see the correction below** |
+
+> **CORRECTED, iteration 151.** The two rows above are incomplete. `+0x08` and `+0x0C`
+> are each filled from **three** alternative function pairs, selected by guards this
+> document could not read because `thumb_disasm.py` was decoding every `cmp Rd,#imm` as
+> `mov Rd,#imm` (fixed in iteration 150). See
+> `findings/chara-setup-loop-has-three-descriptor-paths.md`. The claim "the descriptor's
+> first four words come from four distinct sources" holds for `+0x00` and `+0x04` but
+> understates `+0x08`/`+0x0C`.
 
 ```
 0x0214D5F0  9112       str r1, [sp, #0x48]

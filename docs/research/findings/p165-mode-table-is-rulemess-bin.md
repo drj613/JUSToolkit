@@ -113,6 +113,10 @@ Promotions:
 
 ## What `144` is *not* explained as
 
+**Runtime follow-up (bead `jus-uvs`, closed).** Two framebuffer reads with the emulator's own framecount: `4453` frames at TIME 28, `5673` at TIME 20 — 8 displayed units across 1220 frames, `152.5` frames/unit. The display is integer-quantised, so the honest bracket is 122–203 frames/unit. `144` sits near the centre; `じかん`-as-seconds (60 frames/unit) is outside by ~2.5× and is **refuted**. So a じかん-30 point battle runs ~74 s and one unit is ~2.4 s, and the formula is complete as stated. Their caveat, kept rather than rounded off: this pins frames-not-seconds but does **not** independently pin `144` — that still rests on the table's `+0xC` agreeing with `4463`.
+
+**Not affected by `jus-vkj`.** The runtime harness's `advance(N)` does not advance `N` frames (requested 2300 gave 5310), so any duration summed from requested advances is unsound. Every number used here is either a single RAM read or a framecount the emulator reported at capture, so nothing in this finding depends on advance-and-count.
+
 `not claimed`: why the constant is `144` or why the `- 1`. At 60 fps, `4463` frames is 74.4 seconds for じかん 30, so じかん isn't seconds in versus modes — one unit is 2.4 s if the counter ticks once per frame. Could also be that the counter decrements faster than once per frame, or it isn't a 60 Hz counter. **Static analysis can't tell.** Needs one wall-clock measurement — filed as a request to the runtime loop.
 
 ## Queued by this wake

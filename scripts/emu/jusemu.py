@@ -126,19 +126,66 @@ def make_run_dir(ipc_dir, plan, cmd_id, epoch):
     return rd
 
 
+WINID_SRC = os.path.join(os.path.dirname(os.path.abspath(__file__)), "tools", "winid.c")
+WINID_BIN = os.path.join(os.path.dirname(os.path.abspath(__file__)), "tools", "winid")
+
+
+def melonds_window_id():
+    """CoreGraphics window id for the emulator, or None.
+
+    Not System Events. Asking it for melonDS's window id returns error -1728 --
+    the Qt window is not exposed through the accessibility API, so no permission
+    grant fixes it. Nor a full-display capture: melonDS normally sits behind the
+    terminal, and a display capture only sees what is on top. `screencapture -l`
+    can grab an occluded window, and CoreGraphics gives up the id with no extra
+    permission and no Python dependency.
+    """
+    if not os.path.exists(WINID_BIN) or (
+            os.path.exists(WINID_SRC)
+            and os.path.getmtime(WINID_SRC) > os.path.getmtime(WINID_BIN)):
+        b = subprocess.run(["cc", "-O2", "-framework", "CoreGraphics",
+                            "-framework", "CoreFoundation",
+                            "-o", WINID_BIN, WINID_SRC],
+                           capture_output=True, text=True)
+        if b.returncode != 0:
+            print("could not build winid: %s" % b.stderr.strip(), file=sys.stderr)
+            return None
+    r = subprocess.run([WINID_BIN, "melonDS"], capture_output=True, text=True)
+    if r.returncode != 0:
+        return None
+    for line in r.stdout.splitlines():
+        parts = line.split("\t")
+        if len(parts) < 4:
+            continue
+        wid, dims, owner, title = parts[0], parts[1], parts[2], parts[3]
+        # Skip the separate "Lua Script" console window and Qt's tiny helpers.
+        if "Lua Script" in title:
+            continue
+        try:
+            w, h = (int(x) for x in dims.split("x"))
+        except ValueError:
+            continue
+        if w < 200 or h < 200:
+            continue
+        return wid
+    return None
+
+
 def do_screenshot(outfile, interactive):
-    script = ('tell application "System Events" to tell (first process '
-              'whose name contains "melonDS") to get id of first window')
-    win = subprocess.run(["osascript", "-e", script],
-                         capture_output=True, text=True)
-    if win.returncode != 0:
+    wid = melonds_window_id()
+    if wid is None:
         if interactive:
             return subprocess.run(["screencapture", "-w", outfile]).returncode
-        print("error: melonDS window not found (permissions? running?); "
+        print("error: no melonDS window found via CoreGraphics (running?); "
               "use --interactive to pick a window manually", file=sys.stderr)
         return 1
-    return subprocess.run(
-        ["screencapture", "-l", win.stdout.strip(), outfile]).returncode
+    # -x no sound, -o no window shadow (keeps the image the exact window size).
+    rc = subprocess.run(["screencapture", "-x", "-o", "-l", wid,
+                         outfile]).returncode
+    if rc == 0 and os.path.getsize(outfile) < 2000:
+        print("warning: %s is suspiciously small -- the capture may be blank"
+              % outfile, file=sys.stderr)
+    return rc
 
 
 def main(argv=None):

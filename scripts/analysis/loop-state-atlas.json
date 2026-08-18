@@ -1,9 +1,11 @@
 {
-  "iteration": 151,
+  "iteration": 152,
   "phase": "combat",
-  "current_task": "READ the six descriptor-filling functions to learn what selects between the three paths: 0x02173004/0x02173014 (path A), 0x020875B0/0x020875D8 (path B), 0x02028920/0x020208EC (path C), plus the predicate 0x02086BD4. Path identity likely = local player vs remote vs AI, but that is UNVERIFIED.",
+  "current_task": "IDENTIFY [0x0214CCF4 + 0x4] -- one global object pointer whose nullness gates 47 call sites, the single highest-leverage unknown this pass surfaced. Find its writer; the alloc census may tag the allocation.",
   "queue": [
-    "READ the six descriptor-filling functions to learn what selects between the three paths: 0x02173004/0x02173014 (path A), 0x020875B0/0x020875D8 (path B), 0x02028920/0x020208EC (path C), plus the predicate 0x02086BD4. Path identity likely = local player vs remote vs AI, but that is UNVERIFIED.",
+    "IDENTIFY [0x0214CCF4 + 0x4] -- one global object pointer whose nullness gates 47 call sites, the single highest-leverage unknown this pass surfaced. Find its writer; the alloc census may tag the allocation.",
+    "DISAMBIGUATE Path A's 0x02173004 / 0x02173014 between ov10 and ov11. Both share load base 0x02172A60. Byte-compare the two overlay images at that offset -- if they differ, the call's context decides; if identical, the question is moot.",
+    "CHARACTERISE the remaining 29% of the 465 missing literal loads (those NOT explained by pool-past-enclosing-function-end), then decide whether to patch the index or just document the floor.",
     "FIND what writes sp+0x28 beyond indices 0 and 1 in the chara setup routine -- it is a per-slot enable array and only two entries have a traced writer. If nothing else writes it, slots >=2 read uninitialised stack, which would be a real finding.",
     "READ the six remaining P151-changed sites in context: 0x0214D428, 0x0214D432, 0x0214D4AA, 0x0214D4E0, 0x0214D580, 0x0214D590 -- confirmed changed by the cmp/mov fix but not yet read.",
     "RESOLVE the functions.json callee discrepancy: the BL pair at 0x0206BB36/0x0206BB38 targets 0x02020916 (hi=0xF7B4, lo=0xFEEE, displacement -0x4B224 from 0x0206BB36+4), but functions.json lists 0x02020934 in this function's callee set. Differ by 0x1E. Database question -- check whether Thumb BL targets are systematically mis-recorded.",
@@ -272,7 +274,7 @@
     "Is HP computed as size*k at runtime, or tabulated per panel? Naruto 4-koma=144=4*36; if size*k then size5=180, size6=216, size7=252, size8=288. One reading settles it."
   ],
   "notes": "Iteration 146 done (delegated + verified). THREE closures: (a) 0x800's polarity is category ROUTING, not a contradiction -- 0x020801D4 is loop-continue, 0x0207F7C8 is the next category check; (b) record+0x34 is NOT write-once -- a four-function flag API (0x0207D064/0x0207D0BC/0x0207CF18/0x0207CF78) mirrors changes into +0x38 and the +0x08 node list, and the destructor 0x0207CCD4 memsets 0x188; (c) P144's 0x6FF puzzle SOLVED -- ov6 ORs [record+0x150]&0xFF into +0x34, and 0x6FF covers bits 0-7, so the test reads runtime bits not the 0x100 construction seed. Top task: read record+0x150, which now drives the whole category gate. STANDING: query.py mis-bins functions in this module (4 leaves here, 8 in P125, 2 in P126) -- verify any address before trusting its size or container. The +0x5C base-confusion trap has 7 instances; on +0x34 (1092 hits) the base register is the ONLY struct identifier. CHARTER: updated in P146b on the user's direct authorization. North star = docs/PROJECT-GOAL.md (master, f47d63d); Mission 2's current focus is the entity/projectile subsystems. justoolkit-06 is the designated runtime validator -- send them struct-field hypotheses and breakpoint requests rather than leaving questions unresolved; that is the only route to dynamic evidence without breaking the static-only rule.",
-  "last_wake": "2026-08-18 iteration 151 (autonomous tick)",
+  "last_wake": "2026-08-18 iteration 152 (autonomous tick)",
   "wakeup_default_seconds": 1800,
   "consecutive_no_progress_wakes": 0,
   "k1c_helper_passives": {
@@ -1653,7 +1655,10 @@
     "P150: incoherent instruction PAIRS are a decoder-bug detector. 'mov' immediately before 'beq' cannot be right because mov sets no flags. Read for semantic coherence across adjacent instructions, not just per-instruction plausibility -- that is what caught cmp-decoded-as-mov.",
     "P150: convergent verification earned its place in the charter on first real use. Three decodes agreed on the load-bearing instruction (so the deck result is solid) and two-of-three disagreed with the project tool on 0x2800, which localised the defect. Agreement confirmed the claim; disagreement found the bug.",
     "P151: the blast radius of a decoder bug is not where the bad instructions are, it is where CONTROL FLOW conclusions were drawn. All three flagged CITED addresses turned out to be literal-pool data and harmless; the real damage was nine uncited instructions, three of which were the guards that made a three-way selection look like one path with dead tails.",
-    "P151: checking cited addresses is necessary but not sufficient when auditing a tool bug. Scan the whole CODE RANGE a doc reasons over, not just the addresses it happened to quote -- the quoted ones were fine and the unquoted ones carried the error."
+    "P151: checking cited addresses is necessary but not sufficient when auditing a tool bug. Scan the whole CODE RANGE a doc reasons over, not just the addresses it happened to quote -- the quoted ones were fine and the unquoted ones carried the error.",
+    "P152: an implausibly large number is itself evidence of a measurement bug. 97.3% missing would have meant the database did not work at all, which contradicts using it successfully every wake. Sanity-check a scary statistic against lived experience of the tool BEFORE writing it down.",
+    "P152: 'inside a function extent' needs to mean the ENCLOSING function, not any function. Comparing against any-extent gave 97.3%; comparing against the enclosing one gave 71% of a 9.4% missing set -- a real and actionable pattern instead of noise.",
+    "P152: a predicate can be consulted at more than one level of the same decision. 0x0208C51C gates whether Path B is chosen AND gates the branch inside both of Path B's functions. Do not assume one test per decision point when reading a selection tree."
   ],
   "open_questions_for_owner": [
     "Note-kind bucketing: the engine keeps at most 7 simultaneous \"notes\" per character, and 7 of the 17 kinds share one slot (kinds 6,7,8,9,10,14,15) so they should be mutually exclusive in play. Does starting one of those effects visibly cancel another?"
@@ -1740,5 +1745,24 @@
     "CORRECTION_to_confirmed_claim": "findings/thumb-disassembler-and-the-chara-setup-loop.md listed descriptor +0x08/+0x0C as coming from blx 0x02173004 / 0x02173014. That is ONE OF THREE paths. Path A (both guards pass) = 0x02173004/0x02173014; Path B (via 0x0214D62E, predicate 0x02086BD4 nonzero) = 0x020875B0/0x020875D8; Path C (via 0x0214D648) = 0x02028920/0x020208EC. Six functions, three pairs, all converging on the Battle_CharaCreate call at 0x0214D658 with r0=r5. Doc amended with a correction block.",
     "NEW_sp0x28_enable_array": "sp+0x28 is a per-slot enable BYTE array, initialised [0]=0 and [1]=1 at 0x0214D54C-0x0214D554 and indexed by the loop counter (ldrb r1,[r1,r5] at 0x0214D5FC). The byte is also stashed at sp+0x0. What fills indices >=2 is NOT CLAIMED -- no other writer traced.",
     "CONVERGENCE_with_P147b": "The loop bound is [root+0x158] where root = [0x0214D928] -- the SAME battle-root global P147b found holding the ObjShot manager at root+0x110 and ObjCtrl at root+0x10C. Two unrelated passes reached the same global from different directions. This also identifies the old doc's unexplained 'ldr r3,[r2,#0x158] -- a count on r2': r2 IS the battle root and +0x158 is the character count."
+  },
+  "P152_DESCRIPTOR_PATH_SELECTION": {
+    "selection": "Two byte guards (0x0214D600 per-slot enable at sp+0x28[r5]; 0x0214D60A second gate [r0+r2+0x56]) both non-zero -> Path A. Else predicate 0x02086BD4 at 0x0214D62E: non-zero -> Path B, zero -> Path C.",
+    "predicate_0x02086BD4": "48 bytes, 6 callers. Two-term OR: ([0x020AFE90 + 0x28] != 0) OR 0x0208C51C().",
+    "discriminator_0x0208C51C": "24 bytes, 47 CALLERS. Null test: returns ([0x0214CCF4 + 4] != 0). 0x0214CCF4 is NOT in the arm9 image (arm9 spans 0x02000000-0x020A9158) -- it is a RAM global 0x2C bytes below ov6's load base 0x0214CD20. 0x020AFE90 has 149 literal loads. Both are major globals.",
+    "path_C_is_static": "0x02028920 returns [0x020A1EFC + slot*4]; 0x020208EC reads [0x020A1EBC + slot*4], returns 0 if zero else passes to 0x02011B38. Two parallel word tables indexed by slot, no live state.",
+    "path_B_forks_again": "0x020875B0 and 0x020875D8 BOTH call 0x0208C51C again: non-zero -> ov10 0x0219B9CC / 0x0219BA00, zero -> blx thumb 0x0208C10C / 0x0208C114. So 0x0208C51C is consulted TWICE en route to a Path B value.",
+    "ov10_unambiguous": "0x0219B9CC and 0x0219BA00 are ov10 ONLY -- ov10 spans 0x02172A60-0x021A73A0, ov11 only 0x02172A60-0x02181A60, so both are past ov11's end.",
+    "path_A_NOT_ATTRIBUTABLE": "0x02173004 and 0x02173014 fall inside BOTH ov10 and ov11 (shared load address 0x02172A60). Phantom-overlay hazard. NOT CLAIMED.",
+    "interpretation_NOT_CLAIMED": "fallback-hierarchy reading (C static tables / B live code / A overlay pair) is PLAUSIBLE only. No function bodies read past the first branch; no string or alloc tag names any of the six. Path identity (local/remote/AI, configured/default/absent, etc.) NOT CLAIMED."
+  },
+  "TOOL_BLIND_SPOT_literal_loads": {
+    "severity": "MEDIUM -- makes reference COUNTS floors, not censuses",
+    "what": "xrefs.json's literal_loads index is missing the load at 0x02028920 (0xE59F1004 = ldr r1,[pc,#4]; pool word at 0x0202892C = 0x020A1EFC, both verified from raw bytes). No record with insn_addr 0x02028920, none with pool_addr 0x0202892C.",
+    "measured": "4941 ARM ldr Rd,[pc,#imm] sites inside recorded arm9 ARM functions; 465 have NO xrefs.json record = 9.4%. Of the 465, 331 (71%) have their pool at or past the ENCLOSING function's end; 51 (11%) sit in a function of <=16 bytes. 0x02028920 is both (12-byte fn, pool one word past the end).",
+    "likely_cause": "PLAUSIBLE: the index resolves pools only within the enclosing function's extent. Covers 71%; the other 29% uninvestigated.",
+    "consequence": "query.py pool-values and any 'how many places load this value' count are FLOORS for arm9 ARM, short by ~9.4%, concentrated in short functions whose pool follows immediately.",
+    "MY_WRONG_NUMBER_RETRACTED": "I first reported 97.3% of arm9 pc-relative pools as out-of-extent. Meaningless and withdrawn -- it compared pools against ANY function extent rather than the ENCLOSING one, and did not filter to UNRECORDED loads. Pools normally sit between functions so a high out-of-extent rate is expected. The implausibility of 97% is what prompted the re-check.",
+    "family": "third index to under-report silently, with the Thumb BLX(1) caller gap and the ARM-only field-writer scan."
   }
 }

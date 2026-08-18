@@ -652,3 +652,34 @@ Summarized from `jus_files/analysis/findings/critic.round1.json` — a dedicated
 - `disasm_db`'s `bx <reg>`-epilogue function-boundary heuristic still has a known gap (merged two routines once, per the prior campaign's weight-hunt section). **Not attempted this phase (P6c skipped):** regenerating the disasm/xref DBs was judged too risky pre-synthesis, since every frozen evidence DB this phase's tracers cited would have needed re-verification.
 - **New this phase:** `xrefs-to`/`pool-values` cannot see `bx ip`-style indirect jumps through an inline pool word — demonstrated concretely by guard-sp-gauges' sibling drain trampoline `0x020783B8`, which was invisible to both tools and was only found by a manual disasm sweep of the bytes adjacent to the known trampoline `0x020783CC`. No byte-pattern scanner for this `ldr ip,[pc,#N]/ldr r0,[r0,#M]/bx ip` shape was added this phase.
 - `ExportAllCollisions` (the CLI's own batch export command) had never been run against the full roster — **closed this phase (P1):** it now has, and P2 re-mined the full 281-file export (see collision-data round 2).
+
+---
+
+## Subsystem: rule / match settings (P163–P165)
+
+**Status:** PARTIAL. Consolidated here because P163–P164 landed only in `findings/`. Full detail:
+`findings/p163-rule-select-screen-mapped-to-memory.md`,
+`findings/p164-mode-classifier-is-ov1-and-reads-a-16-byte-table.md`,
+`findings/p165-mode-table-is-rulemess-bin.md`.
+
+| what | where | confidence |
+|---|---|---|
+| Match-settings struct (the ルールセレクト screen, six settings + three booleans) | `0x020AFE90` | `CONFIRMED_STATIC` |
+| Rule mode, index into the rulemess table (`0` = ポイントバトル, `1` = デスマッチ, `2` = J-symbols) | `0x020AFEA0` | **`CROSS_CONFIRMED`** (runtime: bead `jus-1g6`) |
+| Time limit, in frames | `0x020AFEAC` (settings `+0x1C`) | **`CROSS_CONFIRMED`** (4463 measured at じかん 30) |
+| Team battle boolean — **not** cleared by the runtime harness's `rules_off()` | `0x020AFEBD` | `PLAUSIBLE` |
+| COM count | `0x020AFEC3` | `PLAUSIBLE` (untested) |
+| Menu-side settings record, array stride `0xA4` (164 bytes) | source object of `0x0207538C` | `CONFIRMED_STATIC` |
+| Settings `+0x4C` = slot index, or `-1` (**not** `root+0x4C`) | `0x020AFEDC` | `CONFIRMED_STATIC` |
+| Mode classifier: `mode_field(ctx, mode) = [[ctx+4] + mode*0x10 + 0xC]` | ov1 `0x0216446C` | `CONFIRMED_STATIC` |
+| `ctx` builder = `RuleData_Create`; `[ctx+4]` is the data pointer for `bin/rulemess.bin` | ov1 `0x021643A4` | `CONFIRMED_STATIC` |
+| The mode descriptor table is the 22-entry × 16-byte header of `bin/rulemess.bin`; the classifier's field is its `+0xC` int | `jus_files/ripped_jus_files/bin/rulemess.bin` | `CONFIRMED_STATIC` |
+| Time conversion: `+0xC == 1` (mission rules) → `じかん * 60`; otherwise (versus rules) → `(じかん + 1) * 144 - 1` | ov1, per P163 | **`CROSS_CONFIRMED`** |
+
+`not claimed`: why the constant is `144`, and why the `-1`. Needs one wall-clock measurement.
+
+**Format correction with campaign-wide reach.** Pointers in the JUS `bin/*.bin` text files are
+**self-relative** — a pointer's target is its own file position plus its value — not absolute, as
+`docs/articles/specs/texts.md` says. Verified on 1,347 of 1,347 pointers across six files and against
+`src/JUS.Tool/Texts/JusText.cs:90`. Read as absolute, only the first pointer in a file lands on a
+string. Any hand-parse of these files from the old description produces garbage after string one.

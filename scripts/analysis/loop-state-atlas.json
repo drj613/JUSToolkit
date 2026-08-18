@@ -1,8 +1,10 @@
 {
   "iteration": 155,
   "phase": "combat",
-  "current_task": "RE-RUN base_offset_scan.py against the campaign's other static-base claims -- any 'struct at fixed address X has fields at ...' conclusion drawn from an untracked forward walk is now suspect. Grep findings for fixed-address field maps and re-verify each.",
+  "current_task": "HUNT the dream-attack chain counter (owner ground truth, P156): chain length scales the finishing special's damage. This is the campaign's first concrete MULTIPLIER lead after repeatedly finding only flat effects. Find the counter field and the site that reads it on the damage path -- start from the damage core 0x02078488 / entry 0x020783CC and look for a per-chain count read.",
   "queue": [
+    "HUNT the dream-attack chain counter (owner ground truth, P156): chain length scales the finishing special's damage. This is the campaign's first concrete MULTIPLIER lead after repeatedly finding only flat effects. Find the counter field and the site that reads it on the damage path -- start from the damage core 0x02078488 / entry 0x020783CC and look for a per-chain count read.",
+    "FIND the per-move variant selector that makes a dream attack a quick version of an existing move -- check the BattleObjShot kind byte (element+0x1A, 27 kinds) and MoveMan element flags first.",
     "RE-RUN base_offset_scan.py against the campaign's other static-base claims -- any 'struct at fixed address X has fields at ...' conclusion drawn from an untracked forward walk is now suspect. Grep findings for fixed-address field maps and re-verify each.",
     "IDENTIFY [0x020AFE90 + 0x28] -- still the unknown other term of path predicate 0x02086BD4; 149 literal loads. base_offset_scan.py can now do this properly.",
     "READ 0x021671E4 -- called right after the session teardown nulls the pointer; likely the real destructor or comms shutdown.",
@@ -1805,5 +1807,18 @@
     "MY_P154_CLAIM_RETRACTED": "P154 said '0x0214CCF8 is a struct base, not a bare pointer slot'. WRONG, retracted. P153's original 'global pointer slot' was correct and my refinement made the record worse. I hedged the LARGE offsets in P154 and let the SMALL ones through unchallenged -- there were no other offsets at all.",
     "ARM7_BUG_caught_by_positive_control": "the tool's first version reported ZERO hits for 0x0214CCF4, a base whose accessors I hand-read in P153. Cause: the arm9 image was chosen with sorted(glob(...))[0], and sorting puts arm7.bin ahead of arm9.bin -- it was scanning the ARM7 binary. My earlier ad-hoc scans used an UNSORTED glob and got arm9.bin only by luck of directory order. Fixed by naming arm9.bin explicitly and raising if absent.",
     "selftest": "asserts (a) both hand-read ov7 writers of +0x00 are found, (b) no offset >= 0xC40 survives, (c) POSITIVE CONTROL: recovers +0x00/+0x01/+0x04 for 0x0214CCF4 from 9 arm9 sites. Those 9 also match P153's raw-scan 9 pool words vs xrefs.json's 4, so the tool clears the index gap for this case."
+  },
+  "OWNER_GROUND_TRUTH_touch_mechanics": {
+    "source": "owner, live play, 2026-08-18. Not derivable from the repo. Treat as ground truth.",
+    "dream_attack": "tapping the CURRENTLY-ACTIVE character on the touch screen makes it perform a 'dream attack' -- typically a different, quicker version of another move already in that character's base moveset.",
+    "chain": "after a dream attack, tapping a DIFFERENT deck character switches to them and they perform a dream attack too. Chain can continue. When the chain returns to the ORIGINAL character, tapping them yields a SPECIAL ATTACK instead -- an UP-special if you hold up while tapping.",
+    "DAMAGE_SCALING": "the finishing special deals MORE DAMAGE the more characters were tapped in between. Chain length is a damage input. This is a multiplier-like mechanic, distinct from the flat/resistance behaviour recorded elsewhere in this campaign.",
+    "support": "tapping a SUPPORT character summons it to act -- attack, heal, displacement, or apply a status effect.",
+    "research_targets": [
+      "the chain counter must be live battle state -- find the field that counts characters tapped since the chain began, and the site that consumes it as a damage input. This is a concrete multiplier lead where the campaign has so far only found flat effects.",
+      "a dream attack is a VARIANT of an existing move, so there is a per-move variant selector. Likely relates to the BattleObjShot kind byte at element+0x1A (27 kinds) or to a MoveMan element flag.",
+      "up-special vs special selected by the UP input at tap time -- an input-modifier read at move-dispatch time.",
+      "support summons dispatch by effect class (attack/heal/displace/status) -- likely a table, and the ALL_6_THUMB_SITES_ARE_HEALS finding may be the heal arm of it."
+    ]
   }
 }

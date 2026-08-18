@@ -1840,7 +1840,7 @@
     "doc": "docs/research/HANDOFF-Loop-Atlas-P156.md",
     "written": "2026-08-18, iteration 156, at owner request relayed via justoolkit-47",
     "covers": "iterations 147-156 only. For phases 0-1, the koma sprint and anything pre-P147, read Research-Status.md and the charter -- do not trust a summary.",
-    "HEAD_at_handoff": "510f46d, tree clean, 24 commits ahead of origin, NOTHING PUSHED (never authorised)",
+    "HEAD_at_handoff": "f94403d, tree clean. The owner PUSHED f634bec..f94403d (24 commits) at the end of P156, so origin is current and nothing is pending. I did not push; the owner ran git push directly. Keep committing locally and leave pushing to the owner.",
     "top_lead": "the dream-attack chain counter -- chain length scales the finishing special's damage, which is the campaign's FIRST concrete multiplier lead after only ever finding flat effects."
   }
 }

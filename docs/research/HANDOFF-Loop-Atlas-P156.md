@@ -1,8 +1,12 @@
 # Handoff — Loop-Atlas, iterations 147–156
 
-Branch `loop/battle-engine-atlas`, HEAD **`510f46d`**, tree clean, **24** commits ahead of
-`origin/loop/battle-engine-atlas` (nothing pushed this session — pushing was never
-authorised, so don't).
+Branch `loop/battle-engine-atlas`, tree clean. The session's work — **`f634bec..f94403d`**,
+**24** commits — **was pushed by the owner** at the end of iteration 156, so
+`origin/loop/battle-engine-atlas` is current. Nothing is waiting to go out.
+
+I never pushed anything myself; the owner ran `git push` directly. Take that as the pattern
+rather than as standing permission: **commit locally every wake, and leave pushing to the
+owner unless they ask you.**
 
 Canonical state lives in `scripts/analysis/loop-state-atlas.json` — iteration **156**, **75** queue
 entries, **388** confirmed constants, **427** lessons. The canon doc is
@@ -196,7 +200,7 @@ during battle; that the ov05 residency contradiction was a labelling error.
   layout that shared no reasoning with the original. Hand Codex **raw instruction hex, no
   addresses beyond a start, and no hypothesis.**
 - **Escalation** for blocking questions: PR in the `jus_files` repo, `@drj613`.
-- **Don't push.** 24 commits are local and that was never authorised.
+- **Don't push on your own initiative.** The owner pushed this session's 24 commits (`f634bec..f94403d`) themselves. Keep committing locally each wake; a push is the owner's call, not a default.
 
 ---
 

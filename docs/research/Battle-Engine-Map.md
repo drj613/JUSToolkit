@@ -422,6 +422,19 @@ None of the 5 claims were outright REFUTED by any lens. Claim 5's downgrade is a
 | 13 | Exactly 2 static call sites reach the `+0x558` walker (`0x02157E0C`, `0x021592B4`) — exposed through the same generic small-wrapper infrastructure as the HP trampoline. **How many distinct gauge-node "kinds" actually populate the list at runtime cannot be determined statically** — no type-dispatch code exists anywhere in the walker or its callers. | `0x02157E04`–`0x021592B4` | **SPECULATIVE** |
 | 14 | `char+0x558`/`+0x55c`/`+0x560`/`+0x564` are zero-initialized together in one startup loop (consistent with a NULL-terminated, per-character list head). Of 37 total load/store hits to immediate `0x558` ROM-wide, only **1 is a store** (the zero-init) — **no node-insertion site was found anywhere in the database** (a split `add`+register-offset store would be invisible to this immediate-based search). | `0x02075FF8`–`0x02076008` | **PLAUSIBLE** |
 
+**P157 update** (`findings/p157-status-dispatch-table-and-hp-delta-census.md`). A 42-entry,
+8-byte-stride dispatch table at ov6 `0x02171168`–`0x021712B7` (`{fn, cat, key, b2, status}`, with
+`key` a gapless unique `0x00`–`0x1F`) names every handler in this family from data rather than from
+code shape. It **promotes claim 5 to CONFIRMED_STATIC**, reproduces all nine status mappings in
+`findings/c6b-poison-burn-opcodes.md` from a different representation, and closes that finding's
+open item: **status `0x20` is handled by `0x021596E0` and `0x021597F8`** (both open
+`bl 0x02087724; cmp r0,#2`, which is why the prologue-shape scan missed them). The same wake
+censused how `r1` is produced at all ten call sites: every scale on the path is a **constant**
+power of two (`lsl #6`, `lsl #8`), so **no chain-length or other non-constant multiplier is applied
+at the HP-adjust boundary** — `CONFIRMED_STATIC`. Also: `0x02078428` sets HP to **1** on every
+living character when its `r1` argument is 0 (`strheq r4,[r6,#0x18]`), skipping the percentage
+multiply entirely.
+
 ### Refuted hypotheses (guard-sp-gauges)
 
 - **"The `+0x558` walker is the only other static caller of `Grow`"** (claim 7) — refuted; a second, previously undocumented drain trampoline (`0x020783B8`) exists, reached via `0x0215AC70`. It still targets `+0x56c` (not a new gauge), but the enumeration itself was incomplete.

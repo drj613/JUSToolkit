@@ -153,3 +153,33 @@ bash scripts/emu/stop_emu.sh
 
 Both scripts take `--addrs`/defaults for the session-local addresses; a stale
 address reads believable garbage rather than failing.
+
+## The converse test: clearing bit 9 on a real resistor (2026-08-18)
+
+The sweep above added bits to a target that had none. The obvious pushback: maybe a resistance bit only matters on a character whose resistance is actually live. So here's the other direction — Codex's proposed step 2: take a real blunt resistor and strip the bit away.
+
+**The target.** A training battle against Luffy, confirmed from RAM, not assumed — `chr_b[12]`, 152.0 max HP, ability array `[9, 25, 12, 14]`. That includes `0x09` 打撃耐性ＵＰ (blunt resistance) and `0x0C` 斬撃弱点 (slash weakness), exactly the pair earlier notes recorded for Luffy. The attacker is Goku, `chr_b[0]`, abilities `[7, 15]`, carrying neither — a clean attacker with no relevant modifiers.
+
+**Locating the bitset two independent ways.** This matters more than it sounds, so both are recorded:
+
+1. Scan RAM for u32 pointers to `char_struct + 0x10` and grab the object holding one — the same method from the first half of this document.
+2. Compute what the bitset *should* be from the four ability IDs before searching for it: bits 9, 12, 14 and 25 give `0x02005200`. Search 4MB of RAM for that exact word.
+
+Method 2 returns **exactly one match**, at `0x02244308`, implying entity `0x022441E0`. Its `entity+0x04` holds vtable `0x0215D3B4` — the same vtable as both entities identified earlier. One method reasons about pointer topology, the other about a predicted bit pattern, and they converge on the same object. That kind of agreement can't come from shared bias. It also lines up with the atlas session's static finding that `entity+0x10` is the record handle.
+
+**The measurement.** One B press (a punch — blunt type) per trial, HP read per frame, three reps per condition, savestate reloaded before each.
+
+| condition | bitset written | raws (3 reps) | delta |
+|---|---|---|---|
+| baseline | untouched `0x02005200` | 352, 352, 352 | — |
+| clear bit 9 (blunt resistance) | `0x02005000` | 352, 352, 352 | **+0.000** |
+| clear bit 25 (control) | `0x00005200` | 352, 352, 352 | +0.000 |
+| clear bit 12 (slash weakness, control) | `0x02004200` | 352, 352, 352 | +0.000 |
+
+Twelve runs, 352 raw every single time. Removing blunt resistance from a character who demonstrably has it changes incoming blunt damage by exactly nothing.
+
+**Both directions now agree.** Setting bit 9 on a target without it: no effect. Clearing bit 9 on a target with it: no effect. The cached bitset at `entity+0x128` is not consulted when damage is scaled, in either direction, and the flat −2 is not ability `0x09` by way of any runtime read of that word.
+
+The next lead to chase is a per-character defence value, or a stat derived from the ability list at load time and stored somewhere else. The community guide describes *three* separate resistance categories (punch/kick, special attacks, blades), and the atlas session found `record+0x3C`'s low nibble used as an ignore mask — the right shape for a field like that, and three categories fit in four bits comfortably. That's the better thread to pull.
+
+**One honest caveat about the baseline number.** 352 raw here versus 384 against the ability-free dummy earlier aren't comparable: different battle, different mode, different positions, and auto-heal state wasn't equalised between them. Only the within-condition deltas above are being claimed, and those are what the argument rests on.

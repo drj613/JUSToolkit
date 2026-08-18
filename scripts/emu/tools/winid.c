@@ -22,7 +22,36 @@ static void cfstr(CFStringRef s, char *out, size_t n) {
     if (s) CFStringGetCString(s, out, (CFIndex)n, kCFStringEncodingUTF8);
 }
 
+// "--front" prints the owner of the frontmost on-screen window. Needed because
+// screencapture -l on an OCCLUDED window can return a STALE cached backing store:
+// captures come back byte-identical while the emulator is plainly still running,
+// which reads as "the screen never changed" and is the worst kind of silent
+// failure. Captures are only trustworthy while melonDS is frontmost.
+static int print_front(void) {
+    CFArrayRef list = CGWindowListCopyWindowInfo(
+        kCGWindowListOptionOnScreenOnly | kCGWindowListExcludeDesktopElements,
+        kCGNullWindowID);
+    if (!list) return 2;
+    int rc = 1;
+    // The on-screen list is ordered front to back.
+    for (CFIndex i = 0; i < CFArrayGetCount(list); i++) {
+        CFDictionaryRef d = CFArrayGetValueAtIndex(list, i);
+        char owner[256];
+        cfstr(CFDictionaryGetValue(d, kCGWindowOwnerName), owner, sizeof owner);
+        CFNumberRef ln = CFDictionaryGetValue(d, kCGWindowLayer);
+        int layer = 0;
+        if (ln) CFNumberGetValue(ln, kCFNumberIntType, &layer);
+        if (layer != 0) continue;   // skip menu bar, docks, overlays
+        printf("%s\n", owner);
+        rc = 0;
+        break;
+    }
+    CFRelease(list);
+    return rc;
+}
+
 int main(int argc, char **argv) {
+    if (argc > 1 && strcmp(argv[1], "--front") == 0) return print_front();
     const char *needle = argc > 1 ? argv[1] : "melonDS";
     // Exclude desktop elements; include off-screen so an occluded or minimised
     // window still shows up -- that is the whole point.

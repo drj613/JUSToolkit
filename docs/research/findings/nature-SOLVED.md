@@ -6,7 +6,7 @@ Nature isn't stored per panel. It's computed through a sentinel-and-fallback sch
 
 ## The rule
 
-From the deck-editor accessor at **`0x0214E480`** (overlay disassembled in `jus_files/analysis/disasm/ov5.txt`; copy in `arm9.txt` at `0x02076F70` / `0x02078CB8`). `r0` = pointer to a `koma.bin` record.
+From the deck-editor accessor at **`0x0214E480`** (overlay disassembled in `jus_files/analysis/disasm/ov5.txt`; the high-nibble predicate `0x02078CB8` and the low-nibble reader `0x02076F70` in `arm9.txt` — **corrected iteration 156: these are not both copies.** `0x02078CB8` reads the high nibble and compares it against `3`; `0x02076F70` reads the *low* nibble and stores it without comparing. Only `0x02078CB8` copies the resolver's logic). `r0` = pointer to a `koma.bin` record.
 
 ```
 helper  (panelType 2) -> 3 (なし), short-circuit on type, flags ignored

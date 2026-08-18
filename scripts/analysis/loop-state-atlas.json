@@ -1,9 +1,11 @@
 {
-  "iteration": 152,
+  "iteration": 153,
   "phase": "combat",
-  "current_task": "IDENTIFY [0x0214CCF4 + 0x4] -- one global object pointer whose nullness gates 47 call sites, the single highest-leverage unknown this pass surfaced. Find its writer; the alloc census may tag the allocation.",
+  "current_task": "TRACE the writer of 0x0214CCF8 inside ov7/ov10 -- it constructs the network session object, and an alloc-census tag at that site would upgrade the networking identification from PLAUSIBLE to CONFIRMED. Start from the ov7 refs (43, fewer to sift than ov10's 202).",
   "queue": [
-    "IDENTIFY [0x0214CCF4 + 0x4] -- one global object pointer whose nullness gates 47 call sites, the single highest-leverage unknown this pass surfaced. Find its writer; the alloc census may tag the allocation.",
+    "TRACE the writer of 0x0214CCF8 inside ov7/ov10 -- it constructs the network session object, and an alloc-census tag at that site would upgrade the networking identification from PLAUSIBLE to CONFIRMED. Start from the ov7 refs (43, fewer to sift than ov10's 202).",
+    "IDENTIFY [0x020AFE90 + 0x28] -- the OTHER term of the path predicate 0x02086BD4, still unknown. 0x020AFE90 has 149 literal loads, so it is a major global; the byte at +0x28 forces Path B even with no network session.",
+    "REPORT the sixth functions.json binning gap (0x0208C500-0x0208C640: 4 records, 8 leaf accessors; 0x0208C5AC's 52-byte record spans three functions) into the standing query.py binning-audit task.",
     "DISAMBIGUATE Path A's 0x02173004 / 0x02173014 between ov10 and ov11. Both share load base 0x02172A60. Byte-compare the two overlay images at that offset -- if they differ, the call's context decides; if identical, the question is moot.",
     "CHARACTERISE the remaining 29% of the 465 missing literal loads (those NOT explained by pool-past-enclosing-function-end), then decide whether to patch the index or just document the floor.",
     "FIND what writes sp+0x28 beyond indices 0 and 1 in the chara setup routine -- it is a per-slot enable array and only two entries have a traced writer. If nothing else writes it, slots >=2 read uninitialised stack, which would be a real finding.",
@@ -274,7 +276,7 @@
     "Is HP computed as size*k at runtime, or tabulated per panel? Naruto 4-koma=144=4*36; if size*k then size5=180, size6=216, size7=252, size8=288. One reading settles it."
   ],
   "notes": "Iteration 146 done (delegated + verified). THREE closures: (a) 0x800's polarity is category ROUTING, not a contradiction -- 0x020801D4 is loop-continue, 0x0207F7C8 is the next category check; (b) record+0x34 is NOT write-once -- a four-function flag API (0x0207D064/0x0207D0BC/0x0207CF18/0x0207CF78) mirrors changes into +0x38 and the +0x08 node list, and the destructor 0x0207CCD4 memsets 0x188; (c) P144's 0x6FF puzzle SOLVED -- ov6 ORs [record+0x150]&0xFF into +0x34, and 0x6FF covers bits 0-7, so the test reads runtime bits not the 0x100 construction seed. Top task: read record+0x150, which now drives the whole category gate. STANDING: query.py mis-bins functions in this module (4 leaves here, 8 in P125, 2 in P126) -- verify any address before trusting its size or container. The +0x5C base-confusion trap has 7 instances; on +0x34 (1092 hits) the base register is the ONLY struct identifier. CHARTER: updated in P146b on the user's direct authorization. North star = docs/PROJECT-GOAL.md (master, f47d63d); Mission 2's current focus is the entity/projectile subsystems. justoolkit-06 is the designated runtime validator -- send them struct-field hypotheses and breakpoint requests rather than leaving questions unresolved; that is the only route to dynamic evidence without breaking the static-only rule.",
-  "last_wake": "2026-08-18 iteration 152 (autonomous tick)",
+  "last_wake": "2026-08-18 iteration 153 (autonomous tick)",
   "wakeup_default_seconds": 1800,
   "consecutive_no_progress_wakes": 0,
   "k1c_helper_passives": {
@@ -1658,7 +1660,10 @@
     "P151: checking cited addresses is necessary but not sufficient when auditing a tool bug. Scan the whole CODE RANGE a doc reasons over, not just the addresses it happened to quote -- the quoted ones were fine and the unquoted ones carried the error.",
     "P152: an implausibly large number is itself evidence of a measurement bug. 97.3% missing would have meant the database did not work at all, which contradicts using it successfully every wake. Sanity-check a scary statistic against lived experience of the tool BEFORE writing it down.",
     "P152: 'inside a function extent' needs to mean the ENCLOSING function, not any function. Comparing against any-extent gave 97.3%; comparing against the enclosing one gave 71% of a 9.4% missing set -- a real and actionable pattern instead of noise.",
-    "P152: a predicate can be consulted at more than one level of the same decision. 0x0208C51C gates whether Path B is chosen AND gates the branch inside both of Path B's functions. Do not assume one test per decision point when reading a selection tree."
+    "P152: a predicate can be consulted at more than one level of the same decision. 0x0208C51C gates whether Path B is chosen AND gates the branch inside both of Path B's functions. Do not assume one test per decision point when reading a selection tree.",
+    "P153: WHERE a global is referenced from can identify it when nothing names it. 0x0214CCF8 has no string and no alloc tag, but being touched 245 times from ONLY the local-wireless and online overlays -- and zero times from arm9 -- pins it to networking. Reference-provenance is evidence; use it when symbol evidence is absent.",
+    "P153: a 24-byte function with 47 callers is a design signal, not a curiosity. It meant arm9 needed to ask an overlay-owned question without linking the overlay, which is why the state lives in a fixed RAM slot below the overlay load base. Odd caller-count-to-size ratios point at architecture.",
+    "P153: running the raw scan ALONGSIDE the database query (not instead of it) is now paying off every time. Here the DB gave 4 and the truth was 9, on the one global the whole finding rested on. With a measured 9.4% index gap, never let a DB count be the last word on a load-bearing question."
   ],
   "open_questions_for_owner": [
     "Note-kind bucketing: the engine keeps at most 7 simultaneous \"notes\" per character, and 7 of the 17 kinds share one slot (kinds 6,7,8,9,10,14,15) so they should be mutually exclusive in play. Does starting one of those effects visibly cancel another?"
@@ -1764,5 +1769,15 @@
     "consequence": "query.py pool-values and any 'how many places load this value' count are FLOORS for arm9 ARM, short by ~9.4%, concentrated in short functions whose pool follows immediately.",
     "MY_WRONG_NUMBER_RETRACTED": "I first reported 97.3% of arm9 pc-relative pools as out-of-extent. Meaningless and withdrawn -- it compared pools against ANY function extent rather than the ENCLOSING one, and did not filter to UNRECORDED loads. Pools normally sit between functions so a high out-of-extent rate is expected. The implausibility of 97% is what prompted the re-check.",
     "family": "third index to under-report silently, with the Thumb BLX(1) caller gap and the ARM-only field-writer scan."
+  },
+  "P153_NETWORK_SESSION_GLOBAL": {
+    "ANSWER": "[0x0214CCF4 + 4] is the address 0x0214CCF8, referenced by EXACTLY TWO overlays: ov10 (202 refs) and ov7 (43 refs) = 245 total. ZERO refs in arm9 and zero in every other overlay. Measured by exhaustive word-aligned scan of arm9 + all 15 overlays. CONFIRMED_STATIC.",
+    "identity_PLAUSIBLE": "ov07 = Local wireless multiplayer (Commu x94), ov10 = Nintendo WFC online (dwc x15) per Overlay-Map.md's asset-name method. A global touched 245 times ONLY from the two networking overlays is a network session object pointer, so 0x0208C51C is the game's 'is a network session active?' test. That is PLAUSIBLE -- it rests on overlay identity, not on a naming string or alloc tag for the object.",
+    "design_note": "the flag/pointer pair lives in a fixed RAM slot just below the overlay load base 0x0214CD20, so arm9 can test 'is networking up?' without linking against either overlay. Only the overlays touch the object; arm9 only reads the pointer. That is why a 24-byte function has 47 callers.",
+    "accessor_cluster": "eight leaf accessors in 0x0208C51C-0x0208C5E0 for a struct with byte flags at +0/+1 and the pointer at +4: 0x0208C51C read-pointer-nonzero (47 callers); 0x0208C538 init memset(g,0,2) then g[1]=1; 0x0208C564 TEST-AND-CLEAR g[0]; 0x0208C588 get g[0]; 0x0208C598 set g[0]=1; 0x0208C5AC get g[1]; 0x0208C5BC g[1]=1; 0x0208C5D0 g[1]=0. g[0] has test-and-clear and no plain clear = one-shot pending-event flag. g[1] is a persistent enable, initialised to 1.",
+    "no_accessor_writes_+4": "the init memset covers only 2 bytes and 0x0208C51C only reads. The writer is in ov7 or ov10 among the 245 refs; NOT TRACED.",
+    "descriptor_paths_resolved": "Path C (no session) = static word tables 0x020A1EFC / 0x020A1EBC indexed by slot. Path B (session) = ov10 0x0219B9CC / 0x0219BA00, falling back to thumb 0x0208C10C / 0x0208C114. Path A targets 0x02173004/0x02173014 remain UNATTRIBUTABLE (ov10/ov11 share 0x02172A60). So the loop takes descriptor data from the network when a session exists and from static tables otherwise. Mapping the three paths onto NAMED modes (local wireless vs online vs offline) is NOT CLAIMED -- ov7 appears in none of the six descriptor functions.",
+    "neighbour_globals": "literal words pointing into 0x0214CC00-0x0214CD20: 0x0214CCE0 (38 refs), 0x0214CCF0 (2), 0x0214CCF4 (9), 0x0214CCF8 (245), 0x0214CCFC (6), 0x0214CD00 (5). 0x0214CCFC and 0x0214CD00 are also ov7/ov10 -- the whole band looks like the networking subsystem's fixed globals.",
+    "index_gaps_reconfirmed": "xrefs.json records 4 loads of 0x0214CCF4; raw scan finds 9 pool words. Five missing on the very global this finding is about -- live confirmation of P152's 9.4% measurement, and why the raw scan ran ALONGSIDE the DB query. Also a SIXTH functions.json binning gap: only 4 records in 0x0208C500-0x0208C640 but 8 leaf accessors; the 0x0208C5AC record claims 52 bytes and spans three functions (0x0208C5AC, 0x0208C5BC, 0x0208C5D0)."
   }
 }

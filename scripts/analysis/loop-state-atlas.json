@@ -3,7 +3,7 @@
   "phase": "combat",
   "current_task": "P166 DONE: per-mode handler table found at ov6 0x02170EAC, 31 records x 12 bytes, 3 Thumb fn ptrs each. Indexer 0x0214F91C: [root+0x00]=[0x02170EB0+mode*12], [root+0xC8]=1. NEW root fields +0x08 (mode) and +0xC8 (flag). 12 runtime-poked modes land at their own index = CROSS_CONFIRMED. My jus-wbo prediction REFUTED. root+0x08 is NOT a copy of 0x020AFEA0 (training runs entry 8 with the byte at 0).",
   "queue": [
-    "P167-find-the-WRITER-of-root+0x08: this is the mapping from game path + settings byte onto the mode index. Training path proves it is not a copy of 0x020AFEA0. Settles the ov1-rulemess vs ov6-handler index-space question with zero runtime work.",
+    "P167-find-the-WRITER-of-root+0x08 AND THE GATE ON THE INSTALLER 0x0214F91C. Runtime CROSS_CONFIRMED both new fields. Mapping is now shaped: battle path is IDENTITY (0->0, 1->1, 2->2, 12->12), only training substitutes (0->8). Failure signature for my own search: code that PERMUTES battle-path modes is the wrong writer. Second half: mode 12 reached +0x08=12 but +0xC8=0, so the installer is GATED -- that gate is what stands between a poked settings byte and rule 12 actually playing. Expect both in the same setup code.",
     "P167b-static writer of root+0x118 / +0x11C (runtime top ask, jus-3vg).",
     "P167c-static writer of root+0x4C (term V; runtime says the array is zero in 4 states / 2 boots).",
     "P166-find-the-WRITER-of-root+0x4C: two readers (ov6 0x02158F78 as V, arm9 0x0208552C as index), zero writes known. Runtime dump (jus-45k) says the array is ALL ZERO in three live states, so either the duration formula never varies in ordinary play or the writer did not run. Look for register-offset stores (search-imm cannot see them). Settles multiplier-vs-index without the poke.",
@@ -2104,10 +2104,13 @@
       "rulemess mode ORDER (mode 2 = Jシンボル matched the static prediction before runtime knew the table)",
       "22 modes reachable, not 3 (modes 3/5/9 playable)",
       "per-mode handler table ov6 0x02170EAC: 12 poked modes land at their own index",
-      "root+0x08 is the mode index and is NOT a copy of 0x020AFEA0 (training path)"
+      "root+0x08 is the mode index and is NOT a copy of 0x020AFEA0 (training path)",
+      "root+0x08 = rule mode / table index (read directly, 5 rows)",
+      "root+0xC8 = per-mode-handler-installed flag (mode 12: flag 0 + default handler 0x02150F65, predicted statically before the measurement)"
     ],
     "my_refutations": [
       "jus-wbo: rulemess text-duplicate entries do NOT share handler code. Refuted statically the same wake it was filed; runtime independently refuted it by measurement. No dependents tainted -- nothing was built on it."
-    ]
+    ],
+    "recovered_by_logic": "Runtime did not record +0xC8 for the 12 jus-wbo handler rows. Not needed: the default handler 0x02150F65 appears nowhere in the 31-record table and lies outside column +0x4 span (0x0214FA79..0x02150D71), so any row matching a table entry necessarily had +0xC8==1. Rows are self-certifying; no taint, no re-reads."
   }
 }

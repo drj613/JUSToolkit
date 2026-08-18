@@ -30,14 +30,32 @@ changing 121 bytes of deck state. Measured on this screen:
     tap an empty canvas cell       121 bytes
     then press A                  1097 bytes
 
-NOT YET CONFIRMED -- the placement interaction.
-The tap-then-A sequence above changed 1097 bytes of deck state, but a screenshot
-afterwards shows the target cell still EMPTY, with the placement cursor sitting
-exactly where it was tapped and a black marker appearing on a DIFFERENT, already-
-placed koma. So that sequence did something real and it was probably not "place the
-selected koma here" -- possibly a removal. Do not build on it until the actual
-placement gesture is pinned down and confirmed by BOTH a canvas screenshot showing
-the koma present and a deck-region diff.
+PLACEMENT, per the project owner: tapping the target cell alone works, as do
+tap-then-A, tap-dpad-A and A-dpad-A. There is no dragging.
+
+IMPORTANT and it explains a confusing early result: HELPER koma need a DIRECTION.
+After placing a helper you must point it at a battle character to say who receives its
+passive. The only exception is a helper granting +1 SP, since SP is shared across the
+team. The first placement attempt here used セナ's 1-koma, which the list shows as
+ヘルプ -- so it changed 1097 bytes of deck state, left the target cell looking empty,
+and put a marker on an already-placed koma. That was an incomplete helper placement
+waiting for a direction, not a failure to place. Prefer a バトル koma when testing the
+basic flow.
+
+PLACEMENT CONFIRMED, and the missing piece was a SECOND TAP. A koma row needs two
+taps, exactly like the deck slots and the rule toggles: the first highlights the row,
+the second selects it and brings the canvas down. One tap alone looks like nothing
+happened (fingerprint moved 3.96) and misled an earlier attempt here.
+
+The measured sequence, on 悟空's 4-koma (バトル) after filtering to Dragon Ball:
+
+    tap koma row  (1st)   fingerprint  3.96   highlight only
+    tap koma row  (2nd)   fingerprint 64.59   canvas comes down, koma preview floating
+    tap canvas cell       fingerprint 22.41   placed; deck state +212 bytes
+
+Confirmed by both signals, which is the standard this project holds itself to: a canvas
+screenshot showing the 悟空 koma sitting in the top-left cell, AND a deck-state diff
+well above the 18-byte noise floor.
 """
 import os
 import subprocess
@@ -54,7 +72,29 @@ DECK_SLOT_X = 120
 DECK_SLOT_Y = [56, 80, 105, 130, 154]   # deck slots 1..5
 
 KOMA_ROW_X = 75
-KOMA_ROW_Y0, KOMA_ROW_DY = 29, 20       # first koma row, then every 20px
+# Measured from a 512x384 render of the 256x192 bottom screen: row 1 centre sits at
+# DS y~31 with ~16px spacing. An earlier guess of DY=20 was wrong.
+KOMA_ROW_Y0, KOMA_ROW_DY = 31, 16
+
+# Canvas cell centres once the canvas is down (X), from a cleared 5x4 grid.
+CANVAS_COL_X = [24, 71, 119, 166, 214]
+CANVAS_ROW_Y = [24, 66, 114, 160]
+
+# Clears the whole deck: the small tray button under SEL in the right-hand strip.
+# CONFIRMED -- one tap emptied the canvas to a clean 5x4 grid, 107 bytes of deck
+# state changed. (The owner describes a confirmation step; the canvas came back empty
+# without one being visible here, so treat that detail as unverified.)
+TAP_CLEAR_DECK = (248, 88)
+
+# Series filter. The panel lists series as an icon grid with the focused series named
+# across the top. Tapping the focused DRAGON BALL icon applied the filter -- CONFIRMED,
+# fingerprint moved 81.68 and the list changed to 悟空 / 超サイヤ人悟空 / ベジット.
+# Dragon Ball is a good default because it has many バトル koma.
+# NOT confirmed: what opens the panel. A tap at (7, 8) on the 作 header and an L press
+# both measured as no-ops (0.12 and 0.10), yet the panel was open immediately after --
+# so something else opened it and the attribution is unknown.
+TAP_SERIES_HEADER = (7, 8)
+TAP_SERIES_DRAGONBALL = (23, 111)
 
 DECK_STATE_START = 0x020A0C00
 DECK_STATE_END = 0x020B0000
@@ -79,6 +119,26 @@ def deck_changed(before, after):
     """Bytes of deck state that changed, and whether that beats the noise floor."""
     n = sum(1 for x, y in zip(before, after) if x != y)
     return n, n > IDLE_DRIFT
+
+
+def place_koma(row, col_x, row_y, settle=220):
+    """Place koma list entry `row` at a canvas cell. Returns bytes of deck state changed.
+
+    Two taps on the row, not one: the first only highlights it. Then a tap on the
+    target cell commits the placement.
+
+    Caller must already be in the editor with the intended series filter applied.
+    Verify the result from BOTH the returned byte count and a canvas screenshot --
+    a helper koma will change deck state and still not look placed, because it is
+    waiting for a direction.
+    """
+    before = deck_state()
+    x, y = koma_row(row)
+    nav.tap(x, y, settle=150)     # highlight
+    nav.tap(x, y, settle=settle)  # select; canvas drops to the bottom screen
+    nav.tap(col_x, row_y, settle=settle)
+    n, _ = deck_changed(before, deck_state())
+    return n
 
 
 def canvas_down():

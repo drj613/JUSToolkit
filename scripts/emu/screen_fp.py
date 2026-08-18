@@ -1,27 +1,35 @@
 #!/usr/bin/env python3
-"""Fingerprint the emulator screen from pixels, so menu steps can be verified.
+"""Fingerprint the DS screen from the emulator's own framebuffer.
 
-WHY PIXELS AND NOT RAM. The first attempt built fingerprints from main RAM and
-failed for a measurable reason: two boots sitting on the *same* screen differ by
-up to 1.7M bytes, and ~974k bytes differ at the title screen before any input
-(see docs/research/Menu-Nav-Oracle-Attempt-1.md). Absolute RAM values are not
-portable across boots. The rendered screen is -- a menu looks the same every
-time -- so the screen is the better oracle, and it is also the actual ground
-truth a human would check.
+WHY PIXELS AND NOT RAM. The first attempt fingerprinted main RAM and failed for a
+measurable reason: two boots sitting on the same screen differ by up to 1.7M bytes,
+and ~974k bytes differ at the title screen before any input
+(docs/research/Menu-Nav-Oracle-Attempt-1.md). Rendered screens, by contrast, look
+the same every boot.
 
-It also catches a failure RAM cannot. `boot_to_battle.py`'s in_battle() reports
-success on the deck-SELECT screen, because that screen holds deck rosters with HP
-values and chr_b indices and therefore matches the battle-array signature exactly.
-Pixels tell those apart immediately.
+Pixels also catch a failure RAM cannot. boot_to_battle.py's in_battle() reports a
+battle on the deck-SELECT screen, because a deck roster is HP values plus chr_b
+indices in 0x50-byte slots -- exactly the signature it searches for. A screenshot
+tells them apart instantly.
 
-HOW. Capture the melonDS window (see jusemu.py's CoreGraphics route), crop off the
-title bar -- it contains a live FPS counter -- then downscale hard to a small
-grayscale grid. Downscaling is what makes this robust: it averages away cursor
-blink, animated backgrounds and 1px jitter while keeping layout and brightness.
-Compare two fingerprints by mean absolute difference per cell, 0-255.
+WHERE THE PIXELS COME FROM. `jusemu.py screendump`, which reaches into the core via
+GPU.GetFramebuffers (see lua/libs/LuaScreendump.cpp in the melonDS fork). Not
+macOS window capture, which needed the window frontmost and therefore stole the
+user's keyboard focus -- and which silently returned a STALE cached image whenever
+the window was occluded. That produced byte-identical captures while the bridge
+advanced 130 frames in 2 seconds and 13,520 bytes of RAM changed, i.e. a confident
+"the screen never changed" about a game that was plainly responding.
 
-Thresholds are empirical, so measure rather than guess:
-  python3 screen_fp.py selftest      # same screen twice, then after a press
+THE LESSON, kept because it cost real time: an unchanging screenshot is never by
+itself evidence that the game did not respond. Confirm liveness from the bridge
+(framecount, or a RAM diff) before believing any negative.
+
+WHICH PART OF THE SCREEN. The bottom screen only. Menus and cursors live there;
+decorative animation lives on the top screen. Fingerprinting the whole window on
+the title screen drifted by up to 63 between consecutive captures -- more than a
+real menu transition moves a static screen -- and coarsening the grid did not help
+(16x20, 8x10, 4x5 and 2x3 all showed 63-67, because the animation is a global
+brightness change, not fine detail).
 """
 import json
 import os
@@ -30,25 +38,27 @@ import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 GRID_W, GRID_H = 16, 20
-# The window is 756x942 with a ~28px title bar carrying "[60/60] melonDS 1.1".
-# The FPS digits change constantly, so crop the bar away or every comparison
-# picks up noise that has nothing to do with the game.
-CROP = "756x914+0+28"
-SAME_SCREEN_MAX = 6.0     # validated by selftest; see docstring
+# screendump writes a 256x384 PPM: top screen above bottom screen, physical DS
+# layout. The bottom screen is the lower half.
+BOTTOM_CROP = "256x192+0+192"
+SAME_SCREEN_MAX = 6.0
 
 
 def capture(path):
+    """Grab the framebuffer. Headless: no window, no focus, no compositor."""
+    if not path.endswith(".ppm"):
+        path = os.path.splitext(path)[0] + ".ppm"
     r = subprocess.run([sys.executable, os.path.join(HERE, "jusemu.py"),
-                        "screenshot", path], capture_output=True, text=True,
+                        "screendump", path], capture_output=True, text=True,
                        cwd=HERE)
     if r.returncode != 0:
-        raise RuntimeError("screenshot failed: %s%s" % (r.stdout, r.stderr))
+        raise RuntimeError("screendump failed: %s%s" % (r.stdout, r.stderr))
     return path
 
 
 def fingerprint(png):
-    """Downscaled grayscale bytes, GRID_W*GRID_H of them."""
-    r = subprocess.run(["magick", png, "-crop", CROP, "+repage",
+    """Downscaled grayscale bytes of the bottom screen, GRID_W*GRID_H of them."""
+    r = subprocess.run(["magick", png, "-crop", BOTTOM_CROP, "+repage",
                         "-colorspace", "Gray",
                         "-resize", "%dx%d!" % (GRID_W, GRID_H),
                         "-depth", "8", "gray:-"],
@@ -59,12 +69,18 @@ def fingerprint(png):
     if len(fp) != GRID_W * GRID_H:
         raise RuntimeError("expected %d bytes, got %d"
                            % (GRID_W * GRID_H, len(fp)))
+    # A blank capture is the dangerous failure, not a loud one: two blank images
+    # compare equal, so a broken capture reads as "no change". Real game screens
+    # have contrast. (Boot screens can legitimately be near-white, so this is a
+    # low bar deliberately.)
+    if max(fp) - min(fp) < 4:
+        raise RuntimeError("%s looks blank (pixel range %d-%d) -- do not read "
+                           "this as 'no change'" % (png, min(fp), max(fp)))
     return fp
 
 
-def grab(tmp="/tmp/jus_fp.png"):
-    capture(tmp)
-    return fingerprint(tmp)
+def grab(tmp="/tmp/jus_fp.ppm"):
+    return fingerprint(capture(tmp))
 
 
 def distance(a, b):
@@ -75,53 +91,14 @@ def same(a, b, threshold=SAME_SCREEN_MAX):
     return distance(a, b) <= threshold
 
 
-def selftest():
-    """Measure the two distances that decide whether any of this works."""
-    print("capturing the current screen twice (no input between) ...")
-    a = grab("/tmp/jus_fp_a.png")
-    b = grab("/tmp/jus_fp_b.png")
-    d_same = distance(a, b)
-    print("  same screen, two captures: %.3f" % d_same)
-
-    print("pressing B (should close a submenu / go back) ...")
-    plan = {"name": "fp_probe",
-            "segments": [{"from": 0, "to": 0, "buttons": ["B"]}],
-            "tail_frames": 90}
-    with open("/tmp/jus_fp_plan.json", "w") as f:
-        json.dump(plan, f)
-    subprocess.run([sys.executable, os.path.join(HERE, "jusemu.py"), "run",
-                    "/tmp/jus_fp_plan.json"], capture_output=True, cwd=HERE)
-    c = grab("/tmp/jus_fp_c.png")
-    d_diff = distance(a, c)
-    print("  after one B press:        %.3f" % d_diff)
-
-    print()
-    if d_same > SAME_SCREEN_MAX:
-        print("FAIL: two captures of one static screen differ by %.3f, above the "
-              "%.1f threshold. Something is animating a lot, or the capture is "
-              "unstable. Raise the threshold only after looking at the images."
-              % (d_same, SAME_SCREEN_MAX))
-        return 1
-    if d_diff <= d_same:
-        print("FAIL: a B press moved the fingerprint by %.3f, no more than the "
-              "%.3f noise floor. Either the press did nothing (was it swallowed "
-              "by a menu?) or this crop cannot see the change. Do NOT build "
-              "navigation on this until the two separate." % (d_diff, d_same))
-        return 1
-    print("OK: noise floor %.3f, real change %.3f -- separated by %.1fx."
-          % (d_same, d_diff, d_diff / max(d_same, 0.001)))
-    print("So 'has the screen changed yet' is answerable from pixels.")
-    return 0
-
-
 def main():
-    if len(sys.argv) > 1 and sys.argv[1] == "selftest":
-        return selftest()
     if len(sys.argv) > 2 and sys.argv[1] == "dist":
-        return print("%.3f" % distance(fingerprint(sys.argv[2]),
-                                      fingerprint(sys.argv[3])))
+        print("%.3f" % distance(fingerprint(sys.argv[2]),
+                                fingerprint(sys.argv[3])))
+        return 0
     fp = grab()
-    print(json.dumps({"grid": [GRID_W, GRID_H], "fp": list(fp)}))
+    print(json.dumps({"grid": [GRID_W, GRID_H], "range": [min(fp), max(fp)],
+                      "fp": list(fp)}))
     return 0
 
 

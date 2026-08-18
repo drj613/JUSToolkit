@@ -43,6 +43,8 @@ def build_parser():
     d.add_argument("start"); d.add_argument("end"); d.add_argument("outfile")
     w = sub.add_parser("watch")
     w.add_argument("action", choices=["set"]); w.add_argument("spec")
+    sd = sub.add_parser("screendump")
+    sd.add_argument("outfile")
     sc = sub.add_parser("screenshot")
     sc.add_argument("outfile")
     sc.add_argument("--interactive", action="store_true",
@@ -153,12 +155,24 @@ def melonds_window_id():
     r = subprocess.run([WINID_BIN, "melonDS"], capture_output=True, text=True)
     if r.returncode != 0:
         return None
+    # melonDS owns several windows: the main one, a "Lua Script" console, Qt menu
+    # bar strips (3440x24) and sometimes an untitled 500x500 helper. Picking the
+    # first big one grabbed the untitled helper and captured a blank white image,
+    # which then read as "the screen never changed". So key on the real title --
+    # the main window is titled like "[60/60] melonDS 1.1".
+    best = None
     for line in r.stdout.splitlines():
         parts = line.split("\t")
         if len(parts) < 4:
             continue
         wid, dims, owner, title = parts[0], parts[1], parts[2], parts[3]
-        # Skip the separate "Lua Script" console window and Qt's tiny helpers.
+        # Match on the OWNING PROCESS, never the title. Matching titles captured
+        # the terminal window, because it was titled "Hand off melonDS runtime
+        # harness for JUS" -- it contained "melonDS", and being larger it won.
+        # Fingerprints of the terminal then looked plausibly stable and produced
+        # a completely fictitious "the screen never changed".
+        if owner.strip() != "melonDS":
+            continue
         if "Lua Script" in title:
             continue
         try:
@@ -167,8 +181,9 @@ def melonds_window_id():
             continue
         if w < 200 or h < 200:
             continue
-        return wid
-    return None
+        if best is None or w * h > best[1]:
+            best = (wid, w * h)
+    return best[0] if best else None
 
 
 def do_screenshot(outfile, interactive):
@@ -245,6 +260,9 @@ def main(argv=None):
         specs = validate_watches(_read_json(args.spec))
         op, a = "set_watches", {"specs": specs}
         timeout = 10.0
+    elif args.command == "screendump":
+        op, a = "screendump", {"path": os.path.abspath(args.outfile)}
+        timeout = 15.0
     elif args.command == "selftest":
         op, a = "selftest", {}
         timeout = 30.0

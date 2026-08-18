@@ -225,6 +225,27 @@ end
 -- ---------- commands ------------------------------------------------------
 local handlers = {}
 
+-- Headless screen capture. The OS-level route (screencapture -l on the melonDS
+-- window) needs the window frontmost: an occluded window returns a STALE cached
+-- image, which reads as "the screen never changed" while the game is plainly
+-- running. Reading the framebuffer from inside the core avoids the compositor
+-- entirely, so it works with the window buried and never steals focus.
+function handlers.screendump(args)
+    local path = args and args.path
+    if type(path) ~= "string" or #path == 0 then
+        error("screendump needs a path")
+    end
+    if screen == nil or screen.dump == nil then
+        error("this melonDS build lacks screen.dump -- rebuild with "
+              .. "lua/libs/LuaScreendump.cpp")
+    end
+    local ok, why = screen.dump(path)
+    if not ok then
+        error("screen.dump failed: " .. tostring(why))
+    end
+    return core.obj({ path = path, framecount = emu.framecount() })
+end
+
 function handlers.status(args)
     return core.obj({ state = state, framecount = emu.framecount(),
                       session = session,

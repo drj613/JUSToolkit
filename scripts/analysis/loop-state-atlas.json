@@ -3,10 +3,12 @@
   "phase": "combat",
   "current_task": "P165 DONE: ov1 0x021643A4 = RuleData_Create; mode table = 22x16-byte header of bin/rulemess.bin; +0xC decoded for all 22 modes; bin text pointers are SELF-RELATIVE (1347/1347 verified, 6 files); 0x020AFEA0 + 0x020AFEAC promoted to CROSS_CONFIRMED via runtime bead jus-1g6 (4463 = (30+1)*144-1).",
   "queue": [
-    "P166-rulemess-description-reader: find the code that renders the three description strings per rule mode; confirms the 16-byte stride from a second angle",
-    "P166b-overlay-window-sweep: five-way disassembly + boundary + coherence check on every claimed address in the 0x0214CD20 window (carried from P164)",
-    "P166c-thumb-writer-of-0x020AFE90+0x28 (carried from P164)",
-    "P166d-request-runtime-wallclock-jikan30-point-battle: distinguishes 2.4s-per-unit from a faster-decrementing counter (the 144 constant)",
+    "P166-find-the-WRITER-of-root+0x4C: two readers (ov6 0x02158F78 as V, arm9 0x0208552C as index), zero writes known. Runtime dump (jus-45k) says the array is ALL ZERO in three live states, so either the duration formula never varies in ordinary play or the writer did not run. Look for register-offset stores (search-imm cannot see them). Settles multiplier-vs-index without the poke.",
+    "P166b-disassemble root+0x000 handler targets 0x0214FDDC (death match) and 0x02150D70 (training) under ov6 -- runtime says +0x000 is an odd Thumb pointer and the ONLY field differing between modes; would be a third rule-mode discriminator (from jus-45k comments).",
+    "P166c-static writer of root+0x118 / +0x11C: runtime derives the HP blocks as [+0x118]+0x70 and [+0x11C]+0x70 (delta 0x61C, stride 0x50, 4 slots) but only PLAUSIBLE -- one boot lineage. A static allocation-layout match makes it reboot-proof.",
+    "P166d-rulemess description reader: find the code that renders the three description strings per rule mode; confirms the 16-byte stride from a second angle.",
+    "P166e-overlay-window sweep: five-way disassembly + boundary + coherence check on every claimed address in the 0x0214CD20 window (carried from P164).",
+    "P166f-Thumb writer of [0x020AFE90+0x28] (carried from P164; runtime has it as jus-fms via watchpoint).",
     "READ ov1 0x021643A4 -- its return value is the ctx holding the mode table at [ctx+4]. That gives up the table, all three modes' +0xC values, and finally explains the 144.",
     "DUMP the 16-byte mode records once the table base is known. Three modes x 16 bytes is a small, fully documentable structure.",
     "RE-CHECK every campaign address in the 0x0214CD20 window the way P164 did it: five-way disassembly plus boundary and coherence checks. Now demonstrated to catch real errors.",
@@ -2077,5 +2079,21 @@
     "next_task": "read ov1 0x021643A4 -- its return is the ctx whose [ctx+4] is the 16-byte mode table base; yields all three modes +0xC values and explains the 144.",
     "LIVE_TAINT": "root+0x4C = V in duration = base + (base/10)*(V*2) is UNIDENTIFIED. Formula arithmetic verified three ways and stands; its MEANING does not. Do not describe it as stat-scaled. jus-wic settles it.",
     "UNFIXED_TOOL_ROOT_CAUSE": "query.py ARM listing prints a literal VALUE in its \"; = 0x...\" comment; thumb_disasm.py prints the POOL ADDRESS. Same shape, opposite meaning. Caused a four-document error. Queued as a fix, not a lesson."
+  },
+  "coord_state_2026_08_18": {
+    "runtime_loop": "justoolkit-fa (role: runtime, \"ed\"); ledger: justoolkit-d9/87",
+    "my_open_asks": [
+      "jus-uvs (P2 wall-clock the 144)",
+      "jus-bfw (P3 name mode 2)",
+      "jus-45k sentinel poke still open, no longer blocking"
+    ],
+    "their_open_asks_on_me": [
+      "static look at root+0x000 Thumb handlers (informal, taken as P166b)"
+    ],
+    "published": [
+      "jus-hsc (P165 anchor card, CROSS_CONFIRMED)"
+    ],
+    "note": "jus-wic/jus-vrz/jus-qsh/jus-q4b from the P164 handoff never existed in the shared db; runtime recreated them as jus-45k/jus-baz/jus-fms/jus-cvx. Do not cite the old ids.",
+    "live_taint": "root+0x4C term V is SPECULATIVE (was PLAUSIBLE) after the all-zero dump. Formula arithmetic unchanged."
   }
 }

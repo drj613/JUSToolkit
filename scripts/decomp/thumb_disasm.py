@@ -57,14 +57,18 @@ def decode(h, addr, nxt=None):
         if h & 0x400:
             return f'{op} {R[h&7]}, {R[(h>>3)&7]}, #{(h>>6)&7}', 1
         return f'{op} {R[h&7]}, {R[(h>>3)&7]}, {R[(h>>6)&7]}', 1
-    if top == 0b0010:
+    # Format 3 is selected by bits 12-11, NOT bits 12 alone. Iteration 150 found
+    # `top == 0b0010` swallowed the whole 0x2000-0x2FFF range and returned mov, so
+    # EVERY `cmp Rd,#imm` (0x2800-0x2FFF) decoded as `mov Rd,#imm` -- turning a
+    # comparison into an assignment and making any following conditional branch look
+    # like it read a stale flag. The two cmp branches below it were unreachable:
+    # `0b0010 | 1` is `0b0011`, already returned by the add/sub case.
+    if (h >> 11) == 0b00100:
         return f'mov {R[(h>>8)&7]}, #{h&0xff:#x}', 1
-    if top == 0b0011:
-        return f'{"sub" if h & 0x800 else "add"} {R[(h>>8)&7]}, #{h&0xff:#x}', 1
-    if top == 0b0010 | 1:
-        return f'cmp {R[(h>>8)&7]}, #{h&0xff:#x}', 1
     if (h >> 11) == 0b00101:
         return f'cmp {R[(h>>8)&7]}, #{h&0xff:#x}', 1
+    if top == 0b0011:
+        return f'{"sub" if h & 0x800 else "add"} {R[(h>>8)&7]}, #{h&0xff:#x}', 1
     if (h >> 10) == 0b010000:
         ops = ['and', 'eor', 'lsl', 'lsr', 'asr', 'adc', 'sbc', 'ror',
                'tst', 'neg', 'cmp', 'cmn', 'orr', 'mul', 'bic', 'mvn']
@@ -143,7 +147,19 @@ def selftest():
     got = '\n'.join(disasm('ov6', 0x0214D658, 8))
     for want in ('add r1, sp, #0x48', 'blx #0x02156a38', 'nop'):
         assert want in got, f'selftest: missing {want!r} in\n{got}'
-    print('selftest OK: the 0x0214D65E call site decodes as expected')
+    # Format-3 regression guard. Iteration 150: `cmp Rd,#imm` was decoding as
+    # `mov Rd,#imm` because the mov case matched on bits 12 alone instead of 12-11.
+    # A comparison read as an assignment makes the following conditional branch look
+    # like it tested a stale flag, so this is silent and load-bearing. Caught by
+    # cross-checking against an independent decoder that read 0x2800 as cmp.
+    fmt3 = {0x2000: 'mov r0, #0x0', 0x2800: 'cmp r0, #0x0',
+            0x28ff: 'cmp r0, #0xff', 0x2101: 'mov r1, #0x1',
+            0x3001: 'add r0, #0x1', 0x3801: 'sub r0, #0x1'}
+    for hw, want in fmt3.items():
+        assert decode(hw, 0, b'')[0] == want, (
+            f'selftest: {hw:#06x} decoded as {decode(hw, 0, b"")[0]!r}, want {want!r}')
+    print(f'selftest OK: the 0x0214D65E call site decodes as expected, '
+          f'and all {len(fmt3)} format-3 mov/cmp/add/sub encodings are correct')
     print(got)
     return 0
 

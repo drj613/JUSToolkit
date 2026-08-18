@@ -1,9 +1,10 @@
 {
-  "iteration": 149,
+  "iteration": 150,
   "phase": "combat",
-  "current_task": "TRACE 0x0206BB44's base register (Thumb fn 0x0206BAC8) -- the single surviving game-code Thumb-store candidate for deck+0x30. APPLY CONVERGENT VERIFICATION: get the base from a Thumb decode, then confirm the same conclusion from a different representation (e.g. the function's ARM callers' argument setup, or an absolute-vs-relative check on any branch in the same function). Ask the independent checker first.",
+  "current_task": "RE-READ the ov6 Thumb work from iterations 95-96 with the FIXED thumb_disasm.py -- any conclusion that leaned on a conditional branch may have been reading 'mov' where the code says 'cmp'. Start with findings/thumb-disassembler-and-the-chara-setup-loop.md.",
   "queue": [
-    "TRACE 0x0206BB44's base register (Thumb fn 0x0206BAC8) -- the single surviving game-code Thumb-store candidate for deck+0x30. APPLY CONVERGENT VERIFICATION: get the base from a Thumb decode, then confirm the same conclusion from a different representation (e.g. the function's ARM callers' argument setup, or an absolute-vs-relative check on any branch in the same function). Ask the independent checker first.",
+    "RE-READ the ov6 Thumb work from iterations 95-96 with the FIXED thumb_disasm.py -- any conclusion that leaned on a conditional branch may have been reading 'mov' where the code says 'cmp'. Start with findings/thumb-disassembler-and-the-chara-setup-loop.md.",
+    "RESOLVE the functions.json callee discrepancy: the BL pair at 0x0206BB36/0x0206BB38 targets 0x02020916 (hi=0xF7B4, lo=0xFEEE, displacement -0x4B224 from 0x0206BB36+4), but functions.json lists 0x02020934 in this function's callee set. Differ by 0x1E. Database question -- check whether Thumb BL targets are systematically mis-recorded.",
     "SWEEP Thumb register-offset stores (str rD,[rN,rM], 0x5000-0x51FF) and split add+str bases -- the residual that no sweep in P149 covers, for BOTH 0xE8 and 0x68. This is the last route by which a Thumb writer could exist.",
     "TRIAGE the 16 NEW ov6 Thumb-called functions P148 surfaced (31 now vs 15 before): 0x0214E388 0x0214E828 0x0214F6AC 0x021526B4 0x021537E0 0x021539B8 0x02153BC8 0x02156D74 0x02156F6C 0x02156FB4 0x02167F20 0x02168374 0x02168C90 0x0216A8C8 -- plus the two ctors. 0x0216A8C8 is the obj-shot dtor-ish leaf I read in P147.",
     "CATALOGUE ov6's early Thumb region -- functions.json starts ov6 Thumb at 0x0214DF14 but confirmed callers sit below that (0x0214D65E, 0x0214D818, 0x0214D826). The database is incomplete there; this is now the second iteration to trip on it.",
@@ -269,7 +270,7 @@
     "Is HP computed as size*k at runtime, or tabulated per panel? Naruto 4-koma=144=4*36; if size*k then size5=180, size6=216, size7=252, size8=288. One reading settles it."
   ],
   "notes": "Iteration 146 done (delegated + verified). THREE closures: (a) 0x800's polarity is category ROUTING, not a contradiction -- 0x020801D4 is loop-continue, 0x0207F7C8 is the next category check; (b) record+0x34 is NOT write-once -- a four-function flag API (0x0207D064/0x0207D0BC/0x0207CF18/0x0207CF78) mirrors changes into +0x38 and the +0x08 node list, and the destructor 0x0207CCD4 memsets 0x188; (c) P144's 0x6FF puzzle SOLVED -- ov6 ORs [record+0x150]&0xFF into +0x34, and 0x6FF covers bits 0-7, so the test reads runtime bits not the 0x100 construction seed. Top task: read record+0x150, which now drives the whole category gate. STANDING: query.py mis-bins functions in this module (4 leaves here, 8 in P125, 2 in P126) -- verify any address before trusting its size or container. The +0x5C base-confusion trap has 7 instances; on +0x34 (1092 hits) the base register is the ONLY struct identifier. CHARTER: updated in P146b on the user's direct authorization. North star = docs/PROJECT-GOAL.md (master, f47d63d); Mission 2's current focus is the entity/projectile subsystems. justoolkit-06 is the designated runtime validator -- send them struct-field hypotheses and breakpoint requests rather than leaving questions unresolved; that is the only route to dynamic evidence without breaking the static-only rule.",
-  "last_wake": "2026-08-18 iteration 149",
+  "last_wake": "2026-08-18 iteration 150 (autonomous tick)",
   "wakeup_default_seconds": 1800,
   "consecutive_no_progress_wakes": 0,
   "k1c_helper_passives": {
@@ -1645,7 +1646,10 @@
     "P149: asking the independent checker BEFORE forming a conclusion caught an error forming a conclusion first would have hidden -- I mis-transcribed a halfword (0x6668 for 0x66bc) and it flagged the inconsistency rather than decoding around it. Owner's inverted order is better; adopt it for load-bearing decodes.",
     "P149: a checker working in a different coordinate system than you is worth more than one that agrees in your own. Codex read a BL as a relative displacement (A+0xD40) with no address context; query.py reads absolute (0x0215305C). Their agreement validated where the bytes came from, which neither tool could establish alone. Prefer checks that differ in representation, not just in operator.",
     "P150: when a peer's runtime result and my static map disagree on what an ADDRESS IS, check the address before accepting either framing. 0x0215D3B4 was reported as a vtable and is a 300-byte ARM function with a push prologue. Separate a peer's MEASUREMENT from their LABELLING -- the first can be solid while the second is wrong.",
-    "P150: a contradiction in my own state may be an artefact of how evidence was COLLECTED, not a fact about the code. The ov05 conflict sat unresolved for many iterations; the likely cause is a residency measurement taken on a misidentified screen because the boot nav was wrong. Before hunting code to explain a contradiction, ask whether the measurement measured what it claimed to."
+    "P150: a contradiction in my own state may be an artefact of how evidence was COLLECTED, not a fact about the code. The ov05 conflict sat unresolved for many iterations; the likely cause is a residency measurement taken on a misidentified screen because the boot nav was wrong. Before hunting code to explain a contradiction, ask whether the measurement measured what it claimed to.",
+    "P150: a closure that holds under EVERY value of an unresolved variable beats resolving the variable. deck+0x30's last candidate stores zero, and the claim needs the field to stay zero -- so r5's identity stopped mattering. Look for the argument that makes the open question irrelevant before spending a wake closing it.",
+    "P150: incoherent instruction PAIRS are a decoder-bug detector. 'mov' immediately before 'beq' cannot be right because mov sets no flags. Read for semantic coherence across adjacent instructions, not just per-instruction plausibility -- that is what caught cmp-decoded-as-mov.",
+    "P150: convergent verification earned its place in the charter on first real use. Three decodes agreed on the load-bearing instruction (so the deck result is solid) and two-of-three disagreed with the project tool on 0x2800, which localised the defect. Agreement confirmed the claim; disagreement found the bug."
   ],
   "open_questions_for_owner": [
     "Note-kind bucketing: the engine keeps at most 7 simultaneous \"notes\" per character, and 7 of the 17 kinds share one slot (kinds 6,7,8,9,10,14,15) so they should be mutually exclusive in play. Does starting one of those effects visibly cancel another?"
@@ -1713,5 +1717,17 @@
     "GENUINE_convergence": "entity+0x128 fits an 8-byte hole my static work left open. findings/character-embedded-views-0x120-0x130.md has char+0x120 as an 8-byte sub-object (ending AT +0x128) and char+0x130 as a separate sub-object of >=0xC bytes, leaving +0x128..+0x12F unmapped. Their u32 bitset at +0x128 sits in that gap without colliding. Static gap and runtime find agree from different representations -- THIS is convergent verification, unlike the vtable claim.",
     "melonDS_hazard_noted": "rapid repeated savestate loads intermittently hang melonDS right after 'Resetting JIT block cache'; framecount stops. Not my risk (static only) but recorded.",
     "DOWN_B_caveat": "they flag DOWN+B was the second move in Damage-Reduction-Is-Flat.md and may be 'Forced Change', a special mechanic. Flat conclusion reportedly holds but move labelling needs review. Not my doc; recorded so it is not lost."
+  },
+  "DECK_0x30_CLOSED": {
+    "result": "0x0206BB44 (in Thumb fn 0x0206BAC8, arm9, 160 bytes) is 'str r0,[r5,#0x30]' preceded by 'mov r0,#0x0' -- it stores ZERO. The deck claim needs deck+0x30 to STAY 0, so a zero store cannot falsify it. Closed WITHOUT resolving r5, which makes it hold under every possible answer for the base.",
+    "function_is_teardown": "r5 = arg0 ('add r5,r0,#0' at 0x0206BACC). The function zeroes +0x20/+0x30/+0x48/+0x4C/+0x50/+0x60, reads +0x30 three times (0x0206BB12/0x0206BB34/0x0206BB3A), dispatches two vtable slots, and calls the deleting destructor 0x0201B244.",
+    "r5_NOT_CLAIMED": "module attribution FAILED to settle it. Callees 0x021B3BC8 and 0x021B70F8 are in ov12 with no functions.json record; Overlay-Map has ov12 as shared support resident on BOTH battle and deck screens (100% deck, 59.6% battle), so calling into ov12 neither implicates nor exonerates the deck. Deck module proper is 0x02076xxx, absent from this call set -- suggestive only."
+  },
+  "TOOL_BUG_thumb_cmp_as_mov": {
+    "severity": "HIGH, silent, affects control-flow reasoning",
+    "what": "thumb_disasm.py matched the format-3 mov case on bits 12 alone (top == 0b0010), which covers 0x2000-0x2FFF, so EVERY 'cmp Rd,#imm' (0x2800-0x2FFF) decoded as 'mov Rd,#imm'. Two cmp branches below were unreachable dead code: 'top == 0b0010 | 1' is 0b0011 (already returned by add/sub), and '(h>>11)==0b00101' was swallowed by the broken mov case.",
+    "how_found": "the tool printed 'mov r0,#0x0' immediately before a 'beq' at 0x0206BB48. mov does not set flags, so a beq after it is incoherent. An independent decoder read the same halfword 0x2800 as 'cmp r0,#0'.",
+    "fix": "narrowed mov to (h>>11)==0b00100 and let the existing cmp branch match. Six format-3 encodings now asserted in --selftest (0x2000/0x2800/0x28ff/0x2101/0x3001/0x3801). Selftest passes.",
+    "blast_radius": "any Thumb reading done with this tool before P150 where a CONDITIONAL BRANCH carried the argument should be re-read -- notably the ov6 Thumb work from iterations 95-96. Did NOT affect P150's own result: 0x2000 has bit 11 clear and always decoded correctly."
   }
 }

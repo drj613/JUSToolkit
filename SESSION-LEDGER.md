@@ -1,34 +1,41 @@
-# Handoff — Ledger Session (2026-08-18 ~19:00)
+# Session Ledger — JUS Reverse Engineering
 
-**Your predecessor:** session-tracker (scribe), running since the Aug 18 restart.
+Last updated: 2026-08-18 ~20:15 (ledger wake 1, session `justoolkit-87`)
 
 ## 1. Current state
 
-The ledger is this file: `.claude/worktrees/session-tracker/SESSION-LEDGER.md`, branch `ledger/session-tracker`. It's a free-form narrative summary — not the system of record. The new coordination protocol lives in `docs/orchestration/`; your charter is `Charter-Ledger.md`.
+This file is a human catch-up summary — not the system of record. beads (`br`) is the record; protocol in `docs/orchestration/`.
 
-**Live sessions at handoff:**
-- `justoolkit-ed` [6fb027] — busy, branch `re/ability-bitset-not-resistance`. Items 1–3 done (resistance, nav, deck creation). Item 4 (full match playthrough) next. Latest commit: `7145505` (gimmick toggle fix).
-- `battle-engine-atlas-5e` [ba9ba2] — idle, branch `loop/battle-engine-atlas`. At **P163**. Latest: `474b2b7` (rule-select screen mapped).
-- `justoolkit-d9` [699d1d] — the coordinator that designed the new protocol. May or may not persist.
+**Live sessions (from ListAgents):**
+- `justoolkit-fa` [cedb9e] — busy, just started. **Runtime** role, branch `re/ability-bitset-not-resistance`.
+- `battle-engine-atlas-76` [2e8ac4] — busy, just started. **Static** role, branch `loop/battle-engine-atlas`. Atlas now at **P164**.
+- `justoolkit-d9` [699d1d] — idle 58 min. Protocol-design coordinator from earlier; unclear if it will persist.
+- Two `test-suite-guardrails` sessions — not part of coordination.
 
-**No coord beads exist yet.** `br list --label coord` returns nothing. The protocol is written but not adopted by ed/atlas — they'll pick it up on their next restart.
+Previous instances (`justoolkit-ed`, `battle-engine-atlas-5e`) have been replaced. The protocol doc's role table still names the old ones — it says "always resolve via ListAgents" which is correct.
+
+**Coord beads exist (4 open).** See jus-f0v, jus-ovv, jus-6fo, jus-1g6. All carry the `coord` label. **None carry structured `kind:*` / `state:*` / `owner:*` labels** — the protocol's label schema isn't enforced yet. Content is good; machine-sweepable metadata is missing.
 
 ## 2. Open audit flags
 
-**Retractions without tainted dependents:**
-- Atlas P158 "stat block" label was refuted in P160. No downstream findings explicitly depended on it, but any reference to `[0x02172960]` as a "stat block" is stale.
-- Atlas P154 struct-base claim refuted in P155. Same — no explicit dependents marked tainted.
+### Flag A — Coord beads missing structured labels
+All four coord beads have only the `coord` label. The protocol requires `kind:*`, `state:*`, `owner:*` labels for mechanical sweep (aging, TTL, taint propagation). Without them, every audit check is manual. **Action needed:** whichever loop next touches a coord bead should add the labels per the protocol's write convention.
 
-**Gimmick contamination (biggest gap):**
-- `7145505` revealed the gimmick toggle was never off. All prior measurements that assumed "items and gimmicks OFF" (the standard battle setup) may be contaminated. The flat-damage result and resistance-null result likely still hold (gimmicks don't obviously affect base damage), but this has NOT been formally re-verified. Nobody has back-propagated which measurements this taints.
+### Flag B — jus-1g6 is an aging request
+"Tell atlas: 0x020AFEA0 is CONFIRMED the rule mode" is a `kind:request` that hasn't changed status since creation. Atlas just restarted (`battle-engine-atlas-76`) — this should be in its ingest queue on its first wake. If it's not picked up by atlas's next completed wake, this flag escalates.
 
-**Stale pending asks (atlas → ed):**
-1. ObjShot kind-byte walk — requested pre-handoff, still open. Ed has nav working so it's unblocked, but hasn't done it.
-2. Mode-ID byte read — atlas queued this but never found candidate addresses to test. May be moot after ov05 contradiction was closed as a labelling error.
-3. Re-measure overlay residency on deck-MAKE — atlas requested this, but ed's ov05 contradiction closure (`9f836c2`) may have already answered it. Status unclear.
+### Flag C — Gimmick contamination taint not propagated (carried forward)
+`7145505` revealed the gimmick toggle was never off. jus-f0v was created to re-run the two-move proof, but no taint beads link contaminated measurements to the fix. The flat-damage and resistance-null results *probably* hold (gimmicks spawn projectiles, not alter base damage), but this hasn't been formally re-verified. No back-propagation has happened.
 
-**Nature resolver hypothesis — no progress:**
-- `0x0214E480` is ov05 code. Atlas was asked to check if ov06 has its own nature reader. No commit addresses this. Still open.
+### Flag D — Atlas retractions without tainted dependents (carried forward)
+- P158 "stat block" label refuted in P160. No downstream bead marked tainted.
+- P154 struct-base claim refuted in P155. Same.
+These are low-severity — no downstream findings explicitly depended on them — but the protocol requires explicit taint marking.
+
+### Flag E — Stale pending asks (carried forward, aging)
+1. ObjShot kind-byte walk — requested pre-handoff, still open. Runtime has nav working so it's unblocked.
+2. Nature resolver in ov06 — atlas was asked to check if ov06 has its own nature reader. No commit addresses this. Still open.
+3. Mode-ID byte read and overlay residency re-measure — may be moot after ov05 closure, status unclear.
 
 ## 3. Role change
 
@@ -48,7 +55,7 @@ Until ed and atlas adopt the beads protocol (on their next restart), fall back t
 # Session Ledger
 
 What each active session is doing, where things live, and what they've delivered.
-Last updated: 2026-08-18 19:00 — final update before handoff
+Last updated: 2026-08-18 20:15 — ledger wake 1 (auditor mode)
 
 ## Ultimate goal
 
@@ -56,11 +63,11 @@ Lock down JUS battle mechanics well enough to rebuild the system in a new game. 
 
 ---
 
-## Session 1: `justoolkit-ed` [6fb027] — master branch
+## Session 1: Runtime — `justoolkit-fa` [cedb9e] (was `justoolkit-ed`)
 
 **Focus:** Runtime research via the agentic melonDS harness.
 
-**Status:** Active, deck creation **DONE**. Branch `re/ability-bitset-not-resistance`. Items 1-3 done, item 4 (full match playthrough) not started.
+**Status:** Just started (fresh instance). Branch `re/ability-bitset-not-resistance`. Items 1–3 done, item 4 (full match playthrough) not started. Latest commit on branch: `e3c3737` (orchestration hooks).
 
 **Assignments:**
 1. ~~Resistance attribution~~ — **SETTLED** (both directions null)
@@ -97,13 +104,13 @@ Lock down JUS battle mechanics well enough to rebuild the system in a new game. 
 
 ---
 
-## Session 2: `battle-engine-atlas-5e` [ba9ba2] — loop/battle-engine-atlas branch
+## Session 2: Static — `battle-engine-atlas-76` [2e8ac4] (was `battle-engine-atlas-5e`)
 
 **Focus:** Structural static analysis of the battle engine.
 
 **Branch location:** `.claude/worktrees/battle-engine-atlas/`
 
-**Status:** Active, now at **P163** (idle). Handoff at `docs/research/HANDOFF-Loop-Atlas-P156.md` (`f94403d`). Session covers P147–P163.
+**Status:** Just started (fresh instance). Branch `loop/battle-engine-atlas`. Now at **P164**. Handoff doc written at `55651d6`. Latest research commit: `c8da30a` (P164 — mode classifier in ov1, 16-byte-per-mode descriptor table).
 
 **Assignments:**
 1. Entity and projectile subsystems (structural analysis)

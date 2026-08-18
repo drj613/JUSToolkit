@@ -181,8 +181,11 @@ One disagreement, resolved in favour of the absolute listing: Codex placed two l
 3. Find the code that *indexes* `0x02171168` — the `key` lookup site — which names the enum's producer.
 4. Read `0x02087724` (arm9), the `cmp r0,#2` gate shared by both status-`0x20` handlers.
 
-> **Pending.** A second Codex run was dispatched on the three new `r1`-producer fragments
-> (`0x02158B98`, `0x02159260`, `0x021592C0`) as raw hex with no addresses; it had not returned by
-> the end of this wake. Prompt kept at `scratchpad/codex-p157b.txt`. Fold its verdict in next
-> wake. It is a redundancy check, not the load-bearing one — the table's agreement with
-> `c6b-poison-burn-opcodes.md` is what carries section 2.
+> **Closed, not pending.** A second Codex run was dispatched on the three new `r1`-producer
+> fragments (`0x02158B98`, `0x02159260`, `0x021592C0`) as raw hex with no addresses. It was
+> **killed when the wake ended** — a backgrounded process does not survive the end of a turn in
+> this loop, so a long `codex exec` has to be waited on inside the wake that starts it. Not
+> retried: section 3 turned out to be corroborating work the canon map already documents, so the
+> check was redundancy on redundancy. The load-bearing verification is the table's agreement with
+> `c6b-poison-burn-opcodes.md` in section 2, which stands on its own. Prompt kept at
+> `scratchpad/codex-p157b.txt` if anyone wants it later.

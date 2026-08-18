@@ -1,7 +1,54 @@
+# Handoff — Ledger Session (2026-08-18 ~19:00)
+
+**Your predecessor:** session-tracker (scribe), running since the Aug 18 restart.
+
+## 1. Current state
+
+The ledger is this file: `.claude/worktrees/session-tracker/SESSION-LEDGER.md`, branch `ledger/session-tracker`. It's a free-form narrative summary — not the system of record. The new coordination protocol lives in `docs/orchestration/`; your charter is `Charter-Ledger.md`.
+
+**Live sessions at handoff:**
+- `justoolkit-ed` [6fb027] — busy, branch `re/ability-bitset-not-resistance`. Items 1–3 done (resistance, nav, deck creation). Item 4 (full match playthrough) next. Latest commit: `7145505` (gimmick toggle fix).
+- `battle-engine-atlas-5e` [ba9ba2] — idle, branch `loop/battle-engine-atlas`. At **P163**. Latest: `474b2b7` (rule-select screen mapped).
+- `justoolkit-d9` [699d1d] — the coordinator that designed the new protocol. May or may not persist.
+
+**No coord beads exist yet.** `br list --label coord` returns nothing. The protocol is written but not adopted by ed/atlas — they'll pick it up on their next restart.
+
+## 2. Open audit flags
+
+**Retractions without tainted dependents:**
+- Atlas P158 "stat block" label was refuted in P160. No downstream findings explicitly depended on it, but any reference to `[0x02172960]` as a "stat block" is stale.
+- Atlas P154 struct-base claim refuted in P155. Same — no explicit dependents marked tainted.
+
+**Gimmick contamination (biggest gap):**
+- `7145505` revealed the gimmick toggle was never off. All prior measurements that assumed "items and gimmicks OFF" (the standard battle setup) may be contaminated. The flat-damage result and resistance-null result likely still hold (gimmicks don't obviously affect base damage), but this has NOT been formally re-verified. Nobody has back-propagated which measurements this taints.
+
+**Stale pending asks (atlas → ed):**
+1. ObjShot kind-byte walk — requested pre-handoff, still open. Ed has nav working so it's unblocked, but hasn't done it.
+2. Mode-ID byte read — atlas queued this but never found candidate addresses to test. May be moot after ov05 contradiction was closed as a labelling error.
+3. Re-measure overlay residency on deck-MAKE — atlas requested this, but ed's ov05 contradiction closure (`9f836c2`) may have already answered it. Status unclear.
+
+**Nature resolver hypothesis — no progress:**
+- `0x0214E480` is ov05 code. Atlas was asked to check if ov06 has its own nature reader. No commit addresses this. Still open.
+
+## 3. Role change
+
+Your predecessor was a pull-based commit-message summarizer. You are now the **auditor** of the beads-backed coordination protocol. Each wake:
+1. `br list --label coord` + `git log` on both branches.
+2. Update this narrative file — keep it lossy, link bead IDs instead of duplicating data.
+3. **Flag coordination inconsistencies:** retractions without tainted dependents, requests aged past one wake with no status change, measurements missing conditions, claims past 3-wake TTL, `CROSS_CONFIRMED` claims missing linked runtime evidence.
+4. Nudge idle loops. Relay owner direction. Spin up Fable subagents for blocking questions.
+5. You do NOT write findings, addresses, or measurements.
+
+Full charter: `docs/orchestration/Charter-Ledger.md`. Protocol: `docs/orchestration/COORDINATION-PROTOCOL.md`.
+
+Until ed and atlas adopt the beads protocol (on their next restart), fall back to the old method: `git log` + commit messages.
+
+---
+
 # Session Ledger
 
 What each active session is doing, where things live, and what they've delivered.
-Last updated: 2026-08-18 (final check before clear)
+Last updated: 2026-08-18 19:00 — final update before handoff
 
 ## Ultimate goal
 
@@ -9,16 +56,16 @@ Lock down JUS battle mechanics well enough to rebuild the system in a new game. 
 
 ---
 
-## Session 1: `justoolkit-ed` (was `justoolkit-06`) — master branch
+## Session 1: `justoolkit-ed` [6fb027] — master branch
 
 **Focus:** Runtime research via the agentic melonDS harness.
 
-**Status:** Handoff written + post-handoff commits. Branch `re/ability-bitset-not-resistance`. Handoff at `docs/HANDOFF-2026-08-18.md` (`e6b1c96`). Post-handoff: confirmed DOWN+B IS Forced Change but an ordinary attack (`16bf9f6`), savestates preserved to jus_files (`2a16ae1`), stale commit-count fix (`e5628d0`). Items 1-2 done, item 3 mostly done, item 4 not started.
+**Status:** Active, deck creation **DONE**. Branch `re/ability-bitset-not-resistance`. Items 1-3 done, item 4 (full match playthrough) not started.
 
 **Assignments:**
 1. ~~Resistance attribution~~ — **SETTLED** (both directions null)
 2. ~~Harden menu nav~~ — **DONE** (touchscreen taps + pixel verification)
-3. Deck creation — automate the full deck editor flow (ov01) — **NEXT**
+3. ~~Deck creation~~ — **DONE** (`ae6e8c4`): builds a full deck unattended, game grades it. Measured off framebuffer.
 4. Full match playthrough — boot to finish, pulling RAM data throughout
 5. Projectiles / ObjShot kind-byte walk (queued, unblocked now that nav works)
 
@@ -33,6 +80,8 @@ Lock down JUS battle mechanics well enough to rebuild the system in a new game. 
 - **Caution:** Rapid savestate loads intermittently hang melonDS (JIT block cache reset)
 - **MILESTONE — ov05 contradiction CLOSED** (`9f836c2`): deck-make editor = ov05 (99.5%), deck-select list = ov01 (99.6%). Old measurement was correct, label was wrong (nav bug). Reusable tool: `scripts/emu/overlay_residency.py`. Doc: `docs/research/Overlay-Residency-Deck-Screens.md`.
 - **NATURE RESOLVER HYPOTHESIS:** `0x0214E480` is ov05 code — reachable on deck-make screens, NOT during battle (where ov06 occupies that window). The twice-confirmed "nature doesn't affect battle damage" may be because the resolver is the EDITOR's, not the battle engine's. Testing: find what reads nature with ov06 resident (atlas's side).
+- **MILESTONE — Deck creation DONE** (`ae6e8c4`): builds a whole deck unattended, game grades it. Measured off framebuffer (`d7afa94`). Research doc on editor signals (`6adcad7`).
+- **Gimmick toggle fix** (`7145505`): toggle was never actually off — verification check agreed with itself (self-confirming bug).
 
 **What the previous session built (all committed on master):**
 - Emu harness M1-M3: `scripts/emu/` (agent_bridge.lua, launch/stop scripts, joypad patch, JSON plans)
@@ -48,13 +97,13 @@ Lock down JUS battle mechanics well enough to rebuild the system in a new game. 
 
 ---
 
-## Session 2: `battle-engine-atlas-5e` (was `battle-engine-atlas-c2`) — loop/battle-engine-atlas branch
+## Session 2: `battle-engine-atlas-5e` [ba9ba2] — loop/battle-engine-atlas branch
 
 **Focus:** Structural static analysis of the battle engine.
 
 **Branch location:** `.claude/worktrees/battle-engine-atlas/`
 
-**Status:** Handoff written + post-handoff commits. Handoff at `docs/research/HANDOFF-Loop-Atlas-P156.md` (`f94403d`). Post-handoff: corrected push status — owner pushed f634bec..f94403d, origin is current (`7ad111d`). Also P155 (`f7c713b`): added liveness-tracking `base_offset_scan.py`, refuted own P154 struct-base claim. Session covers P147–P156.
+**Status:** Active, now at **P163** (idle). Handoff at `docs/research/HANDOFF-Loop-Atlas-P156.md` (`f94403d`). Session covers P147–P163.
 
 **Assignments:**
 1. Entity and projectile subsystems (structural analysis)
@@ -73,7 +122,15 @@ Lock down JUS battle mechanics well enough to rebuild the system in a new game. 
 - Better ObjShot anchor: battle root pointer `0x0214D928` → `[root+0x110]` = ObjShot manager, `[root+0x10C]` = ObjCtrl manager. More robust than hardcoded singleton. (`d1c8c3c`)
 
 **Latest atlas commits:**
-- `510f46d` P156 (latest): ov05 conflict officially closed as labelling error; aliasing hypothesis true but not load-bearing; cold Codex decode corroborates nibble layout, corrects a 'copy' claim.
+- `474b2b7` **P163: whole rule-select screen mapped to memory. `+0x2D` = team battle. Time limit is a frame count.**
+- `9fd7c4a` P162: `0x020AFE90` is match-settings struct. Third unnamed rule flag. Two disassemblers print opposite literal comments.
+- `d247318` P161: `0x0214D928` is a pool word, not a global — root confirmed. Repeated process mistake noted.
+- `20aee41` P160: `[0x02172960]` is 368-byte ov6 object, P158 "stat block" label refuted. xrefs.json misses 89% of Thumb literal loads.
+- `3ed2633` P159: complete 42-entry effect-id table, both selection routes. Status subsystem cleared of chain scaling.
+- `a747eca` P158: status dispatcher `0x02158ED0` mapped. `[param+0x4]` is static table data, not computed. First non-constant formula found.
+- `1b97d3b` P157 follow-up: closed a dropped Codex check honestly; noted backgrounded commands die at turn end.
+- `8da841a` P157: ov6 `0x02171168` dispatch table names every status handler. Found the missing `0x20`. Rules out a chain multiplier at the HP boundary.
+- `510f46d` P156: ov05 conflict officially closed as labelling error; aliasing hypothesis true but not load-bearing; cold Codex decode corroborates nibble layout, corrects a 'copy' claim.
 - `2f24a65`: owner ground truth on dream-attack tap chains, support summons, chain-length damage scaling; multiplier hunt queued.
 - `9fd3ed5` P154: session object at 0x021AA0D8 (0x1CB4 bytes), ov7 init/teardown. Census hypothesis dead by construction.
 - `8e1b9f0` P153: 47-caller predicate = network-session test; 0x0214CCF8 only ov7/ov10, never arm9.
@@ -118,7 +175,7 @@ Lock down JUS battle mechanics well enough to rebuild the system in a new game. 
 Both sessions are pointed at the entity/projectile system. Atlas identifies structs and addresses; justoolkit validates at runtime.
 
 ### Stretch goals
-- [ ] **Deck creation** — justoolkit automates ov01 deck editor flow
+- [x] **Deck creation** — DONE (`ae6e8c4`)
 - [ ] **Full match playthrough** — justoolkit automates boot-to-finish with RAM captures
 - [ ] **Koma deeper dive** — reimplementation-level detail still needed
 

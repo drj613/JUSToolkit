@@ -131,8 +131,8 @@ So `ov6` contributes **zero** surviving Thumb-store candidates for `+0x68`, and 
 
 ### Independent confirmation
 
-The independent decoder was then re-run on the corrected bytes, given no hint of the
-expected answer, and agreed on every point:
+A separate decoder was given the corrected bytes cold — no expected answers, no context
+about what the document concludes — and it agreed across the board:
 
 | Question | Independent verdict | Matches this document |
 |---|---|---|
@@ -144,17 +144,17 @@ expected answer, and agreed on every point:
 | `E1D266BC` | `LDRH r6, [r2, #0x6C]` | yes |
 | Window B | data — a pointer sequence, not a plausible instruction stream | yes |
 
-One unplanned cross-check fell out of this. The decoder read `EB00034E` **relatively**,
-as a branch to `A + 0xD40` where `A` is the instruction's own address, without being told
-where the bytes came from. That instruction sits at `0x0215231C`, and
-`0x0215231C + 0xD40` = `0x0215305C` — exactly the absolute target `query.py` reports
-(`bl #0x215305c`). Two tools, one working in relative displacements and one in absolute
-addresses, landing on the same byte. That independently validates the window's placement,
-not just its decode.
+An unplanned bonus came out of this too. The decoder read `EB00034E` **relatively** — a
+branch to `A + 0xD40` from whatever address the instruction lives at — without knowing
+that address. The instruction sits at `0x0215231C`, and `0x0215231C + 0xD40` =
+`0x0215305C`, which is exactly the absolute target `query.py` reports
+(`bl #0x215305c`). Two tools working in completely different coordinate systems — one in
+relative displacements, one in absolute addresses — converge on the same byte. That
+validates the window's placement in ROM, not just its decode.
 
-So the encoding ceiling that closes B11 is now double-sourced: derived from the encoding
+The encoding ceiling that closes B11 is now double-sourced: derived from the encoding
 tables, confirmed empirically against `46390` pattern matches in the ROM, and confirmed
-again by an independent decoder that never saw either.
+a second time by an independent decoder that never saw either result.
 
 ## Not claimed
 

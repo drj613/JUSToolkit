@@ -481,6 +481,31 @@ lookup and a negated byte) close it out. With C6b's result that no melee damage 
 dream-attack multiplier is **not here** — it belongs to the move/attack script system
 (`move_script_location_UNKNOWN`).
 
+**P160 update** (`findings/p160-what-0x02172960-is-and-the-thumb-literal-gap.md`). `0x02172960` is a
+**pointer global with exactly two writes**, both ov6 Thumb: `0x0214CD6E` stores a **368-byte
+(`0x170`)** object from the tagged allocator `0x0201A21C` (then `memset` 0 via `0x020517FC`), and
+`0x0214E196` nulls it after `free` (`0x0201B244`). Liveness-tracked scanning finds **only `+0x00`**
+accessed across arm9/ov6/ov11 (276 accesses, 2 stores), positive control passed. It is the first word
+of ov6's BSS (`ram_size 0x25C40`, `bss_size 0x100`), and **ov11 reads it 12 times** — a deliberate
+cross-overlay handle, since ov6 and ov11 occupy different windows and can be co-resident.
+
+`REFUTED` — P158's label "per-character stat block" for `[[0x02172960] + charIdx*4 + 0x4C]`. arm9
+`0x0208552C` reads the same shape and **compares the value against a character index** clamped to
+`[obj+0x158]-1`, so the `+0x4C` words are small index-like integers, not magnitudes. P158's formula
+`duration = base + (base/10)*(V*2)` is unchanged; only the name for `V` is retracted, and what `V`
+means is `not claimed`. Known fields: `+0x4C` word array (stride 4), `+0x158` a count, `+0x15C` an
+index into `+0x4C`. `PLAUSIBLE` (not claimed): the same object as the battle root behind
+`0x0214D928`, on the strength of `[root+0x158]` also being a character count — decidable by
+comparing that global's allocation size against `0x170`.
+
+**Tool blind spot, sharpened and superseding the figure on record.** For `0x02172960`: arm9 2/2,
+ov11 12/12, ov6 ARM 88/88 — all exact — but ov6 **Thumb 167 actual vs 18 recorded**, so xrefs.json
+misses **149 of 167 = 89%** of Thumb pc-relative literal loads. Two independent methods agree on the
+255 ov6 total (`base_offset_scan.py`'s decoder+liveness walk, and a raw `0x4800`-`0x4FFF` encoding
+sweep of `ov06.bin`). The old bound was 9.4% on arm9 ARM loads; for Thumb-heavy overlay code it is an
+order of magnitude worse. **Every campaign "N literal loads" count for a global Thumb code touches is
+a severe floor** — including "`[0x020AFE90+0x28]`, 149 literal loads".
+
 ### Refuted hypotheses (guard-sp-gauges)
 
 - **"The `+0x558` walker is the only other static caller of `Grow`"** (claim 7) — refuted; a second, previously undocumented drain trampoline (`0x020783B8`) exists, reached via `0x0215AC70`. It still targets `+0x56c` (not a new gauge), but the enumeration itself was incomplete.

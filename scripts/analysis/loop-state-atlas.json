@@ -1,9 +1,12 @@
 {
- "iteration": 159,
+ "iteration": 160,
  "phase": "combat",
- "current_task": "P159 done: effect-id table complete (42 ids, 1-41 valid), two selection routes, status subsystem CLEARED of chain scaling. Next: identify [0x02172960], the per-character stat block.",
+ "current_task": "P160 done: [0x02172960] is a 368-byte ov6 object (2-write lifecycle); P158's 'stat block' label REFUTED; xrefs.json misses 89% of Thumb literal loads. Next: 0x0214D928's writer + alloc size.",
  "queue": [
-  "IDENTIFY [0x02172960] -- the per-character stat block whose +0x4C word scales status duration. BSS (past the end of ov06.bin), so find its INITIALISER; +0x4C is very likely a chr_b record field. TOP ITEM: it is the one confirmed multiplier source in the engine, and the shape any damage formula would reuse.",
+  "FIND 0x0214D928's writer and its ALLOCATION SIZE. If 0x170, it is the same object as [0x02172960] and two campaign threads merge. Cheap and decisive.",
+  "RE-MEASURE every campaign literal-load count that involves Thumb code, starting with [0x020AFE90+0x28]'s '149 literal loads'. The 89% Thumb gap makes those numbers untrustworthy as stated.",
+  "IDENTIFY what the +0x4C word array holds now that 'stat' is retracted. Read arm9 0x020854C4 whole -- 244 bytes, 0 recorded callers -- since it compares an entry against a character index.",
+  "FIX or document xrefs.json's Thumb literal-load indexing -- the single largest measured gap in the toolchain; it silently weakens any global's reference census.",
   "FIND the writer of X+0x172 / X+0x173 where X = [[battleObj+0x1A8]+0x10] -- where a move declares which status it inflicts. This is move-side data, which the campaign has been missing.",
   "IDENTIFY the object [[battleObj+0x1A8]+0x10]. It supplies +0x140 (P157), +0x172, +0x173, and +0x182 (P158) -- a recurring per-hit or per-player state block worth naming.",
   "READ ov6 0x02159B8C(battleObj, taggedId) -- consumer of the 16-word array at 0x02171128.",
@@ -236,7 +239,8 @@
   "P147: TRACE Battle_ObjShotManCreate ov6 0x0216A7D4 (0x3FD4, BattleObjShot.cpp) -- the actual projectile subsystem; find its element constructor and spawn sites. justoolkit-06 is BLOCKED on this for their input sweep. -- DONE, see findings/objshot-manager-and-the-27-kind-dispatch-table.md",
   "P157: r1-producer census at all 10 HP-adjust sites; ov6 0x02171168 42-entry dispatch table; status 0x20 handlers found; multiplier ruled out at the HP boundary; Codex cold decode caught the HP=1 special case.",
   "P158: dispatcher 0x02158ED0; [param+0x4] writer is a pointer store to static table data (chain-scaling location REFUTED); status-duration formula duration = base + (base/10)*(stat*2); my P157 'key' claim refuted; Codex refuted by encoding bits.",
-  "P159: two effect-selection routes (0x0217215C operand table; staged X+0x172/+0x173 on-hit ids); complete 42-row effect-id table; id space confirmed 1-41 by a third method; status subsystem CLEARED of chain scaling."
+  "P159: two effect-selection routes (0x0217215C operand table; staged X+0x172/+0x173 on-hit ids); complete 42-row effect-id table; id space confirmed 1-41 by a third method; status subsystem CLEARED of chain scaling.",
+  "P160: [0x02172960] = 368-byte ov6 object, 2-write lifecycle, only +0x00 accessed, cross-overlay handle read by ov11; P158's 'per-character stat' label REFUTED; xrefs.json Thumb literal-load gap measured at 89%."
  ],
  "stuck": {},
  "required_reading_for_koma_tasks": [
@@ -295,8 +299,8 @@
   "Is HP computed as size*k at runtime, or tabulated per panel? Naruto 4-koma=144=4*36; if size*k then size5=180, size6=216, size7=252, size8=288. One reading settles it."
  ],
  "notes": "Iteration 146 done (delegated + verified). THREE closures: (a) 0x800's polarity is category ROUTING, not a contradiction -- 0x020801D4 is loop-continue, 0x0207F7C8 is the next category check; (b) record+0x34 is NOT write-once -- a four-function flag API (0x0207D064/0x0207D0BC/0x0207CF18/0x0207CF78) mirrors changes into +0x38 and the +0x08 node list, and the destructor 0x0207CCD4 memsets 0x188; (c) P144's 0x6FF puzzle SOLVED -- ov6 ORs [record+0x150]&0xFF into +0x34, and 0x6FF covers bits 0-7, so the test reads runtime bits not the 0x100 construction seed. Top task: read record+0x150, which now drives the whole category gate. STANDING: query.py mis-bins functions in this module (4 leaves here, 8 in P125, 2 in P126) -- verify any address before trusting its size or container. The +0x5C base-confusion trap has 7 instances; on +0x34 (1092 hits) the base register is the ONLY struct identifier. CHARTER: updated in P146b on the user's direct authorization. North star = docs/PROJECT-GOAL.md (master, f47d63d); Mission 2's current focus is the entity/projectile subsystems. justoolkit-06 is the designated runtime validator -- send them struct-field hypotheses and breakpoint requests rather than leaving questions unresolved; that is the only route to dynamic evidence without breaking the static-only rule.",
- "last_wake": "2026-08-18 P159",
- "wakeup_default_seconds": 1800,
+ "last_wake": "2026-08-18 P160",
+ "wakeup_default_seconds": 900,
  "consecutive_no_progress_wakes": 0,
  "k1c_helper_passives": {
   "output": "docs/research/Helper-Passives-Catalog.md",
@@ -1940,5 +1944,27 @@
   "plus_C6b": "C6b already found NO MELEE DAMAGE among any caller in this subsystem. Combined, it is closed out.",
   "WHERE_NEXT": "a dream attack is a MOVE, so the multiplier belongs to the move/attack script system (move_script_location_UNKNOWN). The one non-constant formula found so far (P158's duration scale) got its multiplier from a per-character stat table at [[0x02172960] + charIdx*4 + 0x4C]. THAT IS THE SHAPE TO LOOK FOR: a per-character or per-chain word read out of a table and fed to a mul/mla.",
   "detour_was_worth_it": "it produced the dispatcher 0x02158ED0, the complete 42-id table, the duration formula, and the on-hit flush. Record it as a productive negative, not a dead end."
- }
+ },
+ "P160_OBJECT_0x02172960": {
+  "what": "CONFIRMED_STATIC: a pointer global with exactly TWO writes, both ov6 Thumb. Init 0x0214CD6E stores a 368-byte (0x170) object from the tagged allocator 0x0201A21C(size, __FILE__, __FUNCTION__, 0x7F), then memset 0 via 0x020517FC. Teardown 0x0214E196 nulls it after free via 0x0201B244. Lifetime = ov6 residency.",
+  "only_offset_0": "base_offset_scan.py over arm9+ov6+ov11: 276 accesses, 2 stores, ALL at +0x00. Liveness tracking on. Positive control (0x0214CCF4) passed, per the P155 lesson. So it is a pure pointer global, not a struct base.",
+  "fields_of_the_pointee": "+0x4C = base of a word array, stride 4, indexed by a character index; +0x158 = a count, used as count-1 to clamp an index; +0x15C = an index into the +0x4C array. All fit inside 0x170.",
+  "cross_overlay_handle": "ov6 loads at 0x0214CD20, ram_size 0x25C40, bss_size 0x100 -- so its image ends at exactly 0x02172960 and BSS runs 0x02172960-0x02172A60, ending exactly where ov10/ov11 load. 0x02172960 is the FIRST WORD of ov6's BSS. ov11 reads it 12 times; ov11 is in a different window so the two can be co-resident. Deliberate cross-overlay handle, not stale reuse.",
+  "naming_ceiling": "same shape as the P153 network slot -- allocate, store, null. Static analysis will not name it; the allocator's __FILE__/__FUNCTION__ pool words (0x0214D040, 0x0214D044) are the one remaining lead on its identity."
+ },
+ "P160_P158_LABEL_REFUTED": {
+  "claim": "REFUTED: P158's label 'per-character stat block' for [[0x02172960] + charIdx*4 + 0x4C].",
+  "evidence": "arm9 0x020854F4-0x02085538 reads the same expression shape and COMPARES the value for equality against a character index that was just clamped to [obj+0x158]-1, then makes a vtable call with 1 or 0. So the +0x4C words are small integers of the same kind as character indices, not magnitudes.",
+  "what_survives": "P158's arithmetic is untouched: duration = base + (base/10)*(V*2). Only the NAME for V is retracted. What V means is now not claimed. It is still the campaign's only non-constant scaling formula; what it scales BY is open again.",
+  "lesson": "I named a term I had not identified. The formula was verified three ways and the label got a free ride on that verification. Verify the TERMS, not just the operations."
+ },
+ "P160_BATTLE_ROOT_QUESTION": "PLAUSIBLE, not claimed: [0x02172960]'s pointee is the same object as the battle root P156 reached via 0x0214D928. For: P156 found [root+0x158] is the character count, and [obj+0x158] is used here as exactly that. P156's root+0x110 (ObjShot mgr) and root+0x10C (ObjCtrl mgr) both fit in 368 bytes. Against: two different globals in two ov6 sections is equally consistent with two objects. DISCRIMINATOR, cheap: find 0x0214D928's writer and compare its allocation size against 0x170.",
+ "TOOL_BLIND_SPOT_thumb_literal_loads": {
+  "measurement": "For 0x02172960 -- arm9 2 actual / 2 recorded, ov11 12/12, ov6 ARM 88/88 (all EXACT), but ov6 Thumb 167 actual / 18 recorded. xrefs.json misses 149 of 167 = 89% of Thumb pc-relative literal loads.",
+  "gap_is_specific": "every ARM figure matches exactly, so this is not a general undercount -- it is Thumb pc-relative literal loads in overlays specifically.",
+  "convergent": "two independent methods agree on the 255 ov6 total: base_offset_scan.py (its own decoder + liveness walk) and a raw sweep of ov06.bin for the Thumb 01001 encoding 0x4800-0x4FFF resolving Align(pc+4,4)+imm8*4 against the 120 pool words holding the value. Instruction decoding vs encoding-pattern arithmetic -- different representations, same number.",
+  "SUPERSEDES": "the figure on record was '465 of 4941 arm9 ARM pc-relative loads unrecorded = 9.4%'. For Thumb-heavy overlay code it is an order of magnitude worse.",
+  "CONSEQUENCE": "every campaign 'N literal loads' count for a global that Thumb code touches is a SEVERE FLOOR, not an estimate. Re-measure before reasoning from one. The handoff's '[0x020AFE90+0x28], 149 literal loads' is exactly such a figure."
+ },
+ "P160_CODEX": "Agreed on every load-bearing item in both Thumb fragments: 0x17<<4 = 0x170 for both the alloc size and the memset length, r3=0x7F, both blx pairs being single 32-bit instructions, and the store of the allocator's return into the global. IT ADDED SOMETHING I MISSED: in the teardown the two literal loads use DIFFERENT displacements (0x3C, 0x34) at addresses 8 bytes apart, and Codex proved from the displacement arithmetic alone that Align(B+4,4)+0x3C == Align(B+0xC,4)+0x34 -- so free and the null-store provably hit the SAME pool word, established with no address knowledge at all. Relative-vs-absolute cross-check reached from the weaker representation unaided."
 }

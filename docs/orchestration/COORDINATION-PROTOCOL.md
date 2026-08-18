@@ -147,6 +147,19 @@ caught a mis-transcribed halfword this way). The static loop already uses this w
 runtime loop should use it deliberately, especially before publishing any address
 interpretation or accepting a surprising measurement.
 
+**Frame it neutrally — never lead Codex to your answer.** Give it the context and the
+question, but not your hypothesis or the answer you expect. "Confirm `0x02172960` is the
+battle root" invites agreement; "here are the reads / xrefs / disassembly — what is this
+address?" lets it reach an *independent* conclusion. Then reconcile the two:
+
+- Two conclusions reached independently that agree is the strong signal (the same logic as
+  convergent verification — independence is what makes agreement mean something).
+- Disagreement is not a failure — it means one side is wrong, and the gap almost always
+  shows which. Chase it; don't paper over it.
+
+Leading Codex to your answer throws away the exact independence that made the call worth
+making. This applies to both loops.
+
 ## Subagents: bounded evidence collectors, never voices
 
 Both advisors and the owner agree: **never delegate outbound communication.** Knowing

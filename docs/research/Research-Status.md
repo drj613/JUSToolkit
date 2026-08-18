@@ -845,3 +845,76 @@ the emulator-harness session, and the gap is tool capability rather than analysi
 4. Overlays sharing a load address create phantom cross-overlay callers. `find_callers.py` now warns.
 5. A coincidence that mirrors the structure you predicted is more dangerous than a random one,
    because the resemblance itself feels like confirmation.
+
+---
+
+## 2026-08-18 — Handoff, Loop-Atlas iterations 157–164
+
+I can speak for **157–164 only**. For anything earlier, read the findings directory — don't trust any summary, including mine.
+
+### 1. Current state
+
+Iteration **164**, phase **combat**. Branch `loop/battle-engine-atlas`, tree **clean**, **8 commits** (`7ad111d..c8da30a`). Nothing pushed — that's the owner's call.
+
+State file `scripts/analysis/loop-state-atlas.json` is current at iteration 164, 95 queue entries. Canon doc `docs/research/Battle-Engine-Map.md` has a `P157`–`P164` update block per wake. Eight findings added (`docs/research/findings/p157-*` … `p164-*`), each voice-passed through `claude -p --model claude-opus-4-6` with a numeric-token diff. All clean.
+
+`docs/orchestration/COORDINATION-PROTOCOL.md` and `Charter-Atlas-additions.md` **don't exist in this worktree yet**. They weren't deleted — they haven't landed.
+
+### 2. What got settled
+
+**The dream-attack chain multiplier isn't in the status/effect subsystem.** `CONFIRMED_STATIC`, three wakes, three angles. P157: all ten HP-adjust `bl` sites carry only constant shifts (`lsl #6`, `lsl #8`). P158: the writer of `[param+0x4]` stores a **pointer** into static table data — the amount is a constant. P159: effect selection is a byte-table lookup plus a negated byte. Combined with C6b's earlier "no melee damage reaches this subsystem", the question is closed. A dream attack is a *move*, so the hunt belongs to the move script system (`move_script_location_UNKNOWN`).
+
+This was a **productive negative**: it yielded the dispatcher `0x02158ED0`, the complete 42-entry effect-id table, the on-hit flush, and the duration formula.
+
+**The one non-constant formula in the engine** (P158, ov6 `0x02158F78`): `duration = base + (base/10) * (V*2)`. `V` is **unidentified** — see §4.
+
+**The battle root** is `[0x02172960]`, a 368-byte (`0x170`) heap object with a two-write lifecycle. `0x0214D928` is a literal **pool word**, not a global. Root map extended 11 → 14 slots (`+0x4C`, `+0x158`, `+0x15C`).
+
+**The match-settings struct is `0x020AFE90`**, and the whole ルールセレクト screen is mapped to it — six settings, three booleans. Time limit `+0x1C` is a **frame count**. The mode classifier lives in **ov1 `0x0216446C`**, reading a 16-byte-per-mode descriptor table — time conversion is data-driven.
+
+### 3. Next task and queue shape
+
+**Top of queue: read ov1 `0x021643A4`.** Its return value is the `ctx` whose `[ctx+4]` is the mode table base. That gives us the table, all three modes' `+0xC` values, and finally explains the `144` in the second time-limit branch. Small, bounded, decisive.
+
+Then: dump the 16-byte mode records and **re-check every campaign address in the `0x0214CD20` window** the way P164 did (five-way disassembly + boundary + coherence). That sweep isn't hygiene anymore — P164 caught a load-bearing address attributed to the wrong overlay in a doc I'd written **one iteration earlier**.
+
+### 4. Retractions and live taint
+
+| retracted | what it was | still tainting? |
+|---|---|---|
+| `root+0x4C` = "per-character stat" (P158, retracted P160) | the term `V` in the only non-constant formula | **YES.** The formula's arithmetic is verified three ways and stands. Its *meaning* doesn't. Don't describe it as stat-scaled. `jus-wic` settles it. |
+| effect table `+0x5` = "the table's key" (P157, refuted P158) | promoted a gapless `0x00`–`0x1F` permutation to a structural role before finding the indexing code | No — the index is the caller's `id`. Fixed in the map. |
+| "chain scaling must live where `[param+0x4]` is written" (P157, refuted P158) | that field is static table data | No. |
+| "global `0x0214D928`" (campaign-wide, fixed P161) | a literal pool word | **Partly.** Fixed in the map, the P156 handoff, and the chara-setup finding. Raw `; = 0x0214D928` disassembly comments left alone — the tool's output is correct on its own terms. |
+| P154 struct base at `0x0214CCF8` (before me; refuted by its author) | — | No. Only `+0x00` exists. |
+
+**Unfixed root cause (will bite again):** `query.py`'s ARM listing prints a literal's **value** in its `; = 0x...` comment; `thumb_disasm.py` prints the **pool address**. Same shape, opposite meaning. That's how one pool word became "the battle root global" across four documents. Queued as a tool fix.
+
+**Process failure I made twice in five wakes.** P157 drafted an already-documented census as new. P160 spent a whole wake reaching `PLAUSIBLE` on something `findings/battle-add-root-object-map.md` already had at `CONFIRMED_STATIC`. Charter rule added: `grep -rl` the claim's key address through `findings/` **and** `Battle-Engine-Map.md` before drafting — and **not** via the state file, which is hundreds of keys of my own summaries and is exactly where I kept re-finding my own questions instead of the record's answers.
+
+### 5. Open threads with the runtime loop
+
+The runtime loop is **`justoolkit-ed`** (resolved via `ListAgents`). Four `coord` beads carry the reachability basis, expected shape, one-line test, and failure signature:
+
+- **`jus-wic`** (P1) — the `root+0x4C` dump. Owed **to** us; accepted, queued behind owner emulator work. Settles the only multiplier we have.
+- **`jus-vrz`** (P1) — falsification cards for **every** address I handed them, with confidence labels. Two runtime-confirmed, two confirmed-by-elimination, **two `PLAUSIBLE` only** (`0x020AFEA0` mode, `0x020AFEC3` COM count) — don't treat those as confirmed.
+- **`jus-qsh`** (P2) — the ObjShot kind-byte walk. Owed **to** us, long-queued, now re-aimed: their gimmick discovery means stage hazards may occupy kinds in that table — a candidate explanation for the six entity-less kinds.
+- **`jus-q4b`** (P2) — the Thumb writer of `[0x020AFE90+0x28]`. ARM search exhausted; only a *clearing* store exists.
+
+**What I sent them:** the `0x0214D928` correction (unprompted); the six rule-select addresses with per-address confidence; the warning that their `rules_off()` clears **two of three** booleans (`0x020AFEBD` untouched); and that four of six rules have never been varied in any runtime data, since all of it is training-mode.
+
+**What they gave us:** the items/gimmick toggle addresses, which named the `0x020AFE90` struct that had been open for dozens of iterations. Also, against their own interest: **every damage measurement in their last two sessions ran with a projectile-spawning gimmick live**. Our "damage is flat" synthesis leans on their numbers, so treat any single-run figure from those sessions as having an unmodelled source in the room. P157–P159's clearing of the status subsystem is static and unaffected.
+
+**The coordination failure, stated plainly:** I treated them as a service to call when blocked, not as a party to my conclusions. I put a formula into the canon doc with its key term labelled on no evidence and didn't ask for the one dump that would settle it — for four wakes, until the owner prompted. Two mechanisms fix most of it, and the incoming protocol encodes both: retractions get **pushed** the same wake naming every dependent, and every measurement carries its environment while every address carries its reachability basis.
+
+### 6. Codex usage — keep this
+
+It earns its place, and it has been wrong. That's the point.
+
+**The pattern:** hand it **raw instruction hex, an address-free frame, and no hypothesis** — and do it **before** forming a conclusion. Never a second run of my own tool; a genuinely different representation.
+
+What that bought across eight wakes: it caught a special case I read straight past (`0x02078428` sets HP to **1** on every living character when its `r1` argument is 0); it proved from displacement arithmetic alone that a `free` and a null-store hit the same pool word, with no address knowledge; it independently computed a literal at blob offset `0x019A` from PC alignment — which is what confirmed the pool-word fact underpinning the whole root map; and it refused to answer when I mangled a prompt and omitted the data, rather than inventing a decode.
+
+**It was also flatly wrong once** (P158): it swapped `Rn` and `Rs` in an `mla`, which would have made the duration formula dimensionally incoherent. Settled by a **third** representation — the encoding bits (`0xE0223290`: `Rd`=r2, `Rn`=r3, `Rs`=r2, `Rm`=r0; ARM `MLA` is `Rd = Rm*Rs + Rn`). **Codex is not an oracle. When it disagrees on a decode, go to the bits.**
+
+**Operational notes:** `codex exec "<prompt>"` **reads stdin even with a positional prompt** and hangs on an open terminal — one wake burned 560s for 39 bytes. A **backgrounded** call dies when the turn ends at `ScheduleWakeup`; "dispatch it and read it next wake" always comes back empty. The only reliable form is **foreground, `< /dev/null`, generous timeout.**

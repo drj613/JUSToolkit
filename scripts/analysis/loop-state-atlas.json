@@ -2061,5 +2061,16 @@
   "dest_base": "CONFIRMED_STATIC: the destination base is 0x020AFE90. P163 read the stores as 'str r2,[r1,#0xc]' without proving what r1 held; r1 is loaded at 0x020753CC from pool 0x02075590, whose .word is 0x020AFE90. That was the last unverified link in the field map.",
   "new_field": "CONFIRMED_STATIC: 0x020AFEDC = settings +0x4C, a byte holding the slot index or -1, chosen by [container+0xC]: ldrb r1,[r5,#0xc]; cmp r1,#0; mvnne r1,#0; strbeq r4,[r0]; strbne r1,[r0]. ov6 references 0x020AFEDC directly too (pool 0x02150AFC).",
   "CAUTION_two_different_0x4C": "settings+0x4C (0x020AFEDC, static struct at 0x020AFE90) is NOT root+0x4C (the per-character word array on the heap battle root at [0x02172960] that P160-P161 discuss). Two different structs both with a +0x4C. Any future '+0x4C' claim must name its base. I nearly conflated them myself."
+ },
+ "HANDOFF_2026_08_18_P164": {
+  "where": "docs/research/Research-Status.md, dated section 2026-08-18, iterations 157-164.",
+  "vouch_range": "157-164 ONLY. For anything earlier read the findings directory, not any summary including mine.",
+  "commits": "8 this session, 7ad111d..c8da30a, nothing pushed (owner call).",
+  "coord_beads": "jus-wic (P1 root+0x4C dump), jus-vrz (P1 falsification cards for every handed-over address), jus-qsh (P2 ObjShot kind-byte walk), jus-q4b (P2 Thumb writer of settings+0x28). Each carries reachability basis, expected shape, one-line runtime test, failure signature.",
+  "runtime_loop_name": "justoolkit-ed, resolved via ListAgents. NOT justoolkit-06.",
+  "absent_docs": "docs/orchestration/COORDINATION-PROTOCOL.md and Charter-Atlas-additions.md do NOT exist in this worktree yet; successor should expect to read them and not conclude they were deleted.",
+  "next_task": "read ov1 0x021643A4 -- its return is the ctx whose [ctx+4] is the 16-byte mode table base; yields all three modes +0xC values and explains the 144.",
+  "LIVE_TAINT": "root+0x4C = V in duration = base + (base/10)*(V*2) is UNIDENTIFIED. Formula arithmetic verified three ways and stands; its MEANING does not. Do not describe it as stat-scaled. jus-wic settles it.",
+  "UNFIXED_TOOL_ROOT_CAUSE": "query.py ARM listing prints a literal VALUE in its \"; = 0x...\" comment; thumb_disasm.py prints the POOL ADDRESS. Same shape, opposite meaning. Caused a four-document error. Queued as a fix, not a lesson."
  }
 }

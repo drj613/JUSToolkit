@@ -131,3 +131,13 @@ python3 find_battle_structs.py          # addresses are session-local
 
 Opponent HP is at `player_base + 0x61C`. With the auto-heal on, read damage as the
 **minimum of the dip**, not before/after.
+
+## What DOWN+B actually is (confirmed 2026-08-18)
+
+`DOWN+B` is a **Forced Change** — it makes the opponent swap to a different battle character. Every battle character has it. It's universal, not part of anyone's individual kit.
+
+It's **not** a "special" the way X moves are. It's a normal attack that happens to force a switch, so there's no reason to think it goes through a different damage pipeline.
+
+**Why this was worth checking.** The two-move argument above only works if both moves hit the *same* reduction step. If `DOWN+B` were scripted or special-cased, "constant −2.0 across two moves" could just be two independent flat offsets that happen to match — and the damage path does have special cases: Codex found a conditional ×0.5 at `0x0215AC28` and a caller feeding the drain a fixed `0x800` (32.0 displayed). Confirming it's an ordinary attack rules that out.
+
+**So the conclusion stands**, with one residual gap stated plainly: neither move used was a plain no-side-effect attack — `B` is a punch, `DOWN+B` forces a switch. Re-running the comparison with a second ordinary attack that has no side effect would close it. `UP+B` isn't a good candidate; it's a multi-hit string (1.0, 2.0, 1.0, 1.0), so per-hit values are small and harder to compare.

@@ -129,6 +129,33 @@ past the end of `ov6`'s code already suggested.
 So `ov6` contributes **zero** surviving Thumb-store candidates for `+0x68`, and the
 `record+0x68` claim survives the Thumb question in every region.
 
+### Independent confirmation
+
+The independent decoder was then re-run on the corrected bytes, given no hint of the
+expected answer, and agreed on every point:
+
+| Question | Independent verdict | Matches this document |
+|---|---|---|
+| `STR` scaling / max | `imm5 × 4`, max `124` (`0x7C`) | yes |
+| `STRB` scaling / max | `imm5 × 1`, max `31` (`0x1F`) | yes |
+| `STRH` scaling / max | `imm5 × 2`, max `62` (`0x3E`) | yes |
+| `0xE8` expressible by `STR`? | no | yes |
+| `0x68` expressible by `STR`? | yes, `imm5 = 26` | yes |
+| `E1D266BC` | `LDRH r6, [r2, #0x6C]` | yes |
+| Window B | data — a pointer sequence, not a plausible instruction stream | yes |
+
+One unplanned cross-check fell out of this. The decoder read `EB00034E` **relatively**,
+as a branch to `A + 0xD40` where `A` is the instruction's own address, without being told
+where the bytes came from. That instruction sits at `0x0215231C`, and
+`0x0215231C + 0xD40` = `0x0215305C` — exactly the absolute target `query.py` reports
+(`bl #0x215305c`). Two tools, one working in relative displacements and one in absolute
+addresses, landing on the same byte. That independently validates the window's placement,
+not just its decode.
+
+So the encoding ceiling that closes B11 is now double-sourced: derived from the encoding
+tables, confirmed empirically against `46390` pattern matches in the ROM, and confirmed
+again by an independent decoder that never saw either.
+
 ## Not claimed
 
 That the `0x68` and `0x30` claims are now closed. They are *narrowed*, and by different

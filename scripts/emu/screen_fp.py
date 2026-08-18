@@ -56,6 +56,16 @@ def capture(path):
     return path
 
 
+class BlankCapture(RuntimeError):
+    """The captured frame has no contrast.
+
+    Usually a bug (wrong window, broken capture) -- but NOT always: early in ROM
+    boot and during some transitions the DS screen is genuinely black. Callers
+    that poll while waiting for a screen should treat this as "not yet" instead
+    of an error, which is why it has its own type.
+    """
+
+
 def fingerprint(png):
     """Downscaled grayscale bytes of the bottom screen, GRID_W*GRID_H of them."""
     r = subprocess.run(["magick", png, "-crop", BOTTOM_CROP, "+repage",
@@ -74,7 +84,7 @@ def fingerprint(png):
     # have contrast. (Boot screens can legitimately be near-white, so this is a
     # low bar deliberately.)
     if max(fp) - min(fp) < 4:
-        raise RuntimeError("%s looks blank (pixel range %d-%d) -- do not read "
+        raise BlankCapture("%s looks blank (pixel range %d-%d) -- do not read "
                            "this as 'no change'" % (png, min(fp), max(fp)))
     return fp
 

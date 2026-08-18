@@ -453,6 +453,34 @@ key — the index is the caller's `id`; `+0x5` is a value field that happens to 
 `0x00`-`0x1F` permutation. Entry `+0x4` is a **sound index** (`0x0207342C(0x7A, x)`) and `+0x6`
 indexes a 16-word array at `0x02171128`.
 
+**P159 update** (`findings/p159-effect-id-table-and-selection-routes.md`). The dispatcher's callers
+are **3 functions / 5 `bl` sites** (`callers` double-counting again) — and they are the same three
+functions that hold the HP-adjust sites: `0x02157A44`, `0x0215807C`, `0x02158B20`. No Thumb callers.
+Two selection routes:
+
+- **Route A**, 3 sites, all resolving to the same 26-byte translation table at ov6 `0x0217215C`:
+  `id = byteTable[(u16)operand]`. Operands `0x00`-`0x10` map to `id = operand + 1`; `0x11`-`0x17` map
+  to `0x23`-`0x29`; `0x18`->`0x18`, `0x19`->`0x21`. Max value `0x29` = 41, matching the table's 42
+  entries exactly — a third independent confirmation that the id space is **1-41, 0 = none**.
+- **Route B**, 2 sites in `0x02158B20`: `X+0x172` and `X+0x173` (signed bytes, `X =
+  [[battleObj+0x1A8]+0x10]`) are **staged effect ids**, with `+0x173` stored negated. So
+  `0x02158B20` is an **on-hit flush**: pending HP damage `+0xE8`, pending second gauge `+0x130`, and
+  two pending effect ids.
+
+The finding carries the **complete 42-row id table** (handler, sound byte, `+0x5`, `+0x6`, status
+byte, reachable operand). Ids `0x01`-`0x11` are gauge effects with no status byte; `0x12`-`0x22` hold
+every status opcode `0x19`-`0x22` and are nearly unreachable from script operands, so
+`PLAUSIBLE`: statuses are inflicted via Route B while script opcodes drive gauge effects. It also
+resolves P157's shifted/unshifted puzzle — `0x02159260` (x64) is ids `0x25`/`0x26`, `0x02159280`
+(x256) is `0x27`-`0x29`, unshifted `0x021592C0` is id `0x04`: **different opcodes deliberately take
+different units**, not an inconsistency.
+
+**`CONFIRMED_STATIC`: the status/effect subsystem contains no chain-length scaling.** P157 (only
+constant shifts on the delta), P158 (`[param+0x4]` is static table data), P159 (selection is a table
+lookup and a negated byte) close it out. With C6b's result that no melee damage reaches it, the
+dream-attack multiplier is **not here** — it belongs to the move/attack script system
+(`move_script_location_UNKNOWN`).
+
 ### Refuted hypotheses (guard-sp-gauges)
 
 - **"The `+0x558` walker is the only other static caller of `Grow`"** (claim 7) — refuted; a second, previously undocumented drain trampoline (`0x020783B8`) exists, reached via `0x0215AC70`. It still targets `+0x56c` (not a new gauge), but the enumeration itself was incomplete.

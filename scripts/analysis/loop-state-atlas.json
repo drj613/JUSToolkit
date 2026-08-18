@@ -1,10 +1,13 @@
 {
- "iteration": 158,
+ "iteration": 159,
  "phase": "combat",
- "current_task": "P158 done: dispatcher 0x02158ED0 found; [param+0x4] writer resolved (it writes a POINTER to static table data); duration formula found. Next: read the 3 callers of 0x02158ED0.",
+ "current_task": "P159 done: effect-id table complete (42 ids, 1-41 valid), two selection routes, status subsystem CLEARED of chain scaling. Next: identify [0x02172960], the per-character stat block.",
  "queue": [
-  "READ the 3 callers of ov6 0x02158ED0 -- they carry the effect id, so effect SELECTION happens there. Top item: if a dream attack picks a different id by chain length, it shows up in those callers.",
-  "IDENTIFY [0x02172960] -- the per-character stat block whose +0x4C word scales status duration. It is BSS (past the end of ov06.bin), so find its INITIALISER; the +0x4C value is very likely a chr_b record field.",
+  "IDENTIFY [0x02172960] -- the per-character stat block whose +0x4C word scales status duration. BSS (past the end of ov06.bin), so find its INITIALISER; +0x4C is very likely a chr_b record field. TOP ITEM: it is the one confirmed multiplier source in the engine, and the shape any damage formula would reuse.",
+  "FIND the writer of X+0x172 / X+0x173 where X = [[battleObj+0x1A8]+0x10] -- where a move declares which status it inflicts. This is move-side data, which the campaign has been missing.",
+  "IDENTIFY the object [[battleObj+0x1A8]+0x10]. It supplies +0x140 (P157), +0x172, +0x173, and +0x182 (P158) -- a recurring per-hit or per-player state block worth naming.",
+  "READ ov6 0x02159B8C(battleObj, taggedId) -- consumer of the 16-word array at 0x02171128.",
+  "NAME the +0x5 32-entry resource the effect table indexes (icon or message strip).",
   "READ ov6 0x02159B8C(battleObj, taggedId) -- consumer of the 16-word array at 0x02171128.",
   "CHECK whether any caller bounds the effect id before calling 0x02158ED0; 42 table entries, but the dispatcher itself only checks id != 0.",
   "NAME the 32-member key enum at ov6 0x02171168 (byte[1], 0x00-0x1F, gapless) and the cat byte (0x07/0x09/0x0C/0x0D). 32 named battle effects would be a large block of reimplementation-grade documentation.",
@@ -232,7 +235,8 @@
   "P146c: RUNTIME CONFIRMATION via justoolkit-06. The 0x40 element stride is empirically CONFIRMED -- 12 live allocations 0x40 apart (0x0220C208..0x0220C388), container 0x0220B740, first element at container+0xAC8, and (0xAC8-0x648)/0x40 = 18 exactly, validating base and stride together. Closes BOTH gaps Codex named. Also confirmed live: r2 is DTCM (a stack temp, no persistent struct), and elements read back zero (the 0x0207CCD4 destructor memset). AND: the three entity-constructor call sites are NOT the attack path -- 0x02164F0C/0x02164F48 are in 0x02164D48 (bracketed by BattleMapLoadItem/BattleMapItemInit = map items), 0x02168E44 is in 0x02168CF4 (just above Battle_ObjCtrlManCreate = object control). Explains 06's verified zero-allocation result for plain B. Projectiles are BattleObjShot ov6 0x0216A7D4.",
   "P147: TRACE Battle_ObjShotManCreate ov6 0x0216A7D4 (0x3FD4, BattleObjShot.cpp) -- the actual projectile subsystem; find its element constructor and spawn sites. justoolkit-06 is BLOCKED on this for their input sweep. -- DONE, see findings/objshot-manager-and-the-27-kind-dispatch-table.md",
   "P157: r1-producer census at all 10 HP-adjust sites; ov6 0x02171168 42-entry dispatch table; status 0x20 handlers found; multiplier ruled out at the HP boundary; Codex cold decode caught the HP=1 special case.",
-  "P158: dispatcher 0x02158ED0; [param+0x4] writer is a pointer store to static table data (chain-scaling location REFUTED); status-duration formula duration = base + (base/10)*(stat*2); my P157 'key' claim refuted; Codex refuted by encoding bits."
+  "P158: dispatcher 0x02158ED0; [param+0x4] writer is a pointer store to static table data (chain-scaling location REFUTED); status-duration formula duration = base + (base/10)*(stat*2); my P157 'key' claim refuted; Codex refuted by encoding bits.",
+  "P159: two effect-selection routes (0x0217215C operand table; staged X+0x172/+0x173 on-hit ids); complete 42-row effect-id table; id space confirmed 1-41 by a third method; status subsystem CLEARED of chain scaling."
  ],
  "stuck": {},
  "required_reading_for_koma_tasks": [
@@ -291,7 +295,7 @@
   "Is HP computed as size*k at runtime, or tabulated per panel? Naruto 4-koma=144=4*36; if size*k then size5=180, size6=216, size7=252, size8=288. One reading settles it."
  ],
  "notes": "Iteration 146 done (delegated + verified). THREE closures: (a) 0x800's polarity is category ROUTING, not a contradiction -- 0x020801D4 is loop-continue, 0x0207F7C8 is the next category check; (b) record+0x34 is NOT write-once -- a four-function flag API (0x0207D064/0x0207D0BC/0x0207CF18/0x0207CF78) mirrors changes into +0x38 and the +0x08 node list, and the destructor 0x0207CCD4 memsets 0x188; (c) P144's 0x6FF puzzle SOLVED -- ov6 ORs [record+0x150]&0xFF into +0x34, and 0x6FF covers bits 0-7, so the test reads runtime bits not the 0x100 construction seed. Top task: read record+0x150, which now drives the whole category gate. STANDING: query.py mis-bins functions in this module (4 leaves here, 8 in P125, 2 in P126) -- verify any address before trusting its size or container. The +0x5C base-confusion trap has 7 instances; on +0x34 (1092 hits) the base register is the ONLY struct identifier. CHARTER: updated in P146b on the user's direct authorization. North star = docs/PROJECT-GOAL.md (master, f47d63d); Mission 2's current focus is the entity/projectile subsystems. justoolkit-06 is the designated runtime validator -- send them struct-field hypotheses and breakpoint requests rather than leaving questions unresolved; that is the only route to dynamic evidence without breaking the static-only rule.",
- "last_wake": "2026-08-18 P158",
+ "last_wake": "2026-08-18 P159",
  "wakeup_default_seconds": 1800,
  "consecutive_no_progress_wakes": 0,
  "k1c_helper_passives": {
@@ -1911,5 +1915,30 @@
   "codex_remarks_that_STAND": "(1) ldrh r3,[r6,#0xe] at 0x02158F70 is a fresh read AFTER the bl, not a reuse of the stored value. (2) duration is unsigned and strh truncates, so the product wraps rather than saturating. (3) my prompt wrongly claimed the fragment had two bl words; it had one, and Codex said so instead of inventing a second -- a wrong framing did not propagate.",
   "LESSON": "Codex is not an oracle. When it disagrees on a decode, go to the encoding bits -- a third representation neither side controls."
  },
- "TOOL_LESSON_codex_stdin": "codex exec \"<prompt>\" READS STDIN even when the prompt is a positional argument, and blocks forever if stdin is an open terminal. P157's call only worked because backgrounding handed it /dev/null; a foreground call in P158 hung for the full 560s timeout and produced 39 bytes. ALWAYS pass < /dev/null. Combined with the P157 lesson (a backgrounded call dies when the turn ends), the only reliable form is: foreground, stdin closed, generous timeout."
+ "TOOL_LESSON_codex_stdin": "codex exec \"<prompt>\" READS STDIN even when the prompt is a positional argument, and blocks forever if stdin is an open terminal. P157's call only worked because backgrounding handed it /dev/null; a foreground call in P158 hung for the full 560s timeout and produced 39 bytes. ALWAYS pass < /dev/null. Combined with the P157 lesson (a backgrounded call dies when the turn ends), the only reliable form is: foreground, stdin closed, generous timeout.",
+ "P159_SELECTION_ROUTES": {
+  "caller_shape": "query.py says '8 caller reference(s)' = 3 caller FUNCTIONS and 5 bl sites (the long-known double-counting). The three functions are 0x02157A44, 0x0215807C, 0x02158B20 -- EXACTLY the three that hold the P157 HP-adjust sites. find_thumb_callers.py --to reports no Thumb callers, so the ARM enumeration is complete.",
+  "ROUTE_A": "3 sites (0x02157C6C, 0x02158204, 0x02158280), identical idiom: ldr r1,[pc]; lsl r0,r4,#0x10; ldrb r1,[r1,r0,lsr#16]; bl. ALL THREE resolve to the SAME 26-byte table at ov6 0x0217215C (pool words 0x02157F9C and 0x02158460 both hold it). The shift pair masks r4 to 16 bits, it does not scale.",
+  "operand_map": "operands 0x00-0x10 -> id = operand+1; 0x11->0x23, 0x12->0x24, 0x13->0x25, 0x14->0x26, 0x15->0x27, 0x16->0x28, 0x17->0x29, 0x18->0x18, 0x19->0x21. Max value 0x29 = 41.",
+  "THIRD_CONFIRMATION_of_id_space": "P157 counted 42 table entries from the data layout; P158 found indexing is table + id*8 with only id!=0 checked; P159's operand map tops out at exactly 41. Three independent facts: the id space is 1-41 with 0 = none.",
+  "ROUTE_B": "2 sites in 0x02158B20. X = [[battleObj+0x1A8]+0x10]. X+0x173 (ldrsb) is NEGATED then sign-extended to 8 bits then zero-extended to 16; X+0x172 (ldrsb) is used as-is. Both are STAGED EFFECT IDS. +0x173 is stored negated, so a live value there is held negative; 0 still means none because the dispatcher returns on id 0.",
+  "0x02158B20_IS_AN_ON_HIT_FLUSH": "it applies pending HP damage (+0xE8, P157), a pending second-gauge amount (+0x130, P157), and two pending effect ids (+0x172, +0x173). One coherent function.",
+  "edge_case": "the exact form is (uint16_t)(int8_t)(-x), so a stored -128 yields 0xFF80, far outside 1-41. Either the field is never -128 or a guard exists elsewhere; not claimed which."
+ },
+ "P159_EFFECT_TABLE_COMPLETE": {
+  "artifact": "docs/research/findings/p159-effect-id-table-and-selection-routes.md carries all 42 rows: id, handler, +0x4 sound, +0x5, +0x6, +0x7 status, reachable script operand.",
+  "three_blocks": "ids 0x01-0x11 use sound 0x07/0x0D and carry NO status byte = the gauge/HP effects. ids 0x12-0x22 use sound 0x0C and hold EVERY status opcode 0x19-0x22. ids 0x23-0x29 are a mixed tail.",
+  "STATUS_BLOCK_UNREACHABLE_FROM_SCRIPT": "of ids 0x12-0x22 only 0x18 and 0x21 appear in the operand map. PLAUSIBLE: statuses are inflicted via Route B (the staged +0x172/+0x173 bytes on a hit) while script opcodes drive gauge effects. Matches C6b's 'no melee damage reaches this subsystem'.",
+  "P157_PUZZLE_RESOLVED": "the shifted/unshifted split is BY DESIGN, not a bug. lsl#6 handler 0x02159260 = ids 0x25/0x26 (operands 0x13/0x14); lsl#8 handler 0x02159280 = ids 0x27-0x29 (operands 0x15-0x17); unshifted 0x021592C0 = id 0x04. Different script opcodes deliberately take their amount in raw / x64 / x256 units.",
+  "plus_0x5": "each value 0x00-0x1F appears exactly once, handed out only to ids that need one, roughly in id order. SPECULATIVE: index into a 32-entry icon or message resource.",
+  "dead_ids": "0x02159258 (the stub) is id 0x00 AND fills ids 0x08, 0x0B, 0x15, 0x1A, 0x1B, 0x22 -- allocated ids with sound and +0x6 set but no behaviour. SPECULATIVE: cut or unimplemented effects, since they still carry resource bytes.",
+  "duplicate_handlers": "0x021592A0 covers ids 0x01-0x03; 0x02159608 covers 0x18/0x19; 0x021592DC covers 0x05 and 0x21."
+ },
+ "CHAIN_MULTIPLIER_SUBSYSTEM_CLEARED": {
+  "verdict": "CONFIRMED_STATIC: the status/effect subsystem contains no chain-length scaling and cannot be where the dream-attack multiplier lives.",
+  "three_wakes": "P157 checked the delta at all ten HP-adjust bl sites -> only constant shifts. P158 checked the writer of [param+0x4] -> it writes a POINTER to static table data, so the amount is a constant. P159 checked how the id is chosen at all five dispatcher sites -> table lookup and a negated byte, no scaling. Codex independently confirmed 'no multiply, no non-constant scale' in both P159 fragments, asked before I concluded.",
+  "plus_C6b": "C6b already found NO MELEE DAMAGE among any caller in this subsystem. Combined, it is closed out.",
+  "WHERE_NEXT": "a dream attack is a MOVE, so the multiplier belongs to the move/attack script system (move_script_location_UNKNOWN). The one non-constant formula found so far (P158's duration scale) got its multiplier from a per-character stat table at [[0x02172960] + charIdx*4 + 0x4C]. THAT IS THE SHAPE TO LOOK FOR: a per-character or per-chain word read out of a table and fed to a mul/mla.",
+  "detour_was_worth_it": "it produced the dispatcher 0x02158ED0, the complete 42-id table, the duration formula, and the on-hit flush. Record it as a productive negative, not a dead end."
+ }
 }

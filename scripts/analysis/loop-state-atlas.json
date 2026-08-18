@@ -1,11 +1,13 @@
 {
- "iteration": 162,
+ "iteration": 163,
  "phase": "combat",
- "current_task": "P162 done: 0x020AFE90 is the match-settings struct (peer's toggles are +0x2B/+0x2C); a third unnamed rule flag at +0x2D; +0x28's only ARM store CLEARS it; root cause of P161's error is that our two disassemblers print opposite literal comments.",
+ "current_task": "P163 done: whole rule-select screen mapped to the 0x020AFE90 struct; +0x2D = team battle (closes P162's unnamed flag); +0x1C = time limit IN FRAMES, confirmed by two independent constants.",
  "queue": [
+  "READ arm9 0x0216446C(mode) -- it returns 1 for the modes whose \u3058\u304b\u3093 value is in seconds. Names the three modes and explains path B's 144.",
+  "CONFIRM +0x10 is the mode by finding a reader that switches on it three ways (death match / point battle / collect stars).",
+  "IDENTIFY +0x2E, and the [r7+0x70] / +0x75 / +0x78 fields that have no owner-visible setting on the rule-select screen.",
   "FIND the THUMB writer of [0x020AFE90+0x28]. The ARM-only search is exhausted and returns a single CLEARING store; Thumb is the untested half and P160 says our index is nearly blind there. This finally cracks a predicate that has been open since the descriptor-path work.",
   "FIX thumb_disasm.py's literal comment to print pool address AND value. Correctness fix on the tool that caused a four-document error.",
-  "NAME +0x2D, +0x2E, +0x33 and the packed source byte [r7+0x7C] -- the whole match-rules set is one small function away from being fully documented.",
   "AWAIT justoolkit-ed's runtime read of root+0x4C..+0x6C / +0x158 / +0x15C / +0x110 / +0x10C and [battleObj+0x1E0]. It settles the +0x4C multiplier-vs-index contradiction, which gates the meaning of the campaign's only non-constant formula.",
   "APPLY the new charter rule retroactively: grep the findings dir for every 'open question' in this state file's open_questions / next_leads and drop the ones already answered. The state file has been reproducing my own uncertainty.",
   "RE-MEASURE every campaign literal-load count that involves Thumb code, starting with [0x020AFE90+0x28]'s '149 literal loads'. The 89% Thumb gap makes those numbers untrustworthy as stated.",
@@ -246,7 +248,8 @@
   "P159: two effect-selection routes (0x0217215C operand table; staged X+0x172/+0x173 on-hit ids); complete 42-row effect-id table; id space confirmed 1-41 by a third method; status subsystem CLEARED of chain scaling.",
   "P160: [0x02172960] = 368-byte ov6 object, 2-write lifecycle, only +0x00 accessed, cross-overlay handle read by ov11; P158's 'per-character stat' label REFUTED; xrefs.json Thumb literal-load gap measured at 89%.",
   "P161: 0x0214D928 proved to be a pool word holding 0x02172960 (three representations); [0x02172960] confirmed as the battle root; root map extended 11 -> 14 slots; record normalised; process failure recorded and a charter rule added.",
-  "P162: 0x020AFE90 identified as the match-settings struct with a real field map; peer's items/gimmick toggles placed at +0x2B/+0x2C and a third unnamed rule found at +0x2D via the bitfield unpacker; +0x28's only ARM store proved to clear it; opposite literal-comment conventions identified as the root cause of P161's four-document error."
+  "P162: 0x020AFE90 identified as the match-settings struct with a real field map; peer's items/gimmick toggles placed at +0x2B/+0x2C and a third unnamed rule found at +0x2D via the bitfield unpacker; +0x28's only ARM store proved to clear it; opposite literal-comment conventions identified as the root cause of P161's four-document error.",
+  "P163: rule-select screen mapped to the 0x020AFE90 struct via the settings-copy function 0x0207538C; +0x2D named as \u30c1\u30fc\u30e0\u305b\u3093 team battle; +0x1C confirmed as a frame-count time limit by two independent constants (value*60 and ov6's 18000 = 5:00)."
  ],
  "stuck": {},
  "required_reading_for_koma_tasks": [
@@ -305,7 +308,7 @@
   "Is HP computed as size*k at runtime, or tabulated per panel? Naruto 4-koma=144=4*36; if size*k then size5=180, size6=216, size7=252, size8=288. One reading settles it."
  ],
  "notes": "Iteration 146 done (delegated + verified). THREE closures: (a) 0x800's polarity is category ROUTING, not a contradiction -- 0x020801D4 is loop-continue, 0x0207F7C8 is the next category check; (b) record+0x34 is NOT write-once -- a four-function flag API (0x0207D064/0x0207D0BC/0x0207CF18/0x0207CF78) mirrors changes into +0x38 and the +0x08 node list, and the destructor 0x0207CCD4 memsets 0x188; (c) P144's 0x6FF puzzle SOLVED -- ov6 ORs [record+0x150]&0xFF into +0x34, and 0x6FF covers bits 0-7, so the test reads runtime bits not the 0x100 construction seed. Top task: read record+0x150, which now drives the whole category gate. STANDING: query.py mis-bins functions in this module (4 leaves here, 8 in P125, 2 in P126) -- verify any address before trusting its size or container. The +0x5C base-confusion trap has 7 instances; on +0x34 (1092 hits) the base register is the ONLY struct identifier. CHARTER: updated in P146b on the user's direct authorization. North star = docs/PROJECT-GOAL.md (master, f47d63d); Mission 2's current focus is the entity/projectile subsystems. justoolkit-06 is the designated runtime validator -- send them struct-field hypotheses and breakpoint requests rather than leaving questions unresolved; that is the only route to dynamic evidence without breaking the static-only rule.",
- "last_wake": "2026-08-18 P162",
+ "last_wake": "2026-08-18 P163",
  "wakeup_default_seconds": 900,
  "consecutive_no_progress_wakes": 0,
  "k1c_helper_passives": {
@@ -2016,5 +2019,25 @@
   "why_it_matters": "a reader moving between an ARM and a Thumb listing sees '; = 0xADDR' and cannot tell which. That is exactly how the pool word 0x0214D928 became 'the battle root global' across four documents. It WILL happen again until a tool changes.",
   "FIX_QUEUED": "make thumb_disasm.py print '; pool 0x0214D048 -> 0x02172960' so the comment is unambiguous and carries both."
  },
- "P162_PEER_CAVEAT_RECORDED": "justoolkit-ed volunteered that EVERY damage measurement in their last two sessions ran with the stage gimmick live, and on that stage the gimmick is a PROJECTILE SPAWNER. They judge the ability-bitset result safe (baseline held at 384 across six re-measurements, which a stray projectile would have disturbed), but any single-run damage number from those sessions has an unmodelled damage source in the room. This matters here because 'every damage effect found so far is flat' leans on their numbers. P157-P159's clearing of the status subsystem is static and unaffected. ALSO: their gimmick finding offers a candidate explanation for P157's puzzle that six of the 27 ObjShot kinds carry no entity -- stage hazards may occupy kinds, so some may be unreachable from any character move. SPECULATIVE; their pending kind-byte walk would test it."
+ "P162_PEER_CAVEAT_RECORDED": "justoolkit-ed volunteered that EVERY damage measurement in their last two sessions ran with the stage gimmick live, and on that stage the gimmick is a PROJECTILE SPAWNER. They judge the ability-bitset result safe (baseline held at 384 across six re-measurements, which a stray projectile would have disturbed), but any single-run damage number from those sessions has an unmodelled damage source in the room. This matters here because 'every damage effect found so far is flat' leans on their numbers. P157-P159's clearing of the status subsystem is static and unaffected. ALSO: their gimmick finding offers a candidate explanation for P157's puzzle that six of the 27 ObjShot kinds carry no entity -- stage hazards may occupy kinds, so some may be unreachable from any character move. SPECULATIVE; their pending kind-byte walk would test it.",
+ "OWNER_GROUND_TRUTH_rule_select": {
+  "tier": "OBSERVED -- owner screenshot of the \u30eb\u30fc\u30eb\u30bb\u30ec\u30af\u30c8 screen. Outranks disassembly for WHAT, says nothing about byte layout.",
+  "six_settings": "row 1: \u30eb\u30fc\u30eb (mode) = \u30dd\u30a4\u30f3\u30c8/Point, multi-valued (death match / point battle / collect stars); \u3058\u304b\u3093 (time) = 60, a value; COM = 1\u4eba, a count. row 2: \u30a2\u30a4\u30c6\u30e0 (items) OFF; \u30ae\u30df\u30c3\u30af (gimmick) OFF; \u30c1\u30fc\u30e0\u305b\u3093 (team battle) OFF -- three booleans.",
+  "per_player_not_global": "player rows carry \u3064\u3088\u3055 (strength, \u3075\u3064\u3046) and \u30c1\u30fc\u30e0 (team, \u306a\u3057). Per-player, not global rules.",
+  "owner_self_correction": "the owner first said four rules (mode, time, items, gimmicks) then corrected to six with the screenshot. BOTH counts recorded -- the correction is the useful part, since I would otherwise have hunted a fourth boolean that does not exist.",
+  "training_mode_caveat": "training matches expose only items and gimmicks; mode and time limit are not on. So four of six rules have NEVER been varied in any of the campaign's runtime data."
+ },
+ "P163_SETTINGS_COPY_MAP": {
+  "fn": "CONFIRMED_STATIC: arm9 0x0207538C (512 bytes) copies a source settings object in r7 into the match-settings struct at 0x020AFE90.",
+  "map": "[r7+0x70] word -> +0x18 (not claimed); [r7+0x75] byte -> +0x0C (not claimed); [r7+0x76] byte -> +0x10 = MODE (PLAUSIBLE); [r7+0x77] signed byte read 3x (SPECULATIVE per-player \u3064\u3088\u3055/\u30c1\u30fc\u30e0); [r7+0x78] signed -> +0x14 (not claimed); [r7+0x79] -> +0x33 (PLAUSIBLE COM count); [r7+0x7A] HALFWORD -> +0x1C = TIME LIMIT in frames; [r7+0x7C] bit0 -> +0x2B items, bit1 -> +0x2C gimmick, bit2 -> +0x2D TEAM BATTLE; +0x2E forced 0 unconditionally (not claimed).",
+  "TEAM_BATTLE_NAMED": "CONFIRMED by elimination: three booleans on screen, three bits in the mask, bits 0 and 1 confirmed at runtime by justoolkit-ed (0x020AFEBB, 0x020AFEBC). P162's 'third rule flag nobody has named' is \u30c1\u30fc\u30e0\u305b\u3093 at +0x2D = 0x020AFEBD."
+ },
+ "P163_TIME_LIMIT_IS_FRAMES": {
+  "claim": "CONFIRMED_STATIC: 0x020AFE90+0x1C is the time limit as a FRAME COUNT, and the mode selects how the menu value is read.",
+  "converter": "0x020753F0 ldrb r1,[r7,#0x76] (mode); bl 0x0216446C; cmp r0,#1; then path A (eq) r0 = value*60 with 0x3C=60, or path B (ne) r0 = (value+1)*144 - 1 with 0x90=144. str r0,[r1,#0x1c].",
+  "path_A": "value*60 means the menu \u3058\u304b\u3093 value is in SECONDS at 60 fps. The screenshot's 60 gives 3600 frames = 60 s. Consistent.",
+  "INDEPENDENT_CONFIRMATION": "ov6 0x02150AE6 stores 0x00004650 = 18000 into the same field via pool 0x02150AF0 = 0x020AFE90 (verified). 18000 = 300 s x 60 fps = exactly 5:00. A round wall-clock default reaching the same field from unrelated code in the same units -- a frame count is the only reading under which both value*60 and 18000 make sense.",
+  "not_claimed": "path B, (value+1)*144-1. 144 is not an obvious frame-rate multiple, so for at least one mode \u3058\u304b\u3093 is not seconds. 0x0216446C(mode) returning 1 is the discriminator and is unread."
+ },
+ "P163_SENT_TO_PEER": "(1) their rules_off() clears TWO OF THREE booleans -- \u30c1\u30fc\u30e0\u305b\u3093 at 0x020AFEBD is untouched, so every run has had team battle in whatever state the default leaves it. (2) all their data is training mode, so four of six rules have never been varied. (3) they can now set all six from RAM instead of menu taps: 0x020AFEB0 (mode, if +0x10 holds), 0x020AFEAC (time-limit frames, +0x1C), 0x020AFEBB/BC/BD (the three booleans), 0x020AFEC3 (COM count, if +0x33 holds) -- writing frames directly also sidesteps the two-branch converter."
 }

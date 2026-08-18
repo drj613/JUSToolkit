@@ -1,8 +1,11 @@
 {
- "iteration": 161,
+ "iteration": 162,
  "phase": "combat",
- "current_task": "P161 done: 0x0214D928 is a POOL WORD (value 0x02172960); [0x02172960] IS the battle root, CONFIRMED; +0x4C/+0x158/+0x15C added to the root map; +0x4C contradiction sent to justoolkit-ed.",
+ "current_task": "P162 done: 0x020AFE90 is the match-settings struct (peer's toggles are +0x2B/+0x2C); a third unnamed rule flag at +0x2D; +0x28's only ARM store CLEARS it; root cause of P161's error is that our two disassemblers print opposite literal comments.",
  "queue": [
+  "FIND the THUMB writer of [0x020AFE90+0x28]. The ARM-only search is exhausted and returns a single CLEARING store; Thumb is the untested half and P160 says our index is nearly blind there. This finally cracks a predicate that has been open since the descriptor-path work.",
+  "FIX thumb_disasm.py's literal comment to print pool address AND value. Correctness fix on the tool that caused a four-document error.",
+  "NAME +0x2D, +0x2E, +0x33 and the packed source byte [r7+0x7C] -- the whole match-rules set is one small function away from being fully documented.",
   "AWAIT justoolkit-ed's runtime read of root+0x4C..+0x6C / +0x158 / +0x15C / +0x110 / +0x10C and [battleObj+0x1E0]. It settles the +0x4C multiplier-vs-index contradiction, which gates the meaning of the campaign's only non-constant formula.",
   "APPLY the new charter rule retroactively: grep the findings dir for every 'open question' in this state file's open_questions / next_leads and drop the ones already answered. The state file has been reproducing my own uncertainty.",
   "RE-MEASURE every campaign literal-load count that involves Thumb code, starting with [0x020AFE90+0x28]'s '149 literal loads'. The 89% Thumb gap makes those numbers untrustworthy as stated.",
@@ -242,7 +245,8 @@
   "P158: dispatcher 0x02158ED0; [param+0x4] writer is a pointer store to static table data (chain-scaling location REFUTED); status-duration formula duration = base + (base/10)*(stat*2); my P157 'key' claim refuted; Codex refuted by encoding bits.",
   "P159: two effect-selection routes (0x0217215C operand table; staged X+0x172/+0x173 on-hit ids); complete 42-row effect-id table; id space confirmed 1-41 by a third method; status subsystem CLEARED of chain scaling.",
   "P160: [0x02172960] = 368-byte ov6 object, 2-write lifecycle, only +0x00 accessed, cross-overlay handle read by ov11; P158's 'per-character stat' label REFUTED; xrefs.json Thumb literal-load gap measured at 89%.",
-  "P161: 0x0214D928 proved to be a pool word holding 0x02172960 (three representations); [0x02172960] confirmed as the battle root; root map extended 11 -> 14 slots; record normalised; process failure recorded and a charter rule added."
+  "P161: 0x0214D928 proved to be a pool word holding 0x02172960 (three representations); [0x02172960] confirmed as the battle root; root map extended 11 -> 14 slots; record normalised; process failure recorded and a charter rule added.",
+  "P162: 0x020AFE90 identified as the match-settings struct with a real field map; peer's items/gimmick toggles placed at +0x2B/+0x2C and a third unnamed rule found at +0x2D via the bitfield unpacker; +0x28's only ARM store proved to clear it; opposite literal-comment conventions identified as the root cause of P161's four-document error."
  ],
  "stuck": {},
  "required_reading_for_koma_tasks": [
@@ -301,7 +305,7 @@
   "Is HP computed as size*k at runtime, or tabulated per panel? Naruto 4-koma=144=4*36; if size*k then size5=180, size6=216, size7=252, size8=288. One reading settles it."
  ],
  "notes": "Iteration 146 done (delegated + verified). THREE closures: (a) 0x800's polarity is category ROUTING, not a contradiction -- 0x020801D4 is loop-continue, 0x0207F7C8 is the next category check; (b) record+0x34 is NOT write-once -- a four-function flag API (0x0207D064/0x0207D0BC/0x0207CF18/0x0207CF78) mirrors changes into +0x38 and the +0x08 node list, and the destructor 0x0207CCD4 memsets 0x188; (c) P144's 0x6FF puzzle SOLVED -- ov6 ORs [record+0x150]&0xFF into +0x34, and 0x6FF covers bits 0-7, so the test reads runtime bits not the 0x100 construction seed. Top task: read record+0x150, which now drives the whole category gate. STANDING: query.py mis-bins functions in this module (4 leaves here, 8 in P125, 2 in P126) -- verify any address before trusting its size or container. The +0x5C base-confusion trap has 7 instances; on +0x34 (1092 hits) the base register is the ONLY struct identifier. CHARTER: updated in P146b on the user's direct authorization. North star = docs/PROJECT-GOAL.md (master, f47d63d); Mission 2's current focus is the entity/projectile subsystems. justoolkit-06 is the designated runtime validator -- send them struct-field hypotheses and breakpoint requests rather than leaving questions unresolved; that is the only route to dynamic evidence without breaking the static-only rule.",
- "last_wake": "2026-08-18 P161",
+ "last_wake": "2026-08-18 P162",
  "wakeup_default_seconds": 900,
  "consecutive_no_progress_wakes": 0,
  "k1c_helper_passives": {
@@ -1993,5 +1997,24 @@
   "status": "not claimed either way. P160's retraction of the 'per-character stat' label stands and no replacement is offered. One of the two readings is wrong and static analysis cannot tell which.",
   "SENT_TO_PEER": "asked justoolkit-ed for a live read of root+0x4C..+0x6C, root+0x158, root+0x15C, root+0x110, root+0x10C, and [battleObj+0x1E0]. Small values in 0..N-1 mean it is an index array and the duration formula is stranger than it looks; stat-shaped values mean I misread the arm9 site. Reachability verified before asking, per the standing agreement.",
   "ALSO_CORRECTED_TO_PEER": "I had previously sent them the anchor [0x0214D928] -> root -> [root+0x110] -> ObjShot manager. The pointer chain was right, the global was not; corrected to [0x02172960]. Also passed on the P160 caution that our 'N literal loads' figures are severe floors wherever Thumb touches an address."
- }
+ },
+ "P162_MATCH_SETTINGS_STRUCT": {
+  "base": "0x020AFE90 is the MATCH-SETTINGS struct. Liveness-tracked scan: 16 distinct offsets from arm9, 9 from ov6, and exactly ONE from ov5 (+0x24) -- ov5 is the deck editor and it touches only the deck field, an independent check on the peer's deck_active_slot from a direction they cannot see.",
+  "fields": "+0x24 deck_active_slot (0x020AFEB4); +0x28 the unknown term of predicate 0x02086BD4 (0x020AFEB8); +0x2B items (0x020AFEBB, peer runtime); +0x2C gimmick (0x020AFEBC, peer runtime); +0x2D third unnamed rule (0x020AFEBD); +0x2E forced 0 (0x020AFEBE); +0x33 (0x020AFEC3).",
+  "bitfield_unpacker": "arm9 0x0207541C-0x02075474 reads a packed bitmask byte at [r7+0x7C] and fans each bit to its own byte flag: tst #1 -> strb [r0,#0x2b] items; tst #2 -> strb [r0,#0x2c] gimmick; tst #4 -> strb [r3,#0x2d] THIRD RULE UNNAMED; then strb r0,[r3,#0x2e] with r0=0 unconditionally.",
+  "cross_check": "the bit order matches the peer's two runtime addresses in order. They got addresses by RAM diffing; this got ordering from the unpacker. Different representations, agreeing.",
+  "peer_consequence_sent": "if a third rule defaults ON, their rules_off() reporting [0,0] is clearing two of at least three."
+ },
+ "P162_PREDICATE_TERM_SHARPENED": {
+  "prior_record": "findings/the-47-caller-predicate-is-a-network-session-test.md said [0x020AFE90+0x28]'s writer 'in ov7/ov10 was not traced'.",
+  "now": "CONFIRMED_STATIC: +0x28 has 6 accesses and EXACTLY ONE store ROM-wide in ARM code -- 0x02086D54 strb r1,[r0,#0x28] with r1=0. The only ARM writer CLEARS it. Yet predicate 0x02086BD4 = ([0x020AFE90+0x28] != 0) OR 0x0208C51C() treats non-zero as a real state selecting which of three function pairs builds characters.",
+  "not_claimed": "which explanation holds: a THUMB store (P160 measured our index missing ~89% of Thumb literal loads, so very plausible) or a register-offset store with a non-immediate offset. Sent to the peer as a watch on 0x020AFEB8 across every rules-menu row; a negative rules the menu out."
+ },
+ "TOOL_BUG_opposite_literal_comments": {
+  "ROOT_CAUSE_of_P161": "our two disassemblers print OPPOSITE things in the same-looking comment. query.py's ARM listing prints the VALUE ('0x02086D4C: ldr r0,[pc,#8] ; = 0x020AFE90', pool is at 0x02086D5C holding 0x020AFE90). thumb_disasm.py prints the POOL ADDRESS ('0x0214CD6A: ldr r1,[pc,#0x2dc] ; = 0x0214D048', Align(pc+4,4)+0x2DC).",
+  "verified": "0x02086D4C+8+8 = 0x02086D5C and the listing's own .word line there reads 0x020AFE90; Align(0x0214CD6A+4,4)+0x2DC = 0x0214D048.",
+  "why_it_matters": "a reader moving between an ARM and a Thumb listing sees '; = 0xADDR' and cannot tell which. That is exactly how the pool word 0x0214D928 became 'the battle root global' across four documents. It WILL happen again until a tool changes.",
+  "FIX_QUEUED": "make thumb_disasm.py print '; pool 0x0214D048 -> 0x02172960' so the comment is unambiguous and carries both."
+ },
+ "P162_PEER_CAVEAT_RECORDED": "justoolkit-ed volunteered that EVERY damage measurement in their last two sessions ran with the stage gimmick live, and on that stage the gimmick is a PROJECTILE SPAWNER. They judge the ability-bitset result safe (baseline held at 384 across six re-measurements, which a stray projectile would have disturbed), but any single-run damage number from those sessions has an unmodelled damage source in the room. This matters here because 'every damage effect found so far is flat' leans on their numbers. P157-P159's clearing of the status subsystem is static and unaffected. ALSO: their gimmick finding offers a candidate explanation for P157's puzzle that six of the 27 ObjShot kinds carry no entity -- stage hazards may occupy kinds, so some may be unreachable from any character move. SPECULATIVE; their pending kind-byte walk would test it."
 }

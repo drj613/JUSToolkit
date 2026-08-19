@@ -752,7 +752,8 @@ handler). A freshly-`memset` object cannot show those. The zeros are real, so te
 | The poll's entry `0x0214DB20` appears as the Thumb literal `0x0214DB21` exactly twice in ov6 — pools `0x0214DABC` and `0x0214DAD8`, each inside a small adjacent function. Two registration sites | ov6 | `CONFIRMED_STATIC` |
 | Second gated entry to the same function, on a call result rather than the BSS byte | ov6 `0x0214DB94`–`0x0214DBA4` | `CONFIRMED_STATIC`; which path a real battle takes is `not claimed` |
 | Mode 12 hits neither the installer nor its return site, in the same live GDB session that caught mode 2 — so the gate is **upstream of the call** | runtime `jus-usf` | **`CONFIRMED_RUNTIME`** |
-| The handler at `root+0x000` is a **tick that reports completion**: invoked via trampoline `0x0214F948`; a non-zero return restores the default and clears `+0xC8` (`0x0214DD32`–`0x0214DD3E`) | ov6 | `CONFIRMED_STATIC` |
+| The handler at `root+0x000` is a **tick that reports completion**: invoked via trampoline `0x0214F948`; a non-zero return restores the default and clears `+0xC8` (`0x0214DD32`–`0x0214DD3E`) | ov6 | **`CROSS_CONFIRMED`** — runtime built a match-end oracle out of it and watched `+0xC8` go `1→0` with `root+0x000` restored to `0x02150F65` at rule completion |
+| **`0x020AFEAC` = 4463 confirmed end to end.** Install completes at fc 4213 (`+0xC8` `0→1`, handler `0x0214FA79`); rule completes at fc 8503 (`+0xC8` `1→0`, handler back to default); battle object appears ~fc 4040. `8503 − 4040 = 4463`, exactly the configured value | runtime `jus-6fo` | **`CROSS_CONFIRMED`** (whole-match span vs a configured constant, through machinery unrelated to the on-screen counter) |
 | Writer of `root+0x08` | — | `not claimed`. No `ldrb [x,#0x10]` → `str [y,#8]` pair exists anywhere in ov6; all 34 ov6 pool refs to `0x020AFE90` checked. Either a register-offset store or arm9. |
 
 **Instrument rule adopted (runtime, `jus-usf`).** A breakpoint no-hit result is worthless unless the same
@@ -791,3 +792,21 @@ logical) — then read `0x020738B0` as `cmp r0,#16` instead of `cmp r1,#0x10`. E
 19–16 = `0001`, so `Rn` = `r1`; `query.py` agrees. Coherence check too: under its reading `r0` is a pointer,
 always ≥ 16, so the conditional store would fire unconditionally and the comparison would be dead code.
 Same shape as P158's `mla` swap — **when Codex disagrees on a decode, go to the bits.**
+
+### Measurement constraints inherited from the runtime loop (2026-08-18)
+
+Anything I design for them has to respect these:
+
+- **`jus-5kf` (P1, open): the player's HP RECOVERS on the Battle path.** A clean point battle with items and
+  gimmicks verified `0/0` in RAM showed the player going 5.8 → 58.6 → 110.4 with `chr_b` unchanged. Cause
+  unsettled — auto-heal on by default, or the HP word animating up after a same-character respawn. **Any
+  Battle-path measurement against an HP baseline is uninterpretable until it's settled.** Same shape as the
+  gimmick contamination. Training path has auto-heal explicitly off and behaviourally confirmed.
+  *Effect on my record:* none. Every damage figure the flat-damage synthesis leans on was taken on the
+  training path. This is exposure for future Battle-path work, not retroactive taint.
+- **Timeline resolution is ~400 emulated frames per sample round** (several IPC round trips per round, with
+  the emulator free-running at 60 fps through all of them). 12 samples covered a 4463-frame match. So any
+  duration experiment must use **base values well above ~500 frames**, or the per-round IPC has to be cut
+  down first.
+- **The Battle path defaults items and gimmicks ON** and nothing in that flow clears them; `rules_off()`
+  works there but must be called explicitly.

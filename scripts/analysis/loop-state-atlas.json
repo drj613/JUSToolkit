@@ -3,7 +3,7 @@
   "phase": "combat",
   "current_task": "P168 DONE: the mode-12 gate is resolved to arm9. State 1 (0x0214DAA4) advances only if 0x0214DADC returns non-zero; that gates on the veneer 0x0207382C, which DISCARDS the caller r0 and binds 0x0207387C to the singleton 0x0214BD50. That function returns 1 once [0x0214BD58] is set, and sets it when ((counter+4) >> shift) & 0xFFFF >= 0x10, with counter at 0x0214BD52 and shift at 0x0214BD51. PLAUSIBLE: a fade/transition progress object, making mode 12 a stuck transition -- which is also why its framebuffer was black. Codex wrong on one operand (cmp r0 vs cmp r1); bits + query.py settled it.",
   "queue": [
-    "P169-EXTRACT THE BASE DURATIONS from the 42-entry effect table so the status-duration formula can finally be runtime-tested. UNBLOCKED THIS WAKE: runtime retracted jus-vkj (advance(N) is accurate; the emulator just free-runs between plans), so duration measurement is available for the first time. Formula (P158, ov6 0x02158F78): duration = base + (base/10)*(V*2). With V=0 (the array reads zero in 4 states / 2 boots) the prediction is duration == base EXACTLY. Deliverable: pick 2-3 statuses with distinct, large base values, give runtime the exact base frame counts, and let a measured duration != base prove V != 0 without needing the sentinel poke at all. THIS IS THE CHARTER STANDING PRIORITY.",
+    "P169-EXTRACT THE BASE DURATIONS from the 42-entry effect table so the status-duration formula can finally be runtime-tested. UNBLOCKED THIS WAKE: runtime retracted jus-vkj (advance(N) is accurate; the emulator just free-runs between plans), so duration measurement is available for the first time. Formula (P158, ov6 0x02158F78): duration = base + (base/10)*(V*2). With V=0 (the array reads zero in 4 states / 2 boots) the prediction is duration == base EXACTLY. Deliverable: pick 2-3 statuses with distinct, large base values, give runtime the exact base frame counts, and let a measured duration != base prove V != 0 without needing the sentinel poke at all. THIS IS THE CHARTER STANDING PRIORITY. CONSTRAINTS FROM RUNTIME: pick base values WELL ABOVE ~500 frames (their timeline resolution is ~400 frames per sample round); and if a status is observed via an HP effect, specify the TRAINING path, because jus-5kf has the player HP recovering on the Battle path (5.8 -> 58.6 -> 110.4 with chr_b unchanged, cause unsettled).",
     "P169b-read the rest of 0x0214DADC from 0x0214DAEA (the real mode-12 discriminator).",
     "P169c-enumerate the callback-slot states FROM THE CODE (runtime says at least four, lower bound).",
     "P169d-what is 0x0214BD50 / the arm9 module 0x02073798-0x02073FF4 that owns it and its siblings.",
@@ -2104,7 +2104,7 @@
       "jus-hsc (P165 anchor card, CROSS_CONFIRMED)"
     ],
     "note": "jus-wic/jus-vrz/jus-qsh/jus-q4b from the P164 handoff never existed in the shared db; runtime recreated them as jus-45k/jus-baz/jus-fms/jus-cvx. Do not cite the old ids. My jus-hsc one-line test was malformed and produced a false failure; the replacement (poke the byte, START the match, read root+0x000) passed. Root cause: the menu explanation box follows FOCUS, and re-entering rule_select rewrites the byte.",
-    "live_taint": "root+0x4C term V is SPECULATIVE (zero in 4 states, 2 boots). jus-zco: runtime match_run.py HP constants are wrong outside the default heap layout -- mode 3 moves root by +0x180. Checked: no static claim of mine reads HP; the flat-damage synthesis used training-mode (default layout) numbers, so no new taint there beyond the known gimmick contamination. Future non-default-mode damage batches are the exposure.",
+    "live_taint": "root+0x4C term V is SPECULATIVE (zero in 4 states, 2 boots). jus-zco: runtime match_run.py HP constants are wrong outside the default heap layout -- mode 3 moves root by +0x180. Checked: no static claim of mine reads HP; the flat-damage synthesis used training-mode (default layout) numbers, so no new taint there beyond the known gimmick contamination. Future non-default-mode damage batches are the exposure. | jus-5kf: the player HP RECOVERS on the Battle path (cause unsettled). Any Battle-path HP-baseline measurement is uninterpretable. No retroactive taint on my record -- the flat-damage synthesis used training-path numbers only.",
     "cross_confirmed_this_wake": [
       "0x020AFEA0 indexes the rulemess table AT BATTLE TIME (6 distinct handlers for 6 byte values; poked 1 == hand-built death match)",
       "rulemess mode ORDER (mode 2 = Jシンボル matched the static prediction before runtime knew the table)",
@@ -2117,7 +2117,9 @@
       "handler sharing observed live: 22=9, 25=28, 30=16",
       "root+0x08 identity across ten poked modes",
       "r0 at the installer is [0x02172960] (static pool + live lr/r0)",
-      "live return site 0x0214DA5C == statically scanned call site + 4"
+      "live return site 0x0214DA5C == statically scanned call site + 4",
+      "the rule-completion path 0x0214DD32-0x0214DD3E: runtime watched +0xC8 go 1->0 with root+0x000 restored to the default 0x02150F65 at completion",
+      "0x020AFEAC = 4463 end to end: 8503 - 4040 = 4463 measured across a whole match using root+0xC8 as the oracle"
     ],
     "my_refutations": [
       "jus-wbo: rulemess text-duplicate entries do NOT share handler code. Refuted statically the same wake it was filed; runtime independently refuted it by measurement. No dependents tainted -- nothing was built on it."

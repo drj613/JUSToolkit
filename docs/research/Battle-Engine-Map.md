@@ -1435,3 +1435,24 @@ structure", then "24 bits are set, so it isn't". Neither was an experiment. The 
 *because it could have come back 384 and killed the identification*. The asymmetry is worth stating too: **an
 offset match reads as an identification to whoever wants one, and an ugly number reads as a refutation to
 whoever has just been burned.**
+
+### `char+0x56C` resolved, and my P172 doubt retracted (P173)
+
+`findings/p173-char-0x56c-is-the-character-struct.md`. Found by the **cross-branch** record check — the source
+doc is on `origin/master` and absent from my worktree.
+
+| what | where | confidence |
+|---|---|---|
+| `char+0x56C` holds a **pointer to the character struct**; `+0x16` = max HP (s16, capped `0x4000` = 256.0 at 1/64), `+0x18` = current HP (s16), `+0x41` = `chr_b` index | `HP-Struct-From-Disassembly.md` (`origin/master`); arm9 `0x020784B8`, `0x020784E4` | `CONFIRMED_STATIC` |
+| ~~`char+0x56C` is not the HP the owner's 1-HP floor describes~~ and ~~the map's "HP-apply trampoline" name is doing work the bits don't support~~ — **both RETRACTED. It is HP, and the name was right.** The `{max +0x16, current +0x18}` pair I derived independently is the same pair that doc names from other call sites | — | `RETRACTED` |
+| **id 19's `−4` drains CURRENT HP.** The "it's a gauge, not HP" reading is `REFUTED` | arm9 `0x02078488` | `CONFIRMED_STATIC` |
+| The remaining explanation for the runtime loop's unchanged `152.0` is the **cancel gate** — and their own capture supports it: bit 29 (`opcode 0x1D`) is **set** on that target, so the effect was cancelled before applying. Two independent lines, same answer | ov6 `0x0215986C` + runtime `jus-gpx`-series | `PLAUSIBLE` → pending `jus-eml` |
+| `char+0x558` is a **list of character structs** — `0x02078428` walks it reading a skip flag at `+0x40` and writing the HP pair at `+0x16`/`+0x18`. The campaign has been calling it a "Meter-node list" | arm9 `0x0207842C` | `CONFIRMED_STATIC` |
+| `0x02078428` is a **bulk set-HP utility**: `arg1 == 0` writes `1` to every living character's current HP, otherwise it sets a percentage of max. A story/gimmick reset, **not** a per-tick DoT floor | arm9 | `CONFIRMED_STATIC` |
+| Where the **1-HP floor** lives | — | `not claimed`. Not on the id-19 path: `0x02078488` clamps to `[0, max]` and the handler has no HP check. Candidates: the per-frame tick driver, or a KO check that ignores HP reaching 0 by drain. |
+
+**The error worth naming, because it is the third variant in two days.** I held two facts that didn't fit — a
+clamp to `0` and the owner's stated floor of `1` — and resolved the conflict by demoting the one I had derived
+myself, instead of holding both open. The *shape of the mismatch* felt like evidence about which fact was
+weaker. It was not evidence at all. Same family as "the offset matches, so it's the same thing" and "24 bits are
+set, so it isn't."

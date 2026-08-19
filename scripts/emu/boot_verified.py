@@ -103,6 +103,26 @@ TAP_GIMMICK = (165, 51)
 RULE_FLAGS = [("items", 0x020AFEBB, TAP_ITEMS),
               ("gimmick", 0x020AFEBC, TAP_GIMMICK)]
 
+# The THIRD rule boolean. atlas decoded a three-bit rule mask, so rules_off() was
+# clearing two of three and saying nothing about the third (jus-ovv).
+#
+# IT HAS NO TAP TARGET, and that is a finding rather than a missing constant. The
+# チームせん pill is the third in the same row, and no tap moves it: swept x
+# 200-250 and y 44-58, twelve positions, with items (73,51) and gimmick (165,51)
+# toggling correctly in the same states as a positive control. It is drawn greyed
+# and the match is COM 1人, so team battle is presumably unavailable in a 1v1 and
+# the pill is inert rather than mislocated.
+#
+# So this is VERIFIED, not cleared. It reads 0 in every state measured; if it ever
+# reads 1 the run stops, because we have no way to turn it off and a team-battle
+# match is not the thing any measurement here assumes.
+TEAM_FLAG = 0x020AFEBD
+
+
+def team_battle_is_off():
+    """Check the third rule boolean. We can read it; we cannot set it."""
+    return rule_flag(TEAM_FLAG) == 0
+
 
 def rule_flag(addr):
     """Read one rule toggle. 1 is ON, 0 is OFF."""
@@ -132,7 +152,14 @@ def rules_off(max_taps=6):
                 "unfocused pill only moves focus, so two taps per toggle is normal; "
                 "six means the taps are not landing."
                 % (name, max_taps, target, addr))
-    return taps, [rule_flag(a) for _, a, _ in RULE_FLAGS]
+    if not team_battle_is_off():
+        raise RuntimeError(
+            "team battle (0x%08X) reads %d, and there is no way to clear it from "
+            "here -- the チームせん pill does not respond to taps (swept 12 "
+            "positions with items and gimmick toggling as controls). Every "
+            "measurement in this harness assumes a 1v1. Restart from a rule "
+            "screen where it is off." % (TEAM_FLAG, rule_flag(TEAM_FLAG)))
+    return taps, [rule_flag(a) for _, a, _ in RULE_FLAGS] + [rule_flag(TEAM_FLAG)]
 
 
 # Extra frames after the source screen is recognised, so an entry animation that

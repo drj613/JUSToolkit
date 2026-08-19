@@ -94,3 +94,12 @@ those numbers are consistent with it and don't discriminate. The test that would
 and `+0x0F` bytes per node plus the 80 bytes at `arg0+8`, checking that
 `arg0 + 8 + y*0x14 + x*4` holds the recipient's address for all three. Three for three confirms;
 one miss kills it.
+
+## Correction: one "open question" above was not open
+
+I listed the nibble order of `+0x0E` as unresolved. The code settles it — the gate adds `dx` to
+the **low** nibble and bounds it by 5, and `dy` to the **high** nibble bounded by 4. A swapped
+reading would be different code, not a rival hypothesis about this code. The only real question
+was what to *name* the axes, and the observed 5-column × 4-row grid answers that. I then built a
+test for the non-question, and it couldn't discriminate — which is what a test of a
+non-hypothesis does.

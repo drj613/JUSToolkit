@@ -2447,7 +2447,7 @@ dummy, i.e. their blocked `chr_b`-70 path. But separating the two *ways* the rea
 
 | test | reading A (doc: regen ungated, reduction real) | reading B (max-gated regen, no reduction) | separates? |
 |---|---|---|---|
-| Luffy, heal ON, target **at max HP** — the **first** hit | **4.000** | **6.000** | **YES** |
+| ~~Luffy, heal ON, target at max HP — the first hit~~ | ~~4.000~~ | ~~6.000~~ | **RETRACTED — see below** |
 | Luffy, heal ON, target below max — any later hit | 4.000 | 4.000 | no |
 | dummy, heal OFF | 8.000 | 6.000 | YES, but blocked |
 
@@ -2469,3 +2469,41 @@ heal-ON figures are **upper bounds**. If a projectile landed in the Luffy window
 HP** at the store (`char_struct+0x16`/`+0x18`) — if the max-HP-gated story is live those are the fields that
 distinguish the explanations; and the **ability-list contents**, not just the cached bitset, since they have measured
 the bitset to be irrelevant at damage time, so a writer consulting abilities would have done it through the list.
+
+### My prediction table was wrong, and their ladder test is better than the one it came with (P181 close 3)
+
+`RETRACTED`, mine, one message old: the cell claiming reading **B** predicts `6.000` for a heal-ON hit on a full-HP
+target. **It doesn't.** The runtime loop's objection is correct — the target is below max *the instant it is struck*,
+so regen can act in the recovery window on a first hit exactly as on a later one. Getting B to predict `6.000` there
+needs an extra assumption about regen **phase or cooldown** that neither of us has any evidence for. So that cell was
+never separating; it was unresolved and I labelled it decisive.
+
+The error: I treated "at max HP when the hit lands" as the condition, when the condition that matters is the HP state
+**during the window regen acts in** — which the hit itself changes. A gate on max HP doesn't survive its own hit.
+
+**Their replacement test is better and needs no prediction table.** The corrected table rests on exactly one
+assumption: that the heal-ON deficit is **uniform** — the same `2.0` for every row regardless of HP state. That is
+testable inside a *single* heal-ON run, because the hit ladder supplies its own contrast: rep 0 is a from-max hit,
+reps 1–2 are below-max hits, same target, same stage, same session.
+
+- **Identical deficits across the ladder** → regen is uniform, the `+2.0` is sound, the corrected table stands, and
+  the flat `−2.0` is real **without ever reaching `chr_b` 70**.
+- **Deficits differ between the from-max hit and the later ones** → regen is state-dependent, the uniform shift is
+  invalid, and every figure in that table is unsafe *including* the dummy's `8.000`.
+
+It attacks the assumption the doc actually depends on rather than adjudicating between two readings, and it drops both
+blockers at once — no ability-free opponent, no cross-session comparison.
+
+**And they already have the control.** Their heal-OFF ladder ran `152.000 → 146.000 → 140.000 → 134.000`, exactly
+`6.000` at every step — so **damage is constant across HP states**. That makes any per-rep variation in the heal-ON
+ladder attributable to regen rather than to damage varying with HP. The control for the new capture is a measurement
+they took two wakes ago for another purpose.
+
+**A bonus the ladder gives that a single figure wouldn't:** it reveals regen's *shape*, not just whether it is
+uniform. A flat tick predicts identical drops down the ladder; a regen proportional to the deficit from max predicts
+drops that **shrink** as the deficit grows (worked example at `k = 1/16`: `5.625`, `5.273`, `4.944`). So the same
+capture distinguishes flat-tick regen from deficit-scaled regen.
+
+**Operational note for the record, theirs:** enable heal **first**, then walk in, then take the ladder.
+`autoheal_set(True)` restores HP to full and resets positions, so flipping it mid-sequence destroys both the range and
+the HP ladder — which is why their heal-ON arm returned three "never connected" reps.

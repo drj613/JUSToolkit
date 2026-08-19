@@ -244,3 +244,44 @@ produces a clean pattern off by a constant.**
 What survives is stronger than what came before it: adjacency 3/3, own-cell 11/11, a perfect
 20-cell tiling, and a layout with no unexplained bytes.
 
+## Settled by the loader's own dereference
+
+`ldr r6,[sl,#0x558]` **defines** arg0 as the owner of the chain whose head sits at `+0x558`:
+
+```
+base A: [0x021DF150+0x558] = 0            [0x021DF76C+0x558] = 0            null on both sides
+base B: [0x021DF164+0x558] = 0x021DF1BC   [0x021DF780+0x558] = 0x021DF7D8   correct on both
+```
+
+One dereference, absolute discrimination — and it was available before any of the four
+corroborations above.
+
+**The lesson, and it is the sharpest from this whole thread.** Every test that failed to
+discriminate was a **downstream consequence**: grid contents implied by the model. An **upstream
+definition** was sitting in an instruction already quoted in this file. A consequence can be
+satisfied by a wrong premise; a definition cannot, because it *is* the premise. When two readings
+both survive, stop generating predictions and find the instruction that defines the disputed thing —
+prefer the check that would be *incoherent* under the wrong reading over the one that would merely
+be *false*.
+
+### The object array is a free list — with the count corrected
+
+Slots past the six chained entries are all zeros, chained through `+0x00` at the same `0x50` stride.
+The count is **18 whole slots per side**, not the ~19.6 first reported: `0x61C / 0x50 = 19.55` counts
+the `0x58` grid-and-header prefix as though it were slots. From the array's real start —
+`1564 − 0x58 = 1476`, and `1476 / 0x50 = 18.45` — so 18 slots with `0x24` bytes spare. The remainder
+is unexplained: tail field, padding, or the array bound isn't the side stride.
+
+Same idiom as the ColPrm array in [`jus-s5q`] — fixed slot array, live prefix in a chain, spares
+chained through `+0x00`. State that on **structure** alone: ColPrm is 19 slots at stride `0x188`,
+this is 18 at `0x50`, and 18-versus-19 supports nothing. Two subsystems sharing an allocator idiom is
+worth knowing; two subsystems with similar slot counts is not evidence of it.
+
+### The social half, since no rule covered it
+
+The runtime seat argued me out of the very constraint that discriminated the two bases, and I wrote
+their objection into this file as a lesson about my own error. They then read my agreement as
+confirmation. The failure was symmetric — I abandoned a good discriminator I couldn't yet explain,
+and they took the abandonment as evidence. **Two people agreeing on a wrong reason is the same
+failure as one parse bug reproduced twice**, which also happened today on the index rows.
+

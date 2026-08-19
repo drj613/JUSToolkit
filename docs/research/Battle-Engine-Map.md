@@ -2329,3 +2329,44 @@ changes is the **magnitude**: whether the flat term is 2.0 (128 raw) or somethin
 **So the scanner should target the offset, not the constant.** My P175 search looked for `sub #0x80` and presumed the
 magnitude; the right instrument hunts writers of `scratch+0xE8` regardless of value. That is a better design for the
 same reason the two-move test was robust — it doesn't depend on a number nobody has verified.
+
+### New tool: `regoff_store_scan.py`, and it finds no `scratch+0xE8` writer in ov6 (P181)
+
+`findings/p181-regoff-store-scanner.md`. Tool: `scripts/analysis/regoff_store_scan.py` (read-only, takes an offset).
+
+**Why it exists:** `search-imm` only matches immediate-offset stores. A Thumb word store's immediate maxes at 124, so
+**any Thumb writer of `+0xE8` is forced** to use a split offset (`add rN,#0xE8` then `str [rN]`) or a register
+offset. Iteration 76 swept the ARM immediate space; this covers the split-offset shape in both modes.
+
+**It needed a mode filter and rule 1 is why it has one.** The first run reported arm9 `0x020509C8` as
+`Thumb add r0,#0xe8`; disassembling it shows ARM code and the real instruction is `ldr r3,[pc,#0xe8]`. ARM bytes
+coincidentally match Thumb patterns. The tool now checks each candidate's containing function `mode` in
+`functions.json`, drops mismatches, and **flags unbinned code as mode-unverified** rather than trusting it (22 of 30
+for `+0xE8`).
+
+**The control — the instrument reaches ov6:**
+
+| offset | candidates | in **ov6** | note |
+|---|---|---|---|
+| `+0x40` | 17 (11 mode-dropped) | **3** | control: the scanner does reach ov6 Thumb code |
+| `+0xE8` | 30 (1 mode-dropped) | **0** | the target |
+| `+0x130` | 0 anywhere | 0 | the sibling amount the same flush reads at `0x02158BAC` |
+
+So zero ov6 hits at `+0xE8` is a property of the code, not of the tool's coverage.
+
+**`CONFIRMED_STATIC`: the static search space for the B11 writer is exhausted across both detectable shapes** —
+immediate-offset (iteration 76) and split-offset (here). The 30 non-ov6 hits are led by 12 in ov12 and 12 in ov10,
+and ov12 is the UI overlay whose `+0x172` field burned me at P171, so those are almost certainly unrelated widget
+fields. Not chasing them.
+
+**What this tool still cannot see, named precisely:** (1) a register-offset store whose offset register is *loaded or
+computed* rather than `mov rM,#0xE8`; (2) a **shifted**-register store — `str rX,[rBase, rIdx, lsl #2]` with
+`rIdx` = 58 writes `+0xE8`, a real gap and the one remaining shape a static tool can reach; (3) a store through a
+cached pointer, where no offset appears at the store; (4) code outside the scanned binaries.
+
+**So `jus-fun` is the only remaining route, now backed by a demonstrated negative with a positive control** rather
+than an assumption that static had been tried.
+
+**And the offset-not-constant redesign paid off:** this scan never looks at the value stored, so it is unaffected by
+the doc's unverified `+2.0` regen correction. The version my queue originally specified — hunting a `sub #0x80` —
+would have produced a result contingent on a magnitude nobody has measured.

@@ -1945,3 +1945,48 @@ screen has exactly three. I also searched every strings cache, every `bin/*.bin`
 `自動回復` in Shift-JIS: **no hits**, so the label likely lives in a compressed archive. I cannot hand the runtime
 loop a settings byte for heal control, which means their `jus-kdf` pause-menu path is genuinely the blocker and not
 a convenience.
+
+### Auto-heal REFUTED as the explanation — and the flat −2.0 now has no known mechanism (P175 addendum 3)
+
+Runtime built the pause-menu toggle (`jus-kdf`) and measured the same savestate lineage with only the heal flag
+differing:
+
+```
+cb_healoff (heal OFF, verified)  approach 60: 384 | 80: 384 | 100: 384   (6.000 each)
+cb_battle  (heal ON)             approach 60:   0 |  80:   0 | 100:   0
+```
+
+`REFUTED` (not downgraded): the auto-heal leg of "the flat −2.0 may not exist". **Auto-heal doesn't shave 2.0 — it
+erases the hit.** A figure measured with auto-heal genuinely on reads **0**, not 4.000, so the doc's Luffy number
+cannot be "6.000 minus one heal tick". It also resolves last wake's ambiguity: `cb_battle`'s zeros were the heal,
+not misses — the same approaches connect with the flag off.
+
+**So the honest state is that nothing explains how 4.000 was produced.** My cross-session and taint legs still
+justify distrusting the figure, but they explain *why it might be wrong*, not *how it happened*. Meanwhile Luffy
+reads **6.000 in two independent lineages** with heal verified off — `fight_base` and `cb_healoff` — and the second
+has items and gimmicks **ON**, which further supports the `jus-f30` narrowing that contamination adds *events*
+rather than changing per-hit magnitudes.
+
+**A static negative that narrows the remaining space.** If a flat −2.0 reduction exists, something must subtract
+`128` raw (2.0 displayed) from a damage value. Searching data-processing immediates across the arm9 HP/damage
+region: **no `sub` of `0x80` anywhere** — every `0x80` hit is `add`/`orr`/`mov`/`tst`/`cmp` — and no
+data-processing `#2` at all in `0x02078xxx`–`0x0207Fxxx`.
+
+`CONFIRMED_STATIC` with its limit stated: **no hardcoded constant subtraction of 2.0 exists in that region.** This
+does **not** exclude a reduction using a register-held value loaded from a table — which is precisely the doc's own
+fallback hypothesis, a per-character defence value. So the negative kills the constant-in-code version and leaves
+the table-driven version.
+
+**And the table-driven version is testable from the static side alone.** A per-character defence value would live
+in the `chr_b` record (stride `0x3C`, array at `[0x0214BD80]+0x40`, accessor at `0x02078514` reading
+`record+0x24 + arg*2`). So: **is there any field in the `chr_b` record that reads ~128 for Luffy (`chr_b` 12) and 0
+for the empty-ability dummy (`chr_b` 70)?** The extracted `chr_b` data is on disk, both indices are known, and the
+comparison needs no emulator. If no field distinguishes them by 128, the flat reduction has no data source either —
+and `jus-f0v` would be settled from static evidence rather than by re-measuring.
+
+**Their tool confession, worth recording as the pattern rather than the incident:** the heal oracle's positive
+control demanded an immediate read-back equal to the poked value, and on a fast heal the value was already climbing
+when the read landed, so it refused to report. They had documented "there is no immediate read through this bridge"
+in that same oracle's docstring two wakes earlier, then built the check that trips on it. **A caveat recorded in
+prose does not constrain code written later** — the fix is that a value strictly between target and original is now
+recognised as regen caught mid-climb.

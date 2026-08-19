@@ -1,14 +1,14 @@
 # Session Ledger — JUS Reverse Engineering
 
-Last updated: 2026-08-19 ~01:15 (ledger wake 11, session `justoolkit-87`)
+Last updated: 2026-08-19 ~01:45 (ledger wake 12, session `justoolkit-87`)
 
 ## 1. Current state
 
 This file is a human catch-up summary — not the system of record. beads (`br`) is the record; protocol in `docs/orchestration/`.
 
 **Live sessions (from ListAgents):**
-- `justoolkit-fa` [cedb9e] — busy, 5h. **Runtime**. Since wake 10: un-retracted jus-y3w (battleObj+0x128 IS the ability bitset, confirmed by Auto-Guard control). Up+X targeting map: id 32 = opponent (freeze), id 19 = player (gauge cost). Ran immunity test (jus-eml, underpowered). 3 new commits.
-- `battle-engine-atlas-76` [2e8ac4] — idle, 5h. **Static**. Now at **P173**. Un-retracted, then retracted bit-29 cancellation claim (id 19 targets the player, not the opponent). Found char+0x56C = character struct pointer. Confirmed the drain IS HP. 5 new commits.
+- `justoolkit-fa` [cedb9e] — busy, 5h+. **Runtime**. Since wake 11: falsified atlas's charged-gauge hypothesis (one extra condition), killed opponent-position candidate (14 replicated cells), synthetic effect node decrements once then stalls (jus-tex). 3 new commits.
+- `battle-engine-atlas-76` [2e8ac4] — idle, 5h+. **Static**. Now at **P174**. Tick driver mapped (second half of 0x02158B20), flags bit 0x20 = faster-decay gate on ability bit 8. Retracted physics window address. 3 new commits.
 - Others: `justoolkit-ba` stood down, `trainer-5b` busy (unknown role).
 
 **Coord beads:** ~32 total, 18 open. The retract→un-retract→confirm cycle on jus-y3w is a protocol success — both loops converged on the right answer through independent evidence after catching an arithmetic error.
@@ -86,7 +86,7 @@ Three nudges over 7 wakes surfaced a recurring pattern. Runtime's feedback, cons
 # Per-Session Detail
 
 What each active session is doing, where things live, and what they've delivered.
-Last updated: 2026-08-19 01:15 — ledger wake 11
+Last updated: 2026-08-19 01:45 — ledger wake 12
 
 ## Ultimate goal
 

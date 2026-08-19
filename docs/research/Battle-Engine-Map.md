@@ -1071,8 +1071,51 @@ across 27 trials" with no evidence the conditional breakpoint was live, and it w
 late hit in the free-running gap. The fix is a third breakpoint on something that fires regularly, not
 waiting for luck.
 
-**And the effects are mostly the COM's doing.** Driving attacks produced nothing; *landing* attacks produced
-nothing either, with contact confirmed through opponent HP (54.1 and 97.0 damage, a KO and a respawn). What
+**And the effects are mostly the COM's doing.** Driving attacks produced nothing; *landing basic attacks*
+produced nothing either, with contact confirmed through opponent HP (54.1 and 97.0 damage, a KO and a respawn)
+— **narrowed at the runtime loop's own request: that negative covers landed BASIC attacks and does not extend
+to landed attacks of any kind, because HP contact says nothing about whether a status move was thrown.** What
 produced dispatches was letting the match play under light pressure — six dispatches in ~10 minutes of battle
 time. So the parked stimulus hunts matter less for this question than expected: the game inflicts these on its
 own and the task is to let it run and catch what it does.
+
+### The channel split holds at n=17, and the families are better defined by opcode than by id range
+
+| flush site | staging byte | ids observed | n |
+|---|---|---|---|
+| `0x02158B50` | `X+0x173`, negated | 19, 20, 32, 32 | 4 — all status |
+| `0x02158B68` | `X+0x172`, as-is | 1, 8, 9, 10, 13 | 13 — all gauge |
+
+**No crossover in either direction across 17 attributed dispatches.** My per-byte setters and the runtime LR
+split now agree at n=17. The collapse condition (a status on `+0x172`) has not fired.
+
+**Sharpening, and it removes a confound of my own.** I had been calling ids 18–34 "the status family" by id
+range. The cleaner line is `+0x7` in the handler entry: **12 ids carry a status opcode** — 18 (`0x1F`), 19
+(`0x1D`), 20 (`0x1C`), 22 (`0x21`), 23 (`0x1E`), 24 (`0x22`), 25 (`0x22`), 28 (`0x20`), 29 (`0x20`), 30
+(`0x1B`), 31 (`0x19`), 32 (`0x1A`) — while 21, 26, 27, 33 and 34 sit in that id range with `+0x7 = 0xFF`.
+Every `+0x173` id observed is opcode-bearing. And **id 21 has no status opcode**, so my earlier "a status
+crossed the family boundary" claim rests on a bad definition — id 21 also has no LR capture, so it should be
+dropped from the argument entirely rather than counted on either side.
+
+`V = 0` on **eight** ids now: 7, 9, 10, 13, 19, 20, 21, 32.
+
+### Reading ids 19 and 32 against the table (the freeze question)
+
+The owner supplied ground truth mid-run: Goku's 4-koma inflicts a **freeze** on up+X. That move produced
+both id 19 and id 32, and the runtime loop correctly declined to pick between them. From the joined table:
+
+| id | handler | sound | `+0x6` | opcode | flags | base | amount |
+|---|---|---|---|---|---|---|---|
+| 19 | `0x02159500` | `0x0C` | `0x0B` | `0x1D` | `0x0032` | 600 | **−4** |
+| 32 | `0x02159678` | `0xFF` | `0xFF` | `0x1A` | `0x0032` | 60 | **0** |
+
+`PLAUSIBLE`: **id 32 is the freeze** — amount `0` (changes no resource), 60 frames = 1.0 s, no sound and no
+`+0x6` resource index, which fits a brief hold rather than an ongoing effect. `PLAUSIBLE`: **id 19 is a
+drain** — amount `−4` per tick over 600 frames, with its own sound and resource index.
+
+**And there is a real tension worth resolving rather than smoothing over.** The runtime loop reports the
+opponent's HP at `152.0` before and after, unchanged, in every rep — yet id 19 carries amount `−4`. If that
+`−4` applied to HP over 600 frames the HP would have moved a long way. Three readings survive: the `−4`
+applies to a **gauge** rather than HP (consistent with C6b's result that no melee damage reaches this
+subsystem); the effect was applied to the **player** rather than the opponent; or the tick handler never ran.
+`not claimed` which. Watching a gauge through an id-19 window separates the first from the others.

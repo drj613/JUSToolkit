@@ -2093,7 +2093,7 @@
     "UNFIXED_TOOL_ROOT_CAUSE": "query.py ARM listing prints a literal VALUE in its \"; = 0x...\" comment; thumb_disasm.py prints the POOL ADDRESS. Same shape, opposite meaning. Caused a four-document error. Queued as a fix, not a lesson."
   },
   "coord_state_2026_08_18": {
-    "runtime_loop": "justoolkit-fa (role: runtime, \"ed\"); ledger: justoolkit-d9/87",
+    "runtime_loop": "runtime = justoolkit-fa. LEDGER = justoolkit-dc (identity justoolkit-87, branch ledger/session-tracker) -- confirmed 2026-08-19. justoolkit-d9 and -87 as NAMES are stale; resolve via ListAgents every wake.",
     "my_open_asks": [
       "jus-uvs (P2 wall-clock the 144)",
       "jus-bfw (P3 name mode 2)",
@@ -2169,6 +2169,7 @@
     ],
     "planning_caveats": [
       "melonDS watchpoint support is limited and UNTESTED by runtime (jus-fms) -- they have only used execution breakpoints successfully. Budget a support test before designing around a write-watchpoint."
-    ]
+    ],
+    "owner_question_beads": "jus-law = player-knowledge confirm/deny items (6 of mine added). jus-fun = the melonDS write-watchpoint planning item, filed BY THE LEDGER at DJ s instruction (\"ask fable what could be done here and record a br ticket for me\"). Both surfaced in the ledger s morning batch. Do NOT create competing beads for either."
   }
 }

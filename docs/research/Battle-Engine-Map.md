@@ -1224,8 +1224,9 @@ the status range are status-channel effects that set no status flag, so what do 
 **The two-channel model is stronger, not weaker: n=28 dispatches, zero crossover in either direction.**
 Nothing from the gauge range has appeared on `+0x173`, nothing from 18–34 on `+0x172`.
 
-**`V = 0` on ten ids** — 7, 9, 10, 13, 17, 19, 20, 21, 22, 32 — `duration == base` every time. And **every**
-`node+0x0` is the stub, so the one-shot result holds across ten ids rather than three. That strengthens the
+**`V = 0` on ten ids** — 7, 9, 10, 13, 17, 19, 20, 21, 22, 32 — `duration == base` every time. ~~And every
+`node+0x0` is the stub, so the one-shot result holds across ten ids rather than three.~~ **CORRECTED — see the
+stub-conflation block below: it holds across SEVEN ids, not ten.** That strengthens the
 reframe: if nothing ticks anywhere, `node+0xE` is a state timer serviced by something outside this subsystem.
 
 **Coordination rule (the runtime loop's, on themselves, and it is the sharpest one either of us has produced).**
@@ -1275,3 +1276,51 @@ magnitudes. The taint changes shape: from "the numbers may all be inflated" to "
 extra event", and individual reproducing values can be un-tainted one at a time. Runtime's own caveat kept:
 the original doc measured a `chr_b`-70 empty-ability dummy and this was `chr_b` 12, so it is reproduction on a
 different target, not strict replication, and it does **not** re-prove the flat-vs-multiplier argument.
+
+### The stub conflation, and what handler sharing says about the design (P171)
+
+Runtime read the handler table live. **All twelve rows match my static join exactly** — function pointer,
+`+0x4`–`+0x7` bytes, and opcode, including id 21 at `0xFF`. So the joined table is `CROSS_CONFIRMED`.
+
+**`node+0x0 = stub` means two different things and we were reporting them as one.** `0x02159258` is not only
+the "stubbed out" marker — it is also the *table entry* for seven ids. From the table:
+
+```
+table[id].fn == 0x02159258  for ids 0, 8, 11, 21, 26, 27, 34
+```
+
+So for those ids, `node+0x0 = stub` means only that the node received its table entry: nothing was stubbed
+out, because there was never a handler to stub. For ids **7, 9, 10, 13, 17, 22, 32** the table entry is a real
+and different address, so `node+0x0 = stub` does mean the apply handler ran and actively replaced itself.
+
+`CORRECTED`: the "nothing ticks anywhere" reframe rests on the **seven** ids where the stub *replaced*
+something, not on all ten. Note id 8 was in the first trio reported as actively stubbed and belongs in the
+never-handled group — `table[8].fn` is the stub. Runtime's capture now records `tblfn` beside `node0`, which
+makes the two cases distinguishable: differ → stubbed, match → never handled.
+
+**Handlers are behaviour; `state.bin` is magnitude.** `CONFIRMED_STATIC`, from handler sharing across the
+42 ids:
+
+| handler | ids | amounts | note |
+|---|---|---|---|
+| `0x021592A0` | 1, 2, 3 | 10, 20, 40 | one handler, three magnitude tiers |
+| `0x02159260` | 37, 38 | 50, 30 | same |
+| `0x02159280` | 39, 40, 41 | 60, 30, 15 | same |
+| `0x02159608` | 24, 25 | 0, 0 | identical records, both base 480 |
+| **`0x021592DC`** | **5, 33** | **+5, −5** | **same handler, same base 700, opposite sign, different slot bit** |
+
+That last row is the design statement. P158 read `+0x4` as signed and said "one field covers both drain and
+fill"; ids 5 and 33 are the same code serving both directions, with only the sign and the `0x10` slot bit
+differing. The effect *code* is generic and the data file carries direction and magnitude.
+
+**Which sharpens the poison/burn guess.** Three drains exist — 19 (`−4`, opcode `0x1D`), 30 (`−2`, opcode
+`0x1B`), 33 (`−5`, **no opcode**). The owner says poison and burn both show an **icon** above the character,
+and an icon plausibly needs the status opcode. `PLAUSIBLE`: **19 and 30 are poison and burn**, and **33 is an
+unlabelled drain** that shares the fill handler and shows no icon. Falsifiable: if id 33 turns out to show an
+icon, the opcode isn't what drives it.
+
+**And a bundling error of mine, caught by runtime.** I wrote the stub prediction as "non-zero amount keeps its
+handler" alongside the drains, which invited reading amount and opcode as one property. id 33 has amount `−5`
+and no opcode, so drains are **not** all opcode-bearing. The two fields are independent and the stub
+prediction — which is only about `node+0x0` — stands untouched. Still untested on the ids it is about: nine
+reps produced only ids 9 and 17, both amount 0, both actively stubbed.

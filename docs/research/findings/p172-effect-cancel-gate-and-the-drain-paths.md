@@ -1,7 +1,15 @@
 # P172 — The effect cancel gate: what the status opcode is for, and where the drains land
 
 
-> **RESOLVED SAME DAY — the gate's bitset is the repo's already-documented CACHED ABILITY BITSET.** For
+> **THIS BANNER IS RETRACTED IN PART (same day). The identification below is NOT supported** — the runtime
+> loop matched an offset and never verified the base object, and retracted it against their own claim. What
+> survives: my decode of the gate expression, the two-word width, and the `+0x56C` pointer-load upgrade.
+> Everything naming the ability bitset, `effect opcode == ability ID`, or the resolved negative is struck.
+> See the P172 retraction block in `Battle-Engine-Map.md`, which also shows that the base object is
+> `battleObj = 0x022441E0` by the runtime loop's own two numbers, so the *disproof* was likely aimed at the
+> wrong address as well.
+>
+> ~~RESOLVED SAME DAY — the gate's bitset is the repo's already-documented CACHED ABILITY BITSET.~~ For
 > `opcode < 32`, `char+0x120 + 4*(opcode>>5) + 8` **is** `entity+0x128`, the subject of
 > `docs/research/Ability-Bitset-Is-Not-Resistance.md` (on branch `re/ability-bitset-not-resistance`, not on
 > mine — see the process note below). That word is runtime-confirmed live and read during combat: setting bit 4

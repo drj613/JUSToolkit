@@ -1335,11 +1335,38 @@ reps produced only ids 9 and 17, both amount 0, both actively stubbed.
 | The gate is a **bitset test**: `return (Mem32[char+0x120 + 4*(opcode>>5) + 8] >> (opcode & 0x1F)) & 1` | ov6 `0x02158EB0` | `CONFIRMED_STATIC` (Codex-checked from raw words, no addresses) |
 | **This is what the `+0x7` opcode is for** — a bit index into a per-character cancel bitset, not an enum of behaviours. Closes the question left open by my channel-boundary retraction | — | `CONFIRMED_STATIC` |
 | Only opcode-bearing effects are gated: the shared id 5/33 handler (`+0x7 = 0xFF`) has **no gate call** and applies unconditionally | ov6 `0x021592DC` | `CONFIRMED_STATIC` |
-| The `char+0x120 + 8` word **is** `entity+0x128`, the repo's **cached ability bitset** — runtime-confirmed live and read in combat (bit 4 = Auto-Guard drives damage to zero, the campaign's positive control), populated at load by `0x0215FB3C` walking the ability list | `Ability-Bitset-Is-Not-Resistance.md` (branch `re/ability-bitset-not-resistance`) | **`CROSS_CONFIRMED`** |
-| **effect opcode == ability ID**, so *having ability N cancels effects whose opcode is N* — **status immunity is an ability.** Label it the owner's way; do **not** mint "cancel bitset" or call it resistance | — | `PLAUSIBLE` (rests on both indexings holding) |
-| The bitset is **wider than one word**: `4*(opcode>>5)` means opcodes ≥ 32 read `entity+0x12C`. Status opcodes `0x19`–`0x22` straddle it — 25–31 in `+0x128`, 32/33/34 in `+0x12C`. That doc only tested one word | ov6 `0x02158EB0` | `CONFIRMED_STATIC` |
-| **Resolves a negative in that doc:** it found status-resistance abilities "do exactly nothing" — tested only at *damage* time. The gate is an effect-*cancel* path, so a status-resistance ability doing nothing to damage and everything to effect application is consistent. Dead end → wrong place to look | — | `CONFIRMED_STATIC` |
-| **`+0x56C` resolved in that doc's favour:** it suspected `entity+0x56C` was "almost certainly a pointer load, not a subtraction". `0x020783D0` is literally `ldr r0,[r0,#0x56c]`, so `+0x56C` holds a **pointer** to the `{max, current}` meter node — which is why the clamp is to `[0, max]` and why it isn't the HP the 1-HP floor describes | arm9 `0x020783D0` | `CONFIRMED_STATIC` (upgrades their "almost certainly") |
+| ~~The `char+0x120 + 8` word **is** `entity+0x128`, the cached ability bitset~~ — **RETRACTED same day, by the runtime loop, against their own claim.** They matched an *offset* and never verified the *base object*. Not supported | — | `RETRACTED` |
+| ~~effect opcode == ability ID; status immunity is an ability~~ — **RETRACTED**, it rested entirely on that identification | — | `RETRACTED` |
+| ~~Resolves the negative in `Ability-Bitset-Is-Not-Resistance.md`~~ — **RETRACTED**, same reason: it presumed one structure | — | `RETRACTED` |
+| The gate reads **two words** at `gateArg+8` and `gateArg+0xC`; opcodes ≥ 32 use the second. This is my own decode of the expression and is unaffected — but it is a statement about *the words the gate reads*, with **no claim about what object holds them** | ov6 `0x02158EB0` | `CONFIRMED_STATIC` |
+| **`+0x56C` is a pointer load** (`0x020783D0` is literally `ldr r0,[r0,#0x56c]`), upgrading that doc's "almost certainly". Independent of the retraction above and it stands | arm9 `0x020783D0` | `CONFIRMED_STATIC` |
+
+**The base object, from the runtime loop's own two numbers.** Their gate capture reports `r0 = 0x02244300` at
+`0x02158EB0` and, earlier, a node at `0x0224425C`. But `r0` at that point is **`battleObj + 0x120`**, not a
+character base — `0x0215987C` is `add r0, r5, #0x120`. Working back:
+
+```
+P158:  node = battleObj + 0x7C + slot*0x18
+       0x0224425C − 0x7C  = 0x022441E0          (slot 0)
+       0x022441E0 + 0x120 = 0x02244300          = their gate r0   ✓
+```
+
+So `battleObj = 0x022441E0`, confirmed two independent ways, and the word the gate reads is
+**`battleObj + 0x128`** = `0x02244308`. If `r0` was taken as "char", then "char+0x128" is `0x02244428` — off by
+`0x120` and not the gate's word at all. **So the comparison that produced the retraction may itself have been
+made against the wrong address.** The retraction stands regardless (nobody has established the base object's
+identity), but the disproof needs redoing too. `not claimed` in both directions.
+
+Evaluating my expression against their two reported words, whatever object they came from: opcodes `0x1A`,
+`0x20`, `0x21` → bit clear → applies; `0x1B`, `0x1C`, `0x1D`, `0x22` → bit set → cancelled. Their one
+confirming observation fits — opcode `0x1A` read bit 26 = 0 and the effect applied (id 32 stored `60/60`).
+That is one datapoint for the *expression*, not an identification of the *structure*.
+
+**And their caution about the 24 set bits is worth keeping.** Two words with 24 and 23 bits set, decomposing
+into near-identical halfword pairs (`0xFB6A`/`0xFB7B`, `0xFB8E`/`0xFB7C`, all within `0x24` of each other),
+reads like packed data rather than a sparse flag field. If that word really is packed halfwords, a single-bit
+test on it is incoherent — which would mean the object they captured is not the one the gate reads, and my
+`battleObj` arithmetic above is the thing to check first.
 
 **Process gap this exposed, and it is mine.** My check-the-record rule greps `docs/research/` **in my own
 worktree**. `Ability-Bitset-Is-Not-Resistance.md` exists only on `re/ability-bitset-not-resistance` — the

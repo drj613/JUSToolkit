@@ -1446,7 +1446,11 @@ doc is on `origin/master` and absent from my worktree.
 | `char+0x56C` holds a **pointer to the character struct**; `+0x16` = max HP (s16, capped `0x4000` = 256.0 at 1/64), `+0x18` = current HP (s16), `+0x41` = `chr_b` index | `HP-Struct-From-Disassembly.md` (`origin/master`); arm9 `0x020784B8`, `0x020784E4` | `CONFIRMED_STATIC` |
 | ~~`char+0x56C` is not the HP the owner's 1-HP floor describes~~ and ~~the map's "HP-apply trampoline" name is doing work the bits don't support~~ — **both RETRACTED. It is HP, and the name was right.** The `{max +0x16, current +0x18}` pair I derived independently is the same pair that doc names from other call sites | — | `RETRACTED` |
 | **id 19's `−4` drains CURRENT HP.** The "it's a gauge, not HP" reading is `REFUTED` | arm9 `0x02078488` | `CONFIRMED_STATIC` |
-| The remaining explanation for the runtime loop's unchanged `152.0` is the **cancel gate** — and their own capture supports it: bit 29 (`opcode 0x1D`) is **set** on that target, so the effect was cancelled before applying. Two independent lines, same answer | ov6 `0x0215986C` + runtime `jus-gpx`-series | `PLAUSIBLE` → pending `jus-eml` |
+| ~~The unchanged `152.0` is explained by the cancel gate: bit 29 is set on that target~~ — **RETRACTED, mine, and the root cause is specific.** Bit 29 is **clear in both** bitsets (player `0x00008080` = bits 7, 15; opponent `0x02005200` = bits 9, 12, 14, 25). I computed "bit 29 set" from the **misread** word `0xFB6AFB7B` (24 bits set, retracted), then carried the conclusion forward after its input was withdrawn instead of recomputing | runtime gate capture, 82 calls | `RETRACTED` |
+| **id 19 targets the PLAYER, not the opponent.** The gate capture reads `word = 0x00008080` — the *player's* bitset — when Goku throws up+X and id 19 dispatches. So the dispatcher was called with the player's `battleObj` | runtime, 82 identical gate calls | `CONFIRMED_RUNTIME` |
+| So the unchanged opponent HP has a simpler explanation than cancellation: **the opponent was never the target.** The effect was **not** cancelled — the gate returned 0 | — | `CONFIRMED_RUNTIME` |
+| **Self-cost reading reinstated.** The runtime loop had talked me out of option (b) because COM counter-attacks explained their own HP drop more simply. There is now direct evidence for the mechanism itself, so it stands on its own merits: **id 19 drains the PLAYER's current HP by 4, ungated** | — | `PLAUSIBLE` |
+| **New hypothesis, and it fits everything:** Goku's up+X **freezes the opponent (id 32, 60 frames)** *and* **costs Goku HP over time (id 19, `−4`, 600 frames)**. That matches the earlier read of id 32 as the freeze (amount 0, 1.0 s, brief hold) and id 19 as a drain, and explains why one move stages two effects on the two different channels | — | `PLAUSIBLE` — testable by logging which `battleObj` each gate call carries |
 | `char+0x558` is a **list of character structs** — `0x02078428` walks it reading a skip flag at `+0x40` and writing the HP pair at `+0x16`/`+0x18`. The campaign has been calling it a "Meter-node list" | arm9 `0x0207842C` | `CONFIRMED_STATIC` |
 | `0x02078428` is a **bulk set-HP utility**: `arg1 == 0` writes `1` to every living character's current HP, otherwise it sets a percentage of max. A story/gimmick reset, **not** a per-tick DoT floor | arm9 | `CONFIRMED_STATIC` |
 | Where the **1-HP floor** lives | — | `not claimed`. Not on the id-19 path: `0x02078488` clamps to `[0, max]` and the handler has no HP check. Candidates: the per-frame tick driver, or a KO check that ignores HP reaching 0 by drain. |
@@ -1456,3 +1460,18 @@ clamp to `0` and the owner's stated floor of `1` — and resolved the conflict b
 myself, instead of holding both open. The *shape of the mismatch* felt like evidence about which fact was
 weaker. It was not evidence at all. Same family as "the offset matches, so it's the same thing" and "24 bits are
 set, so it isn't."
+
+**A distinct failure mode, and it is the cleanest one yet: I carried a conclusion after its input was
+retracted.** The word `0xFB6AFB7B` was withdrawn as a misread; the bit-29-is-set conclusion I had computed
+*from* it was not. Retracting an input does not automatically retract what was derived from it, and nothing in
+my process re-ran the arithmetic when the corrected word arrived. **Rule: when an input is retracted, re-derive
+everything downstream of it explicitly — a retraction is not transitive on its own.** This is what beads
+dependency links exist for, and I had not linked the derivation to the datum.
+
+**On the runtime loop's `jus-eml` attempt, which they correctly refuse to report as a result.** Three
+conditions of eight reps: baseline gave one id-19 store, bit-29-set gave none, and **the negative control also
+gave none**. With a base rate near one in eight, absence across eight reps is uninformative — and the control
+failing identically is what reveals that rather than hiding it. They also poked the wrong character (the
+opponent, when the gate reads the player). Two design fixes carried forward: **poke the player's bitset**, and
+**use gate calls as the observable rather than stores** — the gate fired 82 times in the rep where one store
+fired, so it is roughly two orders of magnitude more sensitive.

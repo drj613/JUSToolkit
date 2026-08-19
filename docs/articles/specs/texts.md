@@ -72,6 +72,11 @@ Pointer count is the total number of entries. Entry size is the size of the
 total entry in the pointer section. The starting offset means that the pointer
 section ends and the text section starts.
 
+> **Note (loop-atlas P165):** the pointers below are described as "absolute", but they are
+> **self-relative** — a pointer's target is its own file position plus its stored value. See
+> `src/JUS.Tool/Texts/JusText.cs:90` and `docs/research/findings/p165-mode-table-is-rulemess-bin.md`.
+> The C# converters do this correctly; only this description is misleading.
+
 EntrySize is the size of each header pointer entry. For example:
 `A8 00 00 00 A9 00 00 00 B4 00 00 00 BE 00 00 00` the size would be 4 (0x04).
 

@@ -25,3 +25,10 @@ launchSettings.json
 # jus_files is a submodule (git@github.com:drj613/jus_files.git), not ignored.
 # Raw cartridge images are ignored inside that repo instead.
 scripts/emu/tools/winid
+
+# Static RE loop tooling (docs/design/Static-RE-Orchestration.md)
+scripts/analysis/.venv/
+
+# Beads transient state
+.beads/.br_history/
+.beads/.write.lock

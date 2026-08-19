@@ -30,15 +30,18 @@ The four failures this protocol is built to prevent:
 
 ## Roles (key off roles, not names — names drift across restarts)
 
-| Role | Job | Current instance (2026-08-19) |
+| Role | Job | Current instance |
 |---|---|---|
-| **runtime** | Drives the melonDS harness, boots battles, measures damage/status, scans RAM. Produces magnitudes. | `justoolkit-fa` |
-| **static** | Works the disassembly, maps structs/formulas, produces addresses. Labels claims. | `battle-engine-atlas-76` |
-| **ledger** | Reads the beads ledger + git, keeps the human catch-up summary, flags inconsistencies, nudges idle loops. Does **not** write findings. | `justoolkit-87` |
+| **runtime** | Drives the melonDS harness, boots battles, measures damage/status, scans RAM. Produces magnitudes. | *(none — shut down 2026-08-19)* |
+| **static** | Works the disassembly, maps structs/formulas, produces addresses. Labels claims. | *(none — shut down 2026-08-19)* |
+| **ledger** | Reads the beads ledger + git, keeps the human catch-up summary, flags inconsistencies, nudges idle loops. Does **not** write findings. | *(none — shut down 2026-08-19)* |
 
 **On every restart, update this table.** Names drift across restarts; this table is the
 authoritative mapping. Always resolve the role via `ListAgents` as a backup, but keep this
 table current so cold-start readers and cross-session messages can resolve roles without guessing.
+
+All three loops were shut down on 2026-08-19 for the branch consolidation, each
+leaving a handoff doc. Whoever restarts a role fills its row back in.
 
 ## The wake bracket (the core mechanism)
 

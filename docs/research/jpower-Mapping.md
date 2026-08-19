@@ -77,6 +77,14 @@ Each jpower entry (304 bytes) contains:
 
 - **Main record (0x00-0x3F):** damage1, damage2, damage3, hitstun, linkCategory,
   nextId
+  - **`jpower ID` is byte `+0x00`** — reproduces the block-0 ID column below exactly.
+    Note IDs are not array indices: entry *n* has ID `3n` for the first seven.
+  - **Offsets confirmed 2026-08-14** by reproducing the block-0 columns below, 9/9:
+    `damage1` = byte at `+0x0C`, `damage2` = byte at `+0x0E`, `damage3` = byte at
+    `+0x10`. File is 94544 bytes = 311 × 304 exactly.
+  - **`damage1` stores displayed damage × 5.** Every value in the file is a multiple
+    of 5 except `144`, so `floor(damage1/5)` is an exact division rather than a
+    scaling heuristic.
 - **Modifier sub-record (0x40-0x7F):** Powered/buffed state values (2x damage
   typically)
 - **Extra data (0x80-0x12F):** Varies, 66/311 entries have non-zero data here
@@ -107,7 +115,12 @@ Each jpower entry (304 bytes) contains:
 **Not in Block 0:**
 
 - B (8 damage) - **resolved:** uses `damage1=40` entries at global indices
-  146, 195, 218 (outside the block); selection mechanism still unknown
+  195, 218 (outside the block); selection mechanism still unknown.
+  **CORRECTION (2026-08-14): index 146 has `damage1 = 35`, not 40** — verified
+  directly against `jpower.bin` at the now-confirmed offset (`damage1` = byte at
+  record `+0x0C`). `35` is exactly what **DOWN+B** (`7.000` displayed) requires, so
+  146 is a DOWN+B candidate that was filed under B. See
+  `findings/jpower-damage-located.md`.
 - up B (3+3 damage) - multi-hit, might use nextId chains
 - Y combo (4+4+6) - multi-hit, might be in collision
 
@@ -129,6 +142,12 @@ investigate nextId chains for multi-hit moves.
 
 **Selection mechanism unknown.** Possible methods:
 1. Collision `subType` selects which jpower entry to use from the block
+   — **QUESTIONED (2026-08-14):** now that the collision files are extracted, Goku's
+   25 records give subType `{0:2, 1:6, 2:13, 5:2, 6:1, 7:1}` — **13 of 25 share
+   subType 2**, which a one-to-one move selector wouldn't do. And subType is not the
+   jpower ID (block 0's IDs are `0,3,6,…,23`; subTypes include `1,2,5,7`). At most a
+   block-relative index. One character tested; see
+   `findings/collision-subtype-vs-jpower.md`.
 2. Collision `type2` or `linkCategory` performs selection
 3. Another mapping file/table we haven't found
 4. Hardcoded logic in game code per character index

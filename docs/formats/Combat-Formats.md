@@ -170,6 +170,19 @@ Present when byte 0x40 = 0x02 (indicates buffed/powered state data):
 **Endianness:** Little-endian
 
 Referenced by negative `projectileId` values in collision data.
+**REFUTED as stated (2026-08-14)** — negative `ProjectileId` (collision offset `0x03`, `sbyte`) does
+*not* index the owning character's shot records: 2.4% in-bounds, and the set relation fails in both
+directions. The negatives occupy a contiguous −18..−34 band. The 32-byte stride below is confirmed.
+See `../research/findings/shot-data-and-projectileid-refuted.md`.
+The follow-up "global 17-entry table" reading is **also REFUTED** — no file in any `chr/`
+subdirectory has 17 records at any of six strides. The field is a per-character **selector** (92 of
+120 users have exactly one distinct value) sitting on `CollisionType` 4/5 records (92% of negatives);
+PLAUSIBLE that a code switch dispatches on it. See
+`../research/findings/projectileid-is-a-selector-not-an-index.md`.
+
+**Field offsets (32-byte record), from a profile of all 1258 records** — previously undocumented.
+`+0x0C`/`+0x10`/`+0x14` appear to be a 3-element array of `{u16 magnitude, u16 tag}` (PLAUSIBLE);
+`+0x18`/`+0x1A` are effectively dead (>99% zero).
 
 ### Shot Types
 

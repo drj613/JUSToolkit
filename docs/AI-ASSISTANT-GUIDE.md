@@ -214,7 +214,7 @@ Toriko, Hikaru no Go - don't search for them.
 
 | Script                      | Purpose                              |
 | --------------------------- | ------------------------------------ |
-| `classify_damage_flags.py`  | Classify characters by damage system |
+| `archive/classify_damage_flags.py` | Classify by damage system (ARCHIVED - output committed in DamageFlags-Character-Classification.md) |
 | `extract_character_data.py` | Export character data to JSON        |
 | `cheat_code_parser.py`      | Parse cheat codes for RAM addresses  |
 
@@ -235,7 +235,7 @@ dotnet run --project src/JUS.CLI -- jus combat export-collision --bin <file> --o
 dotnet run --project src/JUS.CLI -- jus combat export-chr --bin <file> --output <dir>
 
 # Classify all characters
-python scripts/classify_damage_flags.py ./jus_files/extracted_chrbin/ChrBin.aar/chr/col/
+python scripts/archive/classify_damage_flags.py ./jus_files/extracted_chrbin/ChrBin.aar/chr/col/
 ```
 
 ---
@@ -256,7 +256,6 @@ arm-none-eabi-gdb -x scripts/gdb/jus_gdb_watcher.py
 
 ```gdb
 target remote localhost:3333
-jus-probe-opponent
 jus-read-opponent
 ```
 

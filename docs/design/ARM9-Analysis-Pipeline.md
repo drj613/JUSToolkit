@@ -337,7 +337,7 @@ Update Database ──► New Hypotheses
 | `scripts/arm9_table_scanner.py` | Find pointer/index tables in ARM9 |
 | `scripts/cheat_code_parser.py` | Extract addresses from AR codes |
 | `scripts/gdb/jus_gdb_watcher.py` | GDB Python script for memory watching (Mac/Linux) |
-| `scripts/desmume/jus_watcher.lua` | DeSmuME Lua script (Windows only) |
+| `scripts/archive/jus_watcher.lua` | DeSmuME Lua script (Windows only; ARCHIVED, superseded by GDB watcher) |
 
 ### To Create
 

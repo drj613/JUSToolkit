@@ -5,7 +5,6 @@
   "queue": [
     "P174-FIND THE PER-FRAME TICK DRIVER that calls node+0x0 (unchanged top task): last unexamined link on the DoT path, likeliest home for the owner s 1-HP floor, and it answers what decrements node+0xE.",
     "P174b-WHO WRITES battleObj+0x128 besides the loader 0x0215FB3C? Runtime saw the same savestate read 0x02005200 then 0x0000C024, i.e. the bitset CONTENTS changed. If it is re-cached on a character switch, that writer names the active-character swap -- the stimulus hunt I had parked on a now-retracted premise.",
-    "P174c-item-pickup counter (un-parked): find a field that moves when an item is collected.",
     "P168b-static writer of root+0x118 / +0x11C (runtime top ask, jus-3vg) -- would turn their empirical 0x70/0x61C validation into a structural check.",
     "P168c-what sets the gate byte 0x0217296D: find its writers. That is the thing that decides whether a mode plays at all.",
     "P168d-static writer of root+0x4C (term V).",
@@ -109,7 +108,8 @@
     "RE-AUDIT every map claim on char+0xNNN above 0x200 -- player-slot fields reached via +0x1b4",
     "B11 IS A HARNESS QUESTION: read [[char+0x1a8]+0x10]+0xE8 on a landed hit.",
     "D0.3 Ghidra import -- BLOCKED, needs the user's go-ahead",
-    "READ the ov6 Thumb battle-init routine around 0x0214D7F0-0x0214D840 -- it constructs ObjCtrl and ObjShot back to back and fills battle-root slots +0x10C/+0x110; likely constructs the other managers too, giving a full battle-root slot map."
+    "READ the ov6 Thumb battle-init routine around 0x0214D7F0-0x0214D840 -- it constructs ObjCtrl and ObjShot back to back and fills battle-root slots +0x10C/+0x110; likely constructs the other managers too, giving a full battle-root slot map.",
+    "P174c-item-pickup counter -- BACK DOWN in priority: its only value was as a stimulus check, and that rested on runtimes now-withdrawn yield claim."
   ],
   "done": [
     "K1-koma-data-survey",
@@ -2169,7 +2169,8 @@
       "The static counter at 0x0214BD52 is NOT independent evidence for the retraction: my own decode early-returns once the flag is set, so a set flag PREDICTS a static counter. Only the flag carries the argument.",
       "jus-vkj RETRACTED by runtime: advance(N) is accurate (2300 -> observed 2301). The emulator free-runs at ~60fps whenever no plan executes, so a framecount delta spanning the callers own work overcounts. UNBLOCKS duration measurement, which unblocks the V test. Their bridge now reports fc_start/fc_end/observed_frames and returns None on an old bridge rather than echoing the request.",
       "jus-5kf CLOSED: no auto-heal on the Battle path -- the HP recovery was respawn, verified against two controls (cb_battle restores instantly, fight_base does not move, Battle path flat). Battle-path damage work is UNBLOCKED. A small unexplained +1.2 HP per ~720 frames drift remains on the bead.",
-      "RETRACTED by runtime: their \"sporadic yield, ~1 in 8 reps, do not model up+X as a reliable trigger\". up+X connects at approach 140 frames, not Bs measured 60-100 window. It is RELIABLE. FOURTH VARIANT of the error family and a new kind: a SCOPE ERROR -- a constant measured under one condition reused under another without re-measuring. TAINTS A DEPRIORITISATION OF MINE: I parked both stimulus hunts (active-character swap, item counter) because \"the COM does it anyway\". Targeted tests are reliable at the right range, so those hunts return to ordinary priority."
+      "RETRACTED by runtime: their \"sporadic yield, ~1 in 8 reps, do not model up+X as a reliable trigger\". up+X connects at approach 140 frames, not Bs measured 60-100 window. It is RELIABLE. FOURTH VARIANT of the error family and a new kind: a SCOPE ERROR -- a constant measured under one condition reused under another without re-measuring. TAINTS A DEPRIORITISATION OF MINE: I parked both stimulus hunts (active-character swap, item counter) because \"the COM does it anyway\". Targeted tests are reliable at the right range, so those hunts return to ordinary priority.",
+      "RETRACTED by runtime (2nd time on the same topic): \"up+X is reliable at approach 140\". n=1 per cell, does not replicate -- 22 reps, zero effects, with a CERTIFIED instrument (heartbeat at 0x0214DD36 logged 1345 hits in the same reps). Surviving fact: up+X produced effects readily earlier in the session and none now, so something session/state-dependent governs it and it is NOT distance. The target labels are unaffected (pointer comparisons, independent of why the effect fired)."
     ],
     "my_design_errors": [
       "P169 jus-e66: the value-side fingerprint scan CANNOT work -- node+0xE counts down after apply, so it no longer equals base by the time a 4MB scan finishes. Runtime caught it. The 0x01 0x01 discriminator I included DID work (rejected all 6 coincidental (id,base) hits), but the fingerprint alone is not specific in 4MB of small integers. Right instrument: breakpoint the store."
@@ -2179,7 +2180,8 @@
       "NAME THE CONTAINING FUNCTION BEFORE BELIEVING AN OFFSET HIT. Searching by immediate offset finds every struct in the ROM with a field at that offset.",
       "CHECK THE RECORD ACROSS BRANCHES, not just my worktree. Ability-Bitset-Is-Not-Resistance.md exists only on re/ability-bitset-not-resistance (the owner s branch); I derived its structure independently a wake later. Use: git log --all --diff-filter=A -- \"**/pattern*\" then git show <branch>:<path>. Three loops plus the owner all work on separate branches -- a worktree-local grep checks one quarter of the record.",
       "When two facts conflict, hold both open. Do NOT resolve it by demoting whichever one you derived yourself -- the shape of a mismatch is not evidence about which side is weaker.",
-      "WHEN AN INPUT IS RETRACTED, RE-DERIVE EVERYTHING DOWNSTREAM EXPLICITLY. Retracting a datum does not retract conclusions computed from it. Link derivations to their data (br dep add) so the taint propagates."
+      "WHEN AN INPUT IS RETRACTED, RE-DERIVE EVERYTHING DOWNSTREAM EXPLICITLY. Retracting a datum does not retract conclusions computed from it. Link derivations to their data (br dep add) so the taint propagates.",
+      "DO NOT DERIVE MY PRIORITIES FROM A PARTNER S EXPLANATION. I moved the same scheduling decision twice on runtimes successive accounts of a yield, both later withdrawn. Priorities come from the value of the work, or from something I can verify. Differentiated result: the active-character swap hunt stays at ordinary priority (independently motivated by the reimplementation goal AND by the unexplained bitset shift); the item-pickup counter goes back down (its only value was as a stimulus check, which DID rest on the yield story)."
     ],
     "planning_caveats": [
       "melonDS watchpoint support is limited and UNTESTED by runtime (jus-fms) -- they have only used execution breakpoints successfully. Budget a support test before designing around a write-watchpoint.",

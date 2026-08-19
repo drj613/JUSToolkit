@@ -1527,3 +1527,41 @@ reserve cycling the active character. It doesn't touch the target labels, which 
 **lead on the parked active-character-swap question**: if `battleObj+0x128` changes contents when the active
 character changes, then either the `battleObj` is re-pointed or the bitset is re-cached on switch — and finding
 who writes `+0x128` besides the loader `0x0215FB3C` would name the swap.
+
+### The range claim retracted too — and the fix is on my side, not theirs (P173)
+
+`RETRACTED` (runtime's, one wake old): "up+X connects at 140 frames and is reliable there." It came from a sweep
+with **n=1 per distance** and does not replicate — 22 reps across approach 100/120/140/160 and stepped movement,
+**zero** opcode-bearing effects. And this time the instrument is **certified**: a heartbeat breakpoint at
+`0x0214DD36` logged **1345 hits** during the same reps, so the negatives are real rather than another void set.
+
+What survives, narrowly: up+X produced effects readily earlier in the session from the same savestate (82, 35
+and 30 gate calls across three emulator sessions) and produces none now. **Something session- or
+state-dependent governs it, it is not approach distance, and nobody knows what it is.**
+
+**Unaffected:** every labelled observation. `op 0x1A → OPPONENT` (n=35) and `op 0x1D → PLAYER` (n=82) are pointer
+comparisons made inside the breakpoint — they depend on what happened when the effect fired, not on why it
+fired. Both halves of `jus-p4c` stand.
+
+**My own pattern, which is the part I can actually fix.** I have now moved the same scheduling decision twice on
+their *explanations* of a yield: deprioritised the stimulus hunts on "effects are sporadic, the COM does it
+anyway", then re-prioritised them on "targeted tests are reliable at 140". Both premises are now withdrawn. The
+error isn't that they were wrong twice — it is that **I derived my priorities from a partner's explanation
+rather than from the value of the work.** So the correct move is not to flip a third time:
+
+| hunt | new priority | why — stated without reference to yield |
+|---|---|---|
+| **active-character swap field** | **keep at ordinary priority** | Independently motivated: it is a core mechanic for the reimplementation goal, and runtime's unexplained bitset shift (`0x02005200` → `0x0000C024`, same savestate) is a live lead on it. Neither reason depends on how often up+X fires. |
+| **item-pickup counter** | **back down** | Its only value was as a stimulus check, so it *did* rest on the yield story. Honest to drop it. |
+
+**A hypothesis for the state-dependence, offered because it is cheap to kill.** The owner's ground truth is that
+the freeze comes from **Goku's 4-koma**. A 4-koma character's special plausibly requires a charged gauge, which
+would be exactly session- and state-dependent in the way observed — working early in a session and not later,
+independent of distance. `SPECULATIVE`. One read settles it: sample the SP/power meter immediately before a
+successful up+X and before a failed one. If the successes cluster at high gauge, that is the gate; if gauge is
+identical either way, it is refuted cheaply and I stop guessing.
+
+**Their diagnosis, kept in their words because it generalises past this project:** *"a sweep with n=1 per cell
+isn't a sweep, it's seven coincidence tests, one of which came up positive — I found the positive and
+stopped."* And the tell they name is worth adopting as a checklist item: **a sample size you would reject in
+your partner's work.**

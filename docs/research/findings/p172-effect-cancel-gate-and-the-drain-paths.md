@@ -1,7 +1,13 @@
 # P172 — The effect cancel gate: what the status opcode is for, and where the drains land
 
 
-> **THIS BANNER IS RETRACTED IN PART (same day). The identification below is NOT supported** — the runtime
+> **UN-RETRACTED (same day, third revision — read the P172 re-record block in `Battle-Engine-Map.md`).** The
+> identification below is **restored and `CROSS_CONFIRMED`**: the gate's word is `battleObj+0x128`, it reads
+> sparse (`0x02005200`, bits 9/12/14/25), it differs per character, the opponent's bits match the abilities
+> that doc records for Luffy, and setting bit 4 through that address drives Goku's B damage 384 → 0 with a
+> negative control on bit 20. The intermediate retraction was aimed `0x120` off.
+>
+> ~~THIS BANNER IS RETRACTED IN PART (same day). The identification below is NOT supported~~ — the runtime
 > loop matched an offset and never verified the base object, and retracted it against their own claim. What
 > survives: my decode of the gate expression, the two-word width, and the `+0x56C` pointer-load upgrade.
 > Everything naming the ability bitset, `effect opcode == ability ID`, or the resolved negative is struck.

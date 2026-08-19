@@ -1385,3 +1385,53 @@ right; the name is doing work the bits don't support. **The clamp is to `0`, and
 never kill and leave the victim at 1 HP** — so either `char+0x56C` is not HP (which independently explains the
 runtime loop seeing `152.0` unchanged while id 19 fired), or the 1-HP floor lives somewhere else entirely.
 `not claimed` which. Identifying `char+0x56C` is queued.
+
+### RE-RECORDED, and this time by a control: `battleObj+0x128` IS the cached ability bitset (P172)
+
+The retraction two blocks up is itself withdrawn. My `battleObj + 0x120` correction was right — the gate's word
+is `r0 + 8`, not `r0 + 0x128` — and the corrected read is **sparse**, which is the shape the disproof said was
+missing:
+
+```
+battleObj+0x128 = 0x02005200   bits {9, 12, 14, 25}
+battleObj+0x12C = 0x00000000
+```
+
+Per-character, found by structural signature (self-pointer at `+0x00`, side pointer at `+0x124`):
+
+| | battleObj | `+0x128` | bits |
+|---|---|---|---|
+| player | `0x02228A00` | `0x00008080` | 7, 15 |
+| opponent | `0x02244020` | `0x02005200` | 9, 12, 14, 25 |
+
+The opponent's bits 9 and 12 are ability IDs `0x09` and `0x0C` — exactly the pair
+`Ability-Bitset-Is-Not-Resistance.md` records for Luffy.
+
+**The control is what settles it**, through the address my gate actually reads:
+
+| bitset | Goku B | reading |
+|---|---|---|
+| `0x02005200` (baseline) | 384 raw (6.000) | — |
+| `0x02005210` (**bit 4 set**) | **0 raw (0.000)** | Auto-Guard reproduced |
+| `0x02105200` (bit 20 set) | 384 raw (6.000) | **negative control** — it's that bit, not the poking |
+
+`CROSS_CONFIRMED`: **`battleObj+0x128` is the cached ability bitset.** So the claims I struck are restored:
+
+| claim | confidence |
+|---|---|
+| The gate indexes the ability bitset by **effect opcode** while the loader (`0x0215FB3C`) fills it by **ability ID** — so **effect opcode == ability ID** | `CONFIRMED` **by composition** — a deduction from two confirmed premises about the same word, not a measurement. The direct test is below. |
+| **Status immunity is an ability**: having ability N cancels effects whose opcode is N | `PLAUSIBLE` → pending the direct test |
+| `Ability-Bitset-Is-Not-Resistance.md`'s "status resistance does nothing" is a **wrong place to look**, not a dead end — it was only ever tested at damage time, and the gate is an effect-*cancel* path | `CONFIRMED_STATIC` |
+| The bitset is **two words wide**; that doc examined one. Status opcodes `0x19`–`0x22` straddle the boundary | `CONFIRMED_STATIC` |
+
+**Two new root fields, and they were in the first root dump unlabelled.** `root+0x0DC` is the player's
+`battleObj` and `root+0x0E0` is the opponent's, so both are derivable from the anchor `[0x02172960]` with no
+scanning. `CROSS_CONFIRMED` — found independently by structural signature, and they sit inside the
+`+0x0D0`–`+0x128` pointer band this map predicted from xref shape alone.
+
+**Instrument rule, and it is the one to keep from this whole episode: the shape of a number is not a test.**
+Both errors in this exchange argued from a number's appearance — "the offset matches, so it's the same
+structure", then "24 bits are set, so it isn't". Neither was an experiment. The Auto-Guard control settles it
+*because it could have come back 384 and killed the identification*. The asymmetry is worth stating too: **an
+offset match reads as an identification to whoever wants one, and an ugly number reads as a refutation to
+whoever has just been burned.**

@@ -1565,3 +1565,46 @@ identical either way, it is refuted cheaply and I stop guessing.
 isn't a sweep, it's seven coincidence tests, one of which came up positive — I found the positive and
 stopped."* And the tell they name is worth adopting as a checklist item: **a sample size you would reject in
 your partner's work.**
+
+### My gauge hypothesis, falsified in one wake — and the control design that did it (P173)
+
+`REFUTED`: my `SPECULATIVE` suggestion that up+X needs a charged gauge (a 4-koma special). Runtime ran four
+conditions, 3 reps each, heartbeat live in every rep:
+
+| condition | gate calls | heartbeat |
+|---|---|---|
+| A — up+X immediately | 0, 0, 0 | ~530 |
+| B — land 10 B hits, then up+X | 114, 22, 0 | ~1250 |
+| C — **idle the same span, no hits landed** | 0, 23, 0 | ~1240 |
+| B2 — repeat of B | 0, 0, 51 | ~1240 |
+
+**B alone looked decisive** — 2/3 against A's 0/3, with liveness proven, and it fits "a charged meter" perfectly.
+**C kills it:** idling the same span with nothing landed also produced effects, so whatever enables up+X is not
+built by connecting. Pooled: short preamble 0/3, long preamble 4/9 regardless of what fills it — suggestive of
+elapsed time or simply more opportunity, and at n=3 per cell explicitly *not* named as a mechanism.
+
+**The design rule this earns, and it is the cheapest one in the collection: when a treatment looks decisive, add
+the condition that would produce the same result WITHOUT your mechanism.** B and C share the *span* and differ
+only in *content*, which isolates elapsed time from the proposed cause. One extra condition, no extra tooling,
+and it prevented a fourth mechanism-from-thin-data — one that would have been especially hard to catch because it
+was *my* hypothesis coming back confirmed.
+
+**Honest current state:** up+X produces effects sometimes, more often after a longer preamble, and nobody has
+identified the governing variable. The genuine improvement over the first report is that every cell now carries a
+live heartbeat, so a zero means "no effect" rather than "no instrument".
+
+### An address for their opponent-position candidate
+
+Their best reading — explicitly not a claim — is that up+X connects only when the wandering COM happens to be in
+range at the moment of the attempt. That would explain the original "sporadic", the failed distance sweep (their
+own position was fixed while the opponent's was free), and the session-dependence. It needs an X position, and
+the record has the window:
+
+`[battleObj + 0x1B4]` is the object that carries **both** the documented physics/velocity window at
+**`+0x6A`–`+0xBA`** (`Character-State-Struct.md`; GDB-observed 2026-02-03, and the old "first 64 bytes are
+physics" hypothesis is `DISPROVEN` there) **and** the `char_struct` pointer at `+0x56C` — the same `+0x56C` the
+HP path dereferences. So one object holds the physics state and the HP handle.
+
+`battleObj` is already theirs from `root+0x0DC` / `root+0x0E0`, so logging a few halfwords of that window per
+attempt costs nothing and does two jobs at once: it tests their candidate, and it exercises a `+0x6A`–`+0xBA`
+validation item that has sat in `GDB-Validation-Queue.md` for months.

@@ -1,18 +1,17 @@
 # Session Ledger — JUS Reverse Engineering
 
-Last updated: 2026-08-19 ~00:45 (ledger wake 10, session `justoolkit-87`)
+Last updated: 2026-08-19 ~01:15 (ledger wake 11, session `justoolkit-87`)
 
 ## 1. Current state
 
 This file is a human catch-up summary — not the system of record. beads (`br`) is the record; protocol in `docs/orchestration/`.
 
 **Live sessions (from ListAgents):**
-- `justoolkit-fa` [cedb9e] — busy, 4h+. **Runtime**. Since wake 9: retracted ability-bitset identification (jus-y3w — three "+0x128" offsets, no identity established), character switching still blocked (jus-3aw — no touch stimulus check in battle), added 3 new owner questions. 3 new commits.
-- `battle-engine-atlas-76` [2e8ac4] — idle, 4h+. **Static**. Now at **P172**. Found the cancel gate reads a cached ability bitset keyed by status opcode — status immunity IS an ability. Applied runtime's retraction. 3 new commits.
-- `justoolkit-ba` [009c74] — idle, stood down.
-- `trainer-5b` [73e646] — busy, 1h. Unknown role.
+- `justoolkit-fa` [cedb9e] — busy, 5h. **Runtime**. Since wake 10: un-retracted jus-y3w (battleObj+0x128 IS the ability bitset, confirmed by Auto-Guard control). Up+X targeting map: id 32 = opponent (freeze), id 19 = player (gauge cost). Ran immunity test (jus-eml, underpowered). 3 new commits.
+- `battle-engine-atlas-76` [2e8ac4] — idle, 5h. **Static**. Now at **P173**. Un-retracted, then retracted bit-29 cancellation claim (id 19 targets the player, not the opponent). Found char+0x56C = character struct pointer. Confirmed the drain IS HP. 5 new commits.
+- Others: `justoolkit-ba` stood down, `trainer-5b` busy (unknown role).
 
-**Coord beads:** ~30 total, 18 open. jus-y3w retraction propagated cleanly (runtime retracted → atlas applied same session).
+**Coord beads:** ~32 total, 18 open. The retract→un-retract→confirm cycle on jus-y3w is a protocol success — both loops converged on the right answer through independent evidence after catching an arithmetic error.
 
 ## 1.5. OWNER ACTION — status update
 
@@ -70,8 +69,8 @@ Six retractions now (+ P159 route division, `e131e68`). All in commits/map doc. 
 ### Flag O — NEW: jus-3aw character-switching blocker
 Runtime can't switch characters in battle — 14 touch attempts failed, and there's no stimulus check to verify touch is received. Blocks reaching Rukia (status+damage test) and the change attack. Owner said "just taps" and suggested longer holds or the L/R sticker fallback. This is the biggest runtime blocker right now.
 
-### Flag P — NEW: jus-y3w retraction — three "+0x128" offsets with no identity
-Runtime matched an offset without verifying the base object — the same class of error atlas retracted for one message earlier. Three distinct char+0x128 values exist (gate bitset, pointer pair, documented entity bitset) with no established identity. Retraction propagated cleanly. Runtime's retraction bead (jus-y3w) has the full detail on the three distinct values.
+### Flag P — RESOLVED: jus-y3w retraction cycle complete
+Retracted → un-retracted → CONFIRMED. The arithmetic was wrong (gate reads battleObj+0x120 then +8, not +0x128 directly), but the corrected read IS the ability bitset. Settled by Auto-Guard control (bit 4 zeroes damage, bit 20 doesn't). Both battleObjs derivable at root+0x0DC and root+0x0E0. Closed.
 
 ### Flag M — RESOLVED: jus-5kf
 HP recovery was respawn animation, not auto-heal. Closed. New bug: jus-kdf (match_run --boot calls undefined autoheal_off()).
@@ -87,7 +86,7 @@ Three nudges over 7 wakes surfaced a recurring pattern. Runtime's feedback, cons
 # Per-Session Detail
 
 What each active session is doing, where things live, and what they've delivered.
-Last updated: 2026-08-19 00:45 — ledger wake 10
+Last updated: 2026-08-19 01:15 — ledger wake 11
 
 ## Ultimate goal
 

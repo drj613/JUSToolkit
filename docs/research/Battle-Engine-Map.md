@@ -2422,3 +2422,50 @@ shifted-register scan names a candidate:
 
 The last row is the one that matters most: P180 established the reduction is already present in the value being
 stored, so **whatever the writer read to arrive at 384 rather than 512 is in its inputs at that instant.**
+
+### Pushback as requested: their alternative is live, and their test discriminates only on the first hit (P181 close 2)
+
+The runtime loop raised the "no reduction at all" reading again and asked me to push back. It deserves to be taken
+seriously and it changes what their next measurement has to record.
+
+**Their argument:** two distinct mechanisms both landing on exactly 128 raw is the signature of a misattribution.
+The reduction is `dummy − Luffy` (same session, same heal state); the regen is `Luffy healOFF − Luffy healON`
+(different sessions). And there is a concrete mechanism for the coincidence: **regen only acts on a target below max
+HP.** If the doc's dummy sat at max while Luffy did not, the `6.000`-vs-`4.000` gap **is** the regen artifact and no
+reduction exists.
+
+**That is live, and the reason it is live is a load-bearing assumption neither of us tested:** the doc's corrected
+table applies `+2.0` **uniformly to both rows**, and max-HP-gated regen is precisely the way it would not.
+
+**One qualification of their "same magnitude" heuristic.** `2.0` displayed is `128` raw, and displayed units are
+what the game's designers work in — a regen tick of 2 HP and a reduction of 2 HP colliding is more likely here than
+the heuristic implies. It weakens the misattribution inference; it does not dismiss it.
+
+**Now the pushback that matters. Their two readings differ about the *dummy's* true value, and agree that Luffy's is
+`6.000`.** So no measurement of Luffy *in general* separates them — which makes the discriminator look like the
+dummy, i.e. their blocked `chr_b`-70 path. But separating the two *ways* the readings differ rescues it:
+
+| test | reading A (doc: regen ungated, reduction real) | reading B (max-gated regen, no reduction) | separates? |
+|---|---|---|---|
+| Luffy, heal ON, target **at max HP** — the **first** hit | **4.000** | **6.000** | **YES** |
+| Luffy, heal ON, target below max — any later hit | 4.000 | 4.000 | no |
+| dummy, heal OFF | 8.000 | 6.000 | YES, but blocked |
+
+**So their planned measurement is decisive only if the hit lands on a full-HP target, and only if they record that
+it did.** A `4.000` on a first hit refutes B outright — regen is not max-gated, so the dummy regenerated too, the
+uniform shift holds and the reduction is real, *without* ever reaching `chr_b` 70. A `4.000` on a later hit settles
+nothing, because both readings predict it.
+
+And `fight_base` happens to make this easy: their own trace starts at `152.000`, which is that opponent's max, so the
+first hit in that state is already the test. They measured exactly that sequence with heal **off**; the same sequence
+with heal **on** is the discriminating capture.
+
+**Their point 1, accepted and worth keeping:** the doc is dated 2026-08-14, inside `jus-f30`'s taint window, and the
+handoff names it as the one worth re-running. The bias direction is knowable — a live gimmick **adds** damage, so its
+heal-ON figures are **upper bounds**. If a projectile landed in the Luffy window, true heal-ON Luffy is below
+`4.000` and the regen gap is larger than `2.0`.
+
+**Two additions to the prepared dereference list, both theirs and both right:** the target's **max HP and current
+HP** at the store (`char_struct+0x16`/`+0x18`) — if the max-HP-gated story is live those are the fields that
+distinguish the explanations; and the **ability-list contents**, not just the cached bitset, since they have measured
+the bitset to be irrelevant at damage time, so a writer consulting abilities would have done it through the list.

@@ -7,13 +7,36 @@
 # PIDs with pgrep, kill them individually, and re-check.
 set -uo pipefail
 
-PATTERN="${1:-melonDS.app/Contents/MacOS/melonDS}"
+# This kills EVERY melonDS, so it can take out another session's emulator. It
+# warns when the HOLDER file names someone else; --force skips the warning.
+# See bead jus-emulator-access-not-exclusive-tum.
+FORCE=0
+PATTERN="melonDS.app/Contents/MacOS/melonDS"
+for a in "$@"; do
+  case "$a" in
+    --force) FORCE=1 ;;
+    *)       [ -n "$a" ] && PATTERN="$a" ;;
+  esac
+done
+
+IPC_DIR="${JUS_EMU_DIR:-/tmp/jus_emu}"
+HOLDER_FILE="$IPC_DIR/HOLDER"
+ME="${JUS_EMU_HOLDER:-unlabelled-$PPID}"
+if [ "$FORCE" = 0 ] && [ -f "$HOLDER_FILE" ]; then
+  OTHER="$(sed -n '1p' "$HOLDER_FILE" 2>/dev/null || true)"
+  OTHER_PID="$(sed -n '2p' "$HOLDER_FILE" 2>/dev/null || true)"
+  if [ -n "$OTHER_PID" ] && kill -0 "$OTHER_PID" 2>/dev/null && [ "$OTHER" != "$ME" ]; then
+    echo "WARNING: '$OTHER' holds this emulator (pid $OTHER_PID). Stopping it anyway." >&2
+    echo "  If that was not intended, they will see a dead bridge with no explanation." >&2
+  fi
+fi
 
 pids() { pgrep -f "$PATTERN" 2>/dev/null || true; }
 
 found="$(pids)"
 if [ -z "$found" ]; then
   echo "no melonDS running"
+  rm -f "$HOLDER_FILE"
   exit 0
 fi
 
@@ -34,4 +57,5 @@ if [ -n "$left" ]; then
   echo "(a sandboxed shell may not be allowed to signal them)" >&2
   exit 1
 fi
+rm -f "$HOLDER_FILE"
 echo "all melonDS processes stopped"

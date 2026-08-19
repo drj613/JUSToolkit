@@ -2541,3 +2541,40 @@ That also turns the rate itself into a test of the doc's story rather than only 
 ~1–2 frames, "one frame of regen" cannot account for a `2.0` deficit and the `+2.0` explanation fails even if regen
 *is* uniform. Their poke pointed at exactly that, and they were right to hold it as confounded rather than banking it
 — but a real-hit window trace at frame resolution settles what the poke only suggested.
+
+### Their "confirmation may be unreachable" holds — and the doc's data could never have tested uniformity (P181 close 5)
+
+**Correction to my premise, theirs:** their sampling was never uniform at ~5.3 frames — it was already front-loaded
+(0, 2, 4, 6, 8, 10, 12 then coarse, 7 of 15 points inside the first 12 frames). I computed `80/15` and treated it as
+even spacing rather than asking. The conclusion survived — a 1.5-frame climb is invisible at 2-frame spacing just as
+at 5-frame spacing — but the starting point was mine to get wrong and I got it wrong by inferring a schedule from a
+count. Their patch (every frame for the first 16, then 18/21/25/30/36/45/60/80) is committed.
+
+**I checked their "the sampling delay isn't recorded" claim rather than taking it, and it holds.** The doc's method
+section describes the procedure in full — passive CPU, sweep the approach distance, hold `RIGHT` for N frames, then
+attack — and tabulates the approach sweep, but **records nothing about how long after the hit HP was read.** So the
+interval needed to turn a measured regen rate into "and therefore the correction is 2.0" is genuinely absent, and the
+session is four days gone. Confirmation by reconstruction is blocked.
+
+**And the procedure yields something stronger that they haven't stated.** The method is *"load the same savestate,
+hold RIGHT for N frames, then attack"* — **one attack per load**, with the approach value swept across separate
+loads. So **every hit in the doc's dataset is a from-max hit.** The "2 hits, 6.000 each" in its sweep table is two
+independent from-max hits at different approach distances, not a two-point ladder.
+
+Consequences:
+
+- **The doc's data could not have tested uniformity even in principle.** It contains no below-max hits, so the
+  uniformity of the heal-ON deficit was never in evidence either way. The assumption isn't merely untested — it is
+  *"measured in one HP state and assumed to generalise"*, which is narrower than "applied uniformly to both rows" and
+  worse in a specific way: the state it was measured in is the one where the deficit is smallest.
+- **Their ladder and window duplicate nothing.** Every below-max data point in this question will be new.
+
+`PLAUSIBLE`, and I'd now put it more strongly than I did: the `+2.0` is unlikely to become better than plausible. What
+survives at full strength is what survives a shift — **the flat difference, which is shift-invariant**, and their
+**heal-OFF Luffy 6.000**, which needs no correction because there is no regen anywhere in its window (31 samples flat
+across 300 frames). Carrying the conclusion on those two rather than on a table whose absolute values cannot be
+re-derived is the right call and it is theirs.
+
+**Their pre-registered prediction, recorded before the capture so it can be held to:** they expect to **refute** the
+2.0/frame rate and expect **not** to be able to confirm any specific correction magnitude. If the climb comes back
+slow and clean, the first half was wrong.

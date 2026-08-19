@@ -136,12 +136,35 @@ works without extra setup, so Screen Recording permission is already granted.
 ### Reading HP correctly
 
 HP is a **16-bit little-endian value in 1/64 units**. The "1/4 scale" byte from
-older notes is just its high byte. Read 2 bytes at `addr-1`:
+older notes is just its high byte. Read 2 bytes **at the address**, not at
+`addr-1` — that older instruction is wrong and it silently returns the high byte
+alone (38 rather than 9728, i.e. 0.594 rather than 152.000).
 
 | slot | player | opponent |
 |---|---|---|
-| active | `0x021DF1D4` | `0x021DF7F0` |
+| active (CURRENT HP) | `0x021DF1D4` | `0x021DF7F0` |
 | deck 1/2/3 | `+0x50` each | `+0x50` each |
+
+**These are CURRENT HP. Two bytes earlier is MAX HP and it is not what you
+want** [`jus-reading-max-hp-not-current-2jo`]. The pair sits in the character
+struct as `+0x16` max / `+0x18` current, so the addresses above are `+0x18`:
+
+| field | player | opponent |
+|---|---|---|
+| max HP (`char+0x16`) | `0x021DF1D2` | `0x021DF7EE` |
+| **current HP** (`char+0x18`) | `0x021DF1D4` | `0x021DF7F0` |
+
+The two read **identically at full health**, so a max-HP read looks exactly like
+a working measurement and stays perfectly stable while damage lands. That cost
+four sessions of "no hits landing" which were charged to game behaviour, to
+experiment design, and to another session's interference before anyone checked
+the field. If HP is not moving, verify which of the two you are reading before
+concluding anything about the game.
+
+Nearby fields on the same struct, for orientation: `char+0x13..0x15` are the
+three packed nature slots, `char+0x1A` the live ability count, `char+0x1B` the
+ability ids, `char+0x41` the chr_b index, `char+0x49` the regen rate (poke to 0
+to stop healing).
 
 `displayed_HP = raw / 64`. Full write-up and measured damage values in
 `docs/research/HP-And-Damage-Runtime-Findings.md`.
@@ -152,6 +175,17 @@ the dip. And **facing decides whether an attack connects**; walking past the
 opponent leaves you facing away, and every button whiffs.
 
 ## The in-battle training menu (press START) — read this before measuring damage
+
+> **This menu belongs to DECK-MAKER TEST PLAY ONLY, and none of the current
+> savestates are in that mode** [`jus-nature-menu-not-in-these-modes-43m`].
+> Verified: on `fight_base` (J Arena training) a START press opens **no menu at
+> all** and the follow-up presses go to the battle; on `dm_battle` START opens
+> the **J Arena pause menu** — バトル再開 / リトライ / デッキセレクト /
+> Jアリーナメニューにもどる — which shares none of the rows below. So `自動回復`,
+> `COM設定` and `相手の属性` are **not reachable** from the battles we have, and
+> an experiment built on them will fail in ways that look like the game
+> misbehaving. Auto-heal must instead be stopped by poking `char+0x49` to 0.
+> Reaching the mode below needs a scripted boot through デッキメイク.
 
 Pressing **START** during a deck-maker test battle opens an options menu that
 controls the three things that were previously fighting every damage measurement.

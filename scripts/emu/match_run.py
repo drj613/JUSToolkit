@@ -73,6 +73,7 @@ ANCHOR = 0x02172960          # ov6 BSS: pointer to the battle root, 0 outside ba
 POPULATE_TRIES, POPULATE_STEP = 12, 60   # ~720 frames; population lands by ~300
 ROOT_SIZE = 0x170            # CONFIRMED_STATIC from a single allocation site
 SIDE_A_PTR, SIDE_B_PTR = 0x118, 0x11C
+RULE_FLAG = 0xC8             # 1 while a per-mode rule handler is installed
 HP_IN_SIDE = 0x70            # HP slot array inside a side object
 SIDE_DELTA = 0x61C           # invariant between the two side objects
 
@@ -141,6 +142,32 @@ def cli(*args):
 
 def peek(addr, length):
     return json.loads(cli("peek", hex(addr), str(length)))["result"]["value"]
+
+
+def rule_running():
+    """Is the rule still live? Read from RAM, never from the screen.
+
+    THE SCREEN CANNOT ANSWER THIS. The battle fingerprint trips on fullscreen KO
+    and special-move effects -- a run-to-end attempt ended early on a distance of
+    9.8 against a tolerance of 4.9, and the match was still going.
+
+    The RAM oracle is the rule installer's own bookkeeping: root+0xC8 is 1 while a
+    per-mode rule handler is installed and returns to 0 at rule completion, with
+    root+0x000 restored to the fixed default. Verified end to end on a jikan-30
+    point battle: the flag went 1 at framecount 4213 and back to 0 at 8503, and the
+    battle object appeared around 4040 -- a span of 4463 frames, exactly the
+    configured time limit at 0x020AFEAC.
+
+    Returns None when there is no battle object at all, so callers can tell
+    "the match ended" from "there is no match".
+    """
+    root = peek(ANCHOR, 4)
+    if not root or not (0x02000000 <= root < 0x02400000):
+        return None
+    cli("dump", hex(root), hex(root + ROOT_SIZE), "/tmp/jus_match_rule.bin")
+    with open("/tmp/jus_match_rule.bin", "rb") as f:
+        r = f.read()
+    return r[RULE_FLAG] == 1
 
 
 def resolve_addresses():
@@ -359,19 +386,36 @@ def wait_until_live(max_waits=12):
 
     The HP words animate at the START of a battle exactly as they do during a
     character switch: they count up from zero as the bars fill. Sampled on frame one
-    the player reads 0.0, which the end condition correctly reads as "nobody left to
-    send in" and ends the match before it begins. So wait for both sides to be
-    non-zero AND unchanging.
+    the player reads 0.0, which the end condition would read as "nobody left to send
+    in" and end the match before it begins.
+
+    WHY THIS NO LONGER REQUIRES BOTH SIDES ALIVE. It used to wait for min(both) > 0,
+    which never settles on the Battle path: the COM there is aggressive, a script
+    that has not started attacking gets knocked down repeatedly, and the player's HP
+    legitimately passes through 0 on every respawn. Measured on a clean point battle
+    -- items and gimmicks verified off in RAM -- the player went 125 -> 117 -> 97 ->
+    0.8 -> 5.8 while simply standing still. So "player at zero" is a normal mid-match
+    state on that path, not an unstarted battle.
+
+    What still rules out the opening animation: during it the counts CHANGE every
+    frame and both sides are climbing, so requiring the opponent to be non-zero and
+    UNCHANGED across two samples excludes it without depending on the player at all.
     """
+    # Track ONLY the opponent. The player's HP changes constantly on the Battle
+    # path because the COM keeps hitting it, so a two-sample stability test that
+    # includes the player never converges -- which is what made the first version
+    # of this fix still fail.
     prev = None
     for _ in range(max_waits):
         buf = region()
-        now = (u16(buf, HP_PLAYER), u16(buf, HP_OPP))
-        if now == prev and min(now) > 0:
+        now = u16(buf, HP_OPP)
+        if now == prev and now > 0:
             return buf
         prev = now
         nav.advance(120)
-    raise RuntimeError("both sides' HP never settled above zero; is this a battle?")
+    raise RuntimeError(
+        "the opponent's HP never settled above zero across %d waits; either this is "
+        "not a battle, or the opponent is mid-animation the whole time." % max_waits)
 
 
 def play(rounds):
@@ -392,6 +436,7 @@ def play(rounds):
 
     timeline = [dict(round=-1, x=player_x(), mode="start", **start)]
     first_damage, seeking, misses, facing = None, True, 0, STEP_RIGHT
+    end_reason = "rounds_exhausted"
     prev = start
     zero = {"me": 0, "opp": 0}
     for i in range(rounds):
@@ -445,13 +490,29 @@ def play(rounds):
                 done = "me" if zero["me"] >= 4 else "opp"
                 print("  round %d: %s has nobody left to send in -- match over"
                       % (i, done))
+                end_reason = "stocks:%s" % done
                 shot("03_match_end")
                 break
+
+        # The authoritative end condition, and the reason a point battle can be
+        # run to a finish at all: a timed match ends with everyone still alive, so
+        # the stock check above never fires for it.
+        live = rule_running()
+        if live is False:
+            print("  round %d: rule completed (root+0xC8 cleared) -- match over" % i)
+            end_reason = "rule_complete"
+            shot("03_match_end")
+            break
+        if live is None:
+            print("  round %d: battle object gone -- left the match" % i)
+            end_reason = "no_battle"
+            break
         prev = s
 
     with open(os.path.join(OUT, "timeline.json"), "w") as f:
-        json.dump(timeline, f, indent=1)
-    print("\n%d samples written to %s/timeline.json" % (len(timeline), OUT))
+        json.dump({"end_reason": end_reason, "samples": timeline}, f, indent=1)
+    print("\n%d samples written to %s/timeline.json (end: %s)"
+          % (len(timeline), OUT, end_reason))
     return timeline
 
 

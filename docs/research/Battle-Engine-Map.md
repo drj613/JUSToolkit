@@ -1685,3 +1685,52 @@ pointer at **`+0xAC`**.
 that object. They report a `char_struct` pointer at `+0xAC` of the same object. Both can be true (two pointers to
 the same struct), or one of us has the wrong base. `not claimed` which; the cheap discriminator is whether
 `[obj+0x56C]` and `[obj+0xAC]` hold the same value.
+
+### Ability bit 8 doubles effect decay — and the parity term is not refuted, it self-stabilises (P174)
+
+Runtime installed a synthetic id-19 node (`node+0x04 = paramArray + id*8` was the missing field — my instruction
+ordering predicted their exact symptom) and measured decay over 300-frame samples, 2 reps per cell:
+
+| start | ability bit 8 | rate /frame |
+|---|---|---|
+| 901 (odd) | clear | 1.000, 0.970 |
+| 901 (odd) | **set** | **1.939, 1.939** |
+| 901 (odd) | bit 20 — control | 0.970, 0.970 |
+| 900 (even) | clear | 1.000, 0.970 |
+| 900 (even) | **set** | **1.939, 1.939** |
+
+`CROSS_CONFIRMED`: **ability bit 8 roughly doubles the decay rate.** Negative control flat, both reps identical
+in every cell.
+
+**But their `REFUTED` on the odd-duration qualifier is itself wrong, and their number is the term's signature.**
+The parity test at `0x02158CA4` reads the **post-decrement** value — `0x02158C98` re-loads `node+0xE` *after* the
+base `sub`/`strh` at `0x02158C84`/`0x02158C88`. That makes the term **self-stabilising**: an even value decrements
+to odd, gets the extra, and lands even again, so *every subsequent frame* qualifies. Simulating the exact
+instruction order:
+
+| start | bit 8 | rate over 300 frames | **first-frame delta** |
+|---|---|---|---|
+| 901 | clear | 1.000 | 1 |
+| 901 | **set** | **1.997** | **1** |
+| 900 | clear | 1.000 | 1 |
+| 900 | **set** | **2.000** | **2** |
+
+Both starts give ≈2.0 sustained, which is what they measured in both cells. **1.5 was never the prediction** — that
+would require the parity to alternate, and it cannot, because the extra decrement is what sets up the next frame's
+parity. So `flags & 0x20` + parity + bit 8 stands as written; only my card's phrase "twice as fast **on odd
+values**" was imprecise enough to invite the reading that the *observable rate* would alternate. That wording is
+mine to own.
+
+**The discriminator is the first frame, and it is now cheap.** Install an **odd** duration → first-frame delta 1,
+then 2 thereafter. Install an **even** duration → 2 on every frame including the first. One frame of resolution
+separates "the parity term is real" from "the parity term does nothing", and node installation makes it a
+two-capture test.
+
+### Four smaller results from the same run
+
+| what | confidence |
+|---|---|
+| `paramArray = [[0x02172984]+4] = 0x021E0A40` live, and it cross-checks against two captures taken for other purposes: the id-21 store logged `r5 = 0x021E0AE8` = base + 21×8, id 13 logged `0x021E0AA8` = base + 13×8. Both exact | **`CROSS_CONFIRMED`** — this is the `bin/state.bin` identification (stride 8, id-indexed) confirmed against live pointers |
+| **A second bit of `battleObj+0x128` measured to a distinct behaviour with its own negative control** — bit 4 total damage immunity (384 → 0), bit 8 doubled effect decay. Two bits, two unrelated effects, both measured rather than composed | **`CROSS_CONFIRMED`** — the "behaviour switchboard" reading is now demonstrated, not inferred |
+| `[battleObj+0x18]` reads `0` (player) and `6` (opponent), not `8` — the tick-skip path is not active in ordinary play. Kept as a gotcha for future nulls | `CONFIRMED_RUNTIME` |
+| **The `+0x56C` / `+0xAC` tension resolves as both-true:** they hold the *same value* on both characters (`0x021DF1BC`, `0x021DF7D8`), each `hp_block − 0x18`. Two pointers to one `char_struct`; neither base was wrong | **`CROSS_CONFIRMED`** — rule 3 (hold both open) paid: the answer was "both", which neither of us would have reached by picking |

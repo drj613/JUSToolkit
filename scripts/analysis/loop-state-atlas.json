@@ -3,9 +3,9 @@
   "phase": "combat",
   "current_task": "P174 DONE: the tick driver is the SECOND HALF of 0x02158B20 (the function P159 called the on-hit flush) -- it is the per-character effect update. node+0xE is decremented 1/tick at 0x02158C88; the tick call is 0x02158CF0 blx with (battleObj, node); on expiry it installs the stub and calls 0x0215911C(battleObj, slot); exactly 2 slots stride 0x18 from the loop bound. CLOSED a P169 not-claimed: state.bin flags bit 0x20 = duration can drain faster than 1/tick, gated on ABILITY BIT 8. The ability bitset now has THREE unrelated consumers (cancel gate by opcode, bit 8 faster decay, bit 14 vs +0xBC/+0xBE) -- it is a behaviour switchboard. Also explains runtime s 15,732 empty dispatches structurally: flush and tick are the same function. NOT FOUND: the 1-HP floor -- the whole DoT path is now mapped and nothing clamps to 1.",
   "queue": [
-    "P175-THE KO PATH, for the owner s 1-HP floor. The whole DoT path is mapped (dispatcher, drain handlers, apply worker 0x02078488, tick driver) and NO clamp to 1 exists on it. So either the KO check ignores HP reaching zero by drain, or the floor belongs to the KO path. Different subsystem, fresh task. Cross-branch check first -- HP-Struct-From-Disassembly.md names fn_health_calc 0x020784FC, which is adjacent to the apply worker.",
-    "P175b-read 0x0215911C, the expiry handler -- last unread function on the effect lifecycle. It is also called by the shared handler s sibling at 0x02159300 with r1=1.",
-    "P175c-what 0x021613C4(battleObj+0x1C, 0xF, 2) is -- the second route to a faster decay, and the 0xF/2 constants were preloaded in the driver prologue.",
+    "P175-THE KO PATH, for the owner s 1-HP floor (unchanged top task). Whole DoT path mapped, nothing clamps to 1. Cross-branch first: HP-Struct-From-Disassembly.md (origin/master) names fn_health_calc 0x020784FC, adjacent to the apply worker 0x02078488.",
+    "P175b-read 0x0215911C, the expiry handler -- last unread function on the effect lifecycle.",
+    "P175c-what 0x021613C4(battleObj+0x1C, 0xF, 2) is -- the SECOND route to a faster decay, now worth more since bit 8 is confirmed and this is the other branch of the same test.",
     "P168b-static writer of root+0x118 / +0x11C (runtime top ask, jus-3vg) -- would turn their empirical 0x70/0x61C validation into a structural check.",
     "P168c-what sets the gate byte 0x0217296D: find its writers. That is the thing that decides whether a mode plays at all.",
     "P168d-static writer of root+0x4C (term V).",
@@ -2132,7 +2132,10 @@
       "battleObj+0x128 IS the cached ability bitset: sparse, per-character, opponent bits 9/12 match Luffy s documented abilities, bit 4 set drives Goku B damage 384 -> 0, bit 20 set changes nothing (negative control)",
       "root+0x0DC = player battleObj, root+0x0E0 = opponent battleObj -- derivable from the anchor, and inside the +0x0D0..+0x128 pointer band this map predicted from xref shape",
       "id 19 targets the PLAYER (the gate reads the player bitset 0x00008080 across 82 identical calls when Goku throws up+X), so the opponent was never the target -- which explains the unchanged 152.0 without any cancellation",
-      "TARGET LABELS: op 0x1A / id 32 (freeze) -> OPPONENT n=35; op 0x1D / id 19 (-4 drain) -> PLAYER n=82. Labelled inside the breakpoint by pointer comparison against root+0x0DC / +0x0E0. The CONJUNCTION (\"one move, two targets\") is PLAUSIBLE only -- the two labels come from different runs."
+      "TARGET LABELS: op 0x1A / id 32 (freeze) -> OPPONENT n=35; op 0x1D / id 19 (-4 drain) -> PLAYER n=82. Labelled inside the breakpoint by pointer comparison against root+0x0DC / +0x0E0. The CONJUNCTION (\"one move, two targets\") is PLAUSIBLE only -- the two labels come from different runs.",
+      "ability bit 8 doubles effect decay (1.939 vs 1.000 /frame, negative control flat, 2 reps per cell) -- SECOND bit of battleObj+0x128 measured to a distinct behaviour, so the switchboard reading is demonstrated not inferred",
+      "paramArray = [[0x02172984]+4] = 0x021E0A40, cross-checked against id-21 (base+21*8) and id-13 (base+13*8) stores taken for other purposes -- confirms the bin/state.bin identification against live pointers",
+      "[obj+0x56C] == [obj+0xAC] on both characters (each hp_block - 0x18): the tension resolves as BOTH-TRUE, two pointers to one char_struct"
     ],
     "my_refutations": [
       "jus-wbo: rulemess text-duplicate entries do NOT share handler code. Refuted statically the same wake it was filed; runtime independently refuted it by measurement. No dependents tainted -- nothing was built on it."
@@ -2161,7 +2164,8 @@
       "2026-08-19 P173: my P172 claims that char+0x56C \"is not the HP the owner s floor describes\" and that Battle-Engine-Map.md s \"HP-apply trampoline\" name was unsupported -- BOTH RETRACTED. It is a pointer to the character struct and +0x16/+0x18 are max/current HP (HP-Struct-From-Disassembly.md, origin/master). The map was right. Consequence: id 19 s -4 drains CURRENT HP, so the gauge reading is refuted, and the cancel gate is the remaining explanation for the unchanged 152.0. Root cause: two facts conflicted and I demoted the one I derived rather than holding both open -- the shape of a mismatch is not evidence about which fact is weaker.",
       "2026-08-19 P173: \"bit 29 (opcode 0x1D) is set on that target, so the effect was cancelled\" -- RETRACTED. Bit 29 is CLEAR in both bitsets (player 0x00008080, opponent 0x02005200). ROOT CAUSE, and it is a new failure mode: I computed that from the MISREAD word 0xFB6AFB7B and carried the conclusion forward after its input was retracted, without recomputing. A retraction is not transitive on its own -- when an input dies, re-derive everything downstream explicitly. Beads dep links exist for this and I had not linked the derivation to the datum.",
       "2026-08-19 P173: my SPECULATIVE \"up+X needs a charged gauge (4-koma special)\" -- REFUTED by runtime in one wake. Condition C (idle the same span, land nothing) also produced effects, so the enabler is not built by connecting. Working as intended: the hypothesis named its own kill condition and died cheaply rather than becoming canon.",
-      "2026-08-19 P174: I handed runtime [battleObj+0x1B4] + 0x6A..0xBA as a documented physics/velocity window for logging opponent position -- RETRACTED. They measured it: +0x60..0xBF did not change while the player walked x 445 -> 679, so those offsets are not coordinates and Character-State-Struct.md s +0x6A-+0xBA physics reading is unsupported. Retires the GDB-Validation-Queue card in the NEGATIVE direction. Also theirs: [battleObj+0x1B4] is the side object root+0x118/+0x11C, not a separate physics object; it carries HP at +0x70 and a char_struct pointer at +0xAC."
+      "2026-08-19 P174: I handed runtime [battleObj+0x1B4] + 0x6A..0xBA as a documented physics/velocity window for logging opponent position -- RETRACTED. They measured it: +0x60..0xBF did not change while the player walked x 445 -> 679, so those offsets are not coordinates and Character-State-Struct.md s +0x6A-+0xBA physics reading is unsupported. Retires the GDB-Validation-Queue card in the NEGATIVE direction. Also theirs: [battleObj+0x1B4] is the side object root+0x118/+0x11C, not a separate physics object; it carries HP at +0x70 and a char_struct pointer at +0xAC.",
+      "2026-08-19 P174: my jus-tex card said bit 8 makes duration fall \"twice as fast ON ODD VALUES\", which invited runtime to read it as predicting a parity-ALTERNATING observable rate (1.5/frame). Wording mine to own. The code term is NOT refuted: parity is tested on the POST-decrement value, so it self-stabilises and the sustained rate is 2.0 from either starting parity -- exactly their 1.939. Their REFUTED on the odd-duration qualifier is itself withdrawn; the discriminator is the FIRST-FRAME delta (odd start -> 1, even start -> 2)."
     ],
     "tooling_note": "xrefs.json cannot be trusted for Thumb callers (~89% literal-load blindness, P160). Hand-rolled exhaustive Thumb BL/BLX scan over ov06.bin is the reliable method and found the single caller immediately. Worth promoting into query.py.",
     "codex_disagreements": [
@@ -2200,8 +2204,6 @@
       "exotic missions": "STORY MODE ONLY, not selectable custom rules -> CLOSES the 22-described-vs-31-handler gap; the extra handlers are story content. Stop menu-side hunting.",
       "items inflict statuses": "chili pepper -> burn, purple flask -> poison. Items-ON is a REQUIREMENT for that family, not contamination."
     },
-    "open_tensions": [
-      "char_struct pointer location on [battleObj+0x1B4]: my static read reaches it at +0x56C (drain path: ldr r0,[r5,#0x1b4] then 0x020783CC does ldr r0,[r0,#0x56c]); runtime reports one at +0xAC. Both may be true (two pointers) or one base is wrong. Discriminator: do [obj+0x56C] and [obj+0xAC] hold the same value? HOLD BOTH OPEN."
-    ]
+    "open_tensions": []
   }
 }

@@ -1,17 +1,16 @@
 # Session Ledger — JUS Reverse Engineering
 
-Last updated: 2026-08-18 ~22:45 (ledger wake 6, session `justoolkit-87`)
+Last updated: 2026-08-18 ~23:15 (ledger wake 7, session `justoolkit-87`)
 
 ## 1. Current state
 
 This file is a human catch-up summary — not the system of record. beads (`br`) is the record; protocol in `docs/orchestration/`.
 
 **Live sessions (from ListAgents):**
-- `justoolkit-fa` [cedb9e] — busy, 2h+. **Runtime**. Since wake 5: **item 4 DONE** (jus-6fo closed — full match to finish with RAM end oracle). Retracted own overshoot diagnosis (jus-vkj — nav.advance is accurate). New blocker: jus-5kf (player HP recovers on Battle path, blocks damage measurement). 5 new commits.
-- `battle-engine-atlas-76` [2e8ac4] — busy, 2h+. **Static**. Applied runtime's jus-vkj retraction, promoted V test to next task, retracted same-value gate claim. CROSS_CONFIRMED the 4463 frame count and rule-completion path. 4 new commits.
-- `justoolkit-d9` — gone from ListAgents.
+- `justoolkit-fa` [cedb9e] — busy, 3h. **Runtime**. Since wake 6: resolved jus-5kf (HP recovery = respawn, not auto-heal), captured effect id 10 with stored duration 480, V=0 confirmed on three ids across both families. Filed jus-kdf (--boot path broken). Updated jus-cvx and jus-fms per my nudge. 5 new commits.
+- `battle-engine-atlas-76` [2e8ac4] — idle, 3h. **Static**. Now at **P169**. Mapped status param array to bin/state.bin, resolved V=0 (the non-constant formula doesn't vary), joined handler table to state.bin for all 42 ids, filed jus-5qy (dispatcher LR capture). 5 new commits.
 
-**Coord beads:** ~22 total (9+ closed, 12 open). Protocol continues to work — retractions propagating cleanly between loops (jus-vkj retracted by runtime → applied by atlas within one wake).
+**Coord beads:** ~24 total (10+ closed, 13 open). All aging flags resolved. No active protocol violations.
 
 ## 2. Open audit flags
 
@@ -47,21 +46,27 @@ Runtime responded to the nudge within one wake. Updated the bead, reframed as a 
 ### Flag J — RESOLVED: jus-vkj frame overshoot
 Runtime self-retracted (`state:retracted`). nav.advance IS accurate (2300→2301); the apparent overshoot was the emulator free-running between IPC calls. Atlas applied the retraction and unblocked duration tests. Textbook retraction flow.
 
-### Flag K — ESCALATED: jus-cvx and jus-fms aging — runtime nudged
-Both `state:proposed` `kind:request`, now in their **fifth wake**. Doorbelled runtime at wake 6 requesting status updates on both beads.
+### Flag K — RESOLVED: jus-cvx and jus-fms aging
+Runtime responded to wake 6 nudge. jus-cvx → P3/plausible (blocked on IPC cost, cheap once per-round trips drop). jus-fms → P2/plausible (watchpoint support untested on melonDS's GDB stub — first action is to test support). Both have real status now.
 
 ### Flag L — Atlas retractions in map doc, not in beads (carried forward, low severity)
-Four retractions now (gate-refusal, install-then-revert, r4==r0, same-value gate), all in commits/map doc but not as coord beads. Self-contained. Pattern for the owner.
+Five retractions now (+ scan design retraction, `f526332`). All in commits/map doc. Self-contained. Pattern for the owner — atlas's retraction discipline is strong, just not bead-tracked.
 
-### Flag M — NEW: jus-5kf blocks damage measurement on Battle path
-Player HP recovers during clean point battles (items/gimmicks verified off). Two candidates: auto-heal default or respawn animation. `state:tainted`, `kind:measurement`. This blocks any damage work on the Battle path. Runtime filed it; no action needed from ledger, but it's the biggest current obstacle to the research.
+### Flag M — RESOLVED: jus-5kf
+HP recovery was respawn animation, not auto-heal. Closed. New bug: jus-kdf (match_run --boot calls undefined autoheal_off()).
+
+### Protocol improvement observations (for owner)
+Three nudges over 7 wakes surfaced a recurring pattern. Runtime's feedback, consolidated:
+1. **Bead staleness ≠ work staleness.** jus-baz was frozen while its work was 80% done incidentally. The aging rule caught bookkeeping, not a stalled task.
+2. **"Proposed" doesn't distinguish blocked from untouched.** jus-cvx/jus-fms were honestly queued behind an unstated blocker, but looked identical to abandoned beads. A `state:blocked` label or blocker field would give the ledger a cheaper signal.
+3. **Open-ended asks lose to targeted ones every wake.** jus-baz ("audit all addresses") competed with cheap one-off asks and lost for 3 wakes. Reframing as a standing capability with atlas sending ranked lists was the fix.
 
 ---
 
 # Per-Session Detail
 
 What each active session is doing, where things live, and what they've delivered.
-Last updated: 2026-08-18 22:45 — ledger wake 6
+Last updated: 2026-08-18 23:15 — ledger wake 7
 
 ## Ultimate goal
 

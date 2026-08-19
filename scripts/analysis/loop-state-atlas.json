@@ -1,9 +1,12 @@
 {
-  "iteration": 167,
+  "iteration": 168,
   "phase": "combat",
-  "current_task": "P167 DONE: installer 0x0214F91C has exactly ONE BL caller (0x0214DA58), unconditional, with r0=[0x02172960] (CROSS_CONFIRMED by runtime lr=0x0214DA5D -> return site 0x0214DA5C = call+4). The GATE is a byte at 0x0217296D in ov6 BSS (zero -> skip the install path); a second gated path exists at 0x0214DB94 on a call result. Also found: root+0x000 is a tick invoked via 0x0214F948 whose non-zero return restores the default and clears +0xC8 -- the real 1->0 edge, at rule completion. root+0x08 writer NOT found: no ldrb[+0x10]/str[+8] pair exists in ov6.",
+  "current_task": "P168 DONE: the mode-12 gate is resolved to arm9. State 1 (0x0214DAA4) advances only if 0x0214DADC returns non-zero; that gates on the veneer 0x0207382C, which DISCARDS the caller r0 and binds 0x0207387C to the singleton 0x0214BD50. That function returns 1 once [0x0214BD58] is set, and sets it when ((counter+4) >> shift) & 0xFFFF >= 0x10, with counter at 0x0214BD52 and shift at 0x0214BD51. PLAUSIBLE: a fade/transition progress object, making mode 12 a stuck transition -- which is also why its framebuffer was black. Codex wrong on one operand (cmp r0 vs cmp r1); bits + query.py settled it.",
   "queue": [
-    "P168-READ ov6 0x0214DAA4 (holds pool 0x0214DABC): it is STATE 1 of the [0x023DAC68+0x40] three-state machine and it is where mode 12 gets stuck. Find the condition under which it advances the slot to 0x0214DB21 (the poll). That condition IS the mode-12 gate. Runtime ruled out the arm9 dispatcher, so the answer is in ov6. Then 0x0214DBCC (state 3) and the root+0x08 writer.",
+    "P169-what is 0x0214BD50 and who RESETS its counter (0x0214BD52) / sets its shift (0x0214BD51). Names the transition and says why mode 12 never finishes. Note the neighbourhood: 0x0214BD80 is the battle resource manager, so 0x0214BD50/60/70 are sibling globals in that table.",
+    "P169b-root+0x08 writer (arm9 + register-offset stores; ov6 immediate pattern exhausted).",
+    "P169c-static writer of root+0x118 / +0x11C (runtime top ask, jus-3vg).",
+    "P169d-static writer of root+0x4C (term V, still SPECULATIVE).",
     "P168b-static writer of root+0x118 / +0x11C (runtime top ask, jus-3vg) -- would turn their empirical 0x70/0x61C validation into a structural check.",
     "P168c-what sets the gate byte 0x0217296D: find its writers. That is the thing that decides whether a mode plays at all.",
     "P168d-static writer of root+0x4C (term V).",
@@ -265,7 +268,8 @@
     "P164: 0x0216446C attributed to ov1 by five-way overlay disassembly (correcting P163); it is a 4-instruction leaf reading a 16-byte-per-mode descriptor table, so the time-limit conversion is data-driven; menu settings record stride 0xA4 = 164 bytes; destination base and settings+0x4C confirmed.",
     "P165-mode-table-is-rulemess-bin",
     "P166-per-mode-handler-table",
-    "P167-installer-caller-and-the-bss-gate"
+    "P167-installer-caller-and-the-bss-gate",
+    "P168-why-mode-12-never-installs"
   ],
   "stuck": {},
   "required_reading_for_koma_tasks": [
@@ -2131,6 +2135,9 @@
       "2026-08-18 P167: \"0x0217296D is the gate / the mode-12 discriminator\" -- NOT the discriminator. Runtime (jus-2cu) showed the check never runs for mode 12, so the byte reading 0 is a consequence. It IS confirmed as gating that path, and it IS a poll (114 hits, flips 0->1 then installs). Dependents: the map row (corrected in place) and the P167 finding. Nothing else built on it.",
       "2026-08-18 P167 addendum: \"r4 = r0 = 0x023DDE58 at the arm9 callback dispatch\" -- RETRACTED, my decode error. I read mov r0,r4 at 0x02028614 and skipped that bl 0x0201B45C at 0x0202861C clobbers r0 before the blx. Runtime: r4=0x023DAC68 (registration object), r0=0x023DDE58 (=root+0x144, the callback argument). Dependents: the map row (corrected in place) and the jus-rpl card, which named the wrong object. Root cause: I inferred from a quick listing read WITHOUT a Codex check -- exactly the case the charter says to hand over before concluding."
     ],
-    "tooling_note": "xrefs.json cannot be trusted for Thumb callers (~89% literal-load blindness, P160). Hand-rolled exhaustive Thumb BL/BLX scan over ov06.bin is the reliable method and found the single caller immediately. Worth promoting into query.py."
+    "tooling_note": "xrefs.json cannot be trusted for Thumb callers (~89% literal-load blindness, P160). Hand-rolled exhaustive Thumb BL/BLX scan over ov06.bin is the reliable method and found the single caller immediately. Worth promoting into query.py.",
+    "codex_disagreements": [
+      "P168: Codex read cmp r0,#16 where the encoding E3510010 says cmp r1,#0x10. Resolved by bits + query.py + a coherence check (its reading made the store unconditional). Second Codex operand error after P158s mla swap."
+    ]
   }
 }

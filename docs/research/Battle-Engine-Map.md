@@ -765,3 +765,23 @@ rest-state correlation, clean across four modes and lining up exactly with insta
 *downstream* of the real difference. A rest-state read cannot separate cause from consequence; a
 breakpoint can. Requesting both in the same card is what caught it — the cheap read alone was persuasive
 and wrong.
+
+### The mode-12 gate, resolved to arm9 (P168)
+
+`findings/p168-why-mode-12-never-installs.md`.
+
+| what | where | confidence |
+|---|---|---|
+| State 1 (`0x0214DAA4`) rewrites the slot to the poll **only** if `0x0214DADC` returns non-zero; otherwise it returns having changed nothing | ov6 `0x0214DAA4` | `CONFIRMED_STATIC` |
+| `0x0214DADC` gates on the same value — it `blx`es `0x0207382C`, then `cmp r0,#0` / `beq` to its own return | ov6 | `CONFIRMED_STATIC` |
+| `0x0207382C` is a **bound-method veneer**: `ldr ip,[pc,#4]` → `0x0207387C`, `ldr r0,[pc,#4]` → `0x0214BD50`, `bx ip`. **The caller's `r0` is discarded**, so the check is not a function of the battle object | arm9 | `CONFIRMED_STATIC` |
+| Four identical veneers in a row bind `0x0207387C` to `0x0214BD50` / `0x0214BD70` / `0x0214BD70` / `0x0214BD60` — same method, four instances, in the same globals table as the `0x0214BD80` resource manager | arm9 `0x0207382C`–`0x02073868` | `CONFIRMED_STATIC` |
+| The condition: returns 1 once `[0x0214BD58]` is set, and sets it when `((counter + 4) >> shift) & 0xFFFF >= 0x10`. Fields: `0x0214BD51` shift (byte), `0x0214BD52` counter (halfword, `+=4` per call), `0x0214BD58` done flag (byte) | arm9 `0x0207387C` | `CONFIRMED_STATIC` |
+| `0x0214BD50` is a fade / screen-transition progress object, and mode 12's black screen *is* the stuck transition rather than a separate symptom | arm9 | `PLAUSIBLE` |
+
+**Codex was wrong on one operand and the bits settled it.** It matched every byte width, base offset, the
+early-return, and the `lsl`/`lsr` masking (noting on its own that `ldrh` zero-extension makes the `asr`
+logical) — then read `0x020738B0` as `cmp r0,#16` instead of `cmp r1,#0x10`. Encoding `E3510010` has bits
+19–16 = `0001`, so `Rn` = `r1`; `query.py` agrees. Coherence check too: under its reading `r0` is a pointer,
+always ≥ 16, so the conditional store would fire unconditionally and the comparison would be dead code.
+Same shape as P158's `mla` swap — **when Codex disagrees on a decode, go to the bits.**

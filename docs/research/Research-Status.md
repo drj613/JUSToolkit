@@ -997,3 +997,53 @@ distinct measured behaviours with controls — bit 4 total damage immunity, bit 
 cancellation. Nothing in §3's open list changes; the expiry handler `0x0215911C` is still the last unread function
 on the effect lifecycle, and the KO path still owes us the owner's 1-HP floor.
 
+
+## 2026-08-19 — iterations 175–189: damage staging hunt, and a correction corrected twice
+
+Handoff note. Last dated section covered 165–174.
+
+### Closed
+
+- **`char+0x56C` is HP.** Tick driver, duration decrement, and status-immunity-as-an-ability all landed earlier.
+- **`scratch+0x40` is the damage flag word.** `CONFIRMED_STATIC`. The flush at `0x02158B9C` tests bit 11 (`0x800`) for "damage pending" before reading the amount at `+0xE8`. Bit 30 (`0x40000000`) is toggled by `0x021591F4`, bit 25 (`0x2000000`) by `0x02159210`; the expiry handler `0x0215911C` calls both with `r1 = 0`. Distinct from `scratch+0x3C` (OR/CLEAR pair: arm9 `0x0207CE7C` / `0x0207CEC8`) and from the `+0x40` written by the generic setter `0x02028384` on a different object type.
+- **`0x02156DDC` has no caller chain.** Zero callers. It's installed as a callback via arm9 `0x02028384`, which has 690 caller references across arm9, ov10, and ov12 — an engine-generic setter, so the per-frame invoker can't be reached by walking ov6 call edges.
+- **`0x0215C360` tree is flag/list maintenance at every depth.** `0x0215B460` derives the scratch at `0x0215B490` only to hand it, with mask `0x10000000`, to `0x0207CEC8`. `0x021591F4` and `0x02159210` derive it too and only flip bits 30 and 25. All leaves.
+- **Runtime confirmed a pre-registered prediction:** `+0x134` already holds the reduced `384` at `0x02156DE8`, the first instruction after `r4` loads. Four capture points, a validity check that could have failed — two fighters resolved to two different scratches, `0x0220FDC4` and `0x0220FC3C`.
+
+### Retracted
+
+`0x02081ED0` / `0x02081EE0` — the bit-11 store inside arm9 collision resolution `0x02081DDC`. Runtime's breakpoints never fired; that function doesn't execute on a landed-hit path. It failed differently from my stated kill condition (I predicted a pointer mismatch; there was no pointer, because the code never ran), so the `[[participant+0x1C]+0xC]` versus `entity+0x10` chain question is **UNTESTED, not answered**.
+
+### The correction chain — most useful thing this run
+
+1. **P187** — I found an arm9 `+0x134` store with `search-imm`, concluded my earlier sweeps had been ov6-scoped, and told the runtime loop and the ledger that arm9 had never been swept.
+2. **P188/P189** — that correction was wrong. `regoff_store_scan.py` builds its region list arm9-first and always has. Re-run with an arm9 positive control (`+0x40` → 4 arm9 hits); `+0x130` and `+0x134` return **0 candidates anywhere**.
+3. **The cause was a documentation mismatch, not a memory lapse** — runtime's diagnosis, better than mine. The P181 commit message reads "no scratch+0xE8 writer **in ov6**" while the code it commits scans arm9 first. The artifact and its own label disagreed at the moment of authorship, and a wake later I consulted the label. `git log` on that file shows exactly one commit, so the scope was never added later.
+4. **Checking the record again cuts the other way.** The P181 finding already recorded the iteration-76 immediate sweep as "27 ARM hits **ROM-wide** … both arm9 candidates individually refuted". So that route was global too, and my P187 "discovery" partly re-derived a refutation the record already held.
+
+**Rule 15, earned three times over: a correction is a claim.** A retraction offered against your own interest reads as conscientious, so it gets less scrutiny than the claim it replaces — challenging one feels like refusing an apology. I pushed a wrong correction to two sessions and both accepted it within the minute.
+
+### Two gaps I keep talking past
+
+Momentum toward "statically exhausted" was burying two limits my own P181 doc names:
+
+1. **24 of 30 `+0xE8` split-offset hits (12 in ov12, 12 in ov10) were dismissed, not examined** — on the prior that ov12 is the UI overlay. But ov12 is exactly where a text-widget field burned me at P171, so a prior is not a check. `UNCHECKED, NOT CLEAR`.
+2. **The shifted-register store class was never scanned** — `str rX,[rBase, rIdx, lsl #2]` with `rIdx` = 58 writes `+0xE8`. P181 called it "a genuine gap, not theoretical" and it's still open.
+
+`+0x130` and `+0x134` are exhausted globally with controls. **`+0xE8` is not**, and I've been letting the stronger claim cover the weaker one.
+
+### Runtime instrument findings
+
+The melonDS GDB stub **acks `$Z2` and never fires it** — the handler exists and acknowledges correctly, so what's missing is an address check in the memory-write path, a far smaller fix than adding watchpoint support. That result had a real stimulus (the player moved at full speed while armed, three hits landed) and stands.
+
+Runtime then corrected their own report: stepping advances **0.0031 frames/sec**, so the "0 frames in 20 seconds" freeze was stepping working correctly, and their software-watchpoint null had **no stimulus** — the CPU never wrote the watched address. "Software watchpoints don't fire" is untested, not false. A bounded single-frame trace (~700k instructions, ~5.4 minutes, estimated not measured) is affordable and needs no patch.
+
+### Instrument rules added this run
+
+11. A tool that quit early looks exactly like one that ran and found nothing — and `2>/dev/null` eats the usage error that would tell you. Two of my three fake nulls this run were silenced by my own redirect.
+12. A null needs a **positive** control proving the instrument reached the space; a **negative** control needs the stimulus to have landed. Runtime voided two runs on this rule that would otherwise have read as results.
+13. **Suspect uniformity, not error.** A row of identical zeros is the trigger to run the control. Three false nulls, three different causes: `grep -E` doesn't understand `\s`; zsh doesn't word-split unquoted variables, so `$CMD` became one command name; a wrong subcommand syntax silenced by a redirect.
+14. State the **depth** and **scope** you examined. Say `UNCHECKED, NOT CLEAR` when you skipped a region — then go back and check it.
+15. A correction is a claim. Check a narrowing against the artifact; name which tool established the original and re-run it with a control. **Write the scope the code actually has into the commit message** — that's where this one went wrong.
+
+Both loops' failures this run were on material we authored: I didn't open my own tool, runtime didn't run their own rule on their own null.

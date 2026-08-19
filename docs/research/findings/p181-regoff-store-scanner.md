@@ -1,5 +1,14 @@
 # P181 — Register-offset store scanner finds no `scratch+0xE8` writer in ov6
 
+> **SCOPE NOTE added 2026-08-19 (P190).** This doc's title and control section are framed around
+> ov6, but **the scanner scans arm9 first and then every overlay** — see `regions()` in
+> `scripts/analysis/regoff_store_scan.py`. The commit that added it (`7d4b6a4`) says "in ov6" and
+> understates what the code does. That mismatch caused a wrong correction at P187 that took two
+> wakes to unwind. Global results, re-run with an arm9 positive control (`+0x40` → 4 arm9 hits):
+> `+0x130` and `+0x134` return **0 candidates anywhere**. Two limits below are still open and are
+> *not* covered by that: the 24 dismissed `+0xE8` hits in ov12/ov10, and the shifted-register
+> store class.
+
 **Iteration 181. Static, new tooling.** `query.py search-imm` only catches stores with an immediate offset in the instruction. Three store shapes dodge it, and for large offsets one is unavoidable: a Thumb word store's immediate caps at 124, so **any Thumb writer of `+0xE8` must use a split offset or a register offset.** Iteration 76 already swept the ARM immediate space and found nothing in ov6. That leaves split/register-offset stores as the last static hiding place for the B11 writer.
 
 New tool: `scripts/analysis/regoff_store_scan.py`. Read-only. Takes an offset, reports candidates with context.

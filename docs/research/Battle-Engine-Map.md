@@ -1990,3 +1990,35 @@ when the read landed, so it refused to report. They had documented "there is no 
 in that same oracle's docstring two wakes earlier, then built the check that trips on it. **A caveat recorded in
 prose does not constrain code written later** — the fix is that a value strictly between target and original is now
 recognised as regen caught mid-climb.
+
+### The flat −2.0 has no data source in `chr_b` either (P176)
+
+`findings/p176-no-flat-reduction-in-chr_b.md`. Static, no emulator.
+
+| what | confidence |
+|---|---|
+| `bin/chr_b.bin` is **4440 bytes = exactly 74 × `0x3C`** — the file *is* the record array the chrb-catalog map describes at `[0x0214BD80]+0x40` | `CONFIRMED_STATIC` |
+| Comparing `chr_b` 12 (Luffy) against `chr_b` 70 (the doc's "unresisted" empty-ability dummy) across all 60 bytes: **no byte is `0x80` for Luffy and `0x00` for the dummy**, and **no `u16` at any alignment reads 128 vs 0** | `CONFIRMED_STATIC` |
+| Nor a scalable "2": the only bytes reading `0x02`/`0x00` are `+0x31`, `+0x33`, `+0x35`, `+0x37`, which are the high halves of the ascending `u16` run `0x0218`–`0x021B` at `+0x30`–`+0x37` — ids, not a defence slot | `CONFIRMED_STATIC` |
+| **So the flat −2.0 has neither an implementation nor a data source** — no constant subtraction in code (P175) and no per-character value in the record that could supply 128 | `CONFIRMED_STATIC` with its limit: this rules out the `chr_b` record, not koma/deck data or a value computed at load into the `0x1F0` object |
+| The only field where the dummy exceeds Luffy is `+0x2C` (50 vs 100), whose ratio matches neither `0.6667` (B) nor `0.6000` (DOWN+B) | `CONFIRMED_STATIC` |
+
+**Bonus, and it is a three-way agreement nobody arranged.** Luffy's record carries `0x09` at `+0x03` and `0x0C` at
+`+0x07`, where the dummy carries `0x00` at both:
+
+```
+Luffy  00 02 05 09  19 00 00 0c  2e 01 30 01  52 00 09 02 ...
+dummy  00 02 05 00  00 00 00 00  36 01 37 01  33 01 be 01 ...
+```
+
+Exactly the two ability IDs `Ability-Bitset-Is-Not-Resistance.md` attributes to Luffy, and exactly the emptiness it
+reports for `chr_b[70]`. So the runtime bitset, the on-disk record bytes and that doc's reading of the live array all
+agree. `PLAUSIBLE` — `not claimed` is the layout: `+0x03` and `+0x07` are four apart, but `+0x0B` reads `0x01` in
+**both** records, so a clean stride-4 list doesn't hold. The loader `0x0215FB3C` would name it.
+
+**What this does to `jus-f0v`:** it doesn't close the card, it changes what a negative there *means*. Before, a
+non-replication read as "something about the old session differed". Now the reduction has no mechanism, no constant
+and no per-character source — so both targets reading 6.000 in one clean session makes **retracting
+`Damage-Reduction-Is-Flat.md`** the right action rather than re-explaining it. That doc's *negative* half — ability
+`0x09` doesn't confer blunt resistance through the bitset — is unaffected and has since been confirmed from the
+opposite direction.

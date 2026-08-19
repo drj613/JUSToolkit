@@ -1,12 +1,12 @@
 {
-  "iteration": 175,
+  "iteration": 176,
   "phase": "combat",
-  "current_task": "P175 DONE: the HP apply COMPUTES a KO signal (return = \"still non-zero\") and ALL EIGHT ov6 callers of 0x020783CC discard it -- each branches away or overwrites r0 on the next instruction, including both drain handlers. So the apply is NOT the KO trigger. That explains the owner s \"DoT never kills\" WITHOUT needing a floor -- but only if KO detection is signal-driven; if it polls char_struct+0x18 elsewhere, the floor is real and unfound. Also: displayed HP is raw/64, so the owner s \"1 HP\" is probably RAW 64 -- every floor search so far looked for a clamp to 1, and the constant to hunt is 0x40. Taking a display reading as a raw value was my assumption.",
+  "current_task": "P176 DONE (reordered ahead of the prompts polled-KO task, because it could settle an open P1 card from static evidence and the reasoning was newer than the prompt): bin/chr_b.bin is 4440 = exactly 74 x 0x3C, so the file IS the record array. Comparing chr_b 12 (Luffy) vs chr_b 70 (the doc s unresisted dummy) across all 60 bytes: NO field reads 128 vs 0, and no scalable 2. So the flat -2.0 has neither an implementation (no sub #0x80 in code, P175) nor a data source in chr_b. Limit stated: rules out chr_b, not koma/deck data or a load-time computed field. BONUS three-way agreement: Luffy s abilities 0x09 and 0x0C sit at record +0x03 and +0x07 where the dummy has zeros -- matching the runtime bitset AND the doc s reading of the live array.",
   "queue": [
-    "P176-STATIC TEST THAT COULD SETTLE jus-f0v WITHOUT AN EMULATOR: is there any field in the chr_b record (stride 0x3C, array at [0x0214BD80]+0x40) that reads ~128 raw (= 2.0 displayed) for Luffy (chr_b 12) and 0 for the empty-ability dummy (chr_b 70)? A flat -2.0 needs a data source, and no hardcoded sub of 0x80 exists anywhere in the arm9 HP/damage region -- so if it is real it must be table-loaded. Extracted chr_b data is on disk; both indices known; no emulator needed. If no field distinguishes them by 128, the flat reduction has no data source either.",
-    "P176b-FIND AUTO-HEAL s flag and per-tick amount (the .aar archives are where I have not looked).",
-    "P176c-IDENTIFY 0x020781E4, the other apply path (ids 5 and 33).",
-    "P176d-the polled-KO discriminator; then 0x0215911C, the expiry handler.",
+    "P177-THE POLLED-KO DISCRIMINATOR (deferred from P176s prompt): any read of char_struct+0x18 that branches on zero outside the apply worker. Decides signal-driven vs polled KO detection.",
+    "P177b-0x0215FB3C, the ability-list loader: it names the chr_b record s ability layout (+0x03 and +0x07 hold Luffy s two, but +0x0B breaks a clean stride-4) and it is the last unexamined half of the bitset story.",
+    "P177c-auto-heal s flag and per-tick amount (.aar archives unsearched).",
+    "P177d-0x020781E4 (the other apply path); then 0x0215911C (the expiry handler).",
     "P168b-static writer of root+0x118 / +0x11C (runtime top ask, jus-3vg) -- would turn their empirical 0x70/0x61C validation into a structural check.",
     "P168c-what sets the gate byte 0x0217296D: find its writers. That is the thing that decides whether a mode plays at all.",
     "P168d-static writer of root+0x4C (term V).",
@@ -275,7 +275,8 @@
     "P172-effect-cancel-gate-and-the-drain-paths",
     "P173-char-0x56c-is-the-character-struct",
     "P174-effect-tick-driver",
-    "P175-the-ko-signal-is-discarded"
+    "P175-the-ko-signal-is-discarded",
+    "P176-no-flat-reduction-in-chr_b"
   ],
   "stuck": {},
   "required_reading_for_koma_tasks": [

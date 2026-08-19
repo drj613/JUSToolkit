@@ -17,9 +17,9 @@ This file is a human catch-up summary — not the system of record. beads (`br`)
 
 **jus-law:** Most questions answered by owner ground truth (2026-08-18 evening). Key answers: character switching is "just taps" (runtime still can't land them — trying panel centres and longer holds next), down+B confirmed as change attack (hits opponent, changes THEIR character), items DO inflict statuses (chili=burn, purple flask=poison), DoT exists with a 1-HP floor, exotic missions are story-mode only.
 
-**Remaining open on jus-law:** Q1 (which of ids 19/32 is the freeze), Q6 (calibration move), Q7 (HP drift), Q8 (rephrased: what are the treasure-chest and instant-WINNER screens).
+**Remaining open on jus-law:** Q1 is answered (id 32 = freeze on opponent, id 19 = gauge cost on player). Q6 (calibration move), Q7 (HP drift), Q8 (treasure-chest/WINNER screens) still open.
 
-**jus-fun:** Fable + Codex recommendations recorded. Fable: patch melonDS DataWrite (~15 lines, half day). Codex: savestate bisection + instruction step (no source changes). Both say disable JIT first. Awaiting owner decision on direction.
+**jus-fun: PRIORITY ESCALATED.** All three static routes to the +0x134 writer are now closed (immediate-offset, split/regoff scanner, caller chain — zero callers on 0x02156DDC). Polling can't substitute: 1 non-zero read in 7991 polled hits. The write-watchpoint is now the ONLY remaining route to the flat -2.0 damage reduction — the oldest open question in the battle-engine work. Fable recommended: patch melonDS DataWrite (~15 lines, half day). Codex recommended: savestate bisection + instruction step. Both say disable JIT first. **Owner decision needed — this now blocks the damage model.**
 
 **Atlas flagged a protocol gap:** role resolution has no mechanism — names drift across restarts and the roles table in COORDINATION-PROTOCOL.md isn't updated. Atlas had to double-deliver a message because it couldn't resolve the ledger. Suggested: sessions announce their role on startup into a bead, or the roles table gets updated on each restart.
 

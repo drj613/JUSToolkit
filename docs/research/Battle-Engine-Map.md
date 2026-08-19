@@ -998,8 +998,9 @@ and neither did the third caller.
 What survives, and what doesn't:
 
 - **Survives:** Route B is real and is the observed inflict path for gauge ids. `CONFIRMED_RUNTIME`.
-- **Survives, and is now observed rather than inferred:** Route B is a **per-frame flush that usually has
-  nothing staged.** An unconditional breakpoint caught **15,732** dispatcher calls, *all* with id 0, hitting
+- **Survives, but DOWNGRADED (runtime, P174):** Route B is a per-frame flush that usually has nothing staged.
+  This is **not evidence for the staged-bytes model** — the flush and the tick are the same function, so it runs on
+  every character update regardless. It is what the loop does, not a confirmation of anything. An unconditional breakpoint caught **15,732** dispatcher calls, *all* with id 0, hitting
   both `0x02158B50` and `0x02158B68`. That is exactly what the staged-`+0x172`/`+0x173`-bytes model predicts.
 - **Still untested:** "statuses arrive via Route B." No status-family id fired with an LR captured. The id 21
   from the earlier run has no LR and contributes nothing. So the finding is *"gauge ids use Route B"*, **not**
@@ -1632,3 +1633,55 @@ run was measuring exactly that.
 
 **P159's framing corrected:** "the on-hit apply function" describes what `0x02158B20`'s first half does *when
 something is staged*, not what the function is.
+
+### Answering "what makes a slot count as active" (P174 follow-up)
+
+The runtime loop fabricated a node — `fn = 0x02159500`, `id = 19`, `duration = 601` — and it decremented **once**
+to 600, then never again across 490 frames, staying un-expired and un-stubbed. Their question: what other field
+does a slot need?
+
+`CONFIRMED_STATIC`: **nothing, at the slot level.** The only slot-level condition is
+`ldrh r0,[sb,#0xe] / cmp r0,#0 / beq` — a non-zero duration and that is all. `+0x08`, `+0x10` and `+0x14` are
+never read before the tick.
+
+**But `+0x04` is dereferenced unconditionally, twice, immediately after the decrement:**
+
+```
+0x02158C84: sub    r0, r0, #1
+0x02158C88: strh   r0, [sb, #0xe]     ; the one decrement they saw
+0x02158C8C: ldr    r0, [sb, #4]       ; <- paramArray[id], NOT optional
+0x02158C90: ldrh   r0, [r0]           ; <- dereferenced again
+```
+
+Their node carries `+0x04 = 0`. So the driver decremented once, then read `[0]` and dereferenced whatever it
+found. **That ordering matches their observation exactly** — one decrement, then the update stops. `PLAUSIBLE`:
+the NULL deref is what stopped it.
+
+**The fix:** set `node+0x04 = paramArray + id*8`, where `paramArray = [[0x02172984] + 4]` — the `bin/state.bin`
+data pointer, computable live. For id 19 that is `paramArray + 0x98`.
+
+**One function-level gate to check as well:** `0x02158C50` is `ldrsb r0,[sl,#0x18] / cmp r0,#8 / beq 0x2158d64`,
+which **skips the entire tick loop** when `[battleObj+0x18] == 8`. Worth logging that byte alongside — if it
+reads 8, no slot ticks regardless of its contents.
+
+**Why this matters more than the test it unblocks.** A fabricable node makes every effect-lifetime experiment
+independent of producing the move. Not being able to trigger on demand is the single variable behind three
+runtime retractions this session, and installing effects directly removes it.
+
+### RETRACTED: the physics window I handed over (P173)
+
+`RETRACTED`, mine. I gave the runtime loop `[battleObj+0x1B4] + 0x6A..0xBA` as a documented physics/velocity
+window for logging opponent position. They measured it: **`+0x60..0xBF` did not change while the player walked
+from x 445 to 679**, so those offsets are not coordinates and the `+0x6A`–`+0xBA` reading in
+`Character-State-Struct.md` is **not supported**. That retires the long-standing `GDB-Validation-Queue.md` card
+in the negative direction, which is worth having.
+
+Also theirs: `[battleObj+0x1B4]` is **not a separate physics object** — it is the side object already known as
+`root+0x118` / `root+0x11C`. It carries **HP at `+0x70`** (matching their HP derivation) and a `char_struct`
+pointer at **`+0xAC`**.
+
+**A tension to hold open rather than resolve** (rule 3): my static read has the drain path doing
+`ldr r0,[r5,#0x1b4]` and then `0x020783CC` doing `ldr r0,[r0,#0x56c]` to reach `char_struct` — so `+0x56C` of
+that object. They report a `char_struct` pointer at `+0xAC` of the same object. Both can be true (two pointers to
+the same struct), or one of us has the wrong base. `not claimed` which; the cheap discriminator is whether
+`[obj+0x56C]` and `[obj+0xAC]` hold the same value.

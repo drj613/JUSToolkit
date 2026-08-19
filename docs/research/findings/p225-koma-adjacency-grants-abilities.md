@@ -144,3 +144,48 @@ Pin this before indexing the array.
 apart, with char_structs in the same region (`0x021DF1BC` is `arg0_ply + 0x6C`). Not named, on the
 fourth iteration of that discipline.
 
+## "Anchor" retracted, and row 0 holds a cross-side link
+
+All five player-side type-0 nodes checked: `[+0x0E]` = (footprint column, footprint top row **minus
+one**), five for five. And for two of the five the declared cell is occupied by *another* koma —
+`0x021DF1BC` holds both (1,1) and (3,1), which `0x021DF2AC` and `0x021DF2FC` declare. So the field
+cannot mean "where I am", and **"anchor" implied exactly that**. What it does mean is not named
+here: five samples on one deck, and a systematic off-by-one row has at least three innocent
+readings.
+
+**This is the second field whose meaning depends on `+0x40`.** Type-2 nodes index the grid
+directly — all three adjacency hits used `y = high nibble + dy` with no adjustment — while type-0
+nodes are off by one row. Same shape as `+0x41` being a chr_b index on type 0 and an ability id on
+type 2. The property to carry is: **nothing in this struct is safe to read without checking `+0x40`
+first.**
+
+### Row 0 is a cross-side link, not junk
+
+```
+player grid cell (3,0)  at arg0_ply + 8 + 3*4  = 0x021DF164, value 0x021DF780
+opponent grid cell (3,0) at arg0_opp + 8 + 3*4 = 0x021DF780   ← exact match
+```
+
+`player_grid[(3,0)]` holds the **address of** `opponent_grid[(3,0)]`.
+
+That sharpens the hazard rather than resolving it: for `y' = 0` the gate returns a non-null
+cross-side link, and `AddAbility` then does `strb [that + count + 0x1B]` — a targeted write into
+the other side's grid array, not a garbage dereference. And row 0 is addressed by design, since
+three of five type-0 nodes declare cells in it.
+
+**Open, and it is the next real question:** what stops a live type-2 node producing `y' = 0`?
+Either the gate has a check I've misread, or type-2 nodes never carry a high nibble of 0 or 1 by
+construction, or nothing stops it.
+
+### Layout of `arg0` as far as it is visible
+
+```
++0x008 .. +0x057   the grid the gate indexes, 4 rows x 0x14
++0x058 .. +0x06B   0x14 unaccounted — exactly one more row's worth
++0x06C, stride 0x50  the character records (0x6C, 0xBC, 0x10C, 0x15C, 0x1AC)
+```
+
+A spare row-sized gap right after a 4-row grid, in a game with a 4-row deck, is worth checking
+against the possibility that the array is declared with five rows and the gate excludes one. If the
+declaration excludes row 0 and the gate's bounds do not, the off-by-one is the game's, not ours.
+

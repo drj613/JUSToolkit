@@ -231,10 +231,28 @@ def autoheal_is_on_by_behaviour(addr, drop=0x600, wait=360):
         # which is what the first version of this function did.
         immediate = peek(addr, 2)
         if immediate != target:
+            # A read-back that is STRICTLY BETWEEN the target and the original is
+            # regeneration caught mid-climb: a write that never landed would leave
+            # the value at orig, and nothing else moves it upward. So this is not a
+            # control failure, it is the answer arriving early.
+            #
+            # This case exists because there is no immediate read through this
+            # bridge -- every IPC call costs 30-60 free-running frames, so a fast
+            # heal can restore most of the poke before the read. An earlier version
+            # of this function treated it as instrument failure and refused to
+            # report, which is what it did on the one savestate known to regen.
+            if target < immediate < orig:
+                cli("poke", hex(addr), "%02X%02X" % (orig & 0xFF, orig >> 8))
+                climbed = immediate - target
+                return {"orig": orig / 64.0, "poked_to": target / 64.0,
+                        "early": immediate / 64.0, "after": immediate / 64.0,
+                        "climbed": climbed / 64.0, "snapped_back": False,
+                        "regen": True, "note": "caught mid-climb on the read-back"}
             raise RuntimeError(
-                "POSITIVE CONTROL FAILED: wrote %d to 0x%08X, read back %d with no "
-                "frames advanced. The write itself did not land, so nothing after "
-                "this means anything." % (target, addr, immediate))
+                "POSITIVE CONTROL FAILED: wrote %d to 0x%08X, read back %d (orig "
+                "%d). Not between target and orig, so this is not a mid-climb -- "
+                "the write did not land and nothing after it means anything."
+                % (target, addr, immediate, orig))
         nav.advance(10)
         early = peek(addr, 2)
         nav.advance(wait)
@@ -247,6 +265,64 @@ def autoheal_is_on_by_behaviour(addr, drop=0x600, wait=360):
             "climbed": climbed / 64.0,
             "snapped_back": early >= orig,   # restored within ~10 frames
             "regen": climbed > 0}
+
+
+AUTOHEAL_ROW_DOWNS = 2      # pause menu: バトル再開, COM設定, 自動回復 -- two DOWNs from the top
+
+
+def autoheal_set(want_on, max_attempts=3):
+    """Toggle 自動回復 from the in-battle pause menu, then VERIFY BEHAVIOURALLY.
+
+    THIS FUNCTION DID NOT EXIST. match_run.py --boot has called autoheal_off()
+    since it was written and `git log -S` finds no definition in any commit on
+    any branch, so --boot has never run to completion. Filed as jus-kdf.
+
+    The pause menu, reached with START during a battle, is six rows:
+        バトル再開 / COM設定 / 自動回復 / リトライ / デッキセレクト / Jアリーナメニューにもどる
+    Two DOWNs reach 自動回復 and **A** toggles it. LEFT and RIGHT do NOT --
+    measured: LEFT left the row reading ON, A flipped it to OFF. COM設定 above it
+    carries a ▶ and does cycle with LEFT/RIGHT, which is what made LEFT the
+    natural first guess and the wrong one.
+
+    VERIFICATION IS BEHAVIOURAL, NEVER PIXELS. The handoff records why a crop of
+    the 自動回復 value field cannot work: the focused row's highlight pulses and
+    the row background dominates any brightness statistic, so two screens both
+    reading OFF measured 96 and 231 in the same box. This calls
+    autoheal_is_on_by_behaviour() instead -- poke HP down, watch whether it
+    climbs back -- which is the same oracle used to characterise the savestates.
+
+    Retries because a menu press can be eaten during a transition; each attempt
+    re-verifies rather than assuming the previous one landed.
+    """
+    for attempt in range(max_attempts):
+        resolve_addresses()
+        state = autoheal_is_on_by_behaviour(HP_OPP)
+        if state["regen"] == want_on:
+            return {"ok": True, "attempts": attempt, "verified": state}
+        nav.advance(1, ["START"])          # pause
+        nav.advance(180)
+        for _ in range(AUTOHEAL_ROW_DOWNS):
+            nav.advance(1, ["DOWN"])
+            nav.advance(60)
+        nav.advance(1, ["A"])              # toggle -- NOT left/right
+        nav.advance(120)
+        nav.advance(1, ["START"])          # resume
+        nav.advance(240)
+    resolve_addresses()
+    final = autoheal_is_on_by_behaviour(HP_OPP)
+    if final["regen"] != want_on:
+        raise RuntimeError(
+            "autoheal_set(%s) failed after %d attempts; the behavioural oracle "
+            "still reports regen=%s (orig %.1f -> poked %.1f -> after %.1f). The "
+            "menu press is not landing, or the row order has changed."
+            % (want_on, max_attempts, final["regen"], final["orig"],
+               final["poked_to"], final["after"]))
+    return {"ok": True, "attempts": max_attempts, "verified": final}
+
+
+def autoheal_off():
+    """Turn 自動回復 OFF and prove it. The name --boot has always called."""
+    return autoheal_set(False)
 
 
 def rule_running():

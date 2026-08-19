@@ -180,20 +180,24 @@ Treat this as a convenience index and the binary as the source for anything load
 
 ## Three of the four unmapped records are now placed by series
 
-Not named — placed. From `chr_b.json` and the on-disk ability window
-[`jus-ondisk-ability-list-at-chrb-0x03-kfc`]:
+Not named — placed. From `chr_b.json` plus the four-byte `flags` field at record `+0x04`. The
+placements below **survive** the retraction of
+[`jus-ondisk-ability-list-at-chrb-0x03-kfc`] — that bead read `charId` as an ability slot, and
+dropping it changes the ability values here but none of the relationships, because every
+relationship is a comparison between two records that both lose the same slot.
 
-| record | classId | charId | tier | abilities | placement |
+| record | classId | charId | tier | flags abilities | placement |
 |---|---|---|---|---|---|
-| 1 | 256 | 7 | 2 | 7, 43 | **Dragon Ball.** Shares Goku's `classId` 256, `charId` 7, tier and `formType` 0; sits immediately after him. Differs in one ability (43 vs Goku's 15) and in stat/pointer fields. |
-| 39 | 564 | 3 | 2 | 3, 38 | `classId` 564 is carried by 39 and 40 alone. Neighbours are Eve (562) and Rukia (565), so the 560s span more than one series. |
-| 40 | 564 | 3 | 1 | 3, 38, 48 | Same `classId`, tier 1 rather than 2, and a superset ability list — two tiers of one fighter. |
-| 50 | 582 | 14 | 2 | 14, 48, 21 | **Bobobo-bo Bo-bobo.** Shares Shinsetsu's `classId` 582, `charId` 14, tier, `formType` 2 and its exact ability list. |
+| 1 | 256 | 7 | 2 | 43 | **Dragon Ball.** Shares Goku's `classId` 256, `charId` 7, tier and `formType` 0; sits immediately after him. One ability, differing from Goku's 15. |
+| 39 | 564 | 3 | 2 | 38 | `classId` 564 is carried by 39 and 40 alone. Neighbours are Eve (562) and Rukia (565), so the 560s span more than one series. |
+| 40 | 564 | 3 | 1 | 38, 48 | Same `classId`, tier 1 rather than 2, and a **superset** ability list — two tiers of one fighter. |
+| 50 | 582 | 14 | 2 | 48, 21 | **Bobobo-bo Bo-bobo.** Shares Shinsetsu's `classId` 582, `charId` 14, tier, `formType` 2 and its **identical** ability set. |
 
-`charId` is not a series key: `charId` 3 spans Bleach and D.Gray-man, and `charId` 7 spans eight
-Dragon Ball fighters.
+`charId` is not a series key: `charId` 3 spans Bleach and D.Gray-man, `charId` 7 spans eight
+Dragon Ball fighters, and `charId` 14 spans Gear2-Luffy, three Bobobo entries and Kinnikuman.
 
 **A correction worth carrying:** records 12 and 18 are *not* byte-identical, and neither are 48
-and 50. They share an **ability window** — `09 19 00 00 0C` for the first pair — while differing
-in 16 and 17 bytes respectively. "Identical ability list" is the claim; "byte-identical record"
-was mine and is wrong.
+and 50. They share an **ability field** while differing in 16 and 17 bytes respectively. For 12
+versus 18 the differences are `tier`, `statB`, three `combatStatValue`s and the six-entry
+`textIds` block — no ability field among them, so Robin's auto-guard is not hiding in what
+distinguishes her from Luffy.

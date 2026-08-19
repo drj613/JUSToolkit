@@ -77,9 +77,17 @@ quarter-steps in either direction.
 category index and the pre-adjustment base together. It replaces the older plan of watching
 `[r8+0x40]` for a bit-5 write, which was aimed one word low.
 
-**Nature does not affect damage** [`jus-nature-does-not-affect-damage-0c6`]. The 1.5×
-advantage multiplier in `Combat-Mechanics.md` and `Combat-Mechanics-Reference.md` is wrong;
-both now carry a refutation banner.
+**Nature does affect damage, and the January 1.5× was right all along**
+[`jus-nature-is-read-in-damage-path-hbt`]. The tables the damage routine reads, at
+`0x0209FEF4` and `0x0209FF14`, hold `0x0180` — 1.5 in 8.8 — and the arithmetic turns a base
+of 8 into 12.000, which is the owner's own live-play number. The August claim that nature is
+not consulted is `state:tainted` [`jus-nature-does-not-affect-damage-0c6`]; what it actually
+established is that poking the byte *it* poked, mid-battle, changed nothing. The refutation
+banners that were briefly added to `Combat-Mechanics.md` and `Combat-Mechanics-Reference.md`
+were themselves wrong and have been corrected.
+
+Nature and the resistance gates land in the **same accumulator** and are **additive**.
+Advantage plus one resist gate is 1.25× the base, not 1.5 × 0.75.
 
 ## Documents currently marked refuted or superseded
 

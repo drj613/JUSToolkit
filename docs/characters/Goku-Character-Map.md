@@ -8,7 +8,12 @@
 >
 > A controlled August test found the opposite: poking only the nature byte from a
 > bit-identical savestate changed nothing, 3/3 runs
-> [`jus-nature-does-not-affect-damage-0c6`].
+> [`jus-nature-does-not-affect-damage-0c6`], now `state:tainted`.
+>
+> **Resolved 2026-08-19, and this file's caution was right:** the January 1.5× holds. The
+> damage routine's nature tables contain exactly 1.5 and produce 8 → 12.000
+> [`jus-nature-is-read-in-damage-path-hbt`]. The August test poked a byte the damage path
+> does not read.
 >
 > **Do not assume the newer result wins.** The August claim only establishes that the nature
 > byte is not read *during damage computation*, and its own caveat leaves load-time

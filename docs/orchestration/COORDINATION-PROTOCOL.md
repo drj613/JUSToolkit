@@ -32,9 +32,9 @@ The four failures this protocol is built to prevent:
 
 | Role | Job | Current instance |
 |---|---|---|
-| **runtime** | Drives the melonDS harness, boots battles, measures damage/status, scans RAM. Produces magnitudes. | *(none — shut down 2026-08-19)* |
-| **static** | Works the disassembly, maps structs/formulas, produces addresses. Labels claims. | *(none — shut down 2026-08-19)* |
-| **ledger** | Reads the beads ledger + git, keeps the human catch-up summary, flags inconsistencies, nudges idle loops. Does **not** write findings. | *(none — shut down 2026-08-19)* |
+| **runtime** | Drives the melonDS harness, boots battles, measures damage/status, scans RAM. Produces magnitudes. | `justoolkit-e2` [9764b0] — started 2026-08-19 |
+| **static** | Works the disassembly, maps structs/formulas, produces addresses. Labels claims. | `justoolkit-73` [fbc915] — started 2026-08-19 |
+| **ledger** | Reads the beads ledger + git, keeps the human catch-up summary, flags inconsistencies, nudges idle loops. Does **not** write findings. | `justoolkit-e8` — started 2026-08-19 |
 
 **On every restart, update this table.** Names drift across restarts; this table is the
 authoritative mapping. Always resolve the role via `ListAgents` as a backup, but keep this

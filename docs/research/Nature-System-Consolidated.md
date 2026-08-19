@@ -1,10 +1,19 @@
 # The nature system — consolidated
 
-> ## ✅ Current canon for the nature system
+> ## ⚠️ This document's load-bearing conclusion is tainted — 2026-08-19
 >
-> Claim: [`jus-nature-does-not-affect-damage-0c6`] (`state:runtime-confirmed`, 2026-08-19). This supersedes the 1.5×
-> multiplier asserted in `Combat-Mechanics.md` and `Combat-Mechanics-Reference.md`,
-> both of which now carry a refutation banner.
+> This file concluded that nature is not read during damage computation
+> [`jus-nature-does-not-affect-damage-0c6`], now `state:tainted`. The damage routine does
+> read nature: the tables at `0x0209FEF4` and `0x0209FF14` hold `0x0180`, exactly 1.5 in
+> 8.8, and the instructions turn a base of 8 into 12.000
+> [`jus-nature-is-read-in-damage-path-hbt`].
+>
+> The measurement in here is not wrong, its scope was. The path reads a **2-bit field** —
+> the column from `[r4+0x175]`, one of bits 1:0, 3:2 or 5:4 depending on flags; the row from
+> `[r8+0x175] & 3` — on a per-ColPrm-scratch copy, and there is a bypass at `0x020824F4`
+> that skips the tables entirely. So a null from poking one byte mid-battle had three
+> innocent explanations, and 3/3 bit-identical runs measured reproducibility rather than
+> scope. Keep the experiment; drop the generalisation.
 >
 > **The open caveat in §4 still stands** and is part of the claim: only "the nature byte
 > is not read during damage computation" is established. Whether an ability-derived

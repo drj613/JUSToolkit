@@ -1,11 +1,22 @@
 # JUS Combat Mechanics Reference
 
-> ## ⚠️ ONE CLAIM HERE IS REFUTED — the nature multiplier
+> ## ⚠️ THE BANNER THAT USED TO BE HERE WAS WRONG — corrected 2026-08-19
 >
 > This document asserts a **1.5× nature multiplier on advantage** under the words
-> "CONFIRMED 2026-01-30". That is **wrong**: nature is not consulted when damage is
-> computed. Claim: [`jus-nature-does-not-affect-damage-0c6`] (`state:runtime-confirmed`, 2026-08-19). Current write-up:
-> `Nature-System-Consolidated.md`.
+> "CONFIRMED 2026-01-30". From 2026-08-19 until later the same day, a banner here called
+> that **wrong**. The banner was the error, not the claim.
+>
+> The two nature factor tables the damage routine reads, at `0x0209FEF4` and `0x0209FF14`,
+> contain `0x0180` — exactly 1.5 in 8.8 — and the instructions turn a base of 8 into 12.000
+> [`jus-nature-is-read-in-damage-path-hbt`]. What the August measurement actually showed is
+> narrower: poking the byte *it* poked, mid-battle, changed nothing. The path reads a 2-bit
+> field on a per-scratch copy, and has a bypass that skips the tables entirely, so a null
+> there had three innocent explanations. [`jus-nature-does-not-affect-damage-0c6`] is
+> `state:tainted`.
+>
+> One correction to the number as written below, though: nature and the resistance gates
+> land in the **same accumulator** and are **additive**. Advantage plus one resist gate is
+> 1.25×, not 1.5 × 0.75.
 >
 > The damage reduction described elsewhere in this file is also **×0.75 per gate, not a
 > flat term** — claim [`jus-reduction-is-quarter-multiplier-xk1`].

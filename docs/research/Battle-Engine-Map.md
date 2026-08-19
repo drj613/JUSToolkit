@@ -2173,3 +2173,48 @@ Exactly one extra id in both cases, and it differs per character so it is not a 
 ascending while `[9,25,12,14]` is not, so it isn't a sort either. `not claimed`: how the list is assembled. Two
 instances with inconsistent positioning is not a pattern, and forcing one is the error the runtime loop taught me to
 stop making.
+
+### The four-character comparison is uninformative as posed — and the per-character hypothesis is already unsupported (P179)
+
+Ran the check the runtime loop asked for: do `chr_b` 12, 20, 0 and 14 differ in any field that could be a defence
+value?
+
+**They differ in 43 of 60 bytes.** Only 17 offsets are identical across the four. So "is there a field that
+differs?" is trivially yes and therefore says nothing — a defence value would be indistinguishable from the ~40
+other per-character values in the record. I am **not** producing a candidate list: most of the small-value
+"candidates" a naive filter returns (`+0x25`, `+0x27`, `+0x29`, `+0x2B`, `+0x2F`) are the **high bytes of `u16`
+pairs**, which is exactly the error P177/P178 caught me making twice. `not claimed`: any defence field.
+
+**What would make it informative:** a measurement showing *different* damage across the four. Then the static side
+has something to correlate against, and 43 varying fields collapses to the handful whose values track the observed
+differences. Without that ordering, the sweep can only enumerate.
+
+**But the hypothesis is already unsupported for the one character it was invented to explain.**
+`Damage-Reduction-Is-Flat.md` attributes a flat −2.0 to **Luffy** from Goku's B. Runtime has measured `chr_b` 12
+taking Goku's B at the **full 6.000** in two independent clean lineages (`fight_base` and `cb_healoff`), gimmicks
+and items verified from RAM, heal confirmed off. So either that 4.000 is wrong, or the reduction is not a property
+of `chr_b` 12. **Both readings leave "a per-character defence value" with no support in the case it was posited
+for** — and P176 already showed no field distinguishes 12 from the dummy by 128.
+
+So the static side's contribution to `jus-f0v` is complete as far as it can go: no constant subtraction in code
+(P175), no 128-difference between the two characters the doc compared (P176), and no way to identify a defence
+field among 43 varying bytes without a measurement to correlate against (here). The card now turns entirely on one
+clean same-session comparison.
+
+### Two runtime corrections recorded
+
+**`RETRACTED` (theirs): the ability list is a unique active-character oracle.** I recorded that recommendation last
+wake. Verified and it fails — **11 ability sets are shared by two or more characters**: `[7,43]` by four (`chr_b` 1,
+3, 4, 7), `[7,15]` by three (0, 2, 6), `[9,25,12]` by **`chr_b` 12 and 18 identically**, and the empty set by the
+four dummies (70–73). Their own `identify()` picked 18 over 12 on a tie-break, so it surfaced immediately rather
+than quietly. The list **narrows**; it does not identify.
+
+**Narrowed (theirs): the rotation proof.** They told me "`[2,5,14,15]` matches `chr_b` 20 and no other record
+matches" — a global uniqueness argument. The check that actually holds is over the opponent's **four reserves**
+(12, 20, 0, 14), of which only 20's slots are a subset. That is sound, because rotation can only bring in one of
+those four, but it is a constrained-set argument and I have recorded it the narrow way at their request. The
+conclusion — **reserves rotate** — stands.
+
+**And rotation is not yet reproducible:** three forced KOs in `fight_base` with clean rules left the list unchanged
+at `[9,25,12,14]`, so nothing rotated in. `not claimed`: what decides rotate versus respawn. One data point — the
+opponent's four slots read HP 152, 144, 8, 0, so two reserves are depleted and stock state may decide it.

@@ -1,16 +1,34 @@
 # Session Ledger — JUS Reverse Engineering
 
-Last updated: 2026-08-18 ~23:15 (ledger wake 7, session `justoolkit-87`)
+Last updated: 2026-08-18 ~23:45 (ledger wake 8, session `justoolkit-87`)
 
 ## 1. Current state
 
 This file is a human catch-up summary — not the system of record. beads (`br`) is the record; protocol in `docs/orchestration/`.
 
 **Live sessions (from ListAgents):**
-- `justoolkit-fa` [cedb9e] — busy, 3h. **Runtime**. Since wake 6: resolved jus-5kf (HP recovery = respawn, not auto-heal), captured effect id 10 with stored duration 480, V=0 confirmed on three ids across both families. Filed jus-kdf (--boot path broken). Updated jus-cvx and jus-fms per my nudge. 5 new commits.
-- `battle-engine-atlas-76` [2e8ac4] — idle, 3h. **Static**. Now at **P169**. Mapped status param array to bin/state.bin, resolved V=0 (the non-constant formula doesn't vary), joined handler table to state.bin for all 42 ids, filed jus-5qy (dispatcher LR capture). 5 new commits.
+- `justoolkit-fa` [cedb9e] — busy, 3h+. **Runtime**. Since wake 7: status-system breakpoints working (jus-5qy), captured gauge ids via Route B, n=1→n=4 status hits all on +0x173. Filed jus-law (owner questions) and jus-z4q (gauge watch). 4 new commits.
+- `battle-engine-atlas-76` [2e8ac4] — idle, 3h+. **Static**. Now at **P170**. Retracted P159 route division, confirmed channel split is the two staging bytes, n=17 hits. 4 new commits.
+- `justoolkit-ba` [009c74] — new, idle, 3 min. Unknown role.
+- `trainer-5b` [73e646] — new, busy, 4 min. Unknown role.
 
-**Coord beads:** ~24 total (10+ closed, 13 open). All aging flags resolved. No active protocol violations.
+**Coord beads:** ~26 total (10+ closed, 14 open). No active protocol violations.
+
+## 1.5. OWNER ACTION REQUESTED — jus-law questions (surface on next check-in)
+
+Runtime filed a standing bead (jus-law) for questions only the owner can answer cheaply. **9 open questions**, each saves runtime roughly a wake. Most useful first:
+
+- **Q1** — Goku up+X produced ids 19 AND 32. Which is the freeze? Is the other a second effect or coincidence?
+- **Q2** — How do you switch characters mid-battle? Touch-screen koma taps do nothing.
+- **Q3** — Is Rukia reachable as the active character, or support-only? Needed for status+damage test.
+- **Q4** — How do you perform the character-change attack (down+B)? Needs a gauge/state/landing?
+- **Q5** — Do items inflict statuses? Which items?
+- **Q6** — Any move with a known long-duration visible effect? (Calibrates frame count = 60fps.)
+- **Q7** — Slow passive HP regen (~1.2 over 720 frames) on Battle path — expected or a residual?
+- **Q8** — Mode 12 shows treasure chest on black, modes 18/20 show instant WINNER. Reachable in play?
+- **Q9** — What characters are chr_b 35, 20, 41 in the "Koma R, G, Y" deck?
+
+Full detail: `br show jus-law`
 
 ## 2. Open audit flags
 
@@ -47,10 +65,13 @@ Runtime responded to the nudge within one wake. Updated the bead, reframed as a 
 Runtime self-retracted (`state:retracted`). nav.advance IS accurate (2300→2301); the apparent overshoot was the emulator free-running between IPC calls. Atlas applied the retraction and unblocked duration tests. Textbook retraction flow.
 
 ### Flag K — RESOLVED: jus-cvx and jus-fms aging
-Runtime responded to wake 6 nudge. jus-cvx → P3/plausible (blocked on IPC cost, cheap once per-round trips drop). jus-fms → P2/plausible (watchpoint support untested on melonDS's GDB stub — first action is to test support). Both have real status now.
+Both have real status now after wake 6 nudge.
 
 ### Flag L — Atlas retractions in map doc, not in beads (carried forward, low severity)
-Five retractions now (+ scan design retraction, `f526332`). All in commits/map doc. Self-contained. Pattern for the owner — atlas's retraction discipline is strong, just not bead-tracked.
+Six retractions now (+ P159 route division, `e131e68`). All in commits/map doc. Pattern for the owner.
+
+### Flag N — NEW: jus-zko at 3-wake TTL
+`state:plausible`, created wake 5, now wake 8 (3 wakes). It's an anchor/ask rather than a claim, so the 3-wake TTL for claims doesn't strictly apply, but it's been sitting untouched. Runtime has been busy with status-system work. Not nudging — lower priority than the active status captures.
 
 ### Flag M — RESOLVED: jus-5kf
 HP recovery was respawn animation, not auto-heal. Closed. New bug: jus-kdf (match_run --boot calls undefined autoheal_off()).
@@ -66,7 +87,7 @@ Three nudges over 7 wakes surfaced a recurring pattern. Runtime's feedback, cons
 # Per-Session Detail
 
 What each active session is doing, where things live, and what they've delivered.
-Last updated: 2026-08-18 23:15 — ledger wake 7
+Last updated: 2026-08-18 23:45 — ledger wake 8
 
 ## Ultimate goal
 

@@ -3,9 +3,8 @@
   "phase": "combat",
   "current_task": "P172 DONE: found the effect CANCEL GATE. Opcode-bearing handlers call 0x0215986C with their own opcode; it tests a bitset via 0x02158EB0 -- (Mem32[char+0x120 + 4*(opcode>>5) + 8] >> (opcode & 0x1F)) & 1 -- and a set bit zeroes node+0xE and makes the handler return 0, stubbing the node. THIS IS WHAT THE +0x7 OPCODE IS FOR (a bit index, not a behaviour enum), which closes the question left open by my channel-boundary retraction. Drains return 1 and keep ticking unless gated. id 30 uses the duration as a phase counter (acts every 16 frames). id 19s apply path clamps to [0,max] on a {max,current} meter at char+0x56C -- clamp to ZERO, which sits badly with the owners 1-HP DoT floor; flagged, not resolved.",
   "queue": [
-    "P173-IDENTIFY char+0x56C: which meter is it, and does a separate HP field exist with a clamp to 1? The apply path 0x02078488 clamps to [0,max] on a {max +0x16, current +0x18} halfword pair. The owner says DoT never kills and leaves the victim at 1 HP, so either +0x56C is not HP or the floor is enforced elsewhere. This settles the drain target properly instead of by elimination, and it also resolves a naming inconsistency in Battle-Engine-Map.md (0x020783CC is called the HP-apply trampoline there).",
-    "P173b-map the char+0x120 bitset: who WRITES it. That names the cancel mechanism from the writer side. Remember the P171 rule -- name the containing function before believing an offset hit.",
-    "P173c-name the dispatcher third caller (Route A) to bound the claim it is dead in retail.",
+    "P173-IDENTIFY THE METER at [char+0x56C] (now known to be a POINTER, confirmed: 0x020783D0 is ldr r0,[r0,#0x56c]). It points at a {max +0x16, current +0x18} halfword node with a clamp to [0,max]. Which meter is it -- guard? SP? The guard-sp-gauges section treats +0x56C as a gauge and +0x558 as a meter-node list, so tie those together. Also: a separate HP field must exist with the owner s 1-HP floor -- find it. Use the CROSS-BRANCH record check first (the ability-bitset doc used char_struct = hp_block - 0x18).",
+    "P173b-write the char+0x120 bitset findings back so the ability-bitset doc gets my two additions (the second word at +0x12C, and the base+8 description) -- coordinate with the owner s branch rather than duplicating on mine.",
     "P168b-static writer of root+0x118 / +0x11C (runtime top ask, jus-3vg) -- would turn their empirical 0x70/0x61C validation into a structural check.",
     "P168c-what sets the gate byte 0x0217296D: find its writers. That is the thing that decides whether a mode plays at all.",
     "P168d-static writer of root+0x4C (term V).",
@@ -2167,7 +2166,8 @@
     ],
     "owner_questions_parked": "Runtime opened bead jus-law for owner questions the ledger surfaces each morning, phrased as confirm/deny rather than open questions. Mine sent 2026-08-18: (1) does down+B change the OPPONENT character, not your own? (2) is there any damage-over-time status in JUS at all? (3) do statuses tick visibly or are they instantaneous state flags? (4) are the exotic rulemess missions (destroy every wall, protect the target, capture the target) real playable rules?",
     "process_rules": [
-      "NAME THE CONTAINING FUNCTION BEFORE BELIEVING AN OFFSET HIT. Searching by immediate offset finds every struct in the ROM with a field at that offset."
+      "NAME THE CONTAINING FUNCTION BEFORE BELIEVING AN OFFSET HIT. Searching by immediate offset finds every struct in the ROM with a field at that offset.",
+      "CHECK THE RECORD ACROSS BRANCHES, not just my worktree. Ability-Bitset-Is-Not-Resistance.md exists only on re/ability-bitset-not-resistance (the owner s branch); I derived its structure independently a wake later. Use: git log --all --diff-filter=A -- \"**/pattern*\" then git show <branch>:<path>. Three loops plus the owner all work on separate branches -- a worktree-local grep checks one quarter of the record."
     ],
     "planning_caveats": [
       "melonDS watchpoint support is limited and UNTESTED by runtime (jus-fms) -- they have only used execution breakpoints successfully. Budget a support test before designing around a write-watchpoint.",
@@ -2180,7 +2180,8 @@
       "down+B": "CONFIRMED changes the OPPONENT character. Hold down (= guard) then press B while held; only changes them if it HITS. My P170 reading was right -> OBSERVED.",
       "statuses do not tick visibly": "an icon appears above the character, no timer, no countdown -- supports the state-timer reframe",
       "exotic missions": "STORY MODE ONLY, not selectable custom rules -> CLOSES the 22-described-vs-31-handler gap; the extra handlers are story content. Stop menu-side hunting.",
-      "items inflict statuses": "chili pepper -> burn, purple flask -> poison. Items-ON is a REQUIREMENT for that family, not contamination."
+      "items inflict statuses": "chili pepper -> burn, purple flask -> poison. Items-ON is a REQUIREMENT for that family, not contamination.",
+      "ability bitset": "entity+0x128 is the CACHED ABILITY BITSET, runtime-confirmed: bit 4 = ability 0x04 Auto-Guard drives damage to ZERO (the campaign positive control). Populated at load by 0x0215FB3C walking the ability list. My gate indexes the same word by effect opcode => effect opcode == ability ID => status immunity is an ability. LABEL IT THE OWNER S WAY; do not call it resistance or mint a second name."
     }
   }
 }

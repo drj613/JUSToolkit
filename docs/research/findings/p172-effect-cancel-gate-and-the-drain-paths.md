@@ -1,5 +1,38 @@
 # P172 — The effect cancel gate: what the status opcode is for, and where the drains land
 
+
+> **RESOLVED SAME DAY — the gate's bitset is the repo's already-documented CACHED ABILITY BITSET.** For
+> `opcode < 32`, `char+0x120 + 4*(opcode>>5) + 8` **is** `entity+0x128`, the subject of
+> `docs/research/Ability-Bitset-Is-Not-Resistance.md` (on branch `re/ability-bitset-not-resistance`, not on
+> mine — see the process note below). That word is runtime-confirmed live and read during combat: setting bit 4
+> (ability `0x04` オートガード Auto-Guard) drives damage to zero, and it is the campaign's canonical positive
+> control. It is populated at load by `0x0215FB3C`, which walks the character's ability list and caches each
+> ability ID as a bit.
+>
+> The bitset is indexed **by ability ID**; my gate indexes it **by effect opcode**. If both hold, then
+> **effect opcode == ability ID**, and the mechanism is: *having ability N cancels effects whose opcode is N.*
+> **Status immunity is an ability.** Labelled the owner's way — the cached ability bitset — rather than minting
+> "cancel bitset" as a second name for the same word. Do not call it a resistance bitset.
+>
+> **This resolves a negative sitting in that doc.** It concluded status-resistance abilities "do exactly
+> nothing", having tested them only at **damage** time. The gate is not a damage-time modifier — it is an
+> effect-**cancel** path. A status-resistance ability doing nothing to damage and everything to effect
+> application is fully consistent, which converts that doc's dead end into a wrong-place-to-look.
+>
+> **Two things my expression adds to that doc.** It only ever examined the 32 bits of one word. The
+> `4*(opcode>>5)` term means opcodes ≥ 32 read a **second word at `entity+0x12C`** — and the status opcodes
+> `0x19`–`0x22` (25–34) straddle the boundary: 25–31 are bits 25–31 of `+0x128`, while 32/33/34 are bits 0/1/2
+> of `+0x12C`. id 22's opcode `0x21` = 33 lands in that second word. So the bitset is wider than 32 abilities.
+> And `base +0x120` with a `+8` displacement is a more precise description of the structure than "a word at
+> `+0x128`".
+>
+> **The `+0x56C` inconsistency is resolved, and in the doc's favour.** It cautioned that
+> `entity + 0x56C = char_struct` "was almost certainly a pointer load, `ldr [entity, #0x56C]`, not a
+> subtraction." The bits confirm it: `0x020783D0` is literally `ldr r0, [r0, #0x56c]`. So `+0x56C` holds a
+> **pointer** to the `{max +0x16, current +0x18}` meter node, which is why the apply clamps to `[0, max]` and
+> why it is not the HP the owner's 1-HP floor describes. Their "almost certainly" → `CONFIRMED_STATIC`.
+
+
 **Iteration 172. Static.** Read the three drain handlers — id 19 (`0x02159500`), id 30 (`0x02159624`), and the shared id 5/33 handler (`0x021592DC`) — looking for a return value, an HP-or-gauge answer, and the clamp-to-1 the owner's ground truth predicts.
 
 Found the gate that explains the whole subsystem's shape, and answered an open question: **what the `+0x7` status opcode is for.**

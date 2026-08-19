@@ -1335,7 +1335,18 @@ reps produced only ids 9 and 17, both amount 0, both actively stubbed.
 | The gate is a **bitset test**: `return (Mem32[char+0x120 + 4*(opcode>>5) + 8] >> (opcode & 0x1F)) & 1` | ov6 `0x02158EB0` | `CONFIRMED_STATIC` (Codex-checked from raw words, no addresses) |
 | **This is what the `+0x7` opcode is for** — a bit index into a per-character cancel bitset, not an enum of behaviours. Closes the question left open by my channel-boundary retraction | — | `CONFIRMED_STATIC` |
 | Only opcode-bearing effects are gated: the shared id 5/33 handler (`+0x7 = 0xFF`) has **no gate call** and applies unconditionally | ov6 `0x021592DC` | `CONFIRMED_STATIC` |
-| What the `char+0x120` bitset *is* | — | `not claimed`. Functionally it cancels; the owner's branch is named `re/ability-bitset-not-resistance`, so a resistance label may already be refuted. Asked in `jus-law`. |
+| The `char+0x120 + 8` word **is** `entity+0x128`, the repo's **cached ability bitset** — runtime-confirmed live and read in combat (bit 4 = Auto-Guard drives damage to zero, the campaign's positive control), populated at load by `0x0215FB3C` walking the ability list | `Ability-Bitset-Is-Not-Resistance.md` (branch `re/ability-bitset-not-resistance`) | **`CROSS_CONFIRMED`** |
+| **effect opcode == ability ID**, so *having ability N cancels effects whose opcode is N* — **status immunity is an ability.** Label it the owner's way; do **not** mint "cancel bitset" or call it resistance | — | `PLAUSIBLE` (rests on both indexings holding) |
+| The bitset is **wider than one word**: `4*(opcode>>5)` means opcodes ≥ 32 read `entity+0x12C`. Status opcodes `0x19`–`0x22` straddle it — 25–31 in `+0x128`, 32/33/34 in `+0x12C`. That doc only tested one word | ov6 `0x02158EB0` | `CONFIRMED_STATIC` |
+| **Resolves a negative in that doc:** it found status-resistance abilities "do exactly nothing" — tested only at *damage* time. The gate is an effect-*cancel* path, so a status-resistance ability doing nothing to damage and everything to effect application is consistent. Dead end → wrong place to look | — | `CONFIRMED_STATIC` |
+| **`+0x56C` resolved in that doc's favour:** it suspected `entity+0x56C` was "almost certainly a pointer load, not a subtraction". `0x020783D0` is literally `ldr r0,[r0,#0x56c]`, so `+0x56C` holds a **pointer** to the `{max, current}` meter node — which is why the clamp is to `[0, max]` and why it isn't the HP the 1-HP floor describes | arm9 `0x020783D0` | `CONFIRMED_STATIC` (upgrades their "almost certainly") |
+
+**Process gap this exposed, and it is mine.** My check-the-record rule greps `docs/research/` **in my own
+worktree**. `Ability-Bitset-Is-Not-Resistance.md` exists only on `re/ability-bitset-not-resistance` — the
+owner's branch — so no amount of local grepping could have found it, and I spent a wake deriving a structure
+that was already runtime-confirmed two days earlier. **The rule now has to include other branches**
+(`git log --all --diff-filter=A -- "**/pattern*"`, then `git show <branch>:<path>`). Three loops and the owner
+all work on separate branches; a worktree-local record check is a check against one quarter of the record.
 | Drains return **1** and keep ticking after applying — my P171 prediction holds, **with the gate as a condition**: the same id is stubbed when cancelled | ov6 | `CONFIRMED_STATIC` |
 | id 30 uses the duration as a **phase counter**: `tst duration,#0xF` / `bne`, so it acts once every 16 frames. The handler *reads* `node+0xE` without decrementing it | ov6 `0x02159644` | `CONFIRMED_STATIC` |
 | id 19's apply path `0x020783CC` dereferences `char+0x56C` and tail-jumps to `0x02078488`, which is a `{max +0x16, current +0x18}` halfword meter with a clamp to **`[0, max]`** and a "still non-zero" return | arm9 | `CONFIRMED_STATIC` |

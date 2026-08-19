@@ -64,3 +64,33 @@ Also open: what writes the `+0x558` nodes, and whether `+0x0E`'s nibbles are rea
 ## Provenance
 
 Static only. `jus_files/arm9/arm9.bin`, listing `jus_files/analysis/disasm/arm9.txt`, direction bytes read from the binary at `addr − 0x02000000`. No codex pass — the decisive check is code constants against a human-observed grid size, already cross-representational, so handing codex the same listing would be one artifact twice.
+
+## Corrected the same wake: the list is at `arg0+0x558`, and it is one list walked twice
+
+The runtime seat read `[0x02244020+0x558]` and got ASCII, which caught two errors of mine.
+
+**The address.** `0x0207776C` is `mov sl, r0`, so the list head is at **`arg0+0x558`** and arg0's
+identity is not established. I called it `battleObj` because the surrounding code smelled like it,
+which is the guess-an-object's-identity error again.
+
+**The shape, and this one matters more.** It is one list walked twice, not two lists. Pass 1
+(`0x02077770`) takes nodes with `+0x40 == 0`, reads `+0x41` as a **chr_b index**, walks the five
+record slots and appends to the node *itself* — so for type 0 the node **is** the character struct.
+Pass 2 (`0x02077830`) takes `+0x40 == 2`, reads `+0x41` as an **ability id**, and appends it to the
+adjacency-selected recipient. Both chain via `node+0x00`.
+
+So `+0x41` means two different things depending on `+0x40`: a chr_b index on type 0, an ability id
+on type 2.
+
+**Confirmed from live memory, 3/3** — every appended id matches a type-2 node in the same chain,
+and the mapping is **selective**: the opponent chain has two type-2 nodes, and one fighter got 14
+but not 5 while the other got 5 but not 14. A broadcast would have given both to both, which is
+what the adjacency gate predicts.
+
+**Still untested, and this is the honest state.** The runtime seat refuted a *different*
+hypothesis — that `[+0x0F] & 0x0F` names a deck position (measured 2/3/2 against recipient
+positions 4/1/2). Adjacency says the recipient is `(cell + direction)` and neither field alone, so
+those numbers are consistent with it and don't discriminate. The test that would: the full `+0x0E`
+and `+0x0F` bytes per node plus the 80 bytes at `arg0+8`, checking that
+`arg0 + 8 + y*0x14 + x*4` holds the recipient's address for all three. Three for three confirms;
+one miss kills it.

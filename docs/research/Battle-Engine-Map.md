@@ -2851,3 +2851,27 @@ the honest one: that comparison was contaminated by their harness parameters, se
 **Their pairing of the two blind spots is worth keeping as one rule:** the polling failure and the
 too-early-breakpoint failure are opposite ends of the same problem — *one instrument could not see the event because it
 looked too late in the frame; the other could not see the effect because it looked too early in the code.*
+
+## P184 — Which Register Holds the battleObj Across the Damage Span (CONFIRMED_STATIC)
+
+Before the bracket run, the runtime loop needed to know which register carries the char/battleObj across `0x02156E94`–`0x02156EB0`. They had no disassembly of the register state and planned to eyeball it, then validate against `0x0220FDC4`.
+
+**`r4` holds the battleObj. It's assigned exactly once.**
+
+```
+0x02156DDC: push {r4, r5, r6, lr}
+0x02156DE0: ldr  r0, [r0, #4]      ; arg0 -> [arg0+4]
+0x02156DE4: ldr  r4, [r0, #0x10]   ; r4 = [[arg0+4]+0x10]   <-- the battleObj
+```
+
+I checked every write to `r4` across the full span, not just the prologue. The only assignment is at `0x02156DE4`. So `r4` stays valid from `0x02156DE4` through `0x02156EB0`, and the scratch is `[[r4+0x1A8]+0x10]` at every capture point.
+
+**The trap (already cost 23 rows).** The three bracket addresses `0x02156E98`, `0x02156EA0`, and `0x02156EA8` *are* the `mov r0, r4` instructions. A breakpoint there fires **before** the mov executes, so `r0` still holds the **previous call's return value**, not the battleObj. Deriving from `r0` reproduces exactly the `0x02156EB4` return-address error — a plausible number from the wrong source. Use `r4`.
+
+**A better fourth capture point.** Runtime proposed breaking at the function entry `0x02156DDC` to measure the write upstream rather than infer it from three equal values. The reasoning is sound — three equal values are also what a broken derivation produces, so a fourth read separates a correct prediction from a failing instrument. But at entry, `r4` isn't loaded yet; you'd need a double deref of `arg0` via `[[r0+4]+0x10]`, which is more guesswork. Break at **`0x02156DE8`** instead: `r4` already holds the battleObj, and it's still ahead of everything else in the function. Same answer, nothing to get wrong. It also collapses the validity check into one test — if `[[r4+0x1A8]+0x10] == 0x0220FDC4` at `0x02156DE8`, the derivation is sound for all four points, because `r4` doesn't change between them.
+
+**Prediction and unexamined tree are separate facts.** Runtime's framing is right: if the bracket reads 384 everywhere, the prediction holds AND the 7 callees of `0x0215C360` that never receive the scratch remain unexamined. One is about where the value already lives; the other is about what hasn't been ruled out yet.
+
+**What this answer actually caught.** Runtime's own scheduled wake prompt told next-wake-them to derive the scratch as `[[r5+0x1A8]+0x10]` with the battleObj in `r0` at a prologue. At the three bracket sites that's wrong twice: `r5` isn't established until `0x0215AC00`, and `r0` holds a stale return value. They would have reproduced the `0x02156EB4` failure on four points instead of one — and this time **with no HP signal to reveal nonsense reads**. The first instance got caught because the numbers looked wrong. These wouldn't have.
+
+**Process rule adopted (theirs, and it generalizes).** *A prompt you write for your own next wake is not a safe place for addressing detail; the ledger is.* Next-wake-you reads the bead; the prompt is just what it would otherwise trust unchecked. Addresses, registers, and deref chains belong in a bead where the partner can see and correct them — a self-authored prompt is unreviewed by construction. Same failure shape as rule 6 (grep hit a superseded table in a doc containing its own correction): stale instructions that look authoritative because you wrote them.

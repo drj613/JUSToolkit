@@ -33,7 +33,7 @@ The four failures this protocol is built to prevent:
 | Role | Job | Current instance |
 |---|---|---|
 | **runtime** | Drives the melonDS harness, boots battles, measures damage/status, scans RAM. Produces magnitudes. | `justoolkit-09` — started 2026-08-19, **continuous** through several name changes (was `justoolkit-e2`); confirmed directly, with commits 918ec18, d878084, 95209f4, 0941b71 |
-| **static** | Works the disassembly, maps structs/formulas, produces addresses. Labels claims. | *(session `justoolkit-73` ended; unassigned as of ledger wake 5)* |
+| **static** | Works the disassembly, maps structs/formulas, produces addresses. Labels claims. | **alive** — the static loop is continuous through iteration 218; commits `f84f644`, `d1fb4c6`, `56f2783`. Name unknown to itself (a session cannot see its own name), so identify this seat by its `loop-atlas:` commits, not by a name |
 | **ledger** | Reads the beads ledger + git, keeps the human catch-up summary, flags inconsistencies, nudges idle loops. Does **not** write findings. | `justoolkit-3e` — started 2026-08-19, confirmed the seat directly; never touches the emulator |
 
 **Other sessions active in this project (not loops, no assigned role):**
@@ -53,11 +53,16 @@ mandatory line — *was exclusive access held, and how was that established* —
 it a conditions block reads clean while being contaminated. That is the gimmick lesson with
 another agent as the contaminant.
 
-**`ListAgents` is not a liveness oracle for this table.** On 2026-08-19 I read a roster that
-omitted the runtime and ledger sessions and concluded both seats were vacant. Both were alive
-and working the whole time; the runtime loop has been continuous through several name changes.
-A session missing from `ListAgents` is *not* evidence it has stopped — ask, or check its recent
-commits, before recording a seat as empty. Durable content belongs in beads addressed to the
+**`ListAgents` is not a liveness oracle for this table.** On 2026-08-19 this failed three
+times in one hour. I read a roster that omitted the runtime and ledger sessions and concluded
+both seats were vacant. The ledger independently reached the same conclusion and wrote "ended;
+unassigned" into the runtime row — and into the **static** row, while the static loop was
+actively committing to this branch. All three seats were occupied throughout.
+
+A session missing from `ListAgents` is *not* evidence it has stopped. Ask it, or check for
+recent commits, before writing a seat off. Better: identify a seat by its commit prefix
+(`loop-atlas:`, `loop-ed:`) rather than by a session name, because names drift, rosters lie,
+and a session cannot even see its own name. Durable content belongs in beads addressed to the
 **role**, because that survives both a dead session and a misread roster.
 
 **On every restart, update this table.** Names drift across restarts; this table is the

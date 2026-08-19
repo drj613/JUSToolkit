@@ -3,7 +3,7 @@
  "phase": "combat",
  "current_task": "P213-what sets bit 5 of [r8+0x40] (the resistance gate)",
  "queue": [
-  "P224a-Identify chr_b 1, 39, 40, 50. They carry abilities so they are real characters, but nobody has ever mapped them. Cross-reference classId/charId/jpower block against the collision files and pname.bin / infoname.bin.",
+  "P224a-Identify chr_b 39/40 FIRST -- runtime found they are two tiers of one character from NESTED on-disk ability lists ([3,38] and [3,38,48]), which does not route through the discredited index. Then 1 and 50. Route: jus_files/exported_combat per-collision JSON, since the identity-field route is dead.",
   "P224-What appends ability id 0x0E (14) at runtime? On disk Luffy has 3 abilities, live he has 4. The loader compacts and appends. This is the last unexplained step in the ability chain.",
   "P224b-Find the loader: what writes char+0x1A (count) and char+0x1B.. (ids) from chr_b+0x03? That pins the compaction and probably the append site too.",
   "P224c-chr_b -> jpower linkage proper: which jpower entries does a character record select? Note the record contradiction (block 0 called Goku but Goku B resolved to 146/195/218 outside it). Runtime says a named base-2 move is no longer needed, so this is for its own sake.",
@@ -2438,5 +2438,7 @@
   "EDAJIMA_THIRD_SOURCE": "chr_b 67 = Edajima now confirmed from three sources: the handoff, my ability window, and his own deleted map (charId 9, classId 420, jpower block 164, oj_b_02.bin).",
   "STILL_UNIDENTIFIED": "chr_b 1, 39, 40, 50 carry abilities but no index row and no deleted map ever named them. The only genuinely unknown entries in chr_b.bin.",
   "NEAR_MISS": "my first recovery pass regex-matched the phrase \"tier-2 modifier\" out of the maps prose and reported tier=2 for seven characters. Not a field value. Caught before writing, but it would have entered the index looking like real data -- in a file whose whole purpose is to be the durable extract of deleted originals. tier left dash on all eleven."
- }
+ },
+ "P223_INDEX_IDENTITY_FIELDS_UNVERIFIED": "classId matches chr_b record offset 0x0E (LE u16) for 49 of 70 rows; for 21 it does not, and for 13 of those the value appears at 0x0E of NO record. Either those rows chr_b numbers are wrong or the column came from elsewhere. FOUR of the thirteen are rows I recovered this wake from deleted maps headed \"Map status: STUB\" -- transcribed correctly, but possibly inferred at source. So charId/classId/jpower in character-index.md are UNVERIFIED. Caveated in place, commit c9007a9, bead jus-index-identity-fields-unverified. Kills my plan to identify records 1/39/40/50 by computing identity fields; the collision-file route (jus_files/exported_combat per-collision JSON) is now the only one.",
+ "P223_THREE_ARTIFACTS_ONE_FILE": "character-index.md produced three extraction artifacts today, all reading as plausible data: (1) \"File\" in the chr_b column of twelve placeholder rows, so a numeric parse skipped them and TWO sessions independently diagnosed \"missing records\" -- I verified their number and got the same one, two identical parse bugs agreeing; (2) my own regex lifting \"tier-2 modifier\" out of prose as a tier value for seven characters, caught before writing; (3) a classId column right 70% of the time."
 }

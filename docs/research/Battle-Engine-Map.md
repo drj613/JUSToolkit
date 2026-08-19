@@ -724,3 +724,23 @@ an early-read artifact, because sibling fields in the same dumps were populated 
 held main-RAM pointers, `+0x158` held the correct character count, `+0x000` held a live per-mode
 handler). A freshly-`memset` object cannot show those. The zeros are real, so term `V` stays
 `SPECULATIVE` for the reason already recorded and not for this new one.
+
+### The installer's caller and the gate (P167)
+
+`findings/p167-installer-caller-and-the-bss-gate.md`.
+
+| what | where | confidence |
+|---|---|---|
+| The installer `0x0214F91C` has **exactly one** `BL` caller, and the call is **unconditional** | ov6 `0x0214DA58` | `CONFIRMED_STATIC` (exhaustive Thumb `BL` scan of `ov06.bin`) |
+| `r0` at the installer is `[0x02172960]` — the battle root. So `root+0x08` / `root+0xC8` are fields of the anchor's pointee | pool `0x0214DA9C` / runtime `jus-usf` (`lr` = `0x0214DA5D`, `r0` = `0x021DEA60`) | **`CROSS_CONFIRMED`** |
+| Live return address `0x0214DA5C` = `0x0214DA58 + 4`, matching the statically scanned call site from the opposite direction | runtime `jus-usf` | **`CROSS_CONFIRMED`** |
+| **The gate is a single byte at `0x0217296D`** in ov6's BSS, 13 bytes past the root global. Zero → the whole install path is skipped (`0x0214DB24`–`0x0214DB2A`) | ov6, pool `0x0214DB54` | `CONFIRMED_STATIC` (Codex-checked independently) |
+| Second gated entry to the same function, on a call result rather than the BSS byte | ov6 `0x0214DB94`–`0x0214DBA4` | `CONFIRMED_STATIC`; which path a real battle takes is `not claimed` |
+| Mode 12 hits neither the installer nor its return site, in the same live GDB session that caught mode 2 — so the gate is **upstream of the call** | runtime `jus-usf` | **`CONFIRMED_RUNTIME`** |
+| The handler at `root+0x000` is a **tick that reports completion**: invoked via trampoline `0x0214F948`; a non-zero return restores the default and clears `+0xC8` (`0x0214DD32`–`0x0214DD3E`) | ov6 | `CONFIRMED_STATIC` |
+| Writer of `root+0x08` | — | `not claimed`. No `ldrb [x,#0x10]` → `str [y,#8]` pair exists anywhere in ov6; all 34 ov6 pool refs to `0x020AFE90` checked. Either a register-offset store or arm9. |
+
+**Instrument rule adopted (runtime, `jus-usf`).** A breakpoint no-hit result is worthless unless the same
+log shows the session stayed healthy and a control fired. Two earlier mode-12 runs printed identical
+"0 hits" while GDB had detached on a `SIGILL` or the script had errored — either would have delivered a
+clean-looking negative built on a dead debugger.

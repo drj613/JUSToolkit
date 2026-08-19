@@ -1,11 +1,12 @@
 {
-  "iteration": 166,
+  "iteration": 167,
   "phase": "combat",
-  "current_task": "P166 DONE: per-mode handler table found at ov6 0x02170EAC, 31 records x 12 bytes, 3 Thumb fn ptrs each. Indexer 0x0214F91C: [root+0x00]=[0x02170EB0+mode*12], [root+0xC8]=1. NEW root fields +0x08 (mode) and +0xC8 (flag). 12 runtime-poked modes land at their own index = CROSS_CONFIRMED. My jus-wbo prediction REFUTED. root+0x08 is NOT a copy of 0x020AFEA0 (training runs entry 8 with the byte at 0).",
+  "current_task": "P167 DONE: installer 0x0214F91C has exactly ONE BL caller (0x0214DA58), unconditional, with r0=[0x02172960] (CROSS_CONFIRMED by runtime lr=0x0214DA5D -> return site 0x0214DA5C = call+4). The GATE is a byte at 0x0217296D in ov6 BSS (zero -> skip the install path); a second gated path exists at 0x0214DB94 on a call result. Also found: root+0x000 is a tick invoked via 0x0214F948 whose non-zero return restores the default and clears +0xC8 -- the real 1->0 edge, at rule completion. root+0x08 writer NOT found: no ldrb[+0x10]/str[+8] pair exists in ov6.",
   "queue": [
-    "P167-find-the-WRITER-of-root+0x08 AND THE CALLER/GATE OF THE INSTALLER 0x0214F91C. install-then-revert is REFUTED by runtime (default is the INITIAL state; order is memset -> default+flag0 -> per-mode+flag1; mode 12 never reaches flag 1). So the question is not \"what reverted it\" but \"why was 0x0214F91C never called for mode 12\". Read its CALLERS and the condition around the call. root+0x08 is identity across ten poked modes, so a permuting writer = wrong writer.",
-    "P167b-static writer of root+0x118 / +0x11C (runtime top ask, jus-3vg).",
-    "P167c-static writer of root+0x4C (term V; runtime says the array is zero in 4 states / 2 boots).",
+    "P168-root+0x08 writer: search arm9 and register-offset stores. The ov6 immediate-store pattern is exhausted (zero hits).",
+    "P168b-static writer of root+0x118 / +0x11C (runtime top ask, jus-3vg) -- would turn their empirical 0x70/0x61C validation into a structural check.",
+    "P168c-what sets the gate byte 0x0217296D: find its writers. That is the thing that decides whether a mode plays at all.",
+    "P168d-static writer of root+0x4C (term V).",
     "P166-find-the-WRITER-of-root+0x4C: two readers (ov6 0x02158F78 as V, arm9 0x0208552C as index), zero writes known. Runtime dump (jus-45k) says the array is ALL ZERO in three live states, so either the duration formula never varies in ordinary play or the writer did not run. Look for register-offset stores (search-imm cannot see them). Settles multiplier-vs-index without the poke.",
     "P166b-disassemble root+0x000 handler targets 0x0214FDDC (death match) and 0x02150D70 (training) under ov6 -- runtime says +0x000 is an odd Thumb pointer and the ONLY field differing between modes; would be a third rule-mode discriminator (from jus-45k comments).",
     "P166c-static writer of root+0x118 / +0x11C: runtime derives the HP blocks as [+0x118]+0x70 and [+0x11C]+0x70 (delta 0x61C, stride 0x50, 4 slots) but only PLAUSIBLE -- one boot lineage. A static allocation-layout match makes it reboot-proof.",
@@ -263,7 +264,8 @@
     "P163: rule-select screen mapped to the 0x020AFE90 struct via the settings-copy function 0x0207538C; +0x2D named as チームせん team battle; +0x1C confirmed as a frame-count time limit by two independent constants (value*60 and ov6's 18000 = 5:00).",
     "P164: 0x0216446C attributed to ov1 by five-way overlay disassembly (correcting P163); it is a 4-instruction leaf reading a 16-byte-per-mode descriptor table, so the time-limit conversion is data-driven; menu settings record stride 0xA4 = 164 bytes; destination base and settings+0x4C confirmed.",
     "P165-mode-table-is-rulemess-bin",
-    "P166-per-mode-handler-table"
+    "P166-per-mode-handler-table",
+    "P167-installer-caller-and-the-bss-gate"
   ],
   "stuck": {},
   "required_reading_for_koma_tasks": [
@@ -2109,7 +2111,9 @@
       "root+0xC8 = per-mode-handler-installed flag (mode 12: flag 0 + default handler 0x02150F65, predicted statically before the measurement)",
       "31 records in the handler table (93-word run / 3 AND the live gate refusing 31 and 40)",
       "handler sharing observed live: 22=9, 25=28, 30=16",
-      "root+0x08 identity across ten poked modes"
+      "root+0x08 identity across ten poked modes",
+      "r0 at the installer is [0x02172960] (static pool + live lr/r0)",
+      "live return site 0x0214DA5C == statically scanned call site + 4"
     ],
     "my_refutations": [
       "jus-wbo: rulemess text-duplicate entries do NOT share handler code. Refuted statically the same wake it was filed; runtime independently refuted it by measurement. No dependents tainted -- nothing was built on it."
@@ -2120,10 +2124,11 @@
       "static writer of root+0x118/+0x11C (would let them tighten validation from empirical to structural)",
       "a real timer field offset if my setup-code hunt passes one -- their TIMER offset is UNVERIFIED and reads 16->13->11->8 over 1800 frames, so it is not the じかん counter"
     ],
-    "instrument_rules_adopted": "jus-acq: an all-zero root read taken too early is uninterpretable (freshly memset, fills by ~+300 frames). Checked against my root+0x4C zeros: NOT an artifact -- sibling fields (+0x10C, +0x110, +0x158, +0x000) were populated in the same dumps. | jus-gpx: for ~160 frames after object creation a mode that installs correctly reads flag 0 with the default handler. A single flag-0 observation proves nothing unless shown to persist.",
+    "instrument_rules_adopted": "jus-acq: an all-zero root read taken too early is uninterpretable (freshly memset, fills by ~+300 frames). Checked against my root+0x4C zeros: NOT an artifact -- sibling fields (+0x10C, +0x110, +0x158, +0x000) were populated in the same dumps. | jus-gpx: for ~160 frames after object creation a mode that installs correctly reads flag 0 with the default handler. A single flag-0 observation proves nothing unless shown to persist. | jus-usf: a breakpoint NO-HIT is worthless unless the same log shows the session stayed healthy and a control fired (two earlier mode-12 runs printed identical \"0 hits\" with GDB detached on SIGILL / a script error).",
     "my_retractions_pushed": [
       "2026-08-18 P166: \"the gate refusing indices 31 and 40 confirms the 31-record count\" -- RETRACTED same wake. Runtime cannot distinguish in-range-never-installs (mode 12) from out-of-range-rejected (31/40); all three rest at default+flag0. Record count decomposed instead: lower bound >=31 is CROSS_CONFIRMED (index 30 installs its exact table entry), upper bound =31 is CONFIRMED_STATIC (pointer run ends at 0x02171020, next words are packed data). Dependents: the map row and the P166 finding; both corrected. Nothing else built on it.",
       "2026-08-18 P166: \"mode 12 installs then reverts\" -- REFUTED by runtime the same wake it was proposed; removed from the active task."
-    ]
+    ],
+    "tooling_note": "xrefs.json cannot be trusted for Thumb callers (~89% literal-load blindness, P160). Hand-rolled exhaustive Thumb BL/BLX scan over ov06.bin is the reliable method and found the single caller immediately. Worth promoting into query.py."
   }
 }

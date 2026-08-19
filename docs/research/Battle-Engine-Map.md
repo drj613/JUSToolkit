@@ -1608,3 +1608,27 @@ HP path dereferences. So one object holds the physics state and the HP handle.
 `battleObj` is already theirs from `root+0x0DC` / `root+0x0E0`, so logging a few halfwords of that window per
 attempt costs nothing and does two jobs at once: it tests their candidate, and it exercises a `+0x6A`–`+0xBA`
 validation item that has sat in `GDB-Validation-Queue.md` for months.
+
+### The effect tick driver (P174)
+
+`findings/p174-effect-tick-driver.md`.
+
+| what | where | confidence |
+|---|---|---|
+| The tick driver is the **second half of `0x02158B20`** — the same function P159 called "the on-hit flush". It is the **per-character effect update** | ov6 `0x02158C68`–`0x02158D60` | `CONFIRMED_STATIC` |
+| **`node+0xE` is decremented by 1 per tick** at `0x02158C88` — the thing no handler does | ov6 | `CONFIRMED_STATIC` |
+| The tick call is `0x02158CF0`: `ldr r2,[sb]` / `blx r2` with `r0` = battleObj, `r1` = node | ov6 | `CONFIRMED_STATIC` |
+| On expiry the driver installs the stub (`str r6,[sb]`) and calls `0x0215911C(battleObj, slot)` | ov6 `0x02158D08` | `CONFIRMED_STATIC` |
+| Exactly **2 slots at stride `0x18`**, from the loop bound rather than the apply arithmetic — a second angle on P158 | ov6 `0x02158D54`–`0x02158D60` | `CONFIRMED_STATIC` |
+| **`state.bin` flags bit `0x20` = "duration can drain faster than 1/tick"**, closing a `not claimed` from P169. On odd durations an extra decrement is granted if **ability bit 8** is set, else possibly via `0x021613C4(battleObj+0x1C, 0xF, 2)`. Set on ids 18, 19, 26, 27, 30, 31, 32, 34 | ov6 `0x02158C94`–`0x02158CE0` | `CONFIRMED_STATIC` |
+| **The ability bitset has three unrelated consumers** — the cancel gate (bit = status opcode), tick bit 8 (faster decay), and `0x02158D78` bit 14 (`tst r1,#0x4000`, against a value from `+0xBC`/`+0xBE`). So it is a **general per-ability behaviour switchboard**, not a resistance or immunity field — the owner's branch-name assertion reached from a third direction. Bit 14 is set on the opponent in the runtime capture, so that path is live | ov6 | `CONFIRMED_STATIC` |
+| `Battle_CharaCreate` installs `0x02156DDC` (loaded from its own pool at `0x02156D64`); that function calls `0x02158B20` at `0x02156E94`. Same architecture as the rule handler at `root+0x000` — a per-character callback installed at construction | ov6 | `CONFIRMED_STATIC` |
+| The **1-HP floor** is nowhere on the DoT path | — | `not claimed`. Dispatcher, drain handlers, apply worker and tick driver are all now mapped and none clamps to 1. Remaining candidate: the KO path, not the damage path. |
+
+**It also explains the 15,732 empty dispatches structurally.** We had recorded "the flush usually has nothing
+staged" as an inference from the code's shape. The flush and the tick are **the same function**, so the flush runs
+on every character update whether or not anything is staged. The runtime loop's throwaway number from a failed
+run was measuring exactly that.
+
+**P159's framing corrected:** "the on-hit apply function" describes what `0x02158B20`'s first half does *when
+something is staged*, not what the function is.

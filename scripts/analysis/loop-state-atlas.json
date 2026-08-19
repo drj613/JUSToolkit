@@ -1,10 +1,11 @@
 {
-  "iteration": 173,
+  "iteration": 174,
   "phase": "combat",
-  "current_task": "P173 DONE, and it retracts my own P172 doubt. char+0x56C is a POINTER to the character struct: +0x16 max HP (s16, cap 0x4000 = 256.0 at 1/64), +0x18 current HP, +0x41 chr_b index -- from HP-Struct-From-Disassembly.md on origin/master, NOT in my worktree (found by the new cross-branch rule). So 0x02078488 IS the HP apply, the map s \"HP-apply trampoline\" name was right, and id 19 s -4 drains CURRENT HP -- the gauge reading is REFUTED. The remaining explanation for runtime s unchanged 152.0 is the CANCEL GATE, which their own bitset capture supports (bit 29 set). The 1-HP floor is NOT on this path; 0x02078428 (sets HP to 1) is a bulk list-walk utility over char+0x558, which is a LIST OF CHARACTER STRUCTS.",
+  "current_task": "P174 DONE: the tick driver is the SECOND HALF of 0x02158B20 (the function P159 called the on-hit flush) -- it is the per-character effect update. node+0xE is decremented 1/tick at 0x02158C88; the tick call is 0x02158CF0 blx with (battleObj, node); on expiry it installs the stub and calls 0x0215911C(battleObj, slot); exactly 2 slots stride 0x18 from the loop bound. CLOSED a P169 not-claimed: state.bin flags bit 0x20 = duration can drain faster than 1/tick, gated on ABILITY BIT 8. The ability bitset now has THREE unrelated consumers (cancel gate by opcode, bit 8 faster decay, bit 14 vs +0xBC/+0xBE) -- it is a behaviour switchboard. Also explains runtime s 15,732 empty dispatches structurally: flush and tick are the same function. NOT FOUND: the 1-HP floor -- the whole DoT path is now mapped and nothing clamps to 1.",
   "queue": [
-    "P174-FIND THE PER-FRAME TICK DRIVER that calls node+0x0 (unchanged top task): last unexamined link on the DoT path, likeliest home for the owner s 1-HP floor, and it answers what decrements node+0xE.",
-    "P174b-WHO WRITES battleObj+0x128 besides the loader 0x0215FB3C? Runtime saw the same savestate read 0x02005200 then 0x0000C024, i.e. the bitset CONTENTS changed. If it is re-cached on a character switch, that writer names the active-character swap -- the stimulus hunt I had parked on a now-retracted premise.",
+    "P175-THE KO PATH, for the owner s 1-HP floor. The whole DoT path is mapped (dispatcher, drain handlers, apply worker 0x02078488, tick driver) and NO clamp to 1 exists on it. So either the KO check ignores HP reaching zero by drain, or the floor belongs to the KO path. Different subsystem, fresh task. Cross-branch check first -- HP-Struct-From-Disassembly.md names fn_health_calc 0x020784FC, which is adjacent to the apply worker.",
+    "P175b-read 0x0215911C, the expiry handler -- last unread function on the effect lifecycle. It is also called by the shared handler s sibling at 0x02159300 with r1=1.",
+    "P175c-what 0x021613C4(battleObj+0x1C, 0xF, 2) is -- the second route to a faster decay, and the 0xF/2 constants were preloaded in the driver prologue.",
     "P168b-static writer of root+0x118 / +0x11C (runtime top ask, jus-3vg) -- would turn their empirical 0x70/0x61C validation into a structural check.",
     "P168c-what sets the gate byte 0x0217296D: find its writers. That is the thing that decides whether a mode plays at all.",
     "P168d-static writer of root+0x4C (term V).",
@@ -108,8 +109,7 @@
     "RE-AUDIT every map claim on char+0xNNN above 0x200 -- player-slot fields reached via +0x1b4",
     "B11 IS A HARNESS QUESTION: read [[char+0x1a8]+0x10]+0xE8 on a landed hit.",
     "D0.3 Ghidra import -- BLOCKED, needs the user's go-ahead",
-    "READ the ov6 Thumb battle-init routine around 0x0214D7F0-0x0214D840 -- it constructs ObjCtrl and ObjShot back to back and fills battle-root slots +0x10C/+0x110; likely constructs the other managers too, giving a full battle-root slot map.",
-    "P174c-item-pickup counter -- BACK DOWN in priority: its only value was as a stimulus check, and that rested on runtimes now-withdrawn yield claim."
+    "READ the ov6 Thumb battle-init routine around 0x0214D7F0-0x0214D840 -- it constructs ObjCtrl and ObjShot back to back and fills battle-root slots +0x10C/+0x110; likely constructs the other managers too, giving a full battle-root slot map."
   ],
   "done": [
     "K1-koma-data-survey",
@@ -272,7 +272,8 @@
     "P169-state-bin-is-the-param-array",
     "P171-retraction-ov12-offset-collision",
     "P172-effect-cancel-gate-and-the-drain-paths",
-    "P173-char-0x56c-is-the-character-struct"
+    "P173-char-0x56c-is-the-character-struct",
+    "P174-effect-tick-driver"
   ],
   "stuck": {},
   "required_reading_for_koma_tasks": [

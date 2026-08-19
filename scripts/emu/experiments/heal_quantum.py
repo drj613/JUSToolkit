@@ -20,7 +20,7 @@ os.chdir(os.path.dirname(HERE))
 import match_run as M
 import nav
 
-REPS = 4
+REPS = 3
 
 
 def w32(v):
@@ -80,6 +80,9 @@ def into_range(addr, max_steps=24):
     return None
 
 
+SAMPLE = [0, 2, 4, 6, 8, 10, 12, 16, 20, 26, 32, 40, 50, 60, 80]
+
+
 def hit_trace(addr, max_steps=24, frames=90):
     """Approach until a B press moves HP, then sample every frame through the recovery.
 
@@ -88,15 +91,21 @@ def hit_trace(addr, max_steps=24, frames=90):
     version of this could not answer it -- with the heal on, a poked value is restored
     inside two frames, so every sample after the poke read the original back.
     """
+    # Seek CHEAPLY -- one peek per attempt. The fine trace costs 15 peeks and is only
+    # worth paying once a press is known to connect; tracing every miss made this
+    # unrunnable (90 peeks x 24 steps x reps).
     for _ in range(max_steps):
         before = hp(addr)
         M.act(M.ATTACK, 0)
-        trace = []
-        for f in range(frames):
-            trace.append(hp(addr))
-            nav.advance(1)
-        if any(v != before for v in trace):
-            return {"before_raw": before, "x": M.player_x(), "trace_raw": trace}
+        trace, prev = [], 0
+        for f in SAMPLE:
+            if f > prev:
+                nav.advance(f - prev)
+                prev = f
+            trace.append((f, hp(addr)))
+        if any(v != before for _, v in trace):
+            return {"before_raw": before, "x": M.player_x(), "trace": trace,
+                    "trace_raw": [v for _, v in trace]}
         M.act(M.STEP_RIGHT, 2)
     return None
 
@@ -184,7 +193,7 @@ def run(slot):
                 uniq.append([v, 1])
             else:
                 uniq[-1][1] += 1
-        print("        steps: %s" % " ".join("%.3f x%d" % (v / 64.0, n) for v, n in uniq))
+        print("        %s" % " ".join("f%d:%.3f" % (f, v / 64.0) for f, v in t["trace"]))
         t.update({"drop_raw": drop, "regain_raw": regain, "min_raw": lo, "min_frame": i_lo})
         hits.append(t)
     if not hits:

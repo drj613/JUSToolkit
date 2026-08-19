@@ -1,17 +1,17 @@
 # Session Ledger — JUS Reverse Engineering
 
-Last updated: 2026-08-19 ~01:45 (ledger wake 12, session `justoolkit-87`)
+Last updated: 2026-08-19 ~02:45 (ledger wake 16, session `justoolkit-87`)
 
 ## 1. Current state
 
 This file is a human catch-up summary — not the system of record. beads (`br`) is the record; protocol in `docs/orchestration/`.
 
 **Live sessions (from ListAgents):**
-- `justoolkit-fa` [cedb9e] — busy, 5h+. **Runtime**. Since wake 11: falsified atlas's charged-gauge hypothesis (one extra condition), killed opponent-position candidate (14 replicated cells), synthetic effect node decrements once then stalls (jus-tex). 3 new commits.
-- `battle-engine-atlas-76` [2e8ac4] — idle, 5h+. **Static**. Now at **P174**. Tick driver mapped (second half of 0x02158B20), flags bit 0x20 = faster-decay gate on ability bit 8. Retracted physics window address. 3 new commits.
+- `justoolkit-fa` [cedb9e] — busy, 7h. **Runtime**. Since wake 12: closed jus-ovv (third rule flag verified, not cleared — no tap target in 1v1), closed jus-kdf (autoheal_off implemented, auto-heal ERASES the hit). Confirmed jus-eml (opcode == ability ID). Synthetic drain kills at zero HP. New owner question Q16 (team battle in 1v1?). 9+ new commits.
+- `battle-engine-atlas-76` [2e8ac4] — idle, 7h. **Static**. Now at **P176**. Auto-heal refuted as the -2.0 explanation. No constant -2.0 in code — real reduction must be table-driven. Luffy's abilities visible at record +0x03/+0x07. 6+ new commits.
 - Others: `justoolkit-ba` stood down, `trainer-5b` busy (unknown role).
 
-**Coord beads:** ~32 total, 18 open. The retract→un-retract→confirm cycle on jus-y3w is a protocol success — both loops converged on the right answer through independent evidence after catching an arithmetic error.
+**Coord beads:** ~34 total, 16 open. Two original-session bugs closed this wake (jus-ovv, jus-kdf). No `state:proposed` beads remain — everything has advanced past proposed. Auto-heal refuted as the -2.0 source; reduction must be table-driven.
 
 ## 1.5. OWNER ACTION — status update
 
@@ -86,7 +86,7 @@ Three nudges over 7 wakes surfaced a recurring pattern. Runtime's feedback, cons
 # Per-Session Detail
 
 What each active session is doing, where things live, and what they've delivered.
-Last updated: 2026-08-19 01:45 — ledger wake 12
+Last updated: 2026-08-19 02:45 — ledger wake 16
 
 ## Ultimate goal
 

@@ -103,3 +103,44 @@ reading would be different code, not a rival hypothesis about this code. The onl
 was what to *name* the axes, and the observed 5-column × 4-row grid answers that. I then built a
 test for the non-question, and it couldn't discriminate — which is what a test of a
 non-hypothesis does.
+
+## Confirmed 3/3 from live memory — and one open hazard
+
+The runtime seat ran the constraint scan and `arg0` fell out as a **solution** rather than an
+input: `arg0_opp = 0x021DF76C`, `arg0_ply = 0x021DF150`, difference `0x61C` — the known
+`SIDE_DELTA`, arriving unbidden and breaking a two-candidate tie.
+
+| node | anchor | k | target | grid holds | expected | |
+|---|---|---|---|---|---|---|
+| player, id 10 | (2,3) | 2 | (1,3) | `0x021DF2AC` | `0x021DF2AC` | HIT |
+| opp, id 14 | (4,2) | 3 | (4,1) | `0x021DF7D8` | `0x021DF7D8` | HIT |
+| opp, id 5 | (3,2) | 2 | (2,2) | `0x021DF828` | `0x021DF828` | HIT |
+
+**And the grid is visibly a koma page.** Pointers repeat across multi-cell footprints —
+`0x021DF1BC` in 4 cells, `0x021DF25C` in 3, `0x021DF2AC` in 3, `0x021DF20C` in 3, `0x021DF2FC`
+in 2. Eleven nodes across both chains occupy eleven distinct cells of one 5×4 grid, in polyomino
+shapes.
+
+### A test I proposed would have killed this correct model
+
+I suggested checking that the grid holds each fighter's own address at its own cell, no direction
+step, as a free extra constraint. It returns **0 of 3** — because `+0x0E` is an *anchor*, not a
+footprint, and the grid repeats a pointer across the whole panel. Run as the discriminator it
+would have reported this model dead, by my own suggestion. It smuggled the premise that a fighter
+occupies one cell. **A test is only as good as the assumption it hides.**
+
+### Open hazard: row 0 is reachable and doesn't hold pointers
+
+All three hits are in rows 1–3, and the opponent grid's (0,0) holds `0x00007882` — not a pointer.
+But `y' = 0` **is** reachable under the gate's own bounds: high nibble 0 with `k=2` or `k=4`, or
+high nibble 1 with `k=3`, and the only lower check is `>= 0`. So a node targeting row 0 would get
+a non-null non-pointer back and `AddAbility` would do `ldrsb [0x00007882 + 0x1A]`.
+
+Either no live node ever targets row 0, or `arg0+8` is not the indexing base — and it cannot be a
+simple off-by-one row, because the three hits land correctly with that base and a `0x14` stride.
+Pin this before indexing the array.
+
+`arg0` is a known **address** and an unnamed **object**: `0x021DF150` / `0x021DF76C`, `0x61C`
+apart, with char_structs in the same region (`0x021DF1BC` is `arg0_ply + 0x6C`). Not named, on the
+fourth iteration of that discipline.
+

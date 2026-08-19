@@ -3,11 +3,11 @@
  "phase": "combat",
  "current_task": "P213-what sets bit 5 of [r8+0x40] (the resistance gate)",
  "queue": [
-  "P226-What writes the +0x558 nodes? That is the deck -> battle hop, and it would confirm the grid cells hold character structs. Find the allocator/initialiser that sets node+0x0E, +0x0F, +0x40, +0x41.",
-  "P226b-What do the eight kind-2 handlers do? 0x0207793C (ids 49/50/51), 0x02077944, 0x02077954, 0x02077964, 0x02077974, 0x020779A4. Eight abilities that never join the list.",
-  "P226c-What writes char+0x13..0x15, the three nature slots? Now more interesting: if koma feed abilities by adjacency, they may feed natures the same way.",
-  "P226d-Why does no chr_b record carry id 11? The +0x558 list is a second source, so a record census cannot settle it alone -- a koma could grant it.",
-  "P226e-chr_b -> jpower linkage.",
+  "P226-PIN THE ROW-0 HAZARD: y'=0 is reachable but row 0 holds no pointers. Either find the code that prevents a node targeting row 0, or find that the indexing base differs. Static: look for what writes arg0+8..arg0+0x1B and whether row 0 is a header.",
+  "P226b-What writes the +0x558 nodes and the grid at arg0+8? That is the deck-to-battle hop and it would name arg0.",
+  "P226c-What do the eight kind-2 handlers do? 0x0207793C (ids 49/50/51), 0x02077944, 0x02077954, 0x02077964, 0x02077974, 0x020779A4.",
+  "P226d-What writes char+0x13..0x15, the three nature slots? Now sharper: if koma grant abilities by adjacency, they may grant natures the same way.",
+  "P226e-Why does no chr_b record carry id 11? A koma could grant it, so the record census cannot settle it.",
   "P226f-Overlay-Residency-By-Mode.md: the SHAPE claim plus a row for in-battle menu modes. No boundary address."
  ],
  "done": [
@@ -2466,5 +2466,13 @@
   "SELECTIVE_not_broadcast": "two type-2 nodes in the opponent chain; one fighter got 14 not 5, the other got 5 not 14. A broadcast would give both to both. That is what the adjacency gate predicts.",
   "adjacency_STILL_UNTESTED": "runtime refuted a DIFFERENT hypothesis (that [+0x0F]&0x0F names a deck position: 2,3,2 vs recipient positions 4,1,2). Adjacency says recipient = (cell + direction), neither field alone, so their numbers are consistent and non-discriminating. TEST REQUESTED: full +0x0E and +0x0F bytes per type-2 node plus the 80 bytes at arg0+8; check arg0+8+y*0x14+x*4 holds the recipient address for all three. Escalation asked for on a miss."
  },
- "P225_FLAT_REFUTED_PROPERLY": "runtime jus-flat-refuted-with-attribution-doi: UP+B at x=655, TWO contacts, base byte 3 on both stops, gate 0x2010, class 0, nature 0, all inputs read directly. Proportional predicts 144 raw per contact = 2.250, two contacts 4.500. Flat predicts 64 = 1.000, two contacts 2.000. MEASURED 4.500. Flat wrong by 2.500 displayed = 125% of its own prediction. Verified the arithmetic. This SUPERSEDES the integrality argument, which rested on three unattributed -5.250 reps that were probably DOWN+B with the switch confound live. Base 8 separates the models by exactly nothing for the fifth time."
+ "P225_FLAT_REFUTED_PROPERLY": "runtime jus-flat-refuted-with-attribution-doi: UP+B at x=655, TWO contacts, base byte 3 on both stops, gate 0x2010, class 0, nature 0, all inputs read directly. Proportional predicts 144 raw per contact = 2.250, two contacts 4.500. Flat predicts 64 = 1.000, two contacts 2.000. MEASURED 4.500. Flat wrong by 2.500 displayed = 125% of its own prediction. Verified the arithmetic. This SUPERSEDES the integrality argument, which rested on three unattributed -5.250 reps that were probably DOWN+B with the switch confound live. Base 8 separates the models by exactly nothing for the fifth time.",
+ "P225_CONFIRMED": {
+  "result": "3/3 from live memory. arg0 fell out as a SOLUTION of my constraints, not an input: arg0_opp = 0x021DF76C, arg0_ply = 0x021DF150, difference 0x61C = the known SIDE_DELTA, which broke a two-candidate tie unbidden. player id 10 (2,3) k=2 -> (1,3) holds 0x021DF2AC; opp id 14 (4,2) k=3 -> (4,1) holds 0x021DF7D8; opp id 5 (3,2) k=2 -> (2,2) holds 0x021DF828. All expected, all hit.",
+  "grid_is_a_koma_page": "pointers repeat across multi-cell footprints -- 0x021DF1BC in 4 cells, 0x021DF25C in 3, 0x021DF2AC in 3, 0x021DF20C in 3, 0x021DF2FC in 2. Eleven nodes, eleven distinct cells, polyomino shapes. +0x0E is an ANCHOR, not a footprint.",
+  "MY_TEST_WOULD_HAVE_KILLED_IT": "I proposed checking that the grid holds each fighter own address at its own cell with no direction step, as a free extra constraint. It returns 0 of 3, because the grid repeats a pointer across the whole panel. Run as the discriminator it would have reported this correct model dead, by my own suggestion. It smuggled the premise that a fighter occupies one cell. A test is only as good as the assumption it hides.",
+  "OPEN_HAZARD_row_0": "all three hits are in rows 1-3 and the opponent grid (0,0) holds 0x00007882, not a pointer. But y'=0 IS reachable under the gate's bounds -- high nibble 0 with k=2 or k=4, or high nibble 1 with k=3, and the only lower check is >= 0. So a node targeting row 0 gets a non-null non-pointer and AddAbility does ldrsb [0x00007882+0x1A]. Either no live node targets row 0 or arg0+8 is not the indexing base -- and it cannot be an off-by-one row, since the three hits land with that base and stride 0x14. PIN BEFORE INDEXING.",
+  "possible_slip_flagged": "the report says 0x021DF2AC own cell is (1,1), but in its own quoted grid (1,1) holds 0x021DF1BC and 2AC footprint is (1,2),(1,3),(2,3). Either a typo for (1,2), or an anchor can name a cell another koma occupies -- which would change what anchor means. Flagged, not asserted.",
+  "arg0_still_unnamed": "known address, unnamed object. 0x021DF150 / 0x021DF76C, 0x61C apart, char_structs in the same region (0x021DF1BC = arg0_ply + 0x6C). Fourth iteration of not naming it."
+ }
 }

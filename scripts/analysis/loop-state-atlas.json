@@ -3,12 +3,12 @@
   "phase": "combat",
   "current_task": "P207-trace 0x0215FB3C's caller: the ability entry array and any DERIVED load-time field",
   "queue": [
-    "P207-Trace ov6 0x0215FB3C's CALLER: identify the ability ENTRY ARRAY it walks (IDs at entry+1, stride >=2), which is a different structure from the packed list at char_struct+0x1B. That tells runtime what to poke for the respawn variant, and it is the load path where a DERIVED per-character value would be computed.",
-    "P207b-In that load path, look for a derived scalar -- a per-character defence or damage-scaling field written once at battle start. Both known ability representations have no measured effect at hit time, so a derived value is the live hypothesis. Its offset is what runtime should read.",
-    "P207c-RE-EXAMINE the +0x130 label (deferred seven times). Read 0x020783CC to see which field drives HP; it gates whether my -2.0 candidate is on the damage channel at all.",
-    "P207d-Sweep +0x4C stores and run poolload_scan.py / split_sum_scan.py against +0x48 and +0x4C -- the list insert uses a computed or register offset.",
-    "P207e-The +0xA4 term writer; six unread pipeline stages; the 20 mov #0x800 argument sites.",
-    "P207f-Handoff due NOW (~208): must record the P202->P203->P204 naming chain and rules 34-38."
+    "P207-SPEC THE CALIBRATION DECK for the owner (Q6). This outranks everything else: it unblocks jus-f0v, which the whole campaign has been working around. Static input needed -- which character/koma set gives a clean unresisted baseline, and what makes a move's damage arithmetic legible. Coordinate with runtime, who owns the measurement design.",
+    "P207b-Trace ov6 0x0215FB3C's CALLER: the ability ENTRY ARRAY it walks (IDs at entry+1, stride >=2), a different structure from the packed list at char_struct+0x1B. Tells runtime what to poke for the respawn variant.",
+    "P207c-In that load path, look for a DERIVED per-character defence/scaling scalar written once at battle start. Both known ability representations have no measured effect at hit time.",
+    "P207d-RE-EXAMINE the +0x130 label (deferred seven times). Read 0x020783CC to see which field drives HP.",
+    "P207e-DEPRIORITISED now the watchpoint is coming: the +0xA4 term writer, the +0x48 list insert, the computed-offset scans. A watchpoint answers these in one stop; do not spend wakes racing it.",
+    "P207f-Handoff OVERDUE (~208): the P202->P203->P204 naming chain, rules 34-38, and the owner relay."
   ],
   "done": [
     "K1-koma-data-survey",
@@ -2232,6 +2232,13 @@
     "colman_layout": "Battle_ColMan 0x219C, allocated by 0x0207AD3C, fully mapped by its own constructor: 16 x 8 at +0x10..+0x90 (loop 0x0207AD74-90); 192 x 0x14 at +0x9C..+0xF9C (loop 0x0207AE38-58, bound r6<0xC0); 384 x 0xC at +0xF9C..+0x219C (loop 0x0207AD94-B4). Ends exactly at the allocation size. Contains NO 0x188-stride array.",
     "colprmman_list_0x48": "ColPrmMan+0x48 is the list stage 4 walks (both loops in 0x02081DDC load [sl,#0x48]); elements chain through their own first word (0x02081DF8 ldr r6,[r5]). +0x48 and +0x4C are cleared together at 0x0207F87C/0x0207F878 in the pipeline caller 0x0207F480 -- PLAUSIBLY a head/tail pair, but the base object there is NOT established (r4 reassigned 3x). NO immediate-offset list insert exists anywhere (644-hit sweep with a passing control), so insertion uses a computed or register offset. UNCHECKED: +0x4C stores; register/computed shapes.",
     "cap_audit_2026_08_19": "COMPLETE. All eight load-bearing search-imm/search-op-imm sweeps re-run with --all; none was truncated (counts identical), so no campaign conclusion was affected. Audit method controlled against search-imm 0x48 (200 capped vs 644 --all). Only the P205 +0x48 sweep ever exceeded the cap.",
-    "ability_representations": "TWO representations, and they are NOT the same shape. (1) The packed byte list at char_struct+0x1A (count) / +0x1B (IDs consecutive) -- runtime poked this and measured NO effect at hit time. (2) The bitset at battleObj+0x128, written by ov6 0x0215FB3C, which reads each ID from ENTRY+1 -- so its source is an array of >=2-byte entries with the ID at offset 1, a THIRD structure. Runtime also measured that clearing bit 9 of the cached bitset does nothing at hit time. So both known representations have no measured effect at damage time, and the live hypothesis is a DERIVED value computed at load/battle-start."
+    "ability_representations": "TWO representations, and they are NOT the same shape. (1) The packed byte list at char_struct+0x1A (count) / +0x1B (IDs consecutive) -- runtime poked this and measured NO effect at hit time. (2) The bitset at battleObj+0x128, written by ov6 0x0215FB3C, which reads each ID from ENTRY+1 -- so its source is an array of >=2-byte entries with the ID at offset 1, a THIRD structure. Runtime also measured that clearing bit 9 of the cached bitset does nothing at hit time. So both known representations have no measured effect at damage time, and the live hypothesis is a DERIVED value computed at load/battle-start.",
+    "owner_ground_truth_2026_08_19_relay2": {
+      "Q8_modes_12_18_20": "OWNER: all unfamiliar. Likely internal test or story-only. Tier OBSERVED -- outranks my static mode-table reading for BEHAVIOUR, and it means the 22-vs-31 rule-mode gap needs no further static work.",
+      "Q16_team_battle": "OWNER CONFIRMED: team battle is disabled with only 2 participants; >2 enables teams. Consistent with my P163 finding that rule-select +0x2D is the team-battle field -- the field exists but is inert at 2 participants.",
+      "Q6_calibration_move": "OWNER CAN BUILD CUSTOM DECKS TO SPEC, and asks runtime to say what it needs. THIS UNBLOCKS jus-f0v, the campaign's oldest blocker -- the unreachable COM deck / ability-free opponent that forced the target-swap and ability-poke workarounds.",
+      "jus_fun": "OWNER CHOSE Fable's DataWrite patch approach; implementation underway. So write-watchpoints ARE coming, and the +0xA4 term writer will be directly observable. I should NOT burn wakes on static hunts that the watchpoint answers in one stop.",
+      "protocol": "Owner approved updating the COORDINATION-PROTOCOL.md roles table on every restart; now standing policy per the ledger."
+    }
   }
 }

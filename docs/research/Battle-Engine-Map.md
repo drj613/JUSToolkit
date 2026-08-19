@@ -4131,6 +4131,15 @@ The runtime loop reported a flat `-512` — that's `2.0` in 8.8 fixed point, whi
 
 ### Two gates, one class table
 
+> **Corrected 2026-08-19.** This section says `[r8+0x40]` and describes two gates over an
+> eight-byte table. Wrong on all three counts: the gates read **`[r8+0x44]`**, there are
+> **six** of them (bits 4/5/6 subtract a quarter, bits 12/13/14 add one), **none** is
+> unconditional, and the table at `0x02092E68` is sixteen bytes with three category values
+> [`jus-gate-word-is-r8-0x44-fnz`]. What fills that word is the ability chain in
+> [`jus-bit5-is-ability-10-rxl`] — bit 5 comes from ability id 10, bit 4 from id 9. Read
+> `findings/p213-flag-word-is-plus-0x44-ability-10-sets-bit-5.md` instead of the text below.
+
+
 ```
 gate 1  0x02082634: ldrb r3, [table, r1] ; cmp r3, #1              -> subtract r5/4
 gate 2  0x02082650: tst  r2, #0x20       ; r2 = [r8+0x40], the flag word
@@ -4165,7 +4174,11 @@ They read `r3` going `4 → 262144` at `0x02082644` as "a value of 2 shifted int
 
 ### Why the ability pokes did nothing
 
-This closes that loop. The reduction gates on **a flag bit and a class table**, not the ability bitset. An ability would have to feed those flags at **load** time — exactly the derived-value hypothesis both loops have been circling. Whatever sets **bit 5 of `[r8+0x40]`** is the next target, and a `JUS_WATCH` reaches it.
+This closes that loop. The reduction gates on **a flag bit and a class table**, not the ability bitset. An ability would have to feed those flags at **load** time — exactly the derived-value hypothesis both loops have been circling. Whatever sets bit 5 is the next target. Answered since: the word is `[r8+0x44]`, and
+bit 5 is set by ability id 10 through the mask table at `0x02092E78`, from the routine
+ov6 `0x02157114` reading the cached ability bitset at `battleObj+0x128`
+[`jus-bit5-is-ability-10-rxl`]. The bitset is read there and converted to flags once,
+which is why poking it at hit time did nothing [`jus-w66`].
 
 ### Standing of the disagreement
 

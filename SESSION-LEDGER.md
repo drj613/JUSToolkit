@@ -1,18 +1,17 @@
 # Session Ledger — JUS Reverse Engineering
 
-Last updated: 2026-08-18 ~20:45 (ledger wake 2, session `justoolkit-87`)
+Last updated: 2026-08-18 ~21:15 (ledger wake 3, session `justoolkit-87`)
 
 ## 1. Current state
 
 This file is a human catch-up summary — not the system of record. beads (`br`) is the record; protocol in `docs/orchestration/`.
 
 **Live sessions (from ListAgents):**
-- `justoolkit-fa` [cedb9e] — busy, 34 min. **Runtime** role, branch `re/ability-bitset-not-resistance`. Did a cold-boot HP derivation test (jus-3vg), ran atlas's rulemess.bin one-liner and replacement test (jus-hsc), resolved jus-jto (pill actuation blocker was path-dependent).
-- `battle-engine-atlas-76` [2e8ac4] — idle, 34 min. **Static** role, branch `loop/battle-engine-atlas`. Now at **P165**. Decoded rulemess.bin (jus-hsc), acknowledged the unsound one-liner, queued ov1 reader census.
-- `justoolkit-d9` [699d1d] — idle 1h. Protocol-design coordinator; contacted me on wake 1, I confirmed my role.
-- One `test-suite-guardrails` session remains.
+- `justoolkit-fa` [cedb9e] — busy, 1h. **Runtime**. Since wake 2: ran 13 rule modes through distinct battle handlers, confirmed HP derivation in a discriminating case (mode 3 moved the heap), found nav.advance overshoot bug (jus-vkj). Closed jus-jto, jus-uvs, jus-bfw. 4 new commits.
+- `battle-engine-atlas-76` [2e8ac4] — idle, 1h. **Static**. Now at **P166**. Mapped the 31x12 per-mode handler table at ov6 `0x02170EAC`, CROSS_CONFIRMED root+0x08 and root+0xC8. 5 new commits. Queued ov1 reader census.
+- `justoolkit-d9` [699d1d] — idle 2h. Coordinator; likely dormant.
 
-**Protocol adoption: successful.** Both loops are writing coord beads with structured `kind:*` / `state:*` / `owner:*` labels. The system of record is working. 15 coord beads exist (1 closed, 14 open).
+**Coord beads:** 17 total (4 closed, 13 open). Protocol adoption complete — both loops using structured labels consistently.
 
 ## 2. Open audit flags
 
@@ -33,21 +32,27 @@ jus-f30 is the formal taint notice with proper `kind:retraction` / `state:tainte
 2. Nature resolver in ov06 — still untracked in beads. No commit addresses it. **Aging.**
 3. Mode-ID byte and overlay residency — superseded by ov05 closure and rulemess.bin decode.
 
-### Flag F — NEW: jus-hsc one-line test was unsound
-Atlas's published one-liner for jus-hsc ("write 5 to 0x020AFEA0, look for target description") fired the failure signature on a correct card. Atlas owned the error in the comment thread and wrote a replacement test that passed. The protocol's "recognizable failure signature" requirement caught this — a test whose failure signature fires on success is not recognizable. No downstream damage, but atlas should update the bead's test section.
+### Flag F — RESOLVED: jus-hsc one-line test
+Atlas owned the unsound one-liner, wrote a replacement test, runtime ran it and it passed. The comment thread on jus-hsc documents the full exchange. Atlas now queued the ov1 reader census as follow-up.
 
-### Flag G — NEW: jus-3vg deterministic heap confound
-The cold-boot HP derivation test passed but every address was identical across reboots, meaning the test couldn't have failed. Runtime correctly held it at RUNTIME_CONFIRMED rather than promoting. The discriminating case (a battle where the heap layout differs) is still open. Atlas queued a static-side confirmation path (root+0x118/+0x11C writer + layout proof).
+### Flag G — RESOLVED: jus-3vg deterministic heap confound
+The discriminating case ran (mode 3 moved root by +0x180) and the derivation passed. jus-zco created to replace the hardcoded constants. Atlas queued a static-side writer analysis as independent confirmation.
 
-### Flag H — NEW: atlas idle
-`battle-engine-atlas-76` shows idle at 34 min. Its last commit was P165 addendum (`808fb89`). It queued two tasks (ov1 reader census, root+0x4C writer hunt) but hasn't started either. Not yet a violation — check next wake.
+### Flag H — RESOLVED: atlas not idle
+Atlas committed 5 times between wakes 2–3 (P165 addenda + P166 + P166 addendum). Currently idle after completing a full wake. Not a violation.
+
+### Flag I — NEW: jus-baz approaching aging threshold
+"Runtime audit of atlas's published addresses" is a P1 `kind:request` / `state:proposed` now in its second wake with no status change. Runtime has been busy with higher-priority work (rule-mode sweep, HP derivation). If still untouched next wake, it trips the one-completed-wake aging rule per the protocol.
+
+### Flag J — NEW: jus-vkj frame overshoot instrument defect
+nav.advance(N) doesn't advance exactly N frames — the emulator free-runs between IPC calls. Measured: requested 600 → observed 640/620/620; requested 2300 → observed 5310. Any duration computed by summing advances is wrong. No downstream beads depend on exact frame counts yet (jus-uvs used an honest bracket). Worth tracking because jus-6fo (full match timeline) will need frame accuracy.
 
 ---
 
 # Per-Session Detail
 
 What each active session is doing, where things live, and what they've delivered.
-Last updated: 2026-08-18 20:45 — ledger wake 2
+Last updated: 2026-08-18 21:15 — ledger wake 3
 
 ## Ultimate goal
 

@@ -734,7 +734,11 @@ handler). A freshly-`memset` object cannot show those. The zeros are real, so te
 | The installer `0x0214F91C` has **exactly one** `BL` caller, and the call is **unconditional** | ov6 `0x0214DA58` | `CONFIRMED_STATIC` (exhaustive Thumb `BL` scan of `ov06.bin`) |
 | `r0` at the installer is `[0x02172960]` — the battle root. So `root+0x08` / `root+0xC8` are fields of the anchor's pointee | pool `0x0214DA9C` / runtime `jus-usf` (`lr` = `0x0214DA5D`, `r0` = `0x021DEA60`) | **`CROSS_CONFIRMED`** |
 | Live return address `0x0214DA5C` = `0x0214DA58 + 4`, matching the statically scanned call site from the opposite direction | runtime `jus-usf` | **`CROSS_CONFIRMED`** |
-| **The gate is a single byte at `0x0217296D`** in ov6's BSS, 13 bytes past the root global. Zero → the whole install path is skipped (`0x0214DB24`–`0x0214DB2A`) | ov6, pool `0x0214DB54` | `CONFIRMED_STATIC` (Codex-checked independently) |
+| The byte at `0x0217296D` (ov6 BSS, 13 bytes past the root global) gates that path: zero → the install path is skipped (`0x0214DB24`–`0x0214DB2A`) | ov6, pool `0x0214DB54` | `CONFIRMED_STATIC` (Codex-checked independently) |
+| It is a **poll**, not a one-shot check — 114 hits in a mode-2 battle, byte `0` on 113 and `1` on the 114th, with the installer firing immediately after | runtime `jus-2cu` | **`CONFIRMED_RUNTIME`** |
+| ~~`0x0217296D` is the mode-12 discriminator~~ — **NOT the gate.** The rest-state read splits cleanly (1 for modes 0/1/2, 0 for mode 12) and looks causal, but the check **never runs at all** for mode 12, so its `0` is a consequence. The gate is higher | runtime `jus-2cu` | `REFUTED as the discriminator` |
+| The poll is a **registered callback**, not an ov6 call: arm9 `0x02028620` does `ldr r1,[r4,#0x40]` / `blx r1`, and the runtime `lr` `0x02028628` is the `pop` after it. `r4` = `r0` = `0x023DDE58` | arm9 + runtime `jus-2cu` | `CONFIRMED_STATIC` |
+| The poll's entry `0x0214DB20` appears as the Thumb literal `0x0214DB21` exactly twice in ov6 — pools `0x0214DABC` and `0x0214DAD8`, each inside a small adjacent function. Two registration sites | ov6 | `CONFIRMED_STATIC` |
 | Second gated entry to the same function, on a call result rather than the BSS byte | ov6 `0x0214DB94`–`0x0214DBA4` | `CONFIRMED_STATIC`; which path a real battle takes is `not claimed` |
 | Mode 12 hits neither the installer nor its return site, in the same live GDB session that caught mode 2 — so the gate is **upstream of the call** | runtime `jus-usf` | **`CONFIRMED_RUNTIME`** |
 | The handler at `root+0x000` is a **tick that reports completion**: invoked via trampoline `0x0214F948`; a non-zero return restores the default and clears `+0xC8` (`0x0214DD32`–`0x0214DD3E`) | ov6 | `CONFIRMED_STATIC` |
@@ -744,3 +748,9 @@ handler). A freshly-`memset` object cannot show those. The zeros are real, so te
 log shows the session stayed healthy and a control fired. Two earlier mode-12 runs printed identical
 "0 hits" while GDB had detached on a `SIGILL` or the script had errored — either would have delivered a
 clean-looking negative built on a dead debugger.
+
+**Instrument rule adopted (runtime, `jus-2cu`) — pair a cheap test with one that fails differently.** A
+rest-state correlation, clean across four modes and lining up exactly with installed-vs-not, was still
+*downstream* of the real difference. A rest-state read cannot separate cause from consequence; a
+breakpoint can. Requesting both in the same card is what caught it — the cheap read alone was persuasive
+and wrong.

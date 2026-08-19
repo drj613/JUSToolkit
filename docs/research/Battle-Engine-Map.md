@@ -1324,3 +1324,26 @@ handler" alongside the drains, which invited reading amount and opcode as one pr
 and no opcode, so drains are **not** all opcode-bearing. The two fields are independent and the stub
 prediction — which is only about `node+0x0` — stands untouched. Still untested on the ids it is about: nine
 reps produced only ids 9 and 17, both amount 0, both actively stubbed.
+
+### The effect cancel gate — what the status opcode is for (P172)
+
+`findings/p172-effect-cancel-gate-and-the-drain-paths.md`.
+
+| what | where | confidence |
+|---|---|---|
+| Opcode-bearing handlers call a **cancel gate** with their own opcode: `0x0215986C(char, node, opcode)`. Non-zero → the gate zeroes `node+0xE` and the handler returns 0, so the node is stubbed | ov6 `0x02159500` (id 19), `0x02159624` (id 30) | `CONFIRMED_STATIC` |
+| The gate is a **bitset test**: `return (Mem32[char+0x120 + 4*(opcode>>5) + 8] >> (opcode & 0x1F)) & 1` | ov6 `0x02158EB0` | `CONFIRMED_STATIC` (Codex-checked from raw words, no addresses) |
+| **This is what the `+0x7` opcode is for** — a bit index into a per-character cancel bitset, not an enum of behaviours. Closes the question left open by my channel-boundary retraction | — | `CONFIRMED_STATIC` |
+| Only opcode-bearing effects are gated: the shared id 5/33 handler (`+0x7 = 0xFF`) has **no gate call** and applies unconditionally | ov6 `0x021592DC` | `CONFIRMED_STATIC` |
+| What the `char+0x120` bitset *is* | — | `not claimed`. Functionally it cancels; the owner's branch is named `re/ability-bitset-not-resistance`, so a resistance label may already be refuted. Asked in `jus-law`. |
+| Drains return **1** and keep ticking after applying — my P171 prediction holds, **with the gate as a condition**: the same id is stubbed when cancelled | ov6 | `CONFIRMED_STATIC` |
+| id 30 uses the duration as a **phase counter**: `tst duration,#0xF` / `bne`, so it acts once every 16 frames. The handler *reads* `node+0xE` without decrementing it | ov6 `0x02159644` | `CONFIRMED_STATIC` |
+| id 19's apply path `0x020783CC` dereferences `char+0x56C` and tail-jumps to `0x02078488`, which is a `{max +0x16, current +0x18}` halfword meter with a clamp to **`[0, max]`** and a "still non-zero" return | arm9 | `CONFIRMED_STATIC` |
+| ids 5/33 use a different path again — `0x020781E4`, which branches on the **sign** of the amount and reads `char+0x5CF`. The two drain families do not share an apply path | arm9 | `CONFIRMED_STATIC` |
+
+**Record inconsistency, flagged not resolved.** This file calls `0x020783CC` "the HP-apply trampoline" and
+"the real HP-delta path" while also correctly documenting that it dereferences `char+0x56C`. The mechanism is
+right; the name is doing work the bits don't support. **The clamp is to `0`, and the owner says poison and burn
+never kill and leave the victim at 1 HP** — so either `char+0x56C` is not HP (which independently explains the
+runtime loop seeing `152.0` unchanged while id 19 fired), or the 1-HP floor lives somewhere else entirely.
+`not claimed` which. Identifying `char+0x56C` is queued.

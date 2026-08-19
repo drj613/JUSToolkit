@@ -1,11 +1,11 @@
 {
-  "iteration": 171,
+  "iteration": 172,
   "phase": "combat",
-  "current_task": "P171 RETRACTION WAKE. The seven ov12 \"+0x172/+0x173 writers\" I published last wake are CommonWindow.cpp and ALTextDS.cpp (text-widget fields) -- an offset collision, not the battle entity. Retracted: the \"independent static support\" for the two-channel model, the \"two dedicated per-byte setters\" reading, and the id-1-as-default-staging hypothesis (which rested on an ALTextDS CreateIntf initialiser). Runtime two-channel model UNAFFECTED -- it stands on their own LR evidence at n=17. Real negative established: the writers of X+0x172/+0x173 appear in NO immediate-offset store ROM-wide, same blind spot as the iteration-76 +0xE8 hunt.",
+  "current_task": "P172 DONE: found the effect CANCEL GATE. Opcode-bearing handlers call 0x0215986C with their own opcode; it tests a bitset via 0x02158EB0 -- (Mem32[char+0x120 + 4*(opcode>>5) + 8] >> (opcode & 0x1F)) & 1 -- and a set bit zeroes node+0xE and makes the handler return 0, stubbing the node. THIS IS WHAT THE +0x7 OPCODE IS FOR (a bit index, not a behaviour enum), which closes the question left open by my channel-boundary retraction. Drains return 1 and keep ticking unless gated. id 30 uses the duration as a phase counter (acts every 16 frames). id 19s apply path clamps to [0,max] on a {max,current} meter at char+0x56C -- clamp to ZERO, which sits badly with the owners 1-HP DoT floor; flagged, not resolved.",
   "queue": [
-    "P172-READ THE id-19 HANDLER 0x02159500. Owner ground truth: poison and burn DO drain over time and BOTH LEAVE THE VICTIM AT 1 HP (cannot kill). state.bin id 19 carries amount -4. Runtime saw opponent HP unchanged while id 19 fired, but id 19 s node+0x0 was NEVER recorded, so we do not know if it was stubbed. THREE THINGS TO CHECK IN THAT HANDLER: (1) does it return non-zero, i.e. keep ticking rather than being stubbed like the amount-0 ids? (2) does it drain HP, or a gauge? (3) IS THERE A CLAMP TO 1 rather than to 0? A clamp-to-1 in the code meeting the owner s \"never kills, leaves them at 1 HP\" is a CROSS_CONFIRMED between OBSERVED behaviour and a static constant. Also read 0x02159624 (id 30, -2) and 0x021592DC (id 33, -5) for the same shape.",
-    "P172b-name the dispatcher third caller (Route A) to bound the claim that Route A is dead in retail.",
-    "P172c-what reads node+0xE, given every observed effect is stubbed on apply. If nothing reads it, the duration field is vestigial in retail.",
+    "P173-IDENTIFY char+0x56C: which meter is it, and does a separate HP field exist with a clamp to 1? The apply path 0x02078488 clamps to [0,max] on a {max +0x16, current +0x18} halfword pair. The owner says DoT never kills and leaves the victim at 1 HP, so either +0x56C is not HP or the floor is enforced elsewhere. This settles the drain target properly instead of by elimination, and it also resolves a naming inconsistency in Battle-Engine-Map.md (0x020783CC is called the HP-apply trampoline there).",
+    "P173b-map the char+0x120 bitset: who WRITES it. That names the cancel mechanism from the writer side. Remember the P171 rule -- name the containing function before believing an offset hit.",
+    "P173c-name the dispatcher third caller (Route A) to bound the claim it is dead in retail.",
     "P168b-static writer of root+0x118 / +0x11C (runtime top ask, jus-3vg) -- would turn their empirical 0x70/0x61C validation into a structural check.",
     "P168c-what sets the gate byte 0x0217296D: find its writers. That is the thing that decides whether a mode plays at all.",
     "P168d-static writer of root+0x4C (term V).",
@@ -270,7 +270,8 @@
     "P167-installer-caller-and-the-bss-gate",
     "P168-why-mode-12-never-installs",
     "P169-state-bin-is-the-param-array",
-    "P171-retraction-ov12-offset-collision"
+    "P171-retraction-ov12-offset-collision",
+    "P172-effect-cancel-gate-and-the-drain-paths"
   ],
   "stuck": {},
   "required_reading_for_koma_tasks": [

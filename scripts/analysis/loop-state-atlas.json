@@ -1,14 +1,14 @@
 {
- "iteration": 224,
+ "iteration": 225,
  "phase": "combat",
  "current_task": "P213-what sets bit 5 of [r8+0x40] (the resistance gate)",
  "queue": [
-  "P225-What are node+0x0E and node+0x0F on the +0x558 list? The gate at 0x020779CC constrains [+0x0F]&0x0F to 1..4 and reads [+0x0E]&0xF0. Same cardinality as the nature enum and a koma panel count. This is the koma-to-battle route if it exists.",
-  "P225b-What do the eight kind-2 handlers do? 0x0207793C (shared by ids 49/50/51), 0x02077944, 0x02077954, 0x02077964, 0x02077974, 0x020779A4. Eight abilities that never join the list.",
-  "P225c-What writes char+0x13..0x15, the three nature slots?",
-  "P225d-Why does no character carry id 11 (blunt weakness) when it is wired to bit 12? Note the +0x558 list is a second ability source, so a record census cannot answer this alone.",
-  "P225e-chr_b -> jpower linkage for its own sake.",
-  "P225f-Overlay-Residency-By-Mode.md: the SHAPE claim plus a row for in-battle menu modes. No boundary address."
+  "P226-What writes the +0x558 nodes? That is the deck -> battle hop, and it would confirm the grid cells hold character structs. Find the allocator/initialiser that sets node+0x0E, +0x0F, +0x40, +0x41.",
+  "P226b-What do the eight kind-2 handlers do? 0x0207793C (ids 49/50/51), 0x02077944, 0x02077954, 0x02077964, 0x02077974, 0x020779A4. Eight abilities that never join the list.",
+  "P226c-What writes char+0x13..0x15, the three nature slots? Now more interesting: if koma feed abilities by adjacency, they may feed natures the same way.",
+  "P226d-Why does no chr_b record carry id 11? The +0x558 list is a second source, so a record census cannot settle it alone -- a koma could grant it.",
+  "P226e-chr_b -> jpower linkage.",
+  "P226f-Overlay-Residency-By-Mode.md: the SHAPE claim plus a row for in-battle menu modes. No boundary address."
  ],
  "done": [
   "K1-koma-data-survey",
@@ -269,7 +269,7 @@
   "Is HP computed as size*k at runtime, or tabulated per panel? Naruto 4-koma=144=4*36; if size*k then size5=180, size6=216, size7=252, size8=288. One reading settles it."
  ],
  "notes": "Iteration 146 done (delegated + verified). THREE closures: (a) 0x800's polarity is category ROUTING, not a contradiction -- 0x020801D4 is loop-continue, 0x0207F7C8 is the next category check; (b) record+0x34 is NOT write-once -- a four-function flag API (0x0207D064/0x0207D0BC/0x0207CF18/0x0207CF78) mirrors changes into +0x38 and the +0x08 node list, and the destructor 0x0207CCD4 memsets 0x188; (c) P144's 0x6FF puzzle SOLVED -- ov6 ORs [record+0x150]&0xFF into +0x34, and 0x6FF covers bits 0-7, so the test reads runtime bits not the 0x100 construction seed. Top task: read record+0x150, which now drives the whole category gate. STANDING: query.py mis-bins functions in this module (4 leaves here, 8 in P125, 2 in P126) -- verify any address before trusting its size or container. The +0x5C base-confusion trap has 7 instances; on +0x34 (1092 hits) the base register is the ONLY struct identifier. CHARTER: updated in P146b on the user's direct authorization. North star = docs/PROJECT-GOAL.md (master, f47d63d); Mission 2's current focus is the entity/projectile subsystems. justoolkit-06 is the designated runtime validator -- send them struct-field hypotheses and breakpoint requests rather than leaving questions unresolved; that is the only route to dynamic evidence without breaking the static-only rule.",
- "last_wake": "2026-08-19 P224",
+ "last_wake": "2026-08-19 P225",
  "wakeup_default_seconds": 900,
  "consecutive_no_progress_wakes": 0,
  "k1c_helper_passives": {
@@ -2449,5 +2449,14 @@
   "CONTACT_GATE_CLOSED": "runtime jus-first-attributed-measurement-d6u: 4 landed hits -> 4 stops, 7 misses -> 0 stops. So the formula does NOT run on misses, every computed damage reached HP, and 0x02082584 IS a hit oracle. ve6 fully retracted. My out-param search was chasing a phenomenon their max-HP error invented; CLOSED, not parked.",
   "TTL_handled": "jus-nature-is-read-in-damage-path-hbt hit its 3-wake TTL. NOT blanket-downgraded: the ROM half (tables contain 0x180, instructions give 768 from base 8) is verifiable by anyone and elapsed wakes do not weaken it. Split the unverified half into jus-nature-1p5-never-observed-uh8 at state:speculative -- nature has never been OBSERVED to multiply damage. Also flagged that runtime d6u data (selector 0x0 -> column 0, row 0, both tables 1.000, r0 = 0) is convergent verification of the MECHANISM and is theirs to label.",
   "their_honest_limit": "base 8 is DEGENERATE -- proportional and both flat models all give 6.000. So their only fully attributed measurement discriminates nothing, and the flat refutation still rests on the three unattributed -5.250 reps. It does establish those were not Goku B, since B is base 8 and reads 6.000."
+ },
+ "P225_KOMA_ADJACENCY": {
+  "headline": "The 1..4 field is a DIRECTION, not the nature enum. arm9 0x020779CC is a koma GRID-ADJACENCY test on a 5x4 grid, and it is the koma-to-battle route.",
+  "the_gate": "f(gridOwner, node): k = [node+0x0F] & 0x0F, reject 0 and >4. cell = [node+0x0E], low nibble = column, high nibble = row. index = (k-1)*2 into an 8-byte signed table at 0x02092E34. x = low + dx, y = high + dy. Require 0 <= x < 5 and 0 <= y < 4. Then gridOwner + 8 + y*0x14 + x*4, load the pointer, return it or 0.",
+  "direction_table": "0x02092E34 = 00 01 FF 00 00 FF 01 00 -> k=1 (0,+1) down, k=2 (-1,0) left, k=3 (0,-1) up, k=4 (+1,0) right. The four cardinals. Same data block as the damage class table 0x02092E68 and the mask tables 0x02092E78/0x02092E90.",
+  "MECHANIC": "a +0x558 node carries a grid cell (+0x0E), a direction (+0x0F low nibble) and an ability id (+0x41). The gate steps one cell that way and returns the neighbour cell occupant; the caller appends the ability id to THAT object. So a koma grants its ability to the character in the adjacent cell, in the direction it points.",
+  "convergent_3_ways": "code bounds x<5 y<4; row stride 0x14 = 20 = 5 cells x 4 bytes; and docs/design/Koma-System-Design-Brief.md line 13 says \"a 4-row x 5-column grid = 20 cells\" from live play. Code constants, an array stride, and a human looking at the screen. None derives from the others.",
+  "NOT_claimed": "that the grid cells hold character structs. Inference: AddAbility does ldrsb [r0+0x1A] and strb [r0+count+0x1B] on the returned pointer and char+0x1A/+0x1B is the established ability-list location. Strong but one usage, and object identity is what this campaign has got wrong before. Also open: what writes the nodes, and whether +0x0E nibbles are (column,row) -- the bounds pin which is bounded by 5 and which by 4, but the axis NAMES are mine.",
+  "note": "this partly answers the charter koma sprint: it is a mechanic a designer needs, not just an address."
  }
 }

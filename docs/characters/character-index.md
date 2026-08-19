@@ -142,8 +142,10 @@ and I could not tell a real field from that phrase.
 
 **The Debug series now has names.** `chr_b` 70–73 are KomamanRed, KomamanYellow, KomamanGreen
 and Taizo, collision files `dt_b_01.bin` … `dt_b_04.bin`. These are exactly the four records with
-an empty on-disk ability window [`jus-ondisk-ability-list-at-chrb-0x03-kfc`], which is how they
-were independently identified as unselectable.
+an empty ability field *and* a `charId` of 0 — the only four records where both are zero. That
+prediction is the part of [`jus-ondisk-ability-list-at-chrb-0x03-kfc`] that survived its
+retraction (the bead read `charId` as an ability slot; here both are zero, so the check holds
+either way), and it is how these four were independently identified as unselectable.
 
 **Four records are still unidentified: `chr_b` 1, 39, 40 and 50.** They carry abilities, so they
 are real characters, but no row here describes them and no deleted map named them. Ichigo's row

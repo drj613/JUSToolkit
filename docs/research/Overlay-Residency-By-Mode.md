@@ -42,10 +42,14 @@ respectively is not something a wrong guess produces.
 
 - **ov13's 100% means nothing.** It is 32 bytes. A tiny blob of mostly-zero
   bytes matches almost anything.
-- **The `0x021AC1C0` window is unresolved.** ov12 at 59.6% over 167KB is
-  consistent with "ov12 is resident but roughly 40% of it is writable data that
-  the running game has since modified" — but it's also consistent with something
-  else being loaded there. Don't rely on either reading.
+- **The `0x021AC1C0` window was called unresolved here, and it is not.** This
+  bullet was stale from the day it was written — the deck-editor section 30 lines
+  below already resolved it, and a live byte-level dump has since settled it
+  directly: 79.4 KB of the window is byte-identical to `arm9_ov12.bin` at its
+  declared load address, contiguously, with no interleaving
+  [`jus-ov12-battle-boundary-0x021c13b0-lvl`]. Nothing other than ov12 produces
+  that. The "something else is loaded there" reading is dead; ov12 is the
+  resident overlay in battle, overwritten from the low end.
 
 ## Deck editor: ov01 — and it resolves the ov12 ambiguity
 
@@ -71,8 +75,20 @@ So the resident set is mode-dependent in **two** windows:
 **This resolves the ov12 question left open above.** ov12 reads 100% in the deck
 editor and only 59.6% during battle — so ov12 *is* resident in both, and the
 battle figure was runtime mutation of its writable data, not a different overlay.
-The earlier "ambiguous" reading was measurement noise from a busy combat scene,
-which is a useful caution: **compare in the quietest mode available.**
+
+**But the explanation given here for the battle figure is wrong, and the lesson
+drawn from it does not follow.** The shortfall is not measurement noise from a
+busy combat scene. A live dump shows the window split at a single point, with
+everything below it overwritten by live data — including ov12's entry point at
+file offset 0 — and everything above it byte-identical to the file
+[`jus-ov12-battle-boundary-0x021c13b0-lvl`]. Structured overwriting, not noise:
+noise does not produce 79 KB of exact agreement on one side of a clean boundary.
+So "compare in the quietest mode available" is advice derived from a
+mis-attribution. The real caution is the opposite and more specific: **an ov12
+address's residency in battle depends on where it sits relative to that
+boundary**, and the boundary's location may itself vary with allocation history
+[`jus-ov12-boundary-probably-moves-05o`], so an address near it needs a
+"measured at" qualifier rather than a percentage.
 
 `ov01` is the overlay to disassemble for deck-editor logic (panel nature
 resolution, deck bonus calculation).

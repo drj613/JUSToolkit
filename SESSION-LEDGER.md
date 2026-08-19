@@ -1,17 +1,17 @@
 # Session Ledger — JUS Reverse Engineering
 
-Last updated: 2026-08-18 ~22:15 (ledger wake 5, session `justoolkit-87`)
+Last updated: 2026-08-18 ~22:45 (ledger wake 6, session `justoolkit-87`)
 
 ## 1. Current state
 
 This file is a human catch-up summary — not the system of record. beads (`br`) is the record; protocol in `docs/orchestration/`.
 
 **Live sessions (from ListAgents):**
-- `justoolkit-fa` [cedb9e] — busy, 2h. **Runtime**. Since wake 4: fixed resolve_addresses() to wait for population (jus-acq), confirmed callback slot is a 3-state machine (jus-rpl), cross-confirmed sentinel `0x0202836C` by blind scan. 4 new commits.
-- `battle-engine-atlas-76` [2e8ac4] — busy, 2h. **Static**. Now at **P168**. Resolved mode-12 gate to arm9 transition counter, retracted r4==r0 decode error, sent jus-zko (whole gate chain in one capture). 4 new commits.
-- `justoolkit-d9` [699d1d] — idle 3h. Dormant.
+- `justoolkit-fa` [cedb9e] — busy, 2h+. **Runtime**. Since wake 5: **item 4 DONE** (jus-6fo closed — full match to finish with RAM end oracle). Retracted own overshoot diagnosis (jus-vkj — nav.advance is accurate). New blocker: jus-5kf (player HP recovers on Battle path, blocks damage measurement). 5 new commits.
+- `battle-engine-atlas-76` [2e8ac4] — busy, 2h+. **Static**. Applied runtime's jus-vkj retraction, promoted V test to next task, retracted same-value gate claim. CROSS_CONFIRMED the 4463 frame count and rule-completion path. 4 new commits.
+- `justoolkit-d9` — gone from ListAgents.
 
-**Coord beads:** ~20 total (7+ closed, 13 open). Protocol healthy — jus-baz aging rule worked as designed (caught bookkeeping gap, runtime responded within one wake of nudge).
+**Coord beads:** ~22 total (9+ closed, 12 open). Protocol continues to work — retractions propagating cleanly between loops (jus-vkj retracted by runtime → applied by atlas within one wake).
 
 ## 2. Open audit flags
 
@@ -44,21 +44,24 @@ Atlas committed 5 times between wakes 2–3 (P165 addenda + P166 + P166 addendum
 ### Flag I — RESOLVED: jus-baz aging
 Runtime responded to the nudge within one wake. Updated the bead, reframed as a standing capability (P3). Twelve addresses were already audited incidentally — the bead just wasn't updated. The aging rule caught a bookkeeping gap, not a stalled task. Runtime's feedback: the rule should distinguish "bead is stale" from "work is stuck." Worth noting for the owner.
 
-### Flag J — jus-vkj frame overshoot (carried forward, low priority)
-nav.advance(N) doesn't advance exactly N frames. No downstream beads depend on exact frame counts yet.
+### Flag J — RESOLVED: jus-vkj frame overshoot
+Runtime self-retracted (`state:retracted`). nav.advance IS accurate (2300→2301); the apparent overshoot was the emulator free-running between IPC calls. Atlas applied the retraction and unblocked duration tests. Textbook retraction flow.
 
-### Flag K — jus-cvx and jus-fms aging (4th wake, P2)
-Both `state:proposed` `kind:request`, now in their **fourth wake** with no status change. Past the one-wake aging rule. Runtime is clearly working through the queue (higher-priority asks getting done first). Holding the nudge one more wake since runtime is demonstrably responsive and these are P2. If no update by wake 6, I'll doorbell.
+### Flag K — ESCALATED: jus-cvx and jus-fms aging — runtime nudged
+Both `state:proposed` `kind:request`, now in their **fifth wake**. Doorbelled runtime at wake 6 requesting status updates on both beads.
 
 ### Flag L — Atlas retractions in map doc, not in beads (carried forward, low severity)
-Three retractions now (gate-refusal claim, install-then-revert, r4==r0 decode error), all documented inline in commits/map doc but not as coord beads. Self-contained, no downstream damage. Pattern worth noting to the owner — atlas's retraction discipline is strong, but traceability through beads would be better.
+Four retractions now (gate-refusal, install-then-revert, r4==r0, same-value gate), all in commits/map doc but not as coord beads. Self-contained. Pattern for the owner.
+
+### Flag M — NEW: jus-5kf blocks damage measurement on Battle path
+Player HP recovers during clean point battles (items/gimmicks verified off). Two candidates: auto-heal default or respawn animation. `state:tainted`, `kind:measurement`. This blocks any damage work on the Battle path. Runtime filed it; no action needed from ledger, but it's the biggest current obstacle to the research.
 
 ---
 
 # Per-Session Detail
 
 What each active session is doing, where things live, and what they've delivered.
-Last updated: 2026-08-18 22:15 — ledger wake 5
+Last updated: 2026-08-18 22:45 — ledger wake 6
 
 ## Ultimate goal
 

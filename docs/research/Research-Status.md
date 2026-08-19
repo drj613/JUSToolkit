@@ -1131,3 +1131,70 @@ Rule 26 rescued a null of theirs and one of mine: their `0x02081ED0` result stan
 ### The pattern across all three chains
 
 Every chain turned on **material we authored ourselves**: my commit message, my dismissal, my scanner, my card's missing program point. The controls kept catching instruments; the corrections kept catching descriptions. Knowing a rule didn't prevent misapplying it — runtime wrote "a counter cap plus a busy loop is a truncation that looks like a finding" into their list, then one wake later built a filter on the wrong axis and got 60 zero-reads that would have passed as a result.
+
+## 2026-08-19 — iterations 201–212: the damage formula, solved
+
+Five cycles late — every wakeup was live formula work.
+
+### The formula
+
+arm9 `0x020823E4`, called from `0x02081280` in collision pipeline stage 1. Result lands in an out-parameter at `sp+0x4C`, then accumulates into `scratch+0xA4` at `0x020812DC`.
+
+```
+base = ldrsb [elem+0x10 + 4]            ; move's damage in whole displayed HP
+r3   = base << 8                        ; convert to 8.8 fixed point
+    x= [attacker_scratch+0x184] / 256
+    x= [attacker_scratch+0x186] / 256
+    x= nature_table[defence][attack]
+r5   = that result
+r0   = -(r5 / 4) per resistance gate passed     ; 0, 1 or 2 gates
+out  = (r5 + r0) >> 2                   ; 8.8 -> raw/64 HP scale
+                                        ; stored at 0x02082684, str r1,[fp]
+```
+
+`CROSS_CONFIRMED` — static decode plus runtime loop's certified measurement at two different bases, control firing twice on each:
+
+| move | base byte | base | subtracted | out | displayed |
+|---|---|---|---|---|---|
+| B | 8 | 2048 | 512 = base/4 | 384 | 6.000 |
+| DOWN+B | 7 | 1792 | 448 = base/4 | 336 | 5.250 |
+
+**The reduction is a 25% multiplier, not a flat term.** The ratio holds constant at `0.750` for both moves.
+
+**Nature tables**: `0x0209FEF4` (`ColPrmMan+0x14D` bit 0 clear) and `0x0209FF14` (set). 4×4 signed halfwords, row stride `8` = defence category, column stride `2` = attack category. Only `1.000` and `1.500`; row and column 3 all `1.000`; the two tables are exact transposes, so the bit swaps which side's nature indexes rows. Categories are 2-bit fields from `scratch+0x175`. Bit 30 of `+0x40` on either side forces the factor to `1.0` (`0x020824E0`/`0x020824EC`), making `0x021591F4` a nature-immunity switch. This reproduces the previously CONFIRMED static formula's "nature multiplier: 1.0 neutral, 1.5 advantage, bonus-only" — and shows why it's bonus-only: no value below `1.0` exists in either table.
+
+**Resistance gates**: both read byte table `0x02092E68` — `[0]=1 [1]=1 [2..7]=2`. Gate 1 (`0x02082634`) fires on class 1 unconditionally; gate 2 (`0x02082650`) fires on class 2 only when **bit 5 of `[r8+0x40]`** is set. Total reduction is 0%, 25%, or 50%. In measured conditions `[r8+0x40] = 0x00000008`, bit 5 clear.
+
+### `Damage-Reduction-Is-Flat.md` is REFUTED
+
+Its central claim — constant difference of `-2.0` with a non-constant ratio — is wrong, and it drove fourteen-plus iterations of dead-end searching. Two things broke it:
+
+1. Its `DOWN+B` row (`7.000` → `5.000`) is a **bad measurement**. The runtime loop's certified value is `5.250`.
+2. 25% of 8.0 is exactly 2.0, so on the B move a multiplier and a flat term are numerically identical. One coincidence plus one bad row produced a convincing wrong mechanism.
+
+**The method that produced the bad row is itself invalid.** `DOWN+B` forces an opponent character switch, so the HP word afterward belongs to a different character — the runtime loop measured the HP delta going *up* by `+0.578`. Any move with a side effect can't be measured by HP dip; only an in-formula read works. The doc noted that neither move was side-effect-free without realizing that was fatal to its own oracle.
+
+### Why the ability pokes did nothing
+
+Runtime refuted ability `0x09` from both the cached bitset and the live list, in both directions. Now explained: the reduction reads **a flag bit and a class table**, never the abilities. An ability would have to feed those at load time. Whatever sets bit 5 of `[r8+0x40]` is the next target.
+
+### Corrections made this run
+
+- **`0x0220DDE0` named three times.** It's the `Battle_ColPrmMan` (`0xFB54`, `BattleColPrm.cpp` / `Battle_ColPrmManCreate`). I called it `Battle_ObjMan` (P202), then `Battle_ColMan` (P203), pushed both names to the partner, retracted both the same wake. Cause: I tested containment against a size derived from the name I was trying to establish — the check could only pass. What settled it: zero-remainder slot indices, a constructor accounting for every byte, an array fitting one candidate and not the other.
+- **A warning that stopped a partner's run.** I told them their ability-list poke wouldn't survive a respawn; they held the run; I was wrong. The loader iterates the packed list at `char_struct+0x1B` and uses each byte as an index into the `{kind,id}` table. I'd read one of my own findings and missed the adjacent one that already resolved it.
+- **The `{kind,id}` table**, closed after nine deferrals while being load-bearing for exactly the question above: `[global]+0x50`, stride 4, kind at `+0`, id at `+1`, dispatched through `0x02172210`.
+- **An ability-free opponent can't be built** — records 70–73 are the Debug series and unselectable. So the doc's `chr_b[70]` baseline came by a route that no longer exists. Didn't matter: the `8.000` base is now read directly from the formula, so `jus-f0v`'s premise is moot. Four workarounds were built to obtain a number one signed byte from a breakpoint could give.
+- **`query.py` searches cap at 200 lines silently.** A `+0x48` sweep returned 200 of 644. Audited all eight load-bearing sweeps with `--all`; none was truncated, and the audit carried its own positive control.
+- **My P209 prediction failed on all four specifics**, and I discarded unpublished a follow-up that fitted every measured value from a wrong base.
+
+### The five lessons worth carrying
+
+**42. A derivation that lands on the observed value from the wrong inputs is the most convincing kind of wrong.** Four in this thread: two of mine, one discarded before publishing, one from the runtime loop. They computed `1792 − 512` by assuming flatness — the thing in question — then offered agreement with the doc as independent confirmation. Pre-registration is the only reason any was caught.
+
+**43. Check-the-record must span branches.** Five key damage documents exist only on other branches. I'd been grepping one worktree — a fraction of the record — for the whole campaign.
+
+**44. The unit is part of the search term.** The reduction hid because every scan looked for `128`, the right magnitude in raw/64, while the formula works in 8.8 where `2.0` is `512`. Three independent exhaustion results were sound and all blind.
+
+**45. A measurement at one parameter value can't distinguish a constant from a proportion.** `base/4` is exactly `512` when base is `2048`. Name the parameter value that separates the readings.
+
+**46. A wrong measurement in the record can kill a correct hypothesis for thirty iterations.** At P182 I wrote "0.750 is a clean 3/4, look for a multiply" — and abandoned it because the doc's second row implied a non-constant ratio. The row was wrong. When a hypothesis is clean and one data point refuses it, check the data point.

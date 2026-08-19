@@ -875,3 +875,71 @@ runs. A differential scan across a fight found zero new hits. What *did* work wa
 discriminator I put in the card: of 6 baseline hits on the `(id, base)` halfword pattern, **none** carried
 it, so it correctly rejected all six as coincidence. The fingerprint alone isn't specific in 4 MB of small
 integers; breakpointing the store dodges the window entirely.
+
+### The two tables joined — handler entry × `state.bin` param, all 42 ids (P169)
+
+`CONFIRMED_STATIC`. Handler table at ov6 `0x02171168` (stride 8, in the overlay image) joined to
+`bin/state.bin` (stride 8, loaded to the heap) by shared id. The split is clean and it names the two families:
+
+- **ids 1–17, 35, 36** — `+0x7` is `0xFF` (no status opcode), sounds `0x07`/`0x09`/`0x0D`. The **gauge**
+  effects. Both runtime captures (10 and 13) are here.
+- **ids 18–34** — `+0x7` carries the status opcodes `0x19`–`0x22`, sound `0x0C` (or `0xFF` for 30–32). The
+  **statuses**, which P159 found nearly unreachable from script operands.
+- **ids 9–17** share `+0x6 = 0x05` and sound `0x0D` — one family, durations `120`–`600`.
+
+| id | handler | sound | enum | `+0x6` | `+0x7` opcode | flags | base | amount |
+|---|---|---|---|---|---|---|---|---|
+| 0 | `0x02159258` | `0xff` | `0xff` | `0xff` | `0xff` | `0x0000` | 0 | 0 |
+| 1 | `0x021592a0` | `0x07` | `0xff` | `0x00` | `0xff` | `0x0001` | 0 | 10 |
+| 2 | `0x021592a0` | `0x07` | `0xff` | `0x00` | `0xff` | `0x0001` | 0 | 20 |
+| 3 | `0x021592a0` | `0x07` | `0xff` | `0x00` | `0xff` | `0x0001` | 0 | 40 |
+| 4 | `0x021592c0` | `0x0d` | `0x00` | `0x01` | `0xff` | `0x0002` | 700 | 5 |
+| 5 | `0x021592dc` | `0x0d` | `0x01` | `0x03` | `0xff` | `0x0002` | 700 | 5 |
+| 6 | `0x021592f8` | `0x0d` | `0xff` | `0x05` | `0xff` | `0x0001` | 0 | 0 |
+| 7 | `0x0215930c` | `0x0d` | `0x02` | `0x09` | `0xff` | `0x0002` | 800 | 0 |
+| 8 | `0x02159258` | `0x0d` | `0x03` | `0x07` | `0xff` | `0x0002` | 800 | 0 |
+| 9 | `0x0215931c` | `0x0d` | `0x05` | `0x05` | `0xff` | `0x0002` | 120 | 0 |
+| 10 **←runtime** | `0x0215932c` | `0x0d` | `0x04` | `0x05` | `0xff` | `0x0002` | 480 | 0 |
+| 11 | `0x02159258` | `0x0d` | `0x06` | `0x05` | `0xff` | `0x0002` | 240 | 0 |
+| 12 | `0x02159344` | `0x0d` | `0x13` | `0x05` | `0xff` | `0x0002` | 120 | 0 |
+| 13 **←runtime** | `0x02159364` | `0x0d` | `0x0b` | `0x05` | `0xff` | `0x0002` | 300 | 0 |
+| 14 | `0x02159378` | `0x0d` | `0x08` | `0x05` | `0xff` | `0x0002` | 240 | 0 |
+| 15 | `0x021593a4` | `0x0d` | `0x09` | `0x05` | `0xff` | `0x0002` | 300 | 0 |
+| 16 | `0x021593d0` | `0x0d` | `0x0a` | `0x05` | `0xff` | `0x0002` | 600 | 0 |
+| 17 | `0x02159434` | `0x0d` | `0x07` | `0x05` | `0xff` | `0x0002` | 240 | 0 |
+| 18 | `0x021594e4` | `0x0c` | `0x0c` | `0x0a` | `0x1f` | `0x0032` | 100 | 0 |
+| 19 | `0x02159500` | `0x0c` | `0x0d` | `0x0b` | `0x1d` | `0x0032` | 600 | -4 |
+| 20 | `0x02159538` | `0x0c` | `0x0f` | `0x0c` | `0x1c` | `0x0012` | 360 | 0 |
+| 21 | `0x02159258` | `0x0c` | `0x10` | `0x0d` | `0xff` | `0x0012` | 480 | 0 |
+| 22 | `0x02159578` | `0x0c` | `0x11` | `0x08` | `0x21` | `0x0012` | 540 | 0 |
+| 23 | `0x02159594` | `0x0c` | `0x12` | `0x0e` | `0x1e` | `0x0012` | 600 | 0 |
+| 24 | `0x02159608` | `0x0c` | `0x14` | `0x0e` | `0x22` | `0x0012` | 480 | 0 |
+| 25 | `0x02159608` | `0x0c` | `0x15` | `0x0e` | `0x22` | `0x0012` | 480 | 0 |
+| 26 | `0x02159258` | `0x0c` | `0x16` | `0x0e` | `0xff` | `0x0032` | 240 | 0 |
+| 27 | `0x02159258` | `0x0c` | `0x17` | `0x0e` | `0xff` | `0x0032` | 240 | 0 |
+| 28 | `0x021596e0` | `0x0c` | `0x19` | `0x0e` | `0x20` | `0x0012` | 180 | 0 |
+| 29 | `0x021597f8` | `0x0c` | `0x1a` | `0x0e` | `0x20` | `0x0012` | 180 | 0 |
+| 30 | `0x02159624` | `0xff` | `0x1b` | `0xff` | `0x1b` | `0x0032` | 480 | -2 |
+| 31 | `0x02159694` | `0xff` | `0x1c` | `0xff` | `0x19` | `0x0032` | 240 | 0 |
+| 32 | `0x02159678` | `0xff` | `0x1d` | `0xff` | `0x1a` | `0x0032` | 60 | 0 |
+| 33 | `0x021592dc` | `0x0c` | `0x0e` | `0x04` | `0xff` | `0x0012` | 700 | -5 |
+| 34 | `0x02159258` | `0x0c` | `0x18` | `0x0e` | `0xff` | `0x0032` | 300 | 0 |
+| 35 | `0x0215941c` | `0x0d` | `0x1e` | `0xff` | `0xff` | `0x0002` | 600 | 0 |
+| 36 | `0x021593e8` | `0x0d` | `0x1f` | `0xff` | `0xff` | `0x0002` | 360 | 0 |
+| 37 | `0x02159260` | `0x07` | `0xff` | `0x00` | `0xff` | `0x0001` | 0 | 50 |
+| 38 | `0x02159260` | `0x07` | `0xff` | `0x00` | `0xff` | `0x0001` | 0 | 30 |
+| 39 | `0x02159280` | `0x09` | `0xff` | `0x02` | `0xff` | `0x0001` | 0 | 60 |
+| 40 | `0x02159280` | `0x09` | `0xff` | `0x02` | `0xff` | `0x0001` | 0 | 30 |
+| 41 | `0x02159280` | `0x09` | `0xff` | `0x02` | `0xff` | `0x0001` | 0 | 15 |
+
+**Second independent `V = 0`** (runtime): id 13, stored duration `300`, and they read `base` live from
+`r5+2` rather than from my table — `300 == 300`. Two ids now agree, and the second didn't depend on me
+supplying the base. The two-table correction is also verified at runtime: `0x02171168 + 13×8 = 0x021711D0` =
+their `r4`, while `r5 = 0x021E0AA8` sits on the heap in a different region.
+
+**Instrument rule, sharpened by the runtime loop (this is a real hole in the version I'd adopted).** "A
+control fired" is not enough — **a control that fires once at the start of a run cannot certify a negative
+collected later in that run.** The installer `0x0214F91C` fires at battle start, so it proved the session was
+alive at phase zero and said nothing about phase eight. A control has to *recur*, or liveness has to be
+sampled alongside the measurement. This surfaced when an attribution sweep returned eight zero phases and the
+battle had already ended on the 4463-frame limit partway through.

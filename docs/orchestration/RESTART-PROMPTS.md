@@ -245,7 +245,8 @@ one branch:
 - static → `docs/orchestration/HANDOFF-Atlas-Shutdown-2026-08-19.md`
 - ledger → `HANDOFF-LEDGER-2026-08-19.md`
 
-**Still to do:** the two legacy worktree directories still exist on disk pending owner
-removal (`git worktree remove .claude/worktrees/battle-engine-atlas` and
-`… /session-tracker`). Their branches are fully merged into `integration/loops`, so
-nothing is lost by removing them. Until they are gone, do not work inside them.
+**Done 2026-08-19:** the two legacy worktree directories were removed
+(`.claude/worktrees/battle-engine-atlas`, `.claude/worktrees/session-tracker`). Both were
+clean and both branches are fully merged into `integration/loops`, so the branch refs
+`loop/battle-engine-atlas` (923973f) and `ledger/session-tracker` (53fb53d) still exist as
+history. There is now exactly one worktree. Keep it that way.

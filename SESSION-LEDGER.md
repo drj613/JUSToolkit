@@ -1,17 +1,17 @@
 # Session Ledger — JUS Reverse Engineering
 
-Last updated: 2026-08-19 ~07:30 (ledger wake 29, session `justoolkit-87`)
+Last updated: 2026-08-19 ~09:00 (ledger wake 33, session `justoolkit-87`)
 
 ## 1. Current state
 
 This file is a human catch-up summary — not the system of record. beads (`br`) is the record; protocol in `docs/orchestration/`.
 
 **Live sessions (from ListAgents):**
-- `justoolkit-fa` [cedb9e] — busy, 11h. **Runtime**. **MILESTONE: found the scratch+0x134 writer at arm9 `0x020821F8` — it ACCUMULATES.** Pulled back own exhaustion claim, found a call-shaped write that reopened the route. Also: no interior pointers in the scratch, two scratches are doubly linked. 30+ commits this session.
-- `battle-engine-atlas-76` [2e8ac4] — idle, 11h. **Static**. Now at **P198**. Built poolload_scan.py and split_sum_scan.py, found ONE computed-offset candidate (an accumulator writing obj+0x134 from an array at +0xA4). **Convergent: both loops found the same writer independently.** 30+ commits this session.
+- `justoolkit-fa` [cedb9e] — busy, 13h. **Runtime**. Watchpoint patch working (jus-1rm: term writer arm9 `0x020812E4` found in one stop). **KEY FINDING: jus-w66 — removing ability id 9 does NOT change damage.** Neither the ability list nor the cached bitset is read at hit time. Touch control built (jus-3aw progressing). 35+ commits.
+- `battle-engine-atlas-76` [2e8ac4] — busy, 13h. **Static**. Now at **P208**. Damage formula at arm9 `0x020823E4` reached by out-parameter. {kind,id} table confirmed. Cap audit clean. 40+ commits.
 - Others: `justoolkit-ba` stood down, `trainer-5b` busy (unknown role).
 
-**Coord beads:** ~42 total, ~14 open. **MILESTONE: the +0x134 writer is FOUND** — arm9 `0x020821F8`, an accumulator. Both loops found it independently (runtime via execution breakpoint, atlas via computed-offset scan). This is convergent verification on the oldest open question in the battle-engine work. jus-fun (write-watchpoint) is no longer the sole gating item — the writer was found through static+runtime convergence without needing the watchpoint.
+**Coord beads:** ~48 total, ~20 open. Write-watchpoint patch built and working (jus-fun). Term writer found (jus-1rm). **But: ability id 9 does NOT affect damage (jus-w66) — the deck experiment design may need rethinking.** The reduction mechanism is upstream of abilities.
 
 ## 1.5. OWNER ACTION — status update
 
@@ -86,7 +86,7 @@ Three nudges over 7 wakes surfaced a recurring pattern. Runtime's feedback, cons
 # Per-Session Detail
 
 What each active session is doing, where things live, and what they've delivered.
-Last updated: 2026-08-19 07:30 — ledger wake 29
+Last updated: 2026-08-19 09:00 — ledger wake 33
 
 ## Ultimate goal
 

@@ -3,8 +3,7 @@
   "phase": "combat",
   "current_task": "P171 RETRACTION WAKE. The seven ov12 \"+0x172/+0x173 writers\" I published last wake are CommonWindow.cpp and ALTextDS.cpp (text-widget fields) -- an offset collision, not the battle entity. Retracted: the \"independent static support\" for the two-channel model, the \"two dedicated per-byte setters\" reading, and the id-1-as-default-staging hypothesis (which rested on an ALTextDS CreateIntf initialiser). Runtime two-channel model UNAFFECTED -- it stands on their own LR evidence at n=17. Real negative established: the writers of X+0x172/+0x173 appear in NO immediate-offset store ROM-wide, same blind spot as the iteration-76 +0xE8 hunt.",
   "queue": [
-    "P172-WHAT DOES THE +0x7 OPCODE DISTINGUISH, if not the channel? 12 of 42 ids carry 0x19-0x22; five ids inside the status range (21, 26, 27, 33, 34) carry 0xFF. Read the handlers for a pair that differs only in opcode presence -- e.g. 21 (0xFF, base 480) vs 22 (0x21, base 540), both status-channel, both V=0, both stubbed. That is a bounded static question with a runtime-confirmed contrast already in hand.",
-    "P172-find the X+0x172/+0x173 writers with a DIFFERENT instrument: register-offset stores (add rX,#0x172 then strb), split-offset stores, and Thumb. The immediate-offset search is exhausted and produced only UI structs. Consider asking runtime for a GDB write-watchpoint on X+0x172 -- that is what settled 0x020AFEB8 (jus-fms).",
+    "P172-READ THE id-19 HANDLER 0x02159500. Owner ground truth: poison and burn DO drain over time and BOTH LEAVE THE VICTIM AT 1 HP (cannot kill). state.bin id 19 carries amount -4. Runtime saw opponent HP unchanged while id 19 fired, but id 19 s node+0x0 was NEVER recorded, so we do not know if it was stubbed. THREE THINGS TO CHECK IN THAT HANDLER: (1) does it return non-zero, i.e. keep ticking rather than being stubbed like the amount-0 ids? (2) does it drain HP, or a gauge? (3) IS THERE A CLAMP TO 1 rather than to 0? A clamp-to-1 in the code meeting the owner s \"never kills, leaves them at 1 HP\" is a CROSS_CONFIRMED between OBSERVED behaviour and a static constant. Also read 0x02159624 (id 30, -2) and 0x021592DC (id 33, -5) for the same shape.",
     "P172b-name the dispatcher third caller (Route A) to bound the claim that Route A is dead in retail.",
     "P172c-what reads node+0xE, given every observed effect is stubbed on apply. If nothing reads it, the duration field is vestigial in retail.",
     "P168b-static writer of root+0x118 / +0x11C (runtime top ask, jus-3vg) -- would turn their empirical 0x70/0x61C validation into a structural check.",
@@ -2172,6 +2171,13 @@
       "Lua-side memory-diff polling CANNOT bracket a single writer: the Lua bridge runs on the GUI thread via a queued Qt connection, so one _Update() is not guaranteed to be one frame. Candidate struck (source: DJ s interactive session).",
       "The GDB stub does not survive a disconnect -- first connection works, later ones fail the handshake AND leave the core halted. Exactly ONE watchpoint try per emulator launch, and a failure costs a relaunch plus recovering a halted core. Any watchpoint design must be composed and reviewed BEFORE launch, not iterated live."
     ],
-    "owner_question_beads": "jus-law = player-knowledge confirm/deny items (6 of mine added). jus-fun = the melonDS write-watchpoint planning item, filed BY THE LEDGER at DJ s instruction (\"ask fable what could be done here and record a br ticket for me\"). Both surfaced in the ledger s morning batch. Do NOT create competing beads for either."
+    "owner_question_beads": "jus-law = player-knowledge confirm/deny items (6 of mine added). jus-fun = the melonDS write-watchpoint planning item, filed BY THE LEDGER at DJ s instruction (\"ask fable what could be done here and record a br ticket for me\"). Both surfaced in the ledger s morning batch. Do NOT create competing beads for either.",
+    "owner_ground_truth_2026_08_19": {
+      "DoT exists": "poison and burn both drain; burn also forces auto-run in the facing direction; NEITHER CAN KILL -- both leave the victim at 1 HP",
+      "down+B": "CONFIRMED changes the OPPONENT character. Hold down (= guard) then press B while held; only changes them if it HITS. My P170 reading was right -> OBSERVED.",
+      "statuses do not tick visibly": "an icon appears above the character, no timer, no countdown -- supports the state-timer reframe",
+      "exotic missions": "STORY MODE ONLY, not selectable custom rules -> CLOSES the 22-described-vs-31-handler gap; the extra handlers are story content. Stop menu-side hunting.",
+      "items inflict statuses": "chili pepper -> burn, purple flask -> poison. Items-ON is a REQUIREMENT for that family, not contamination."
+    }
   }
 }

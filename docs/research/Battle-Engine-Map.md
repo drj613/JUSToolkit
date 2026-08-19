@@ -1237,3 +1237,41 @@ the bad claim into canon.
 **Planning caveat for the staging-writer hunt:** melonDS watchpoint support is limited and untested by the
 runtime loop (`jus-fms`) — they have only ever used execution breakpoints successfully. Any design that
 depends on a write-watchpoint needs a support test budgeted first.
+
+### Owner ground truth (2026-08-19, via `jus-law`) — four answers, one closed gap, one sharpened tension
+
+Tier **OBSERVED** — outranks CONFIRMED-from-disassembly for *behaviour*.
+
+| question | answer | what it does to the record |
+|---|---|---|
+| Is there any damage-over-time status? | **Yes.** Poison and burn both drain over time. Burn also makes the victim run automatically in its facing direction. **Neither can kill — both leave the victim at 1 HP.** | Closes the shortcut I was hoping for. A drain mechanic exists, so id 19's `−4` may well be HP after all. See the sharpened tension below. |
+| Does ↓+B change the opponent's character? | **Confirmed.** Input is *hold down* (which is guard) then press B while held, so it comes out of guard — and it only changes them **if it hits**. | My P170 correction was right. `PLAUSIBLE` → **OBSERVED**. |
+| Do statuses tick visibly? | **No.** An icon appears above the character; no timer, no countdown. | Supports the state-timer reframe and the all-stubbed result: nothing ticks in the effect subsystem, and the icon is presumably driven off the same state the duration lives in. |
+| Are the exotic missions real playable rules? | **Story mode only**, not selectable custom rules. | **Closes the 22-described-vs-31-handler gap.** The extra handler slots are story content, not modes we failed to reach. Stop any menu-side hunt for them. |
+| (unasked) | **Items inflict statuses** — chili pepper causes burn, a purple flask causes poison. | Confirms my reasoning that items-ON is a *requirement* for reaching that family, not contamination. Now OBSERVED rather than inferred. |
+
+**The `−4` tension is sharper, not resolved, and I had the reasoning slightly wrong.** I offered three readings;
+the owner's answer kills the one I was leaning on (no-DoT-therefore-not-HP) and promotes the third. DoT exists
+and drains HP, yet the runtime loop saw the opponent at `152.0` unchanged while id 19 fired. The reconciliation
+is the **stub**: if id 19's node was stubbed on apply, nothing ticks, so nothing applies the `−4`.
+
+**But id 19's `node+0x0` was never recorded** — the stub readout started *after* that capture, so "every
+`node+0x0` is the stub" covers the later ids and not id 19. So:
+
+`PLAUSIBLE`: ids with a non-zero `amount` keep their handler (return non-zero, keep ticking) while amount-0
+ids get stubbed. That splits `state.bin` cleanly — 19 (`−4`), 30 (`−2`), 33 (`−5`) are the drains, everything
+else observed so far has amount 0 and was stubbed. **This is checkable statically**: read the id-19 handler
+`0x02159500` and see whether it returns non-zero and whether it drains HP. `not claimed` until read.
+
+**And the owner handed us a falsifiable clamp.** Poison and burn leave the victim at **1 HP** and cannot kill.
+So the id-19 handler should contain a **clamp to 1**, not a clamp to 0. That is a specific, named thing to look
+for in `0x02159500` — and if it's there, it's an OBSERVED behaviour and a static code path meeting at a
+constant, which is the strongest confirmation this campaign allows.
+
+**Gimmick taint narrowed (`jus-f30`).** Goku's B against a live opponent, gimmick verified off via the RAM
+flag, reads **384 raw / 6.000 displayed** across three trials at three approach distances — exactly the value
+in the tainted dataset. So the gimmick was adding **separate damage events**, not inflating per-hit
+magnitudes. The taint changes shape: from "the numbers may all be inflated" to "any given trial may contain an
+extra event", and individual reproducing values can be un-tainted one at a time. Runtime's own caveat kept:
+the original doc measured a `chr_b`-70 empty-ability dummy and this was `chr_b` 12, so it is reproduction on a
+different target, not strict replication, and it does **not** re-prove the flat-vs-multiplier argument.

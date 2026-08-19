@@ -988,3 +988,12 @@ Ten now, nearly all self-caught by the runtime loop. The load-bearing ones for a
 - A rate averaged over a long window cannot see a one-event difference at the start.
 
 The pattern behind most of this run's errors on both sides: *a plausible mechanism sitting in front of you is more dangerous than none at all, because it ends the search.*
+
+**Addendum, same day (P174 close).** `jus-eml` is measured: a synthetic id-19 node with the player's ability bit
+29 set comes back **stubbed and zeroed**, with an inert-bit control and a second-treatment control (bit 8, which
+decays faster) in the same experiment. So **status immunity is an ability**, and **effect opcode == ability ID** is
+measured rather than composed from two premises about the same word. **Three** bits of `battleObj+0x128` now carry
+distinct measured behaviours with controls — bit 4 total damage immunity, bit 8 doubled decay, bit 29 effect
+cancellation. Nothing in §3's open list changes; the expiry handler `0x0215911C` is still the last unread function
+on the effect lifecycle, and the KO path still owes us the owner's 1-HP floor.
+

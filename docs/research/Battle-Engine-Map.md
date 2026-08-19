@@ -1763,3 +1763,39 @@ GDB log from Python; GDB holds the file and its buffered writes discard interlea
 vanished and the segments had to be recovered by detecting upward jumps in the logged value. **When I ask for a
 multi-condition run, the card should specify one log file per condition** rather than leaving segmentation to the
 receiver.
+
+### `jus-eml` MEASURED — status immunity is an ability (P174 close)
+
+Synthetic id-19 node (opcode `0x1D` = bit 29) in the **player's** slot, read 60 frames after install, 2 reps per
+cell, both identical:
+
+| cell | `node+0x00` | `node+0xE` | outcome |
+|---|---|---|---|
+| A — no bit set | `0x02159500` | 510 | ticking, alive |
+| B — **bit 29 set** | **`0x02159258`** | **0** | **CANCELLED — stubbed and zeroed** |
+| C — bit 20 (control) | `0x02159500` | 510 | inert bit, alive |
+| D — bit 8 | `0x02159500` | **420** | alive, decaying **faster** |
+
+B is the gate's documented behaviour exactly: `node+0xE` zeroed, handler returns 0, node stubbed. Not a slowdown
+and not partial — the effect is gone.
+
+| claim | new confidence |
+|---|---|
+| **Status immunity is an ability** | **`CROSS_CONFIRMED`** (was `PLAUSIBLE`) |
+| **effect opcode == ability ID** | **measured**, no longer `CONFIRMED BY COMPOSITION` |
+| `battleObj+0x128` is a per-ability behaviour switchboard | **`CROSS_CONFIRMED` by three independent measurements**, each with a control: bit 4 total damage immunity, bit 8 doubled decay, bit 29 effect cancellation |
+
+**Eleventh instrument rule, and it is a strictly better control than the one I keep asking for: A SECOND
+TREATMENT WITH A DIFFERENT PREDICTED EFFECT BEATS AN INERT CONTROL.** Cell C (an unrelated bit, nothing happens)
+rules out "poking the word breaks effects". Cell D (a different bit, a *different* documented outcome) rules that
+out **and** reproduces the bit-8 result inside the same experiment at no extra cost. An inert control shows the
+perturbation isn't sufficient; a differently-predicted second treatment shows the word is *structured*.
+
+**And the labelling discipline earned itself.** I had deliberately held "opcode == ability ID" at `CONFIRMED BY
+COMPOSITION` rather than accepting it as measured, flagging it as the kind of step that had already gone wrong
+twice in this thread. It survived — but the label is what made the surviving meaningful, because a claim that was
+never separable from its premises can't be said to have been tested.
+
+**What made it a two-minute job:** no GDB at all. Cancellation reads directly as `fn == stub && dur == 0`, so a
+poke and two peeks settle it. The same question two wakes ago was un-runnable and produced an underpowered null
+against a real up+X. One field in a fabricated node — `node+0x04` — is the whole difference.

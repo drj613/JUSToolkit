@@ -1,15 +1,14 @@
 {
- "iteration": 214,
+ "iteration": 215,
  "phase": "combat",
  "current_task": "P213-what sets bit 5 of [r8+0x40] (the resistance gate)",
  "queue": [
-  "P215-Is [arg1+0x10] the same struct the 0x0207A098/0x02079DFC writers touch? This gates whether jus-elem-0x0e-is-packed-8wz becomes canon. Pin it by identifying what allocates [arg1+0x10], not by offset agreement.",
-  "P215b-arm9 0x0208207C: same elem+0xE expression as the damage routine but tested against zero. Inside 0x02081DDC. What is it deciding?",
-  "P214-Battle-Engine-Map.md has 8 bare-CONFIRMED warnings from check_docs.py (ledger flagged it). It is canon. Attach a bead id to each, one wake.",
-  "P214b-Where are bits 7-9 and 15-17 of the +0x44 flag word consumed? The damage routine reads only indices 0,1,2 of the mask tables; the other three couples (abilities 23/24, 16/17, 18/19) feed something else.",
-  "P214d-How do ability ids reach battleObj+0x128 from a chr_b record? This is the load-time hop and it is what jus-zko is actually about.",
-  "P214e-Correct findings/defence-candidates-ruled-out.md, which still attributes a flat -2 to ability 0x09. Stale conclusion, first place a reader lands.",
-  "P214f-jus-nature-january-vs-august-9a6: a nature-derived value baked in at load time. Now more plausible -- the +0x44 mechanism proves load-time derived values feed the damage path."
+  "P216-What gates the flush from the damage accumulator to HP? Runtime found the formula runs on swings that MISS, so contact is decided elsewhere, between 0x020821F8 and the HP write. This is now the sharpest open question in the damage chain and it is static-shaped.",
+  "P216b-Where are bits 7-9 and 15-17 of +0x44 consumed? Six of the twelve ability rows feed bits the damage routine never reads (ids 23/24, 16/17, 18/19).",
+  "P216c-Is [arg1+0x10] the same struct the 0x0207A098/0x02079DFC writers touch? Gates whether jus-elem-0x0e-is-packed-8wz becomes canon. Pin from the allocator, not offset agreement.",
+  "P216d-arm9 0x0208207C tests the same elem+0xE expression against zero rather than a range. Inside 0x02081DDC. What is it deciding? Possibly the contact decision from P216.",
+  "P216e-What is ability id 14, and what appends it to Luffy live list? Now known NOT to be a damage flag.",
+  "P216f-Battle-Engine-Map.md 8 bare-CONFIRMED warnings. Two-wake deadline self-imposed at P214; ledger has deferred it, I have not."
  ],
  "done": [
   "K1-koma-data-survey",
@@ -270,7 +269,7 @@
   "Is HP computed as size*k at runtime, or tabulated per panel? Naruto 4-koma=144=4*36; if size*k then size5=180, size6=216, size7=252, size8=288. One reading settles it."
  ],
  "notes": "Iteration 146 done (delegated + verified). THREE closures: (a) 0x800's polarity is category ROUTING, not a contradiction -- 0x020801D4 is loop-continue, 0x0207F7C8 is the next category check; (b) record+0x34 is NOT write-once -- a four-function flag API (0x0207D064/0x0207D0BC/0x0207CF18/0x0207CF78) mirrors changes into +0x38 and the +0x08 node list, and the destructor 0x0207CCD4 memsets 0x188; (c) P144's 0x6FF puzzle SOLVED -- ov6 ORs [record+0x150]&0xFF into +0x34, and 0x6FF covers bits 0-7, so the test reads runtime bits not the 0x100 construction seed. Top task: read record+0x150, which now drives the whole category gate. STANDING: query.py mis-bins functions in this module (4 leaves here, 8 in P125, 2 in P126) -- verify any address before trusting its size or container. The +0x5C base-confusion trap has 7 instances; on +0x34 (1092 hits) the base register is the ONLY struct identifier. CHARTER: updated in P146b on the user's direct authorization. North star = docs/PROJECT-GOAL.md (master, f47d63d); Mission 2's current focus is the entity/projectile subsystems. justoolkit-06 is the designated runtime validator -- send them struct-field hypotheses and breakpoint requests rather than leaving questions unresolved; that is the only route to dynamic evidence without breaking the static-only rule.",
- "last_wake": "2026-08-19 P214",
+ "last_wake": "2026-08-19 P215 (message-triggered: the capture landed)",
  "wakeup_default_seconds": 900,
  "consecutive_no_progress_wakes": 0,
  "k1c_helper_passives": {
@@ -2316,5 +2315,18 @@
   "NOT_established": "whether the 0x0207A098 / 0x02079DFC writers act on the SAME struct as [arg1+0x10]. Same offset, same packing, but two objects in this subsystem carry a +0x10 pointer. Offset agreement is the coincidence that has burned this campaign. Do not build on the packing.",
   "lead": "arm9 0x0208207C reads ldr r0,[r7,#0x10]; ldrsb r0,[r0,#0x0e] -- character for character the damage routine expression -- then tests it against ZERO, not a range. Inside 0x02081DDC, the same function as the +0x44 store 0x02081F68 and the never-reached 0x02081F5C. Worth its own wake.",
   "sweep": "imm==0x0E restricted to arm9 0x0207-0x0209 + ov6: 28 stores, 73 loads. Four sites read-modify-write behind a 6-bit mask."
+ },
+ "P215_CAPTURE_LANDED": {
+  "result": "runtime read [r8+0x44] = 0x00002010 at 0x02082584. I re-derived it independently from my own table BEFORE reading their arithmetic: bitset 0x02005200 -> ids 9,12,14,25; id 9 -> 0x10 (bit 4 subtract), id 12 -> 0x2000 (bit 13 add); ids 14 and 25 are not in the table. Predicted 0x00002010, matched to the bit.",
+  "arithmetic": "category = table[0] = 1, so bit 4 fires -512 and bit 13 is ARMED BUT BLOCKED (needs category 2). out = (2048-512)>>2 = 384 = 6.000 = jus-jas. The armed-but-blocked bit is the strongest detail: it shows category gating, not one bit correlating with one number.",
+  "object_identity_CLOSED": "[[battleObj+0x1a8]+0x10] == r8 == 0x0220FDC4, from two derivations, one taken on fight_base before GDB attached. Helper and gates touch ONE object. r4 = 0x0220FC3C != r8, so both participants are named and my \"which side is r8\" section holds; r8 is the target and the target carries ability 9.",
+  "both_my_corrections_taken": "runtime moved the breakpoint 0x0208257C -> 0x02082584 and dropped the \"r1 outside 0..15\" signature. Nature was 1.0 and r0 read 0, so the earlier stop would indeed have read r1 = 0 and passed on an unrelated zero.",
+  "bead_hygiene": "retitled jus-bit5-is-ability-10-rxl to the MECHANISM (runtime labelled it state:runtime-confirmed). Split the untested row into jus-bit5-ability-10-untested-mvk (state:proposed), dep-linked. My original title named the least-supported of twelve rows.",
+  "NEW_FACT_id_14": "ability id 14 is live in the cached bitset and is NOT in the flag table. The handoff flagged id 14 as the mystery id in Luffy live list but absent from his chr_b record. First hard fact about it: whatever it does, it is not a damage flag. Same for id 25.",
+  "runtime_caveats_to_respect": [
+   "NO LANDED HIT in the confirming capture. Eight stops, no contact, target HP pinned at 152.000. The formula runs on swings that MISS, so 0x02082584 is not a hit oracle. What gates the flush from the accumulator to HP is OPEN, somewhere between 0x020821F8 and the HP write. Bead jus-formula-bp-not-a-hit-oracle-ve6. Do not cite the capture as witnessing a hit.",
+   "bit 4 causality untested. The clear-bit-4 arm returned +0.000 on all three arms -- the trivial pass, out of range so no damage computed. Only an unconditional stop counter separated it from \"bit 4 does nothing\". Negative-control-needs-the-stimulus-first, and it caught nobody only because the counter existed.",
+   "harness README HP read \"2 bytes at addr-1\" is off by one and returns a plausible small number rather than an error."
+  ]
  }
 }

@@ -180,3 +180,27 @@ sixteen-byte shape of the table at `0x02092E68`. Those two hold up. The offset i
 on one representation until the live capture lands, and `state:static-confirmed` on
 [`jus-gate-word-is-r8-0x44-fnz`] should be read as "the disassembly says this clearly",
 not as "measured".
+
+## What happened next (appended, not revised)
+
+This file is journal, so the text above stands as written. For the record of where it
+landed:
+
+The mechanism was confirmed against live RAM the same day
+[`jus-gate-word-read-live-0x2010-nbz`]. The bitset `0x02005200` carries ability ids 9, 12,
+14 and 25; my table predicts ids 9 and 12 contribute `0x10` (bit 4, subtract) and `0x2000`
+(bit 13, add), so `[r8+0x44]` should read `0x00002010`. It read `0x00002010`. The category
+was 1, so bit 4 fired for `-512` and bit 13 was **armed but blocked**, giving
+`(2048-512)>>2 = 384 = 6.000` — the number `jus-jas` measured independently. The
+armed-but-blocked bit is the strongest detail in it: it shows the category gating working,
+not just one bit correlating with one number. `[[battleObj+0x1a8]+0x10]` and the routine's
+`r8` are the same object, `0x0220FDC4`, from two derivations one of which predates the
+debugger attaching.
+
+Two things this entry's title gets wrong in hindsight. Ability 10 → bit 5 is **untested** —
+ten of the twelve rows are, and bit 5 has been clear in every capture
+[`jus-bit5-ability-10-untested-mvk`]. And the confirming capture **witnessed no landed
+hit**: eight stops, no contact, target HP pinned. The formula runs on swings that miss, so
+a stop at `0x02082584` is not a hit oracle [`jus-formula-bp-not-a-hit-oracle-ve6`].
+
+The bead formerly titled after the ability-10 row is retitled to the mechanism.

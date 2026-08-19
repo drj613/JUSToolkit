@@ -1812,3 +1812,45 @@ against a real up+X. One field in a fabricated node — `node+0x04` — is the w
 | Whether HP reaching zero by drain is *survivable* | — | `not claimed`. If KO detection is signal-driven this is the whole answer; if it polls `char_struct+0x18` somewhere else, the floor is real and unfound. Both live. |
 | **A reading correction on "1 HP":** displayed HP is **raw / 64** (max `0x4000` = 256.0 displayed), so a player's "1 HP" is most likely **raw 64**. Every floor search so far looked for a clamp to `1`; the constant to look for is **`0x40`** | — | `PLAUSIBLE` — and taking the owner's *display* reading as a raw value was my assumption, not their claim |
 | Found on the way: the **chr_b record accessor family** at `0x02078514`+ reaches `record = [manager+0x40] + [char_struct+0x41]*0x3C`, then a halfword at `record+0x24 + arg*2`. Manager `0x0214BD80`, offset `+0x40`, stride `0x3C` — exactly the chrb-catalog map, reached from a fresh angle through the `chr_b` index field the HP doc names | arm9 | `CONFIRMED_STATIC` |
+
+### A synthetic drain kills — KO detection is polled, and my DoT mapping is downgraded (P175 close)
+
+Runtime installed an id-19 drain node with the opponent walked away from, HP poked to 300 raw:
+
+```
+CONTROL,   no drain node   300 300 300 300 300 300 300 0
+TREATMENT, id-19 drain     0    (already zero at the first 45-frame sample)
+```
+
+And zero HP **does** produce a KO: HP came back as 1182 then 2282 — the respawn count-up — and the player couldn't
+damage the opponent during it.
+
+| claim | outcome |
+|---|---|
+| The apply computes a "still non-zero" flag and all nine call sites discard it | **stands** — `CONFIRMED_STATIC`, unaffected |
+| "So a drain cannot raise a KO" | **not the whole story.** HP reaching zero by drain killed, so something *outside* the apply notices | `CONFIRMED_RUNTIME` |
+| Signal-driven vs polled KO detection | **leans polled.** My P176 discriminator should come back yes | `PLAUSIBLE` |
+| ~~ids 19 and 30 are poison and burn~~ | **DOWNGRADED to SPECULATIVE, mine.** Two independent strikes: a synthetic id-19 drain reached raw 0 and killed with **no pause at raw 64**, so the units hypothesis doesn't rescue the owner's floor either; and id 19 targets the **player** when Goku throws up+X, which reads as a self-cost rather than a status inflicted on an opponent |
+| The owner's "poison and burn never kill, they leave the victim at 1 HP" | **unexplained, and now harder.** Two readings, neither chosen: **(a)** id 19 isn't poison or burn and my mapping was wrong; **(b)** the floor lives on the real inflict path, which a hand-installed node bypasses |
+
+**Twelfth instrument rule, and it is the runtime loop putting a limit on their own best tool: A SYNTHETIC
+STIMULUS TESTS THE CONSUMER, NOT THE PRODUCER.** Installing a node skips whatever the normal application route
+does around it, so anything measured that way is *"what the tick driver does with a node"*, not *"what the game
+does when you get poisoned"*. Node installation removed the triggering variable — real and valuable — but may
+have removed other things with it. They raised this against their own tool while it was still winning, which is
+the hardest direction.
+
+Scope of the caveat, theirs and I agree: `jus-tex` (bit-8 decay) and `jus-eml` (bit-29 cancellation) were both
+about the **tick path specifically**, which is exactly what an installed node models faithfully. The DoT floor is
+about the **inflict path**, which it does not.
+
+**What a real inflict does that an install skips** (`CONFIRMED_STATIC`, from P158's dispatcher): writes
+`node+0x4` = `&paramArray[id]`, `node+0xC` = id, `node+0xE` = the formula result, `node+0x10` = 0, `node+0x12`
+from `[[battleObj+0x1A8]+0x10]+0x182`, `node+0x14`/`+0x15` = 1, **and calls the handler once at apply time**,
+using its return to decide whether the node keeps its handler. `not claimed` whether any of those matters for a
+floor — none is read by the tick driver or by id 19's handler — but `+0x10`, `+0x12`, `+0x14` and `+0x15` are the
+fields a synthetic node has never had set correctly.
+
+**Unexplained and not hidden** (theirs): the control sat at exactly 300 for seven samples then read 0 at the
+eighth, with nothing draining it. Possibly the opponent closed, possibly the match ended. Doesn't affect the
+contrast, which is decided in the first sample.

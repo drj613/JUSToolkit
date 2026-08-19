@@ -1,7 +1,8 @@
 # Charter additions: Static (atlas)
 
-The static loop already has a strong charter (`docs/research/Loop-Charter-Atlas.md` in its
-worktree). These are **additions**, to be merged into it at the next restart — not a
+The static loop already has a strong charter (`docs/research/Loop-Charter-Atlas.md` — since
+the 2026-08-19 consolidation it is on `integration/loops` alongside everything else, not in
+a separate worktree). These are **additions**, to be merged into it at the next restart — not a
 rewrite. They import the shared `COORDINATION-PROTOCOL.md`.
 
 ## Fix the stale reference

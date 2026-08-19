@@ -103,10 +103,46 @@ start fresh with the restart prompt.
 
 ---
 
-## Note on where these files must live
+## Where the loops run (changed 2026-08-19 — read this before restarting anything)
 
-Charters are re-read each wake from each session's own worktree, and the static/ledger
-loops run on separate branches/worktrees. For every loop to read the protocol and its
-charter, **these `docs/orchestration/` files need to land on `master`** (or be copied into
-each worktree). They're currently on `re/ability-bitset-not-resistance`. Merge to master
-before the restart, or the restart prompts point at files the sessions can't see.
+**One branch, one worktree.** All three loops now run in the main worktree,
+`/Users/djdjo/Documents/mine/JUSToolkit`, on the branch `integration/loops`. The old
+per-loop branches and worktrees are gone as a working arrangement:
+
+| was | now |
+|---|---|
+| runtime → `re/ability-bitset-not-resistance` (main worktree) | all three → `integration/loops` (main worktree) |
+| static → `loop/battle-engine-atlas` (`.claude/worktrees/battle-engine-atlas`) | — |
+| ledger → `ledger/session-tracker` (`.claude/worktrees/session-tracker`) | — |
+
+`integration/loops` is master plus all three loop branches merged, so every loop now sees
+the whole record. Do **not** create a new branch per loop, and do not re-add worktrees.
+
+**Why this changed.** The separation cost the campaign real time, and the static loop
+diagnosed it in its own shutdown handoff: five of the most important damage documents
+existed only on branches it could not see, its check-the-record habit was grepping one
+worktree — a fraction of the record — for the entire run, and a stale conclusion in
+`Damage-Reduction-Is-Flat.md` misled two loops for roughly thirty iterations because
+neither could see the branch that contradicted it.
+
+**Two constraints that follow, both load-bearing:**
+
+1. **Git will not check out one branch in two worktrees.** So "all loops on one branch"
+   *requires* one worktree. If you add a worktree back, you have re-created the problem.
+2. **`br` needs the db-backed `.beads`, which lives in the main worktree only.** A fresh
+   worktree gets `.beads/` from the branch but no `beads.db`, and in that state `br`
+   tries to import `issues.jsonl` and rejects the 46 historical uppercase `JUS-` ids
+   ("invalid format (expected prefix-hash)"). The fix is to use the main worktree, **not**
+   to rewrite those ids.
+
+**Read these at restart** — the three shutdown handoffs from 2026-08-19, all now on this
+one branch:
+
+- runtime → `docs/HANDOFF-2026-08-19-runtime-shutdown.md`
+- static → `docs/orchestration/HANDOFF-Atlas-Shutdown-2026-08-19.md`
+- ledger → `HANDOFF-LEDGER-2026-08-19.md`
+
+**Still to do:** the two legacy worktree directories still exist on disk pending owner
+removal (`git worktree remove .claude/worktrees/battle-engine-atlas` and
+`… /session-tracker`). Their branches are fully merged into `integration/loops`, so
+nothing is lost by removing them. Until they are gone, do not work inside them.

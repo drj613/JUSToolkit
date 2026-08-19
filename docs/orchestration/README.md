@@ -15,6 +15,8 @@ converged on this design.
 - **`outbox-gate-hook.md`** — the one hook (flush-before-schedule reminder); needs owner
   install via `/update-config`.
 
-**Before restarting the loops:** these files must be on `master` (or copied into each
-worktree) so every loop can read them — they're born on
-`re/ability-bitset-not-resistance`.
+**Where the loops run:** all three now share the main worktree on the branch
+`integration/loops` (master + all three loop branches merged, 2026-08-19). One branch, one
+worktree — git cannot check out one branch in two worktrees, and `br` needs the db-backed
+`.beads` that only the main worktree has. See the "Where the loops run" section of
+`RESTART-PROMPTS.md` before restarting anything.

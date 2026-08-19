@@ -8,7 +8,9 @@ record.
 ## What changed and why
 
 Old model: pull every ~30 min, read `git log` + commit messages on both branches, update
-a free-form narrative (`.claude/worktrees/session-tracker/SESSION-LEDGER.md`). The flaw:
+a free-form narrative in `SESSION-LEDGER.md` (then at
+`.claude/worktrees/session-tracker/`; since the 2026-08-19 consolidation it is at the repo
+root of `integration/loops`). The flaw:
 your entire view was *whatever got committed*, so retractions, contamination, and missing
 measurement conditions slipped past you — you had no structured way to mark a claim
 retracted or to back-propagate "this condition was wrong, so these prior results are

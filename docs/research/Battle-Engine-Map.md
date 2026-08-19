@@ -1475,3 +1475,55 @@ failing identically is what reveals that rather than hiding it. They also poked 
 opponent, when the gate reads the player). Two design fixes carried forward: **poke the player's bitset**, and
 **use gate calls as the observable rather than stores** — the gate fired 82 times in the rep where one store
 fired, so it is roughly two orders of magnitude more sensitive.
+
+### Targets confirmed: one move, two effects, two channels, two targets (P173)
+
+Runtime labelled the target **inside** the breakpoint — dereferencing `[[0x02172960]+0xDC]` and `+0xE0` on the
+same frame and comparing pointers, not contents, so there is no post-hoc matching:
+
+| opcode | id | effect | target | n (gate calls) |
+|---|---|---|---|---|
+| `0x1A` (26) | 32 | **freeze** | **OPPONENT** | 35 |
+| `0x1D` (29) | 19 | `−4` **drain** | **PLAYER** | 82 |
+
+`CROSS_CONFIRMED` for each target label separately. **`PLAUSIBLE` for the conjunction** — their own caveat, kept
+in the label: the two labels come from two different runs, so "one move, two targets" is *assembled* rather than
+witnessed in a single up+X. They're fixing that.
+
+This lands the owner's "Goku's up+X inflicts freeze" on **id 32 specifically**, and vindicates the read I offered
+from the data table alone: id 32 as the freeze (amount 0, 60 frames, a brief hold) and id 19 as a drain. So up+X
+freezes the opponent and costs Goku HP.
+
+### A scope error, and a dependent of mine it taints
+
+`RETRACTED` (runtime's, self-caught): their "sporadic yield — effects fire about 1 in 8 reps, don't model up+X as
+a reliable trigger." **up+X has a different range from B.**
+
+```
+approach 0/20/40/60/80/100 frames -> 0 gate calls
+approach 140 frames               -> 30 gate calls
+approach 180 frames               -> 0
+```
+
+B connects at 60–100 — a *measured* window, the one the flat-damage doc records, **for B**. They carried that
+constant to a different move, got occasional hits from drift, and explained the nulls as a property of the game.
+up+X is reliable, at 140.
+
+**Fourth variant of the family, and it is not a shape-of-a-number error — it is a scope error: a constant
+measured under one condition, reused under another without re-measuring.** The flat-damage doc had already
+written the rule down — *sweep the approach distance, don't reason about it* — and it was applied to exactly one
+move.
+
+**My dependent, tainted.** I recorded "the effects are mostly the COM's doing" and **deprioritised both stimulus
+hunts** (the active-character swap field, the item-pickup counter) on the reasoning that triggering matters less
+than letting the match run. That reasoning rested on their yield claim. Targeted tests *are* reliable when the
+range is right, so naming a stimulus is worth more than I concluded — the hunts go back to ordinary priority
+rather than parked. What survives: letting the match run does also produce effects, which is how the first
+status samples arrived.
+
+**Unexplained, and logged rather than smoothed:** the opponent's bitset read `0x0000C024` (bits 2, 5, 14, 15) in
+this run where the same savestate read `0x02005200` (bits 9, 12, 14, 25) earlier. Runtime's guess is a respawned
+reserve cycling the active character. It doesn't touch the target labels, which compare pointers. But it is a
+**lead on the parked active-character-swap question**: if `battleObj+0x128` changes contents when the active
+character changes, then either the `battleObj` is re-pointed or the bitset is re-cached on switch — and finding
+who writes `+0x128` besides the loader `0x0215FB3C` would name the swap.

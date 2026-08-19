@@ -3,9 +3,9 @@
   "phase": "combat",
   "current_task": "P173 DONE, and it retracts my own P172 doubt. char+0x56C is a POINTER to the character struct: +0x16 max HP (s16, cap 0x4000 = 256.0 at 1/64), +0x18 current HP, +0x41 chr_b index -- from HP-Struct-From-Disassembly.md on origin/master, NOT in my worktree (found by the new cross-branch rule). So 0x02078488 IS the HP apply, the map s \"HP-apply trampoline\" name was right, and id 19 s -4 drains CURRENT HP -- the gauge reading is REFUTED. The remaining explanation for runtime s unchanged 152.0 is the CANCEL GATE, which their own bitset capture supports (bit 29 set). The 1-HP floor is NOT on this path; 0x02078428 (sets HP to 1) is a bulk list-walk utility over char+0x558, which is a LIST OF CHARACTER STRUCTS.",
   "queue": [
-    "P174-FIND THE PER-FRAME TICK DRIVER that calls node+0x0. Last unexamined link on the DoT path, most likely home for the 1-HP floor, and it also answers what decrements node+0xE (which no handler does).",
-    "P174b-name the dispatcher third caller (Route A) to bound the claim it is dead in retail.",
-    "P174c-write my two additions back to the ability-bitset doc on the owner s branch (second word at +0x12C, base+8 description) rather than duplicating on mine.",
+    "P174-FIND THE PER-FRAME TICK DRIVER that calls node+0x0 (unchanged top task): last unexamined link on the DoT path, likeliest home for the owner s 1-HP floor, and it answers what decrements node+0xE.",
+    "P174b-WHO WRITES battleObj+0x128 besides the loader 0x0215FB3C? Runtime saw the same savestate read 0x02005200 then 0x0000C024, i.e. the bitset CONTENTS changed. If it is re-cached on a character switch, that writer names the active-character swap -- the stimulus hunt I had parked on a now-retracted premise.",
+    "P174c-item-pickup counter (un-parked): find a field that moves when an item is collected.",
     "P168b-static writer of root+0x118 / +0x11C (runtime top ask, jus-3vg) -- would turn their empirical 0x70/0x61C validation into a structural check.",
     "P168c-what sets the gate byte 0x0217296D: find its writers. That is the thing that decides whether a mode plays at all.",
     "P168d-static writer of root+0x4C (term V).",
@@ -2130,7 +2130,8 @@
       "the joined handler table: runtime read all twelve rows live and every fn, byte and opcode matches my static join, including id 21 at 0xFF",
       "battleObj+0x128 IS the cached ability bitset: sparse, per-character, opponent bits 9/12 match Luffy s documented abilities, bit 4 set drives Goku B damage 384 -> 0, bit 20 set changes nothing (negative control)",
       "root+0x0DC = player battleObj, root+0x0E0 = opponent battleObj -- derivable from the anchor, and inside the +0x0D0..+0x128 pointer band this map predicted from xref shape",
-      "id 19 targets the PLAYER (the gate reads the player bitset 0x00008080 across 82 identical calls when Goku throws up+X), so the opponent was never the target -- which explains the unchanged 152.0 without any cancellation"
+      "id 19 targets the PLAYER (the gate reads the player bitset 0x00008080 across 82 identical calls when Goku throws up+X), so the opponent was never the target -- which explains the unchanged 152.0 without any cancellation",
+      "TARGET LABELS: op 0x1A / id 32 (freeze) -> OPPONENT n=35; op 0x1D / id 19 (-4 drain) -> PLAYER n=82. Labelled inside the breakpoint by pointer comparison against root+0x0DC / +0x0E0. The CONJUNCTION (\"one move, two targets\") is PLAUSIBLE only -- the two labels come from different runs."
     ],
     "my_refutations": [
       "jus-wbo: rulemess text-duplicate entries do NOT share handler code. Refuted statically the same wake it was filed; runtime independently refuted it by measurement. No dependents tainted -- nothing was built on it."
@@ -2167,7 +2168,8 @@
       "The callback-slot sequence is at least FOUR states (0x0214DB61 sits between the poll and 0x0214DBCD, holding ~30 frames, invisible at 40-frame sampling). Four is a LOWER BOUND -- enumerate from the code, not from sampling.",
       "The static counter at 0x0214BD52 is NOT independent evidence for the retraction: my own decode early-returns once the flag is set, so a set flag PREDICTS a static counter. Only the flag carries the argument.",
       "jus-vkj RETRACTED by runtime: advance(N) is accurate (2300 -> observed 2301). The emulator free-runs at ~60fps whenever no plan executes, so a framecount delta spanning the callers own work overcounts. UNBLOCKS duration measurement, which unblocks the V test. Their bridge now reports fc_start/fc_end/observed_frames and returns None on an old bridge rather than echoing the request.",
-      "jus-5kf CLOSED: no auto-heal on the Battle path -- the HP recovery was respawn, verified against two controls (cb_battle restores instantly, fight_base does not move, Battle path flat). Battle-path damage work is UNBLOCKED. A small unexplained +1.2 HP per ~720 frames drift remains on the bead."
+      "jus-5kf CLOSED: no auto-heal on the Battle path -- the HP recovery was respawn, verified against two controls (cb_battle restores instantly, fight_base does not move, Battle path flat). Battle-path damage work is UNBLOCKED. A small unexplained +1.2 HP per ~720 frames drift remains on the bead.",
+      "RETRACTED by runtime: their \"sporadic yield, ~1 in 8 reps, do not model up+X as a reliable trigger\". up+X connects at approach 140 frames, not Bs measured 60-100 window. It is RELIABLE. FOURTH VARIANT of the error family and a new kind: a SCOPE ERROR -- a constant measured under one condition reused under another without re-measuring. TAINTS A DEPRIORITISATION OF MINE: I parked both stimulus hunts (active-character swap, item counter) because \"the COM does it anyway\". Targeted tests are reliable at the right range, so those hunts return to ordinary priority."
     ],
     "my_design_errors": [
       "P169 jus-e66: the value-side fingerprint scan CANNOT work -- node+0xE counts down after apply, so it no longer equals base by the time a 4MB scan finishes. Runtime caught it. The 0x01 0x01 discriminator I included DID work (rejected all 6 coincidental (id,base) hits), but the fingerprint alone is not specific in 4MB of small integers. Right instrument: breakpoint the store."

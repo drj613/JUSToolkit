@@ -1,39 +1,37 @@
-# Character maps — read this before trusting any file in here
+# Character documentation
 
-**70 files. Two are complete.** The rest are a filled-in template, and the template is
-long enough to look like data.
+**69 of the 71 per-character map files were deleted on 2026-08-19.** They were placeholders:
+a long template — median 309 lines — filled mostly with `TBD`, "NEEDS VERIFICATION", and
+plausible guesses. 489 literal `TBD`s across the set. The length read as substance, which is
+exactly the failure mode this project has been bitten by before.
 
-| Map status | files |
+## What's here
+
+| file | what it is |
 |---|---|
-| COMPLETE | 2 |
-| PARTIAL | 57 |
-| STUB | 11 |
+| `character-index.md` | identity + file-linkage fields for **all 71** characters, extracted before deletion. The only part of those files that was real. |
+| `character-index.json` | the same table, machine-readable |
+| `Goku-Character-Map.md` | verified in-game data. **Has a refutation banner — read it.** |
+| `Ichigo-Character-Map.md` | verified move lists (base and Bankai), buff and weight mechanics |
+| `TEMPLATE.md` | the template, for if a character ever gets mapped properly |
+| `BaseNaruto/sprites/` | 21 PNGs labelled by animation state — real reference material for hitstun/animation work |
 
-Median length is 309 lines and there are 489 literal `TBD`s across the directory. The
-owner's summary (2026-08-19) is that **most of these are placeholders**: the identity
-fields (name, series, `chr_b` index, collision file, `charId`, `classId`, `jpower` block)
-are generally real, and almost everything below them — move damages, koma data, frame
-data — is unverified or absent.
+## Rules
 
-Absence of the word `TBD` does **not** mean a file is finished. 45 files contain no `TBD`
-at all, while only 2 claim COMPLETE; the others simply didn't use the marker.
+- **Identity fields are usable; numbers are not.** `character-index.md` tells you which
+  `chr_b` entry, collision file and `jpower` block belong to a character. It contains no
+  measurements and should never be cited as evidence for one.
+- **Nothing new goes in a character map without a bead.** If you measure a move, the claim
+  lives in beads (`br create … --label coord`) and the document cites the id. A bare
+  `CONFIRMED` in a character file has already proved worthless once — Allen-Character-Map.md (now
+  deleted) had a header reading "Move List (CONFIRMED)" directly above a `TBD`.
+- **Don't regenerate the 69.** If per-character data is wanted at scale, generate it from the
+  ROM into a table, the way `character-index.json` already is. Hand-writing 70 templates is
+  what created this.
 
-## What this means in practice
+Deleted files are recoverable from git history:
 
-- **Do not cite a character map as evidence.** Check the `Map status` line, then check
-  whether the specific field you want is verified. If it isn't backed by a claim bead or
-  a measurement doc, it's a guess.
-- **A `(CONFIRMED)` section header in these files is decorative.** At least one file
-  (`Allen-Character-Map.md`) has a header reading "Move List (CONFIRMED)" sitting directly
-  above a `TBD` value.
-- **Don't hand-edit these to fix the sprawl.** The identity fields are data, not prose —
-  they belong in a generated table (see `docs/research/battle-chars-passives.json` for the
-  shape that already exists). Regenerating them is the fix; editing 70 templates is not.
-
-## Where the real record is
-
-- Verified claims live in beads (`br list --label coord`), with a lifecycle label.
-- Measurements and derivations live in `docs/research/`.
-- `docs/research/findings/` is an append-only journal, not a reference.
-
-See `docs/research/README.md` for how the layers fit together.
+```bash
+git log --diff-filter=D --name-only -- 'docs/characters/*-Character-Map.md' | head
+git show <commit>^:docs/characters/Zoro-Character-Map.md
+```

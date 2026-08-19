@@ -168,8 +168,11 @@ struct CollisionEntry {  // 20 bytes
 ### Caramelman (ds_b_03) - Verified 2026-02-02
 
 Detailed collision export notes, `damageFlags` mapping attempts, and per-move
-analysis are maintained in: `docs/characters/Caramelman-Character-Map.md` (see
-**damageFlags Mapping (WIP)**).
+analysis used to live in docs/characters/Caramelman-Character-Map.md, which was
+**deleted on 2026-08-19** along with 68 other placeholder character maps — its
+`damageFlags` mapping was a WIP guess, not data. Identity and file-linkage fields
+for every character survive in `docs/characters/character-index.md`; recover the
+old notes from git history if the WIP reasoning is wanted.
 
 ### Majin Buu (db_b_12) - Verified 2026-02-02
 

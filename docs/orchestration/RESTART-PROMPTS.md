@@ -203,8 +203,8 @@ start fresh with the restart prompt.
   retracted, or tainted bead citations; it warns on `CONFIRMED`-style prose with no bead
   nearby and on pointers to missing files.
 - Layers: **claims** in beads · **canon** in `docs/research/*.md` · **journal** in
-  `docs/research/findings/` (history, never current) · `docs/characters/` is 70 template
-  files of which two are complete.
+  `docs/research/findings/` (history, never current) · `docs/characters/` is two verified
+  maps plus `character-index.md`; the other 69 placeholder maps were deleted 2026-08-19.
 
 ## Where the loops run (changed 2026-08-19 — read this before restarting anything)
 

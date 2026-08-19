@@ -41,8 +41,9 @@ titled "Loop-Atlas iteration N". An entry was true when written and was never re
 afterwards. **Do not cite a `findings/` file as the current answer.** See
 `findings/README.md`.
 
-`docs/characters/` is 70 template files of which two are complete. See
-`docs/characters/README.md` before trusting any of it.
+`docs/characters/` now holds two verified maps (Goku, Ichigo) plus
+`character-index.md`, the identity fields for all 71 characters. The other 69 map files
+were placeholders and were deleted. See `docs/characters/README.md`.
 
 ## Current state (2026-08-19)
 

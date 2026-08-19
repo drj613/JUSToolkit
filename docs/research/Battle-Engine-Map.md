@@ -1904,3 +1904,44 @@ already in the "off" state.* Clearing bit 9 on a character who wasn't resisting 
 about removing real resistance. What caught it was comparing their baseline against **the doc's external
 unresisted figure** rather than only against their own treatment. **A baseline needs an external anchor for what
 "on" looks like.**
+
+### The auto-heal leg of that argument is weakened — but a new static objection replaces it (P175 addendum 2)
+
+Runtime tried the auto-heal reading directly and it strains:
+
+```
+fight_base (heal OFF, items 0, gimmick 0, opp chr_b 12)   384 raw (6.000) x3
+cb_battle  (heal ON,  items 1, gimmick 1, opp chr_b 12)     0 raw (0.000) x3
+```
+
+The `cb_battle` figure is **not a measurement** — zero at every approach across seven distances and a wide
+separation band, in a state where the COM is actively drifting. Either B never connects there or the heal restores
+faster than a peek can read. Unseparable without frame-level HP resolution.
+
+**But the second candidate already strains my model, and this is the part that matters.** My reading needs auto-heal
+to be a ~2.0-per-tick trickle, so one tick lands inside a measurement window and shaves exactly 2.0. What they have
+measured in the only heal-ON state available is a **full instant restore** — `jus-5kf` saw HP poked down 24.0 come
+back completely by the next sample. Those are different mechanisms.
+
+`DOWNGRADED`: the auto-heal leg of "the flat −2.0 may not exist". Held open, not dropped — the doc's battle may have
+had a different heal behaviour — but the heal that *can* be observed does not behave the way my explanation
+requires.
+
+**What survives, independently:** the cross-session leg (the 6.000 and 4.000 were never measured together, the
+doc's own caveat) and the taint leg (2026-08-14 is inside `jus-f30`'s gimmick window). So the overall `PLAUSIBLE`
+stands on two of three legs rather than three.
+
+**And a new static objection that replaces the one I lost.** The doc asserts *"each is `true − 2.0` (one auto-heal
+tick)"* — so it treats one tick as **2.0 displayed = 128 raw**. No amount in `bin/state.bin` is anywhere near that:
+the largest instant heal is **60** (id 39) and the timed regens are **+5 per tick** (ids 4 and 5). `CONFIRMED_STATIC`
+that if auto-heal ran through the effect subsystem, a 2.0-displayed tick is **impossible**. So either auto-heal is
+not an effect-subsystem heal at all, or **the doc's "one tick = 2.0" is an assumption rather than a measurement** —
+which would make the −2.0 self-explaining in a different way: a reduction attributed to a tick whose size was
+inferred from the reduction.
+
+**A negative worth recording so nobody repeats it:** auto-heal is **not** one of the three rule-select booleans I
+mapped at P163 — those are items (`0x020AFEBB`), gimmick (`0x020AFEBC`) and team battle (`0x020AFEBD`), and the
+screen has exactly three. I also searched every strings cache, every `bin/*.bin` and the `ruleselect` archive for
+`自動回復` in Shift-JIS: **no hits**, so the label likely lives in a compressed archive. I cannot hand the runtime
+loop a settings byte for heal control, which means their `jus-kdf` pause-menu path is genuinely the blocker and not
+a convenience.

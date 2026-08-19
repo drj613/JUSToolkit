@@ -1,11 +1,11 @@
 {
-  "iteration": 179,
+  "iteration": 180,
   "phase": "combat",
-  "current_task": "P179: ran the four-character comparison (chr_b 12, 20, 0, 14) and it is UNINFORMATIVE AS POSED -- they differ in 43 of 60 bytes, so a defence value is indistinguishable from ~40 other per-character values. Deliberately produced NO candidate list: the small-value candidates a naive filter returns are high bytes of u16 pairs, the exact error P177/P178 caught twice. BUT the per-character hypothesis is already unsupported for the character it was invented for: the doc attributes -2.0 to Luffy, and runtime measured chr_b 12 at the FULL 6.000 in two clean lineages. Static contribution to jus-f0v is now complete; the card turns entirely on one clean same-session comparison.",
+  "current_task": "P180 DONE (reordered off my own queue top, which was \"look for a ratio\" -- reading the doc properly killed that premise: the corrected table has BOTH moves, ratios 0.750 and 0.714, so flat is right and the doc had already argued it). THE REDUCTION IS APPLIED UPSTREAM OF THE APPLY: the flush at 0x02158BA8 reads the pending delta from scratch+0xE8 and negates it, gated on flags bit 0x800, so the doc s breakpointed 512/384 already differs in +0xE8. RETRACTED the record s iteration-76 PLAUSIBLE that +0xE8 is vestigial -- it is read every flush and carries live damage. So B11 is THE question and the -2.0 lives in its writer, which the record shows is a register-offset or Thumb store (27 immediate-offset stores swept, none in ov6, zero split-offset).",
   "queue": [
-    "P180-THE MECHANISM OF THE REAL -2.0. The phenomenon is confirmed (8.000 vs 6.000, ratio 0.750) but my negatives stand: no constant sub of 0x80 in the damage region and no chr_b field separating 12 from 70 by 128. So look for a RATIO: a multiply-by-3/4 or a shift-and-subtract on the damage value, gated per character. 0.750 is a much more implementable shape than a flat 128.",
-    "P180b-the polled-KO discriminator (deferred four times).",
-    "P180c-what supplies the one extra ability id; enumerate the {kind,id} table.",
+    "P181-BUILD A REGISTER-OFFSET-AWARE STORE SCANNER. The one static instrument that could still find the scratch+0xE8 writer: scan for str rX,[rY,rZ] register-offset stores and add rY,#0xE8 / str [rY] split pairs, which search-imm cannot see by construction. jus-fun lists this as one of four routes and it is the only one whose cost falls entirely on this loop.",
+    "P181b-the polled-KO discriminator (deferred four times, now genuinely lower value).",
+    "P181c-enumerate the {kind,id} table at [global]+0x50; the extra-ability writer; auto-heal.",
     "P168b-static writer of root+0x118 / +0x11C (runtime top ask, jus-3vg) -- would turn their empirical 0x70/0x61C validation into a structural check.",
     "P168c-what sets the gate byte 0x0217296D: find its writers. That is the thing that decides whether a mode plays at all.",
     "P168d-static writer of root+0x4C (term V).",
@@ -278,7 +278,8 @@
     "P176-no-flat-reduction-in-chr_b",
     "P177-ability-bitset-loader",
     "P178-ability-list-is-in-chr_b",
-    "P179-four-character-comparison-uninformative"
+    "P179-four-character-comparison-uninformative",
+    "P180-the-reduction-lives-in-the-b11-writer"
   ],
   "stuck": {},
   "required_reading_for_koma_tasks": [

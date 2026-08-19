@@ -2258,3 +2258,31 @@ had named, the runtime loop built a check against their own docstring's caveat, 
 - **The runtime loop's blocker is solved by the same doc.** `pos_base` is a savestate with `chr_b[70]` as the
   opponent — *"Goku (`chr_b[0]`, abilities `[7, 15]`) vs the ability-free dummy `chr_b[70]`"*, loaded with
   `jusemu.py state load pos_base`. They said they cannot reach `chr_b` 70; the state already exists.
+
+### The flat −2.0 lives in the B11 writer; `scratch+0xE8` is not vestigial (P180)
+
+`findings/p180-the-reduction-lives-in-the-b11-writer.md`.
+
+| what | confidence |
+|---|---|
+| **The ratio hypothesis was already refuted by the doc, with both moves**: `B` 8.000→6.000 (ratio 0.750) and `DOWN+B` 7.000→5.000 (ratio 0.714). Constant difference, non-constant ratio. My queued "look for a ×3/4" would have re-derived a refuted hypothesis | `CONFIRMED_STATIC` |
+| **The reduction is applied upstream of the apply.** The doc's breakpoint shows `512` handed to the HP drain; the flush reads that value from **`scratch+0xE8`** and negates it (`0x02158BA8`/`0x02158BB0`), gated on flags bit `0x800` at `+0x40`. So the `512`/`384` difference already exists in `+0xE8` | `CONFIRMED_STATIC` |
+| ~~`+0xE8` is vestigial in retail and B11 may be the wrong question~~ (iteration 76, on sibling `+0x140` reading 0) — **RETRACTED.** It is read on every flush and the doc's breakpoint proves it carries live damage. That note said "one harness read settles it"; the read has happened and settles it the other way | `RETRACTED` |
+| **So B11 is the question, with a sharper motive than when filed:** the writer of `scratch+0xE8` is where the only confirmed damage-reduction mechanic in the game lives | — |
+| Why it is hard, from the record: iteration 76's ROM-wide sweep found **27** immediate-offset stores to `+0xE8`, **none** in ov6, **zero** split-offset stores, and both arm9 candidates refuted individually. So the writer is a **register-offset store or Thumb**, and the immediate-offset space is exhausted | `CONFIRMED_STATIC` |
+
+**Why my last two searches came up empty:** P175 looked for a constant `sub #0x80` in the arm9 HP/damage region and
+P176 looked for a per-character 128 in `chr_b`. Both are downstream of, or beside, where the reduction happens. The
+value arrives at the apply already reduced.
+
+**Card consequences.** `jus-f0v`: Luffy's half is confirmed clean (runtime's 6.000 heal-off matches the doc's
+corrected figure exactly); what remains is the dummy at 8.000 in a clean session, for which `pos_base` is the state,
+and that would discharge the doc's own cross-session caveat. **`jus-fun` is now the blocker for the campaign's
+oldest question** rather than a convenience — a write-watchpoint on `scratch+0xE8` names the writer in one capture,
+and nothing static will, because the reachable static space has been swept.
+
+**Reading beats grepping, twice in two wakes.** Grepping this doc for numbers cost me three wakes of argument on a
+contradiction that didn't exist. Reading its structure this wake killed a bad premise of my own before I spent a
+wake on it. The doc even states the robustness reason itself: *"a constant offset applied to both sides cancels in a
+difference, which is precisely why the two-move design was robust to a measurement error neither of us had spotted
+yet."*

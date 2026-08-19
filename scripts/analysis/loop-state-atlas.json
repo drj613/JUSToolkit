@@ -1,11 +1,12 @@
 {
- "iteration": 213,
+ "iteration": 214,
  "phase": "combat",
  "current_task": "P213-what sets bit 5 of [r8+0x40] (the resistance gate)",
  "queue": [
+  "P215-Is [arg1+0x10] the same struct the 0x0207A098/0x02079DFC writers touch? This gates whether jus-elem-0x0e-is-packed-8wz becomes canon. Pin it by identifying what allocates [arg1+0x10], not by offset agreement.",
+  "P215b-arm9 0x0208207C: same elem+0xE expression as the damage routine but tested against zero. Inside 0x02081DDC. What is it deciding?",
   "P214-Battle-Engine-Map.md has 8 bare-CONFIRMED warnings from check_docs.py (ledger flagged it). It is canon. Attach a bead id to each, one wake.",
   "P214b-Where are bits 7-9 and 15-17 of the +0x44 flag word consumed? The damage routine reads only indices 0,1,2 of the mask tables; the other three couples (abilities 23/24, 16/17, 18/19) feed something else.",
-  "P214c-What writes the element byte at elem+0xE, the class index. Nothing is known about it and it selects which of the four class gates can fire.",
   "P214d-How do ability ids reach battleObj+0x128 from a chr_b record? This is the load-time hop and it is what jus-zko is actually about.",
   "P214e-Correct findings/defence-candidates-ruled-out.md, which still attributes a flat -2 to ability 0x09. Stale conclusion, first place a reader lands.",
   "P214f-jus-nature-january-vs-august-9a6: a nature-derived value baked in at load time. Now more plausible -- the +0x44 mechanism proves load-time derived values feed the damage path."
@@ -269,7 +270,7 @@
   "Is HP computed as size*k at runtime, or tabulated per panel? Naruto 4-koma=144=4*36; if size*k then size5=180, size6=216, size7=252, size8=288. One reading settles it."
  ],
  "notes": "Iteration 146 done (delegated + verified). THREE closures: (a) 0x800's polarity is category ROUTING, not a contradiction -- 0x020801D4 is loop-continue, 0x0207F7C8 is the next category check; (b) record+0x34 is NOT write-once -- a four-function flag API (0x0207D064/0x0207D0BC/0x0207CF18/0x0207CF78) mirrors changes into +0x38 and the +0x08 node list, and the destructor 0x0207CCD4 memsets 0x188; (c) P144's 0x6FF puzzle SOLVED -- ov6 ORs [record+0x150]&0xFF into +0x34, and 0x6FF covers bits 0-7, so the test reads runtime bits not the 0x100 construction seed. Top task: read record+0x150, which now drives the whole category gate. STANDING: query.py mis-bins functions in this module (4 leaves here, 8 in P125, 2 in P126) -- verify any address before trusting its size or container. The +0x5C base-confusion trap has 7 instances; on +0x34 (1092 hits) the base register is the ONLY struct identifier. CHARTER: updated in P146b on the user's direct authorization. North star = docs/PROJECT-GOAL.md (master, f47d63d); Mission 2's current focus is the entity/projectile subsystems. justoolkit-06 is the designated runtime validator -- send them struct-field hypotheses and breakpoint requests rather than leaving questions unresolved; that is the only route to dynamic evidence without breaking the static-only rule.",
- "last_wake": "2026-08-19 P213 (fresh session, consolidated branch integration/loops)",
+ "last_wake": "2026-08-19 P214",
  "wakeup_default_seconds": 900,
  "consecutive_no_progress_wakes": 0,
  "k1c_helper_passives": {
@@ -2301,10 +2302,19 @@
   "roles": "runtime = justoolkit-e2, ledger = justoolkit-e8 (the ledger table in COORDINATION-PROTOCOL.md names them justoolkit-e2/-1e and static = justoolkit-73). Resolve via ListAgents every wake; a fresh session cannot see its own name.",
   "branch": "integration/loops, single shared worktree. Do NOT create a branch or worktree -- br only works where the db-backed .beads lives.",
   "my_open_asks": [
-   "jus-peek-plus-0x44-and-flag-writer-uvp (P1, runtime acked as next wake first action)",
-   "jus-zko (repriced, not closed -- it is the load-time chr_b hop)"
+   "jus-peek-plus-0x44-and-flag-writer-uvp (P1, runtime next wake; breakpoint corrected to 0x02082584 -- confirm they took the correction BEFORE they launch)",
+   "jus-zko (repriced, the load-time chr_b hop)"
   ],
   "labelling_rule": "the loop that produced a claim never applies the confirming label. jus-bit5-is-ability-10-rxl is mine; runtime labels it. jus-gate-word-is-r8-0x44-fnz is theirs; I labelled it.",
   "runtime_prereg": "runtime pre-registered: my decode predicts bit 4 SET and bit 5 CLEAR on the 6.000 capture. Bit 5 set instead is a refutation, not a reinterpretation."
+ },
+ "P214_RESULT": {
+  "fast_lane": "Shot at the runtime capture plan BEFORE the run. Their breakpoint 0x0208257C reads r1 as the class index, but r1 there is r5*(nature-0x100). With nature 1.0 -- true in every measurement ever -- r1 = 0, which is INSIDE their predicted {0,1}. It would have PASSED for the wrong reason and confirmed \"category 1, bit 4 fired\" without reading the index at all. Fix: break at 0x02082584 instead; a GDB breakpoint halts before the instruction, so r1 (loaded 0x02082580) and r4 (destroyed by 0x02082584) are both live. Pushed to runtime and onto jus-peek-plus-0x44-and-flag-writer-uvp.",
+  "free_extras_given": "at 0x02082584 r3 = the element pointer, so ldrsb [r3+4] should be 8 (base byte, independent of r5) and ldrsb [r3+0xE] should equal r1.",
+  "elem_0xE": "PACKED byte, not a plain class number. Low 6 bits a field (writers 0x0207A148, 0x0207A20C use bic #0x3f / and #0x3f / orr), bit 7 a separate flag (bic #0x80 at 0x02079E28), and a reader at 0x0207A158 sign-extends only the low 6 bits. Reset writes low 6 bits all ones = 0x3F, paired with +0x0F identically and +0x0C set to -1 at 0x02079E20. Bead jus-elem-0x0e-is-packed-8wz, state:plausible.",
+  "refutation_signature_too_strong": "runtime pre-registered \"r1 outside 0..15 -> argument order or object identity is wrong\". WRONG: 0x3F (63) is the reset sentinel and reads as no-class-gate via bgt; bit 7 set reads negative and skips via blt. Both are healthy states. Pushed.",
+  "NOT_established": "whether the 0x0207A098 / 0x02079DFC writers act on the SAME struct as [arg1+0x10]. Same offset, same packing, but two objects in this subsystem carry a +0x10 pointer. Offset agreement is the coincidence that has burned this campaign. Do not build on the packing.",
+  "lead": "arm9 0x0208207C reads ldr r0,[r7,#0x10]; ldrsb r0,[r0,#0x0e] -- character for character the damage routine expression -- then tests it against ZERO, not a range. Inside 0x02081DDC, the same function as the +0x44 store 0x02081F68 and the never-reached 0x02081F5C. Worth its own wake.",
+  "sweep": "imm==0x0E restricted to arm9 0x0207-0x0209 + ov6: 28 stores, 73 loads. Four sites read-modify-write behind a 6-bit mask."
  }
 }

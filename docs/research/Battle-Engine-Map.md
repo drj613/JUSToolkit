@@ -2370,3 +2370,55 @@ than an assumption that static had been tried.
 **And the offset-not-constant redesign paid off:** this scan never looks at the value stored, so it is unaffected by
 the doc's unverified `+2.0` regen correction. The version my queue originally specified — hunting a `sub #0x80` —
 would have produced a result contingent on a magnitude nobody has measured.
+
+### The `+2.0` correction is better supported than either of us thought — by the runtime loop's own number (P181 close)
+
+They measured Goku's B on the `fight_base` target (`chr_b` 12) at **384 raw = 6.000**, three for three, heal off and
+proven off behaviourally, with HP **flat for 78 frames** after the drop — so no regen acts inside a measurement
+window and **6.000 is a true value, not a net one**. They then reported the doc's `+2.0` as still unverified and
+*"wrong in shape"*.
+
+**Their own measurement verifies it, and I think they missed that it does.** The arithmetic:
+
+| row | heal ON | heal OFF | difference |
+|---|---|---|---|
+| Luffy / `chr_b` 12, B | **4.000** (doc, 256 raw) | **6.000** (runtime, 384 raw, measured) | **2.000** = 128 raw |
+| dummy, B | 6.000 (doc, 384 raw) | 8.000 (doc's corrected true, 512 raw) | 2.000 = 128 raw |
+
+The Luffy row is now **bracketed by two independent measurements** — a heal-ON figure from the doc and a heal-OFF
+figure from the runtime loop — and their difference is exactly `128` raw, the same magnitude the doc applies to the
+dummy row. So the `+2.0` is no longer a theory added to both sides; it is the measured gap between heal-on and
+heal-off for the same character and move.
+
+`PLAUSIBLE`, not confirmed, and the reason is the doc's own caveat rather than anything new: its Luffy figure is from
+a different session than its dummy figure. So this is a cross-session bracket, not a same-session one.
+
+**And it resolves the "wrong in shape" worry the other way.** Their contrary signal is that a *poked* HP value is
+restored within ~2 frames with heal on, implying regen would erase a hit rather than shave 2.0. But they label that
+observation confounded themselves — a poke isn't damage, and the engine may be repairing an inconsistency rather
+than showing its rate. Against that, the doc's heal-ON reading of a *real hit* came out at 4.000, not near zero,
+which is direct evidence that regen took exactly one 2.0 step in that state. **Rule 3: both held open** — but the
+real-damage measurement outweighs the confounded poke, and the arithmetic above lines up with it.
+
+**What this does and does not change for the scanner.** It does *not* license hunting a constant: the offset-not-value
+design stays, because the magnitude question is about the *heal*, not about the reduction. What it does give is an
+expectation — for this target the delta reaching `scratch+0xE8` is **384 raw**, measured rather than derived, which
+is the number a live capture at the writer should show.
+
+### Pre-specified dereference list, ready for when a writer is named
+
+Their standing offer comes with a constraint worth designing around now rather than later: **they must dereference
+inside the breakpoint command**, because reading a pointer "just after" a hit returns stale or reused memory. So a
+card naming an address has to say what to *dereference*, not just where to stop. Prepared, so it ships the moment the
+shifted-register scan names a candidate:
+
+| capture | why |
+|---|---|
+| the store's value operand | should be `384` raw for this target — the measured delta, so a mismatch means the wrong store |
+| the store's base register, and `base − 0x10` | `scratch` is reached as `[[char+0x1A8]+0x10]`; confirms the base is the ColPrm scratch and not another struct with a `+0xE8` |
+| `[base+0x40]` | the flags word — bit `0x800` is what gates the flush, so it should be set by or at the store |
+| `LR` | names the caller, which is the damage computation and the thing that applied the reduction |
+| the attacker's and defender's `battleObj` (`root+0x0DC` / `root+0x0E0`) | tells us which side's data the writer had in hand |
+
+The last row is the one that matters most: P180 established the reduction is already present in the value being
+stored, so **whatever the writer read to arrive at 384 rather than 512 is in its inputs at that instant.**

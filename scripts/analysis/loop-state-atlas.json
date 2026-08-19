@@ -1,13 +1,14 @@
 {
- "iteration": 220,
+ "iteration": 221,
  "phase": "combat",
  "current_task": "P213-what sets bit 5 of [r8+0x40] (the resistance gate)",
  "queue": [
-  "P221-WHAT IS r5 = [[[battleObj+0x1a0]+0x174]+8]? It holds three consecutive nature bytes at +3/+4/+5 and is the candidate koma-to-damage route. Identify it from its allocator, not from offset agreement. Highest value open question in the project right now.",
-  "P221b-The chr_b -> jpower linkage (may be the same structure as r5). Blocks naming a base-2 move, the on-disk ability list, and jus-zko.",
-  "P221c-Contact gate: what consumes the out-param at sp+0x4c in caller 0x02080F14 and discards it. Do NOT cite formula continuity -- withdrawn.",
-  "P221d-Fix the SHAPE claim in Overlay-Residency-By-Mode.md. No boundary address.",
-  "P221e-Where are bits 7-9 and 15-17 of +0x44 consumed? And what are bits 6-7 of +0x175, preserved by the read-modify-write at 0x021571D4?"
+  "P222-Does a deck write char+0x13..0x15? The koma lead is now LOCATED (per-character source bytes at a known live address) but not confirmed. One dereference further back is the deck question.",
+  "P222b-What are bits 7:6 of char+0x15 (the packed nature byte)? Preserved by the read-modify-write at 0x021571D4, no account at all.",
+  "P222c-chr_b -> jpower linkage. Still blocks naming a base-2 move. NOTE the live ability list is at char+0x1A/+0x1B, so the on-disk half is the remaining unknown.",
+  "P222d-Contact gate: what consumes the out-param at sp+0x4c in caller 0x02080F14 and discards it. Do NOT cite formula continuity -- withdrawn.",
+  "P222e-Fix the SHAPE claim in Overlay-Residency-By-Mode.md. No boundary address. Also: the doc says nothing about an in-battle menu mode, and menus demonstrably swap overlays -- worth a row.",
+  "P222f-Where are bits 7-9 and 15-17 of +0x44 consumed?"
  ],
  "done": [
   "K1-koma-data-survey",
@@ -268,7 +269,7 @@
   "Is HP computed as size*k at runtime, or tabulated per panel? Naruto 4-koma=144=4*36; if size*k then size5=180, size6=216, size7=252, size8=288. One reading settles it."
  ],
  "notes": "Iteration 146 done (delegated + verified). THREE closures: (a) 0x800's polarity is category ROUTING, not a contradiction -- 0x020801D4 is loop-continue, 0x0207F7C8 is the next category check; (b) record+0x34 is NOT write-once -- a four-function flag API (0x0207D064/0x0207D0BC/0x0207CF18/0x0207CF78) mirrors changes into +0x38 and the +0x08 node list, and the destructor 0x0207CCD4 memsets 0x188; (c) P144's 0x6FF puzzle SOLVED -- ov6 ORs [record+0x150]&0xFF into +0x34, and 0x6FF covers bits 0-7, so the test reads runtime bits not the 0x100 construction seed. Top task: read record+0x150, which now drives the whole category gate. STANDING: query.py mis-bins functions in this module (4 leaves here, 8 in P125, 2 in P126) -- verify any address before trusting its size or container. The +0x5C base-confusion trap has 7 instances; on +0x34 (1092 hits) the base register is the ONLY struct identifier. CHARTER: updated in P146b on the user's direct authorization. North star = docs/PROJECT-GOAL.md (master, f47d63d); Mission 2's current focus is the entity/projectile subsystems. justoolkit-06 is the designated runtime validator -- send them struct-field hypotheses and breakpoint requests rather than leaving questions unresolved; that is the only route to dynamic evidence without breaking the static-only rule.",
- "last_wake": "2026-08-19 P220",
+ "last_wake": "2026-08-19 P221",
  "wakeup_default_seconds": 900,
  "consecutive_no_progress_wakes": 0,
  "k1c_helper_passives": {
@@ -2394,5 +2395,15 @@
   "INVOKER_NOT_FINDABLE_STATICALLY": "0x02157114 has two calling functions, 0x02156A38 (804 bytes, 22 callees, ZERO callers) and 0x02157328. 0x02156A38 has NO references of any kind -- 0 literal_load, 0 branch, 0 callers -- and a word search for all three addresses across arm9.bin plus every overlay binary found ZERO occurrences, so none is in a static handler table. The outer function is entered by a computed call from a runtime dispatch. LIMITS: known Thumb-BLX blind spot, and an arithmetically-assembled reference would not show in a word search. So: no static invoker findable by the two methods that would find one. The runtime breakpoint is the PRIMARY instrument for the timing question.",
   "OVERLAY_GUARD_FOR_BREAKPOINTS": "0x02157208 is in ov6, sharing its window with ov0-ov9. Overlay-Residency-By-Mode.md records battle as ov06+ov11+ov12 and says NOTHING about an in-battle menu mode, while documenting the deck editor swapping ov01 into that window. So menus demonstrably swap overlays. A breakpoint there during a menu could fire FALSELY on different code. GUARD: confirm the 4 bytes at 0x02157208 are 75 11 c0 e5 at each stop. Generalises: verify the instruction, not merely that the stop happened.",
   "LESSON_from_runtime": "Runtime widened a memory diff so it could not return a bare null and counted that as protection -- but the field was DERIVED, so a clean stable reading was the expected observation under the hypothesis being tested. A wider net around the wrong field is still the wrong field. Properties like cannot-return-a-null, has-a-positive-control, pre-registered, 3/3-reproducible are all INTERNAL to the chosen target and are not evidence the target is the field the mechanism writes. Before measuring: establish what writes the field, from the instruction stream, and whether the value is STORED or DERIVED -- a derived value changes only when its producer runs, so the producer timing is part of the experiment."
+ },
+ "P221": {
+  "r5_IDENTIFIED": "r5 = char_struct + 0x10. Runtime read it live at the assembler stop rather than trusting my three-dereference chain. Alignment: r5+3..5 = char+0x13..0x15 the three nature slots; r5+6 = char+0x16 MAX HP; r5+8 = char+0x18 CURRENT HP; r5+10 = char+0x1A ability COUNT; r5+11.. = char+0x1B ability IDS -- the last two match the handoff live-list description exactly, which is what makes it more than arithmetic. Live bases: char structs at 0x021DF1BC and 0x021DF7D8.",
+  "BIGGER_THAN_NATURE": "the live ability list that could not be found on disk sits at char+0x1A/+0x1B, three bytes past the HP measured all campaign. Every field already mapped on that struct (+0x41 chr_b index, +0x49 regen) is now at a known live address.",
+  "FLAG_for_runtime": "record puts MAX HP at char+0x16 and CURRENT at char+0x18, so r5+6 is MAX. If HP has been read at r5+6 it has been reading the cap not the pool -- and a max-HP read is stable exactly the way a working measurement looks. One check against a damaged fighter settles it.",
+  "column_3_OBSERVED": "pre-store value of the packed byte is 0x3C = 0b00111100: slot A = 0, slot B = 3, slot C = 3. Both SELECTABLE slots at 3 (none) -- exactly the condition I flagged as making an opponent-nature walk meaningless. Not hypothetical: it is the initialisation default, seen live. Bits 7:6 read 0 and are preserved by the read-modify-write; separate 2-bit field, no account.",
+  "assembler_confirmed_live": "runs PER FIGHTER, two stops per trigger. r1 (the value about to be stored) equalled the packed composition both times: (0)|(0<<2)|(2<<4) = 0x20 and 0x00. My overlay guard held -- 0x02157208 read E5C01175 on every stop, so ov6 stayed resident and no stop was false.",
+  "THE_WALK_IS_BLOCKED": "the in-battle options menu (COM\u8a2d\u5b9a / \u81ea\u52d5\u56de\u5fa9 / \u76f8\u624b\u306e\u5c5e\u6027) does NOT exist in either battle mode we have. fight_base opens no menu on START; dm_battle opens the J Arena pause menu (4 rows, none of them these). scripts/emu/README.md documents that menu and never says which mode carries it. Runtime built a lever on that omission and had withdrawn the jus-5bg deck request on the strength of it -- re-instated. Cheaper path first: scripted boot through \u30c7\u30c3\u30ad\u30e1\u30a4\u30af to reach test play, which carries all three settings.",
+  "BETTER_TEST_THAN_BASE_2": "dm_battle has gate word 0x00000000 -- an UNREDUCED baseline nothing has measured -- with observed bases 3, 4, 5. Same move against fight_base (gate 0x2010, class 1, bit 4 fires) vs dm_battle (nothing fires): proportional predicts a constant RATIO of 0.750; flat predicts a constant DIFFERENCE of 2.000 displayed. Verified: base 3 -> 144/192 diff 0.750; base 4 -> 192/256 diff 1.000; base 5 -> 240/320 diff 1.250; base 8 -> 384/512 diff 2.000. They coincide ONLY at base 8, which is the zero-margin coincidence showing up a third time. Better than base 2: needs no small base byte identified, uses bases already observed, and no arm depends on a first-contact drop a whiff can imitate.",
+  "selector_varies": "[sl+0x18] read 0x18 and 0x00 on different stops, so the selector field is NOT constant -- wake 3 could not show that because every stop returned 0x41. Both still resolve to the bits1:0 path, so the koma lead is untested rather than supported."
  }
 }

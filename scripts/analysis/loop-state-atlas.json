@@ -1,16 +1,14 @@
 {
- "iteration": 223,
+ "iteration": 224,
  "phase": "combat",
  "current_task": "P213-what sets bit 5 of [r8+0x40] (the resistance gate)",
  "queue": [
-  "P224a-Identify chr_b 39/40 FIRST -- runtime found they are two tiers of one character from NESTED on-disk ability lists ([3,38] and [3,38,48]), which does not route through the discredited index. Then 1 and 50. Route: jus_files/exported_combat per-collision JSON, since the identity-field route is dead.",
-  "P224-What appends ability id 0x0E (14) at runtime? On disk Luffy has 3 abilities, live he has 4. The loader compacts and appends. This is the last unexplained step in the ability chain.",
-  "P224b-Find the loader: what writes char+0x1A (count) and char+0x1B.. (ids) from chr_b+0x03? That pins the compaction and probably the append site too.",
-  "P224c-chr_b -> jpower linkage proper: which jpower entries does a character record select? Note the record contradiction (block 0 called Goku but Goku B resolved to 146/195/218 outside it). Runtime says a named base-2 move is no longer needed, so this is for its own sake.",
-  "P224d-Does a deck write char+0x13..0x15 (the three nature slots)? Koma lead is located, not confirmed.",
-  "P224e-What are bits 7:6 of char+0x15? Preserved by the read-modify-write at 0x021571D4, no account.",
-  "P224f-Why does no character carry id 11 (blunt weakness) when it is wired to bit 12 of the gate word?",
-  "P224g-Fix Overlay-Residency-By-Mode.md: SHAPE claim plus a row for in-battle menu modes. No boundary address."
+  "P225-What are node+0x0E and node+0x0F on the +0x558 list? The gate at 0x020779CC constrains [+0x0F]&0x0F to 1..4 and reads [+0x0E]&0xF0. Same cardinality as the nature enum and a koma panel count. This is the koma-to-battle route if it exists.",
+  "P225b-What do the eight kind-2 handlers do? 0x0207793C (shared by ids 49/50/51), 0x02077944, 0x02077954, 0x02077964, 0x02077974, 0x020779A4. Eight abilities that never join the list.",
+  "P225c-What writes char+0x13..0x15, the three nature slots?",
+  "P225d-Why does no character carry id 11 (blunt weakness) when it is wired to bit 12? Note the +0x558 list is a second ability source, so a record census cannot answer this alone.",
+  "P225e-chr_b -> jpower linkage for its own sake.",
+  "P225f-Overlay-Residency-By-Mode.md: the SHAPE claim plus a row for in-battle menu modes. No boundary address."
  ],
  "done": [
   "K1-koma-data-survey",
@@ -271,7 +269,7 @@
   "Is HP computed as size*k at runtime, or tabulated per panel? Naruto 4-koma=144=4*36; if size*k then size5=180, size6=216, size7=252, size8=288. One reading settles it."
  ],
  "notes": "Iteration 146 done (delegated + verified). THREE closures: (a) 0x800's polarity is category ROUTING, not a contradiction -- 0x020801D4 is loop-continue, 0x0207F7C8 is the next category check; (b) record+0x34 is NOT write-once -- a four-function flag API (0x0207D064/0x0207D0BC/0x0207CF18/0x0207CF78) mirrors changes into +0x38 and the +0x08 node list, and the destructor 0x0207CCD4 memsets 0x188; (c) P144's 0x6FF puzzle SOLVED -- ov6 ORs [record+0x150]&0xFF into +0x34, and 0x6FF covers bits 0-7, so the test reads runtime bits not the 0x100 construction seed. Top task: read record+0x150, which now drives the whole category gate. STANDING: query.py mis-bins functions in this module (4 leaves here, 8 in P125, 2 in P126) -- verify any address before trusting its size or container. The +0x5C base-confusion trap has 7 instances; on +0x34 (1092 hits) the base register is the ONLY struct identifier. CHARTER: updated in P146b on the user's direct authorization. North star = docs/PROJECT-GOAL.md (master, f47d63d); Mission 2's current focus is the entity/projectile subsystems. justoolkit-06 is the designated runtime validator -- send them struct-field hypotheses and breakpoint requests rather than leaving questions unresolved; that is the only route to dynamic evidence without breaking the static-only rule.",
- "last_wake": "2026-08-19 P223",
+ "last_wake": "2026-08-19 P224",
  "wakeup_default_seconds": 900,
  "consecutive_no_progress_wakes": 0,
  "k1c_helper_passives": {
@@ -2440,5 +2438,16 @@
   "NEAR_MISS": "my first recovery pass regex-matched the phrase \"tier-2 modifier\" out of the maps prose and reported tier=2 for seven characters. Not a field value. Caught before writing, but it would have entered the index looking like real data -- in a file whose whole purpose is to be the durable extract of deleted originals. tier left dash on all eleven."
  },
  "P223_INDEX_IDENTITY_FIELDS_UNVERIFIED": "classId matches chr_b record offset 0x0E (LE u16) for 49 of 70 rows; for 21 it does not, and for 13 of those the value appears at 0x0E of NO record. Either those rows chr_b numbers are wrong or the column came from elsewhere. FOUR of the thirteen are rows I recovered this wake from deleted maps headed \"Map status: STUB\" -- transcribed correctly, but possibly inferred at source. So charId/classId/jpower in character-index.md are UNVERIFIED. Caveated in place, commit c9007a9, bead jus-index-identity-fields-unverified. Kills my plan to identify records 1/39/40/50 by computing identity fields; the collision-file route (jus_files/exported_combat per-collision JSON) is now the only one.",
- "P223_THREE_ARTIFACTS_ONE_FILE": "character-index.md produced three extraction artifacts today, all reading as plausible data: (1) \"File\" in the chr_b column of twelve placeholder rows, so a numeric parse skipped them and TWO sessions independently diagnosed \"missing records\" -- I verified their number and got the same one, two identical parse bugs agreeing; (2) my own regex lifting \"tier-2 modifier\" out of prose as a tier value for seven characters, caught before writing; (3) a classId column right 70% of the time."
+ "P223_THREE_ARTIFACTS_ONE_FILE": "character-index.md produced three extraction artifacts today, all reading as plausible data: (1) \"File\" in the chr_b column of twelve placeholder rows, so a numeric parse skipped them and TWO sessions independently diagnosed \"missing records\" -- I verified their number and got the same one, two identical parse bugs agreeing; (2) my own regex lifting \"tier-2 modifier\" out of prose as a tier value for seven characters, caught before writing; (3) a classId column right 70% of the time.",
+ "P224": {
+  "ANSWERED_the_append": "AddAbility (arm9 0x02077A74) has exactly TWO call sites, both in 0x02077768. First: the five-slot chr_b record loop. Second: a walk of the list at battleObj+0x558, taking nodes whose +0x40 == 2, reading an ability id from node+0x41, dispatching through the same kind table, and appending if an eligibility gate at 0x020779CC passes. Luffy 0x0E is in his live list and NOT in his record slots, so it came from there. Open since before this session. Bead jus-second-ability-source-0x558-5rp.",
+  "plus_0x558_not_new": "Battle-Engine-Map.md already names \"the +0x558 dynamic Meter-node list\" as the leading candidate for the second gauge. Same list, different consumer.",
+  "ability_bin_IS_the_kind_table": "228 bytes = 57 entries x 4, indexed by ability id. byte0 = kind: kind 0 = ids 0-37 (append), kind 1 = ids 38-48 (append), kind 2 = ids 49-56 (do NOT append; call a handler from the table at 0x0209F544). Handlers: 49/50/51 -> 0x0207793C shared; 52 -> 0x02077974; 53 -> 0x020779A4; 54 -> 0x02077944; 55 -> 0x02077954; 56 -> 0x02077964. byte1 = handler index; byte2 non-zero for 52/54/55/56 (0x08/0x01/0x03/0xFD), looks like a parameter.",
+  "SUPERSEDES": "\"the loader compacts non-zero slots\" is wrong -- eight ability ids dispatch elsewhere and never reach char+0x1B. Ability id 14 is kind 0 and appends normally, so nothing exotic is needed for Luffy 0x0E beyond identifying the node.",
+  "KOMA_LEAD_not_asserted": "the gate 0x020779CC reads [node+0x0F] & 0x0F, rejects 0 and anything > 4, then reads [node+0x0E] & 0xF0 and does two table lookups. A field constrained to 1..4 gating whether a node ability applies has the same cardinality as the nature enum and as a koma panel count. What node+0x0E and +0x0F are is UNIDENTIFIED.",
+  "runtime_ask": "walk battleObj+0x558 printing each node +0x40 and +0x41; confirm a type-2 node carrying 0x0E exists for Luffy. One read dumps the whole second ability source.",
+  "CONTACT_GATE_CLOSED": "runtime jus-first-attributed-measurement-d6u: 4 landed hits -> 4 stops, 7 misses -> 0 stops. So the formula does NOT run on misses, every computed damage reached HP, and 0x02082584 IS a hit oracle. ve6 fully retracted. My out-param search was chasing a phenomenon their max-HP error invented; CLOSED, not parked.",
+  "TTL_handled": "jus-nature-is-read-in-damage-path-hbt hit its 3-wake TTL. NOT blanket-downgraded: the ROM half (tables contain 0x180, instructions give 768 from base 8) is verifiable by anyone and elapsed wakes do not weaken it. Split the unverified half into jus-nature-1p5-never-observed-uh8 at state:speculative -- nature has never been OBSERVED to multiply damage. Also flagged that runtime d6u data (selector 0x0 -> column 0, row 0, both tables 1.000, r0 = 0) is convergent verification of the MECHANISM and is theirs to label.",
+  "their_honest_limit": "base 8 is DEGENERATE -- proportional and both flat models all give 6.000. So their only fully attributed measurement discriminates nothing, and the flat refutation still rests on the three unattributed -5.250 reps. It does establish those were not Goku B, since B is base 8 and reads 6.000."
+ }
 }

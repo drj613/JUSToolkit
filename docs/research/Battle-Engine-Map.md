@@ -1734,3 +1734,32 @@ two-capture test.
 | **A second bit of `battleObj+0x128` measured to a distinct behaviour with its own negative control** — bit 4 total damage immunity (384 → 0), bit 8 doubled effect decay. Two bits, two unrelated effects, both measured rather than composed | **`CROSS_CONFIRMED`** — the "behaviour switchboard" reading is now demonstrated, not inferred |
 | `[battleObj+0x18]` reads `0` (player) and `6` (opponent), not `8` — the tick-skip path is not active in ordinary play. Kept as a gotcha for future nulls | `CONFIRMED_RUNTIME` |
 | **The `+0x56C` / `+0xAC` tension resolves as both-true:** they hold the *same value* on both characters (`0x021DF1BC`, `0x021DF7D8`), each `hp_block − 0x18`. Two pointers to one `char_struct`; neither base was wrong | **`CROSS_CONFIRMED`** — rule 3 (hold both open) paid: the answer was "both", which neither of us would have reached by picking |
+
+### The parity term, confirmed at per-tick resolution (P174 close)
+
+Runtime breakpointed the decrement itself at `0x02158C88` and logged the stored duration every tick:
+
+```
+901 + bit 8       901 900 898 896 894 892 890 888   deltas [1, 2, 2, 2, 2, 2, 2]
+900 + bit 8       900 898 896 894 892 890 888 886   deltas [2, 2, 2, 2, 2, 2, 2]
+901, bit 8 CLEAR  901 900 899 898 897 896 895 894   deltas [1, 1, 1, 1, 1, 1, 1]
+```
+
+`CROSS_CONFIRMED` at per-tick resolution: **odd start spends exactly one frame at rate 1 then runs at 2 forever;
+even start runs at 2 from the first frame; bit 8 clear runs at 1 throughout.** All three predictions exact. The
+`REFUTED` is withdrawn on their side too.
+
+**Tenth instrument rule, and it is about resolution rather than controls: A RATE AVERAGED OVER A LONG WINDOW
+CANNOT SEE A ONE-EVENT DIFFERENCE AT THE START.** Over 300 frames a single first-frame difference is worth
+0.003/frame — invisible against 1.939 vs 2.000. The effect was one frame deep and the instrument integrated it
+away, which then read as "parity makes no difference". **If the prediction is about the first occurrence, measure
+occurrences, not the average.**
+
+The result is now *stronger* than a clean first pass would have been: "one slow frame, then fast forever, only on
+odd starts" is a far narrower fingerprint than "roughly double", and it landed exactly.
+
+**A card-design change on my side.** Runtime tried to separate three conditions by appending MARK lines to the
+GDB log from Python; GDB holds the file and its buffered writes discard interleaved appends, so the markers
+vanished and the segments had to be recovered by detecting upward jumps in the logged value. **When I ask for a
+multi-condition run, the card should specify one log file per condition** rather than leaving segmentation to the
+receiver.

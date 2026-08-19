@@ -80,7 +80,13 @@ def into_range(addr, max_steps=24):
     return None
 
 
-SAMPLE = [0, 2, 4, 6, 8, 10, 12, 16, 20, 26, 32, 40, 50, 60, 80]
+# EVERY FRAME for the first 16, then coarse. Both candidate regen rates put the whole
+# climb inside ~10 frames -- the doc's own "one frame of regen = 2.0" implies 2.0/frame
+# (an 18.0 deficit refilled in 9 frames), and the poke suggested ~12.0/frame (refilled in
+# 1.5). At the previous 2-frame spacing those two are indistinguishable from each other.
+# The back 65 frames are the part already measured flat with the heal off, so they're
+# cheap to sample sparsely.
+SAMPLE = list(range(0, 16)) + [18, 21, 25, 30, 36, 45, 60, 80]
 
 
 def hit_trace(addr, max_steps=24, frames=90):

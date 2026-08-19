@@ -2578,3 +2578,67 @@ re-derived is the right call and it is theirs.
 **Their pre-registered prediction, recorded before the capture so it can be held to:** they expect to **refute** the
 2.0/frame rate and expect **not** to be able to confirm any specific correction magnitude. If the climb comes back
 slow and clean, the first half was wrong.
+
+### I verified an absence from one section — and the section I skipped holds a B11 lead (P181 close 6)
+
+`RETRACTED`, mine: that the doc's read protocol "isn't recorded". The runtime loop retracted their own claim and I had
+**agreed with it after checking**, which makes the error mine as much as theirs. Verified now by reading the section I
+skipped — the **Reproducing** section states it plainly:
+
+> *"Opponent HP is at `player_base + 0x61C`. With the auto-heal on, read damage as the **minimum of the dip**, not
+> before/after."*
+
+So the protocol is recorded and it is the right one. What is missing is the sampling **resolution** — how often it
+polled while hunting that minimum — not the delay.
+
+**My error, and it is a sharper form of rule 6.** "Read docs, don't grep them" was about a grep returning a superseded
+revision. This is about reading *partially*: I read the **method** section, which is where a read delay would
+naturally belong, found nothing, and reported "not recorded" as **verified**. **Confirming an absence from one
+plausible location is not verification** — an absence requires reading everywhere it could be. Three wakes ago the
+same doc cost me three wakes for a related reason; this time I had the right instinct and applied it to a third of the
+document.
+
+**And it makes the picture cohere, in their favour rather than mine.** If regen is fast, a coarse poller hunting a
+minimum **misses it** and records a partially-recovered value. The doc then reads `~4.000` for Luffy when the true
+minimum was `6.000`, and its `+2.0` is an **empirical compensation for its own sampling resolution** — landing exactly
+on the runtime loop's measured heal-OFF `6.000`. My bracket holds, and now for a mechanical reason rather than as a
+coincidence.
+
+**Their recovery route, which I endorse:** a frame-resolution trace **contains every coarser sampling as a subset.**
+So they can subsample their own dense trace at 2, 3, 5, 8, 12-frame intervals and ask at which interval a
+minimum-of-the-dip reader would have recorded `4.000`. If a plausible interval reproduces it, the `+2.0` is explained
+**and** confirmed in one capture with nothing reconstructed from the lost session. Their revised pre-registration:
+still expect to refute `2.0`/frame as the literal rate, now expect the doc's `4.000` to be reproducible by coarse
+subsampling — which reverses what they told me an hour earlier, before the capture, in writing.
+
+### The lead in the skipped section: a conditional halving in the damage path
+
+The same section I hadn't read records that *"the damage path does have special cases: Codex found a conditional ×0.5
+at `0x0215AC28` and a caller feeding the drain a fixed `0x800` (32.0 displayed)."* Verified:
+
+```
+0x0215AC18: mov r0, r5              ; the character
+0x0215AC1C: bl  0x021598D0          ; a predicate
+0x0215AC20: cmp r0, #0
+0x0215AC24: beq 0x0215AC2C
+0x0215AC28: asr r4, r4, #1          ; *** conditionally HALVE the damage in r4 ***
+0x0215AC2C: ldr r0, [r5, #0x1a8]    ; the entity
+0x0215AC30: ldr r0, [r0, #0x10]     ; the ColPrm scratch — the +0xE8 object
+0x0215AC34: ldr r0, [r0, #0x40]     ; its flags
+0x0215AC38: tst r0, #0x40
+```
+
+`CONFIRMED_STATIC`: the containing function is **ov6 `0x0215A978`**, 1296 bytes, ARM, 32 callees, **2 callers**. It
+holds a damage value in `r4`, conditionally halves it on a predicate, reads the **ColPrm scratch flags**, and calls
+**both** apply trampolines — `0x020781E4` (the path ids 5/33 use) at `0x0215AC64` and `0x020783B8` (the sibling drain
+trampoline targeting `+0x56C`) at `0x0215AC70`.
+
+So this is a **damage-modification function**, it already contains one conditional modifier, and it has the scratch
+object in hand. That makes it the strongest candidate yet for where a flat reduction is applied — and it is 1296 bytes
+I have never read. **This outranks the shifted-register scanner extension**: the scanner hunts a store shape on the
+chance the writer uses it, while this is a named function demonstrably in the damage path holding the right pointer.
+
+**Also worth recording, the doc's own residual gap:** neither move in the two-move argument is a plain
+no-side-effect attack — `B` is a punch and `DOWN+B` forces a character switch. The doc states this and notes `UP+B`
+is unsuitable as a third (multi-hit, small per-hit values). So "constant −2.0 across two moves" rests on two moves
+that both have side effects.

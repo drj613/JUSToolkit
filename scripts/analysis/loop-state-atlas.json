@@ -2111,6 +2111,11 @@
     "my_refutations": [
       "jus-wbo: rulemess text-duplicate entries do NOT share handler code. Refuted statically the same wake it was filed; runtime independently refuted it by measurement. No dependents tainted -- nothing was built on it."
     ],
-    "recovered_by_logic": "Runtime did not record +0xC8 for the 12 jus-wbo handler rows. Not needed: the default handler 0x02150F65 appears nowhere in the 31-record table and lies outside column +0x4 span (0x0214FA79..0x02150D71), so any row matching a table entry necessarily had +0xC8==1. Rows are self-certifying; no taint, no re-reads."
+    "recovered_by_logic": "Runtime did not record +0xC8 for the 12 jus-wbo handler rows. Not needed: the default handler 0x02150F65 appears nowhere in the 31-record table and lies outside column +0x4 span (0x0214FA79..0x02150D71), so any row matching a table entry necessarily had +0xC8==1. Rows are self-certifying; no taint, no re-reads.",
+    "blast_radius_note": "jus-zco closed: runtime match_run.py now DERIVES HP_PLAYER/HP_OPP and its dump window from my anchor [0x02172960] every run, with no fallback to the old constants. Their measurement harness is now load-bearing on my anchor -- so any retraction of [0x02172960], root+0x118 or root+0x11C breaks their instrument, not just a doc. Push any such retraction as URGENT, not at the boundary flush. The 0x70 offset and 0x61C delta remain EMPIRICAL (no static basis yet); my root+0x118/+0x11C writer hunt would make them structural.",
+    "runtime_open_asks_on_me": [
+      "static writer of root+0x118/+0x11C (would let them tighten validation from empirical to structural)",
+      "a real timer field offset if my setup-code hunt passes one -- their TIMER offset is UNVERIFIED and reads 16->13->11->8 over 1800 frames, so it is not the じかん counter"
+    ]
   }
 }

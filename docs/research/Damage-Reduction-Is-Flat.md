@@ -1,5 +1,21 @@
 # Damage reduction is FLAT (−2), not a multiplier
 
+> ## ⛔ REFUTED — do not use this document's central claim
+>
+> **The reduction is a ×0.75 multiplier (25% of base per gate), not a flat −2.0.**
+> Claim: [`jus-reduction-is-quarter-multiplier-xk1`] (`state:runtime-confirmed`, 2026-08-19).
+>
+> Refuted by a two-move measurement with the in-session control firing twice: B and
+> DOWN+B lost 512 and 448 in 8.8 fixed point — both exactly `base/4`, ratio constant
+> at 0.750. This document's **DOWN+B row of 5.000 is wrong** (it measures 5.250), and
+> that row was the entire basis of its "non-constant ratio ⇒ flat subtraction"
+> argument. The earlier bead `jus-ccb` carried the flat−2.0 headline and is now
+> `state:retracted`.
+>
+> Everything below is kept as the record of how the wrong answer was reached. It is
+> **not** current. For the mechanism, read the claim bead.
+
+
 **Result:** the damage reduction that makes Luffy take less from Goku's blunt
 attacks is a **flat −2.0 displayed HP per hit**, not a percentage. Measured
 2026-08-14 via the melonDS agent bridge.

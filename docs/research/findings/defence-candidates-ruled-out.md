@@ -1,6 +1,15 @@
-Let me read the file to make sure I have the exact content, then rewrite it.
-
 # The flat −2 is ability 0x09 — both defence candidates are identical
+
+> ## ⛔ REFUTED — the reduction is not ability `0x09`
+>
+> Current claim: [`jus-reduction-is-quarter-multiplier-xk1`]. The reduction is a **×0.75
+> multiplier, 25% of base per gate**, gated on a class table at `0x02092E68` and bit 5 of
+> `[r8+0x40]` — it does not come from ability `0x09`, and it is not a flat term. Poking the
+> cached ability bitset and the live ability list both did nothing (`jus-w66`).
+>
+> Kept as a journal entry. See `README.md` in this directory: entries are history, never
+> current.
+
 
 Loop-Atlas iteration 33. Static analysis, settling a caveat the harness session flagged as untestable.
 

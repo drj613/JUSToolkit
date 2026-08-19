@@ -1,5 +1,12 @@
 # Menu navigation: why a cross-boot golden trace cannot work
 
+> ## 📕 Superseded — kept as a failed-experiment record
+>
+> The working approach is in **`Menu-Nav-Verified-From-Pixels.md`**. This file records
+> why a cross-boot golden RAM trace cannot work, which is still useful causally — the
+> negative result is the point. It is not a description of how navigation works now.
+
+
 **Result:** the idea was to record what each menu screen looks like in RAM, then swap `boot_to_battle.py`'s fixed settle timers for "wait until the screen matches what we expect." That can't work across boots, and the numbers show why: **two runs of the exact same button sequence disagree in about 1.6 million bytes of main RAM — and they already disagree by ~974,000 bytes at the title screen, before a single button is pressed.** Measured 2026-08-17.
 
 > **Corrected below.** The runs did not all reach a battle, which confounds the

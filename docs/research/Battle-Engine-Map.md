@@ -1,5 +1,28 @@
 # Battle Engine Map — Jump Ultimate Stars Static RE Atlas
 
+> ## ⚠️ Read before citing anything in here
+>
+> This file is 4,000+ lines of static-RE canon from a campaign dated **2026-07-02**, and it
+> has **not** been re-audited against the current record. Three specific problems:
+>
+> 1. **It cites tainted evidence in 11 places** — `jus-f30` (every runtime damage
+>    measurement from the two sessions before 2026-08-18 ran with the stage gimmick ON),
+>    `jus-f0v` (the two-move flat-reduction proof, measured with the gimmick live), and
+>    `jus-5kf`. Anything here resting on those numbers is suspect until re-measured.
+>    `jus-5kf` was since answered — there is no auto-heal on the Battle path — so citations
+>    of it are stale rather than wrong.
+> 2. **The damage reduction is a ×0.75 multiplier, 25% of base per gate**, not a flat term
+>    [`jus-reduction-is-quarter-multiplier-xk1`]. Anywhere this file implies a flat −2.0,
+>    it is refuted.
+> 3. **Only one reduction path has ever been measured.** In every measurement taken the flag
+>    word read `0x00000008` with bit 5 clear, so the "0% / 25% / 50%" model has one of three
+>    points sampled. Do not read it as characterised.
+>
+> The structural work — addresses, call graphs, struct layouts — is the durable part and is
+> largely independent of the tainted magnitudes. Treat layout claims as usable and any
+> **number** as needing a bead.
+
+
 **Campaign date:** 2026-07-02. This is the canonical artifact of a static
 reverse-engineering campaign against the JUS (NDS) battle engine binary
 (`arm9.bin` + 14 overlays). Every claim below was extracted by a tracer

@@ -1,5 +1,15 @@
 # Combat Research Status
 
+> ## 📕 Unmaintained historical progress log
+>
+> Not current, and not maintained. `docs/research/README.md` is the entrypoint; beads
+> (`br list --label coord`) are the record.
+>
+> Several bead ids cited below — `jus-wic`, `jus-vrz`, `jus-qsh`, `jus-q4b` — **no longer
+> exist in the ledger**, so those references cannot be checked. Do not treat a citation in
+> this file as evidence without confirming the bead resolves.
+
+
 Current understanding of Jump Ultimate Stars combat mechanics and data
 structures.
 

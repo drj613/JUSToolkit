@@ -1,173 +1,119 @@
-# JUS Research Documentation
+# JUS research documentation — start here
 
-**Start here for new sessions.** This is the entrypoint for understanding the
-reverse engineering research.
+Rewritten 2026-08-19, after the three loop branches were consolidated onto one branch.
+The previous version of this file told every new session to run `bd ready` (the project
+moved to `br`), cited uppercase bead ids that `br` rejects, and named a "Current Focus"
+that was months stale. If you read that version, discard it.
 
----
+## The one rule
 
-## Quick Status
+**Beads is the system of record. Documents explain; they do not decide.**
 
-Run `bd ready` to see available work, or `bd show JUS-p5i` for current focus.
-
-### Current Focus: Hitstun/Velocity Research (JUS-p5i)
-
-- GDB tooling ready at `scripts/gdb/jus_gdb_watcher.py`
-- Need to capture in-game data to find velocity/hitstun fields
-- See workflow in `scripts/gdb/README.md`
-
-### Blocking Unknowns
-
-1. **Weight storage location** (JUS-cb0.1) - Critical for knockback formula
-2. **Hitstun timer field** - Where in RAM is hitstun countdown stored?
-3. **Velocity fields** - Where are X/Y velocity stored in character struct?
-
----
-
-## Document Map
-
-| Document                           | Purpose                           | Read When                       |
-| ---------------------------------- | --------------------------------- | ------------------------------- |
-| **This README**                    | Entrypoint, navigation            | Start of every session          |
-| **`RE-Session-Playbook.md`**       | **Human+LLM strategies**          | **Planning research approach**  |
-| `Combat-Mechanics-Reference.md`    | Canonical game behavior reference | Understanding mechanics         |
-| `Combat-Mechanics.md`              | Raw research findings             | Deep diving into specifics      |
-| `Character-State-Struct.md`        | In-battle character RAM structure | GDB debugging, hitstun research |
-| `chr_b-Complete-Mapping.md`        | Character file format             | Working with chr_b.bin          |
-| `jpower-Mapping.md`                | Damage/move data format           | Working with jpower.bin         |
-| `jpower-Block-Pattern-Analysis.md` | Block patterns and unknowns       | jpower deep dive                |
-| `Cheat-Code-Analysis.md`           | Known memory addresses            | GDB debugging                   |
-| `ARM9-Research-Guide.md`           | ARM9 binary analysis              | Low-level research              |
-| `Research-Status.md`               | Historical status tracking        | Understanding progress          |
-| `Passives-Reference.md`            | Character passive abilities       | Passive system work             |
-
-### Design Documents (in `../design/`)
-
-| Document                  | Purpose                     |
-| ------------------------- | --------------------------- |
-| `Combat-Engine-Design.md` | Specs for engine recreation |
-| `LLM-RE-Framework.md`     | Reusable RE methodology     |
-
----
-
-## Glossary
-
-| Term             | Definition                                                  |
-| ---------------- | ----------------------------------------------------------- |
-| **jpower.bin**   | Move data file - damage values, hitstun, attack types       |
-| **chr_b.bin**    | Character parameters - 74 entries, one per battle character |
-| **classId**      | Field linking character to jpower block (`classId & 0xFF`)  |
-| **statC**        | Walk speed threshold field in chr_b.bin                     |
-| **koma**         | Panel/card in deck system (Help, Support, or Battle)        |
-| **PassiveIndex** | Index into passive ability table (in koma.bin)              |
-| **tier**         | Character power level (1-3), affects damage                 |
-| **nature**       | Rock-paper-scissors type (Power/Knowledge/Laughter)         |
-| **JSoul**        | Health/HP in this game (not "health" or "HP")               |
-
----
-
-## Key Formulas
-
-### Damage Formula (CONFIRMED 2026-01-30)
-
-`jsoul_damage = floor(jpower.damage1 / 5) + (tier - 2)`, then
-`actual_damage = floor(jsoul_damage × nature_multiplier)` (1.5x advantage
-only). `damage1` = first component only, NOT total.
-
-**Canonical reference (verified across 12 characters — see table):**
-[Research-Status.md](Research-Status.md)
-
-**REMAINING UNKNOWN:** How collision files SELECT which jpower entry to use
-
-### Walk Speed
+A document must not assert status in prose. No bare `CONFIRMED`, no `VERIFIED`, no
+`Status: Draft`. A load-bearing claim is written as the claim plus the bead that holds its
+state:
 
 ```
-if statC < ~100: walk_speed = SLOW
-else: walk_speed = NORMAL
+damage reduction is x0.75 per gate [jus-reduction-is-quarter-multiplier-xk1]
 ```
 
-Exact threshold TBD (JUS-n3p)
+The bead carries the lifecycle label; the document carries the evidence and the reasoning.
+Check a claim with `br show <id>`, not by reading how confident the prose sounds.
 
-### Knockback (UNKNOWN)
+Lifecycle labels, from `docs/orchestration/COORDINATION-PROTOCOL.md`:
 
-```
-knockback_velocity = f(attack_power, weight, hp_ratio, passives)
-```
+`state:proposed` → `state:plausible` → `state:runtime-confirmed` / `state:static-confirmed`
+→ `state:cross-confirmed`, or out to `state:retracted` / `state:tainted`.
 
-Weight storage location unknown (JUS-cb0.1)
+`state:cross-confirmed` means a runtime number and a static address agreed **through
+different representations**. It never means "one method, twice".
 
----
+## Three layers, and only one of them is current
 
-## Research Tools
+| layer | where | authority |
+|---|---|---|
+| **Claims** | beads (`br list --label coord`) | the record. Has a lifecycle label. |
+| **Canon** | `docs/research/*.md` (40 files) | current explanation, should cite bead ids |
+| **Journal** | `docs/research/findings/` (193 files) | **history only.** Never current. |
 
-### GDB Watcher (`scripts/gdb/`)
+`findings/` is an append-only research journal — one file per static-loop iteration,
+titled "Loop-Atlas iteration N". An entry was true when written and was never revised
+afterwards. **Do not cite a `findings/` file as the current answer.** See
+`findings/README.md`.
 
-Memory analysis for melonDS. Key commands:
+`docs/characters/` is 70 template files of which two are complete. See
+`docs/characters/README.md` before trusting any of it.
 
-- `jus-baseline-noise` - Identify timer fields (run first!)
-- `jus-auto-snapshot-on-hit` - Capture state on damage
-- `jus-char-diff` - Compare snapshots to find changes
+## Current state (2026-08-19)
 
-### CLI Tool (`src/JUS.CLI/`)
+All three loops — runtime, static, ledger — were shut down for the consolidation, each
+leaving a handoff. Read the one for your role first:
 
-Extract and analyze game files:
+- runtime → `docs/HANDOFF-2026-08-19-runtime-shutdown.md`
+- static → `docs/orchestration/HANDOFF-Atlas-Shutdown-2026-08-19.md`
+- ledger → `HANDOFF-LEDGER-2026-08-19.md`
+
+**The damage chain is solved end to end.** Reduction is a **×0.75 multiplier, 25% of base
+per gate** — not a flat −2.0 [`jus-reduction-is-quarter-multiplier-xk1`]. Two gates read
+the class table at `0x02092E68`; the formula routine is `0x020823E4`.
+
+**The scope caveat matters more than the result.** In every measurement ever taken the flag
+word read `0x00000008` with bit 5 clear, so only the class-1 path has been exercised.
+"Total reduction is 0%, 25% or 50%" is a three-point model with **one point sampled**. It
+is not characterised.
+
+**The exact next action** is to find what sets bit 5 of `[r8+0x40]`. It is the last unknown
+in the chain, and it is where abilities are expected to feed in at load time.
+
+**Nature does not affect damage** [`jus-nature-does-not-affect-damage-0c6`]. The 1.5×
+advantage multiplier in `Combat-Mechanics.md` and `Combat-Mechanics-Reference.md` is wrong;
+both now carry a refutation banner.
+
+## Documents currently marked refuted or superseded
+
+| document | why |
+|---|---|
+| `Damage-Reduction-Is-Flat.md` | central claim refuted; its DOWN+B row of 5.000 is wrong |
+| `Combat-Mechanics.md` | asserts the 1.5× nature multiplier as CONFIRMED |
+| `Combat-Mechanics-Reference.md` | same |
+| `Menu-Nav-Oracle-Attempt-1.md` | superseded by `Menu-Nav-Verified-From-Pixels.md` |
+| `findings/defence-candidates-ruled-out.md` | attributes the reduction to ability `0x09` |
+
+Kept, not deleted — a failed experiment records why an approach doesn't work, which is
+worth having. They carry banners so a reader can't land on them unaware.
+
+## Checking your own work
 
 ```bash
-dotnet run --project src/JUS.CLI -- jus combat export-all <rom_path> <output>
+python3 scripts/check_docs.py        # doc/bead consistency linter
+br list --label coord                # the coordination record
+br show <bead-id>                    # a claim's real state and provenance
 ```
 
-### Analysis Scripts (`scripts/`)
+The linter fails on a document citing a retracted or tainted bead, on a bead id that
+doesn't exist, and on `CONFIRMED`-style prose with no bead id near it. Run it before
+committing docs.
 
-- `cheat_code_parser.py` - Extract addresses from AR codes
-- `analyze_deck_dump.py` - Analyze memory dumps
+## Two failure modes this project has actually suffered
 
----
+1. **A check that agrees with itself.** A pixel oracle reported "gimmicks OFF" for weeks
+   while they were ON, because its reference was captured in the same broken state. Verify
+   contamination-capable state through an independent representation — a RAM flag, not a
+   screenshot compared against its own past.
+2. **Clean evidence skipping the check.** Tidy listings and neat correlations suppress
+   verification. A long document is not a verified one; see `docs/characters/README.md`.
 
-## Getting Started (New Contributor)
+## Orientation, by topic
 
-1. **Read this document** - Understand the project state
-2. **Check `bd ready`** - See what work is available
-3. **Read the relevant doc** - From the document map above
-4. **Pick an issue** - Claim with `bd update <id> --status in_progress`
+| document | use it for |
+|---|---|
+| `RE-Session-Playbook.md` | how to approach a research session |
+| `HP-And-Damage-Runtime-Findings.md` | HP encoding, measured damage, harness traps |
+| `Nature-System-Consolidated.md` | the nature system (current) |
+| `Character-State-Struct.md` | in-battle character RAM layout |
+| `chr_b-Complete-Mapping.md` | `chr_b.bin` file format |
+| `jpower-Mapping.md` | damage/move data format |
+| `Overlay-Residency-By-Mode.md` | which overlays are resident when |
+| `scripts/emu/README.md` | the melonDS agent harness (not in this directory) |
 
-### For GDB Research
-
-1. Set up melonDS with GDB stub (see `scripts/gdb/README.md`)
-2. Load the watcher: `arm-none-eabi-gdb -x scripts/gdb/jus_gdb_watcher.py`
-3. Run baseline noise capture first
-4. Use automated triggers for data collection
-
----
-
-## Issue Tracking
-
-We use [beads](https://github.com/steveyegge/beads) for persistent issue
-tracking.
-
-```bash
-bd ready              # Find available work
-bd show <id>          # View issue details
-bd update <id> --status in_progress  # Start work
-bd close <id>         # Complete work
-bd sync               # Sync with git
-```
-
-### Key Epics
-
-- **JUS-55i**: Create reusable fighting game engine (PRIMARY GOAL)
-- **JUS-cb0**: Combat System
-- **JUS-acr**: LLM-assisted RE framework
-
----
-
-## Session End Checklist
-
-Before ending a session:
-
-1. Update issue notes with progress
-2. Commit documentation changes
-3. Run `bd sync && git push`
-4. Verify `git status` shows up to date
-
----
-
-_Last updated: 2026-01-31_
+`Research-Status.md` is historical progress tracking and is not maintained. Use beads.

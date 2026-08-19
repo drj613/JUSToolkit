@@ -1,5 +1,19 @@
 # JUS Combat Mechanics Reference
 
+> ## ⚠️ ONE CLAIM HERE IS REFUTED — the nature multiplier
+>
+> This document asserts a **1.5× nature multiplier on advantage** under the words
+> "CONFIRMED 2026-01-30". That is **wrong**: nature is not consulted when damage is
+> computed. Claim: [`jus-nature-does-not-affect-damage-0c6`] (`state:runtime-confirmed`, 2026-08-19). Current write-up:
+> `Nature-System-Consolidated.md`.
+>
+> The damage reduction described elsewhere in this file is also **×0.75 per gate, not a
+> flat term** — claim [`jus-reduction-is-quarter-multiplier-xk1`].
+>
+> The rest of this document has not been re-audited against the current record. Treat
+> any bare "CONFIRMED" in it as unverified until it carries a bead id.
+
+
 Documentation of Jump Ultimate Stars combat mechanics as implemented in the
 original game. Research-driven, with clear markers for unknowns and assumptions.
 

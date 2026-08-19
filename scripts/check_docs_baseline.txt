@@ -1,0 +1,20 @@
+# Known documentation debt, accepted for now.
+# check_docs.py fails on anything NOT listed here, so new
+# violations are caught while this backlog is worked down.
+# Regenerate with: python3 scripts/check_docs.py --write-baseline
+# Shrinking this file is the goal. Do not grow it casually.
+
+docs/HANDOFF-2026-08-18-runtime-2.md:114 cites unknown bead jus-qsh
+docs/HANDOFF-2026-08-18-runtime-2.md:114 cites unknown bead jus-wic
+docs/HANDOFF-2026-08-18-runtime-2.md:115 cites unknown bead jus-q4b
+docs/HANDOFF-2026-08-18-runtime-2.md:115 cites unknown bead jus-vrz
+docs/HANDOFF-2026-08-18-runtime-2.md:207 cites unknown bead jus-wic
+docs/research/Research-Status.md:8 cites unknown bead jus-q4b
+docs/research/Research-Status.md:8 cites unknown bead jus-qsh
+docs/research/Research-Status.md:8 cites unknown bead jus-vrz
+docs/research/Research-Status.md:8 cites unknown bead jus-wic
+docs/research/Research-Status.md:895 cites unknown bead jus-wic
+docs/research/Research-Status.md:909 cites unknown bead jus-wic
+docs/research/Research-Status.md:910 cites unknown bead jus-vrz
+docs/research/Research-Status.md:911 cites unknown bead jus-qsh
+docs/research/Research-Status.md:912 cites unknown bead jus-q4b

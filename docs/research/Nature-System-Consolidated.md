@@ -1,5 +1,16 @@
 # The nature system — consolidated
 
+> ## ✅ Current canon for the nature system
+>
+> Claim: [`jus-nature-does-not-affect-damage-0c6`] (`state:runtime-confirmed`, 2026-08-19). This supersedes the 1.5×
+> multiplier asserted in `Combat-Mechanics.md` and `Combat-Mechanics-Reference.md`,
+> both of which now carry a refutation banner.
+>
+> **The open caveat in §4 still stands** and is part of the claim: only "the nature byte
+> is not read during damage computation" is established. Whether an ability-derived
+> value lands at **load** time is untested.
+
+
 Single authoritative summary, merging findings from two sessions that attacked
 this independently: **runtime** experiments via the melonDS agent bridge (this
 session) and **static** analysis of the ROM data and code (the battle-engine-atlas

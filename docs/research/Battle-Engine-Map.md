@@ -2218,3 +2218,43 @@ conclusion — **reserves rotate** — stands.
 **And rotation is not yet reproducible:** three forced KOs in `fight_base` with clean rules left the list unchanged
 at `[9,25,12,14]`, so nothing rotated in. `not claimed`: what decides rotate versus respawn. One data point — the
 opponent's four slots read HP 152, 144, 8, 0, so two reserves are depleted and stock state may decide it.
+
+### RETRACTED: "the flat −2.0 may not exist". The doc corrected itself and I never read the correction (P179)
+
+`RETRACTED`, mine, and it is the worst-founded thing I have published this run.
+`Damage-Reduction-Is-Flat.md` contains a section headed **"The numbers are net of auto-heal — and the conclusion
+survives"**, with a corrected table:
+
+| move | unresisted | Luffy | difference | ratio |
+|---|---|---|---|---|
+| B | **8.000** | **6.000** | **−2.0** | 0.750 |
+
+And *"the 8.000 figure is verified directly: a breakpoint shows **512** handed to the [apply]"*.
+
+So the doc's own corrected figures are **8.000 for the dummy and 6.000 for Luffy**. The runtime loop's clean
+measurement of Luffy at **6.000 with auto-heal off** is **exactly the doc's corrected Luffy figure** — it
+*confirms* the doc rather than contradicting it. The "same character reads 6.000 here and 4.000 there"
+contradiction I built three wakes of argument on **does not exist**: I was comparing a heal-off figure against the
+doc's *superseded, heal-on* number for the other target.
+
+**The flat −2.0 is real.** `8.000 → 6.000`, verified from the raw value handed to the apply.
+
+**Root cause, and it is a new one worth a rule: I grepped a doc for numbers instead of reading it, and got the
+superseded table.** My grep hit line 17's `| B (punch) | 6.000 | 4.000 | −2.0 | 0.6667 |` — the *uncorrected* table
+— and never reached the later section that supersedes it under a heading that says so in plain words. **When a doc
+has been revised, a grep returns whichever version matches first. Read the structure, not the matching lines.**
+That is the third variant this session of "the information was already written down": I scanned a field my own dump
+had named, the runtime loop built a check against their own docstring's caveat, and now this.
+
+**What this does to the record:**
+
+- `jus-f0v` is no longer "decide whether the result exists". The result exists. The card reverts to its original
+  scope: separate `−2.0 flat` from `×0.75` by measuring a second move, which needs a target taking a different
+  base damage.
+- **My static negatives stand and now matter more, not less.** No constant `sub` of `0x80` in the damage region
+  (P175) and no `chr_b` field separating 12 from 70 by 128 (P176) — so the phenomenon is real *and* its mechanism
+  is still unfound. A flat 128-raw subtraction has no implementation and no per-character data source, which makes
+  the ratio reading (`0.750`) the more likely shape and makes P179's 43-varying-bytes problem the live one.
+- **The runtime loop's blocker is solved by the same doc.** `pos_base` is a savestate with `chr_b[70]` as the
+  opponent — *"Goku (`chr_b[0]`, abilities `[7, 15]`) vs the ability-free dummy `chr_b[70]`"*, loaded with
+  `jusemu.py state load pos_base`. They said they cannot reach `chr_b` 70; the state already exists.

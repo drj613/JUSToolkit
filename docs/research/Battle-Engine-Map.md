@@ -2022,3 +2022,28 @@ and no per-character source — so both targets reading 6.000 in one clean sessi
 `Damage-Reduction-Is-Flat.md`** the right action rather than re-explaining it. That doc's *negative* half — ability
 `0x09` doesn't confer blunt resistance through the bitset — is unaffected and has since been confirmed from the
 opposite direction.
+
+### The ability bitset's writer, and the kind-dispatch loader (P177)
+
+`findings/p177-ability-bitset-loader.md`.
+
+| what | where | confidence |
+|---|---|---|
+| **The bit setter**: `ldrb lr,[r1,#1]` (the ability ID) / `add ip,r0,#8` / bit `ID & 0x1F` of word `ID>>5` — **identical addressing to the cancel gate's read, from the write side.** So `r0` is the same base, `battleObj+0x120` | ov6 `0x0215FB3C` | `CONFIRMED_STATIC` |
+| Nothing calls it directly — no `BL` in ov6 or arm9, ARM or Thumb. It is reached **through a table** | — | `CONFIRMED_STATIC` |
+| **Ability entries are 4 bytes: kind at `+0`, ID at `+1`.** The array is at `[obj+0x50]`, the count is the loop bound, and each entry dispatches through `table[kind]` | ov6 loop `0x0215FAF4`–`0x0215FB20` | `CONFIRMED_STATIC` |
+| The table is at **`0x02172210`**, and `table[0]` is the bit setter. Four consecutive slots hold `0x0215FFDC`, a bare `bx lr` — kinds that do nothing at load | ov6 | `CONFIRMED_STATIC` |
+| **The binary names the table**: the bytes before it read `"Init"` then **`"BattleCharaDataLoad.cpp"`** — the same self-naming that gave us `Battle_CharaCreate` and `RuleData_Create` | ov6 `0x021721F0` | `CONFIRMED_STATIC` |
+| This resolves P176's layout puzzle: Luffy's record bytes read as `{kind 0x05, id 0x09}` at `+0x02` and `{kind 0x00, id 0x0C}` at `+0x06`, and `+0x0B` is simply past his count | — | `PLAUSIBLE` that the record's bytes **are** the array the loader walks — the loop reads `[obj+0x50]`, so the record may be transformed on the way in. And `0x09` sitting under kind `0x05` rather than kind `0x00` means the setter is not the only handler that sets bits |
+
+**Addresses for the respawn re-cache**, in increasing scope: `0x0215FB3C` (each bit set — `LR` names the dispatcher,
+`r0−0x120` should equal `battleObj`, `[r1+1]` is the ID), `0x0215FB14` (every dispatch including no-op kinds, so the
+whole table gets mapped), `0x0215FAF4` (the loop entry — the whole re-cache as one event, with the count).
+
+**And the caveat the runtime loop's finding puts on P176's three-way agreement.** The bitset is **not stable across a
+match**: `{9,12,14,25}` became `{2,5,14,15}` after a KO on an object that kept its pointer, its side object and its
+`+0x1E0` identity byte — so it is **re-cached in place**, not swapped. The agreement between the runtime bitset, the
+on-disk record and that doc's live-array reading holds **provided the runtime half was read before a KO**. It was,
+but nobody knew that at the time. Their three measured bits (4, 8, 29) are unaffected — each was poked and observed
+inside one uninterrupted window. What needs a timestamp is any *observation of which bits a character carries*:
+**a character's ability set is not a constant of the character.**

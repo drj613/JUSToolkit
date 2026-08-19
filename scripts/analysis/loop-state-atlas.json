@@ -1,13 +1,13 @@
 {
- "iteration": 219,
+ "iteration": 220,
  "phase": "combat",
  "current_task": "P213-what sets bit 5 of [r8+0x40] (the resistance gate)",
  "queue": [
-  "P220-The chr_b -> jpower linkage: how does a character record select its jpower entries? Blocks the base-2 move identification AND the on-disk ability list AND jus-zko. One question, three blocked things. Note the record contradiction: jpower-Mapping.md calls block 0 Goku but resolves Goku B to 146/195/218 outside it.",
-  "P220b-Contact gate: what CONSUMES the out-param at sp+0x4c in caller 0x02080F14 and what DISCARDS it. Nine instances from a known touch stimulus all rejected before HP changed. Do NOT cite formula continuity -- withdrawn.",
-  "P220c-Fix the SHAPE claim in Overlay-Residency-By-Mode.md (contiguous split from the bottom, not scatter). Do not add the boundary address.",
-  "P220d-What writes r4+0x175 and what sets bits 6-7 of [arg1+0x18]?",
-  "P220e-Where are bits 7-9 and 15-17 of +0x44 consumed?"
+  "P221-WHAT IS r5 = [[[battleObj+0x1a0]+0x174]+8]? It holds three consecutive nature bytes at +3/+4/+5 and is the candidate koma-to-damage route. Identify it from its allocator, not from offset agreement. Highest value open question in the project right now.",
+  "P221b-The chr_b -> jpower linkage (may be the same structure as r5). Blocks naming a base-2 move, the on-disk ability list, and jus-zko.",
+  "P221c-Contact gate: what consumes the out-param at sp+0x4c in caller 0x02080F14 and discards it. Do NOT cite formula continuity -- withdrawn.",
+  "P221d-Fix the SHAPE claim in Overlay-Residency-By-Mode.md. No boundary address.",
+  "P221e-Where are bits 7-9 and 15-17 of +0x44 consumed? And what are bits 6-7 of +0x175, preserved by the read-modify-write at 0x021571D4?"
  ],
  "done": [
   "K1-koma-data-survey",
@@ -268,7 +268,7 @@
   "Is HP computed as size*k at runtime, or tabulated per panel? Naruto 4-koma=144=4*36; if size*k then size5=180, size6=216, size7=252, size8=288. One reading settles it."
  ],
  "notes": "Iteration 146 done (delegated + verified). THREE closures: (a) 0x800's polarity is category ROUTING, not a contradiction -- 0x020801D4 is loop-continue, 0x0207F7C8 is the next category check; (b) record+0x34 is NOT write-once -- a four-function flag API (0x0207D064/0x0207D0BC/0x0207CF18/0x0207CF78) mirrors changes into +0x38 and the +0x08 node list, and the destructor 0x0207CCD4 memsets 0x188; (c) P144's 0x6FF puzzle SOLVED -- ov6 ORs [record+0x150]&0xFF into +0x34, and 0x6FF covers bits 0-7, so the test reads runtime bits not the 0x100 construction seed. Top task: read record+0x150, which now drives the whole category gate. STANDING: query.py mis-bins functions in this module (4 leaves here, 8 in P125, 2 in P126) -- verify any address before trusting its size or container. The +0x5C base-confusion trap has 7 instances; on +0x34 (1092 hits) the base register is the ONLY struct identifier. CHARTER: updated in P146b on the user's direct authorization. North star = docs/PROJECT-GOAL.md (master, f47d63d); Mission 2's current focus is the entity/projectile subsystems. justoolkit-06 is the designated runtime validator -- send them struct-field hypotheses and breakpoint requests rather than leaving questions unresolved; that is the only route to dynamic evidence without breaking the static-only rule.",
- "last_wake": "2026-08-19 P219",
+ "last_wake": "2026-08-19 P220",
  "wakeup_default_seconds": 900,
  "consecutive_no_progress_wakes": 0,
  "k1c_helper_passives": {
@@ -2382,5 +2382,14 @@
   "THE_PATTERN": "20 of the 23 have damage1=10 WITH damage2=40; the other 3 have damage1=10 with damage3=40. Base 2 is almost never alone -- it is paired with a base-8 partner in the same record. Reads as a two-stage move (weak first contact, strong follow-up), which is what a touch-triggered support/dream contact would look like if the tap registers a light hit then hands off. Runtime nine base-2 instances fit.",
   "NOT_CLAIMED": "that jpower idx 1 (d1=10 d2=40) is reachable by Goku. It sits in block 0 which jpower-Mapping.md calls Goku block, but the SAME doc resolves Goku B to indices 146/195/218 which are NOT in block 0. Contradiction predates me. Settled only by the chr_b -> jpower linkage, which is the same unlocated structure as the on-disk ability list.",
   "HUMAN_MATCH_SPEC_ASKS": "DJ will play a match with an agreed attack sequence and RAM tailing, so attribution comes from his own record. My three asks: (1) a MULTI-HIT move with a weak first contact -- if a landed hit reads base 2 at [elem+0x04] with the follow-up 8, the pairing is confirmed and the base-2 discriminator (proportional 1.500 vs flat 0.000) rides along; (2) a CLASS-2 element ([elem+0x0E] in 2..11) -- every capture so far read class 0 so bits 5 and 13 have never been eligible; a slashing move on Luffy should fire bit 13 for +25% since he carries slash weakness; (3) a hit where both fighters natures DIFFER, the only route left to cross-confirming jus-nature-is-read-in-damage-path-hbt."
+ },
+ "P220": {
+  "HEADLINE": "ov6 0x02157114 assembles BOTH load-time derived values. Already known as the ability-bitset -> gate word routine; it ALSO composes the packed three-slot nature byte at +0x175, on the same object ([[battleObj+0x1a8]+0x10]), in the same pass. The two long-running questions -- where do abilities feed the damage path, where does nature -- have one answer.",
+  "nature_assembler": "0x021571C8 ldrb r2,[r5,#3] -> bits 1:0 | 0x021571D8 ldrb ip,[r5,#4] -> bits 3:2 | 0x021571D0 ldrb r1,[r5,#5] -> bits 5:4 | 0x021571D4 read-modify-write so bits 6-7 survive | 0x02157208 strb. r5 = [[[battleObj+0x1a0]+0x174]+8], set at 0x02157130.",
+  "design_shape": "A fighter carries THREE natures. A move picks which one it attacks with, via [arg1+0x18] bits 6-7. The defender always defends with slot A (bits 1:0, no selector). Asymmetric by design.",
+  "KOMA_LEAD_not_claim": "three consecutive per-character source bytes feeding three slots, with the move choosing among them, is what a deck contributing several natures would look like -- and the owner ground truth says natures are four values and PER PANEL. What r5 points at is UNIDENTIFIED. Same unlocated structure as the on-disk ability list.",
+  "why_urgent": "runtime was about to diff +0x175 across a training-menu nature change. Sweep for imm==0x175: 16 hits, 8 stores ROM-wide, only 0x02157208 composes three slots. 0x021C9D78 writes literal 0 (init); 0x021CA22C writes 0 or 1 from cmp r0,#8 (boolean, not a 4-value nature); rest are init pairs. So the menu cannot write +0x175 directly -- it must write r5+3..5, and +0x175 only refreshes when 0x02157114 re-runs. \"Byte did not move on the A press\" is the EXPECTED result. Third planned null this session that a design would have misread, and the FIRST where the misreading was in the TARGET ADDRESS rather than the readout. Revised target: r5+0..16 across the press, same navigation cost.",
+  "my_count_error_corrected": "I reported the jpower base-2 partner split as 20/3; it is 18/4/1 and idx 199 pairs with damage2=90 (base 18). All 23 pair with something stronger, so it is \"base 2 is NEVER alone\", 23/23 -- a stronger claim than I made. Runtime caught it. Lesson recorded: when the claim is a count, count it; when the claim is a margin, compute it. Both loops mis-summarised their OWN captured output this session.",
+  "my_bonus_had_a_degeneracy": "I offered \"which row shows 1.500 identifies which nature table arg2 selected\". With the column restricted to {0,2} but unresolved, row 0 and row 2 are unique but row 1 is ambiguous between (col0,FEF4) and (col2,FF14). Runtime caught it; fix is to capture [sl+0x18] and resolve the column. Also conceded: the column-3 guard is per-SAVESTATE not per-move, since one byte read covers all three candidate fields."
  }
 }

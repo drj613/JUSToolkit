@@ -1,14 +1,13 @@
 {
- "iteration": 216,
+ "iteration": 217,
  "phase": "combat",
  "current_task": "P213-what sets bit 5 of [r8+0x40] (the resistance gate)",
  "queue": [
-  "P217-Where is the on-disk ability list? runtime could not find it: chr_b.json has no ability field and the 60-byte chr_b.bin records lack Luffy 09 19 0C triple. Static-shaped, and it unblocks the id-10 lookup and jus-zko both.",
-  "P217b-What gates the flush from the accumulator to HP? Eight formula evaluations produced zero HP change, so the gate is DOWNSTREAM of the formula and rejected all eight. Candidate arm9 0x0208207C (element byte tested against zero) inside 0x02081DDC.",
-  "P217c-Which 2-bit field of +0x175 is the nature column, and what sets the flags at 0x020824A4/0x020824B4 that choose between bits 1:0, 3:2 and 5:4? Three packed natures in one byte is a real structure and nobody has mapped it.",
-  "P217d-What sets bit 30 of +0x40, the nature bypass? A third innocent explanation for any nature null.",
-  "P217e-Where are bits 7-9 and 15-17 of +0x44 consumed? Six ability rows feed bits the damage routine never reads.",
-  "P217f-Battle-Engine-Map.md 8 bare-CONFIRMED warnings. Deadline blown once; ledger deferred it, I did not."
+  "P218-TTL WATCH ON MY OWN BEAD: jus-nature-is-read-in-damage-path-hbt is state:static-confirmed with no runtime number, while five documents now assert 1.5 prominently. If it is still unmeasured after three wakes, downgrade it to SPECULATIVE myself rather than wait to be told. Wake 1 of 3 was P216.",
+  "P218b-What gates the flush from the accumulator to HP? Eight (now nine) formula evaluations, zero HP change, so the gate is downstream and rejected all of them. Candidate arm9 0x0208207C inside 0x02081DDC. Owner ground truth helps: zero-damage contact still kills a character at the floor, so contact does not consult the damage value.",
+  "P218c-Where is the on-disk ability list? chr_b.json has no ability field and the 60-byte records lack Luffy 09 19 0C. Unblocks the id-10 lookup and jus-zko.",
+  "P218d-What writes r4+0x175, the packed three-nature byte, and what sets bits 6-7 of [arg1+0x18] that selects among them? This is the koma-to-damage route if it exists.",
+  "P218e-Where are bits 7-9 and 15-17 of +0x44 consumed?"
  ],
  "done": [
   "K1-koma-data-survey",
@@ -269,7 +268,7 @@
   "Is HP computed as size*k at runtime, or tabulated per panel? Naruto 4-koma=144=4*36; if size*k then size5=180, size6=216, size7=252, size8=288. One reading settles it."
  ],
  "notes": "Iteration 146 done (delegated + verified). THREE closures: (a) 0x800's polarity is category ROUTING, not a contradiction -- 0x020801D4 is loop-continue, 0x0207F7C8 is the next category check; (b) record+0x34 is NOT write-once -- a four-function flag API (0x0207D064/0x0207D0BC/0x0207CF18/0x0207CF78) mirrors changes into +0x38 and the +0x08 node list, and the destructor 0x0207CCD4 memsets 0x188; (c) P144's 0x6FF puzzle SOLVED -- ov6 ORs [record+0x150]&0xFF into +0x34, and 0x6FF covers bits 0-7, so the test reads runtime bits not the 0x100 construction seed. Top task: read record+0x150, which now drives the whole category gate. STANDING: query.py mis-bins functions in this module (4 leaves here, 8 in P125, 2 in P126) -- verify any address before trusting its size or container. The +0x5C base-confusion trap has 7 instances; on +0x34 (1092 hits) the base register is the ONLY struct identifier. CHARTER: updated in P146b on the user's direct authorization. North star = docs/PROJECT-GOAL.md (master, f47d63d); Mission 2's current focus is the entity/projectile subsystems. justoolkit-06 is the designated runtime validator -- send them struct-field hypotheses and breakpoint requests rather than leaving questions unresolved; that is the only route to dynamic evidence without breaking the static-only rule.",
- "last_wake": "2026-08-19 P216",
+ "last_wake": "2026-08-19 P217",
  "wakeup_default_seconds": 900,
  "consecutive_no_progress_wakes": 0,
  "k1c_helper_passives": {
@@ -2345,5 +2344,17 @@
   "luffy": "live list [9, 25, 12, 14] -- blunt resist AND slash weakness. That is why bit 13 was armed and correctly blocked: he is weak to slashing and was hit with a punch.",
   "their_next": "a slashing attacker vs the same target, predicting (2048+512)>>2 = 640 = 10.000. I WARNED THEM: if the slasher has nature advantage the answer is (2048+512+1024)>>2 = 896 = 14.000, which would read as a refutation of the mask table while actually being the mask table plus a nature term. Told them to read r3 in the same stop or pick a neutral-nature attacker, and to pre-register both.",
   "id_10_lookup_FAILED": "chr_b.json has no ability-list field and the 60-byte records do not contain Luffy known 09 19 0C triple. The on-disk ability list is unlocated. Shortlist for id 10 by semantic join is state:proposed only -- it crosses two id spaces that are demonstrably numbered differently (Luffy punch/kick resist is catalog 17 vs bitset 9)."
+ },
+ "P217": {
+  "fast_lane": "Runtime read [sl+0x18] = 0x41, confirming my nature-column selector decode live -- they labelled jus-nature-column-selector-8gk state:runtime-confirmed. Re-derived their arithmetic from the tables: 0x41&0xC0=0x40 so bits 3:2 of column byte 0x20 = 0, row 0 col 0 = 1.000 both tables, term 0. Correct throughout.",
+  "corrections_pushed": [
+   "THEIR IDENTITY REGISTER IS WRONG for the koma test: r10 is sl = arg1 = the PARTICIPANT, same for all moves by one character. The element is [sl+0x10] and it is already live in their capture as r3 (loaded 0x02082570, still held at 0x02082584 since ldrb r4,[r3] uses it). Running the test on r10 would have shown a constant and produced a false \"ambient\" conclusion from a register that could not move. Stronger readout still: [r3+0x04], the base damage byte.",
+   "THEIR EXISTING DATA ALREADY ARGUES AMBIENT: nine stops all base byte 2 across seven buttons, but Goku B is base 8 and DOWN+B is 7. Base 2 is neither, so the stops are almost certainly not from their presses. They may already have the answer without another arm.",
+   "BASE 2 IS A PREDICTION, NOT AN AGREEMENT. They wrote \"bases 8, 7 and 2 all agree with proportional\". The store at 0x02082684 is after their stop and no hit landed, so 96 raw is computed from r5 and the gate word, not read. Also base 8 NEVER discriminated -- proportional, flat-512 and flat-2.0 all give exactly 6.000 there (verified). Base 7 at 5.250 vs 5.000 is the only measured discriminating point. Base 2 at 1.500 vs 0.000 is an unexercised discriminator and by far the strongest -- worth pre-registering and running."
+  ],
+  "nature_bypass_eliminated": "runtime read bit 30 clear in BOTH [r8+0x40] and [r4+0x40], so the bypass at 0x020824F4 did not fire. The tables ARE read on that path and the old null was a genuine 1.0 cell. One of my three explanations for the August null is eliminated; the packed-field one survives.",
+  "WORK_DONE_battle_engine_map": "All 8 bare-CONFIRMED warnings cleared (lines 429, 521, 536, 609, 641, 654, 3717, 4073). Created jus-hp-block-at-char-0x56c-q86 at state:plausible to give the HP-struct claim a home -- it was asserted CONFIRMED in prose in five places with no bead. Deliberately NOT confirmed by me: the confirming evidence is runtime's (jus-jas, jus-i3v), so they may raise it. Lines 3717 and 4073 now cite jus-s5q and jus-nature-is-read-in-damage-path-hbt.",
+  "DO_NOT_DO": "Do NOT sed docs/research/findings/ to fix the ~30 \"points at missing file Battle-Engine-Map.md\" warnings. Those are prose mentions resolving one directory up, nothing is broken for a reader, and findings/ is an APPEND-ONLY JOURNAL. Rewriting 30 historical entries to silence a cosmetic warning trades a real rule for a clean linter run. Filed as jus-linter-false-positive-md-paths-bas with the proposal to fix the LINTER instead (try docs/research/ and the docs root before warning) -- removes ~44 false positives, touches no document, and is the opposite of the noisy rule I rejected in jus-representation-rule-in-linter-jai.",
+  "linter_proposal_REJECTED": "jus-representation-rule-in-linter-jai closed as rejected. Verified all three instances: zero clean catches. Instance 1 is fatal -- HANDOFF-2026-08-19-runtime-shutdown.md:62 already carried BOTH forms plus a re-derive caution and was still wrong, because all three sit on one premise. This also refutes MY OWN generalisation that values crossing a representation boundary should be restated in both forms. Restating is not deriving. Replacement: for any load-bearing value, NAME THE TWO ARTIFACTS; if both trace to one artifact there is no cross-check. Project memory corrected."
  }
 }

@@ -426,7 +426,7 @@ None of the 5 claims were outright REFUTED by any lens. Claim 5's downgrade is a
 
 ## Subsystem: guard-sp-gauges
 
-**Status:** PARTIAL (2 confirmed / 11 plausible / 1 speculative; 14 claims, 3-lens verified). **New this phase — Phase-0 spec B12.** Goal: find guard-health/SP-gauge instances of the CONFIRMED HP clamp-accumulator (cross-cutting §2) at a base offset other than `+0x56c`. **Headline result: no second *fixed* offset exists** — all 8 trampoline call sites and the 1 direct walker call into `Grow`/`0x02078488`, plus the sole `GrowMax` caller, resolve to `+0x56c` or to a *dynamically-linked list node* rooted at `char+0x558`. The leading guard/SP candidate is therefore the **`+0x558` Meter-node list**, not a second fixed struct offset.
+**Status:** PARTIAL (2 confirmed / 11 plausible / 1 speculative; 14 claims, 3-lens verified). **New this phase — Phase-0 spec B12.** Goal: find guard-health/SP-gauge instances of the HP clamp-accumulator [`jus-hp-block-at-char-0x56c-q86`] (cross-cutting §2) at a base offset other than `+0x56c`. **Headline result: no second *fixed* offset exists** — all 8 trampoline call sites and the 1 direct walker call into `Grow`/`0x02078488`, plus the sole `GrowMax` caller, resolve to `+0x56c` or to a *dynamically-linked list node* rooted at `char+0x558`. The leading guard/SP candidate is therefore the **`+0x558` Meter-node list**, not a second fixed struct offset.
 
 | # | Claim | Key addresses | Confidence |
 |---|-------|---------------|------------|
@@ -518,7 +518,7 @@ cross-overlay handle, since ov6 and ov11 occupy different windows and can be co-
 `duration = base + (base/10)*(V*2)` is unchanged; only the name for `V` is retracted, and what `V`
 means is `not claimed`. Known fields: `+0x4C` word array (stride 4), `+0x158` a count, `+0x15C` an
 index into `+0x4C`. `PLAUSIBLE` (not claimed): the same object as the battle root behind
-`0x0214D928` — **now CONFIRMED, see P161 below**; on the strength of `[root+0x158]` also being a character count, and decidable by
+`0x0214D928` — **settled in P161 below**; on the strength of `[root+0x158]` also being a character count, and decidable by
 comparing that global's allocation size against `0x170`.
 
 **Tool blind spot, sharpened and superseding the figure on record.** For `0x02172960`: arm9 2/2,
@@ -533,7 +533,7 @@ a severe floor** — including "`[0x020AFE90+0x28]`, 149 literal loads".
 
 - **"The `+0x558` walker is the only other static caller of `Grow`"** (claim 7) — refuted; a second, previously undocumented drain trampoline (`0x020783B8`) exists, reached via `0x0215AC70`. It still targets `+0x56c` (not a new gauge), but the enumeration itself was incomplete.
 - **The trampoline blind-spot's own "no sibling found" negative result** (claim 8) — refuted by directly performing the manual disasm-sweep the claim itself proposed; a sibling was found ~20 bytes away on the very first attempt.
-- No fixed-offset second gauge exists anywhere in the enumerated call graph (claims 9–10) — this negative result **survives**, but is now known to rest on a demonstrably incomplete sweep (see above), so it is held at PLAUSIBLE rather than CONFIRMED.
+- No fixed-offset second gauge exists anywhere in the enumerated call graph (claims 9–10) — this negative result **survives**, but is now known to rest on a demonstrably incomplete sweep (see above), so it is held at `state:plausible` rather than established [`jus-hp-block-at-char-0x56c-q86`].
 
 ### Open questions
 
@@ -606,7 +606,7 @@ Known fields on whichever object this turns out to be:
 
 ### 2. Gauge / Meter struct
 
-`char+0x56c` → `{+0x16 max (u16), +0x18 current (u16)}`. Accessors: `0x02078488` = `ApplyDeltaToCurrent` (clamped add, `[0, max]`); `0x020784B8` = `GrowMax` (capped at `0x4000`; sole caller `0x0215C73C`, gated on a `char+0x128` badge bit — candidate "max HP on respawn" passive ability `0x07`); `0x020784E4` = `IsCurrentBelowPercentOfMax` (the GDB seed anchor; both known callers pass `pct=25`). Trampoline `0x020783CC` tail-jumps into `0x02078488` with `r0` pre-loaded from `+0x56c`; **all 8 of its call sites are now traced** (spec **B12**, Phase-0 — see § guard-sp-gauges). **A previously-invisible sibling *drain* trampoline exists at `0x020783B8`** (same `+0x56c` target, negates its delta via `rsb` first) — found only because the aliasing verification lens manually swept the bytes adjacent to the known trampoline; both trampolines' pool-word jump targets are invisible to `xrefs-to`/`pool-values` (a demonstrated tooling blind spot for `bx ip`-style indirection). A `+0x558`-rooted linked list (walked by `0x020783DC`, full body now CONFIRMED) is the leading candidate for guard-health/SP: **no second *fixed* struct offset exists anywhere in the enumerated call graph** — every found path feeds either `+0x56c` directly or a dynamically-linked node reachable via `+0x558`. Whether `+0x558` nodes and `+0x56c`'s pointer are ever the *same* object is the campaign's top open dispute — see § chrb-catalog. See § guard-sp-gauges for full detail (spec **B12**, now DONE).
+`char+0x56c` → `{+0x16 max (u16), +0x18 current (u16)}`. Accessors: `0x02078488` = `ApplyDeltaToCurrent` (clamped add, `[0, max]`); `0x020784B8` = `GrowMax` (capped at `0x4000`; sole caller `0x0215C73C`, gated on a `char+0x128` badge bit — candidate "max HP on respawn" passive ability `0x07`); `0x020784E4` = `IsCurrentBelowPercentOfMax` (the GDB seed anchor; both known callers pass `pct=25`). Trampoline `0x020783CC` tail-jumps into `0x02078488` with `r0` pre-loaded from `+0x56c`; **all 8 of its call sites are now traced** (spec **B12**, Phase-0 — see § guard-sp-gauges). **A previously-invisible sibling *drain* trampoline exists at `0x020783B8`** (same `+0x56c` target, negates its delta via `rsb` first) — found only because the aliasing verification lens manually swept the bytes adjacent to the known trampoline; both trampolines' pool-word jump targets are invisible to `xrefs-to`/`pool-values` (a demonstrated tooling blind spot for `bx ip`-style indirection). A `+0x558`-rooted linked list (walked by `0x020783DC`, full body now see [`jus-hp-block-at-char-0x56c-q86`]) is the leading candidate for guard-health/SP: **no second *fixed* struct offset exists anywhere in the enumerated call graph** — every found path feeds either `+0x56c` directly or a dynamically-linked node reachable via `+0x558`. Whether `+0x558` nodes and `+0x56c`'s pointer are ever the *same* object is the campaign's top open dispute — see § chrb-catalog. See § guard-sp-gauges for full detail (spec **B12**, now DONE).
 
 ### 3. chr_b singleton
 
@@ -638,7 +638,7 @@ Summarized from `jus_files/analysis/findings/critic.round1.json` — a dedicated
 
 | Area | Status | Why it matters |
 |------|--------|-----------------|
-| Guard/block | **PARTIAL (Phase-0, spec B12 — DONE)** | The CONFIRMED clamp-accumulator gauge (cross-cutting §2) has no second *fixed* offset; leading candidate is the `+0x558` dynamic Meter-node list. Node-kind census and the node-insertion site remain unfound statically. See § guard-sp-gauges. |
+| Guard/block | **PARTIAL (Phase-0, spec B12 — DONE)** | The clamp-accumulator gauge [`jus-hp-block-at-char-0x56c-q86`] (cross-cutting §2) has no second *fixed* offset; leading candidate is the `+0x558` dynamic Meter-node list. Node-kind census and the node-insertion site remain unfound statically. See § guard-sp-gauges. |
 | SP gauge & specials | **PARTIAL (Phase-0, spec B12 — DONE)** | Same `+0x558` list candidate as guard/block; unresolved tension with SP being documented as deck-shared rather than per-character. See § guard-sp-gauges open questions. |
 | Throws/grabs | never traced | `hasSpecialFlag`/`hitProperties` bit-fields (collision-data claims 9–10) are candidate markers; their disassembly consumer was never found. |
 | Support koma attacks | never traced | Unknown whether support-koma attacks share the main fighter's damage/hitstun/physics pipeline. |
@@ -651,7 +651,7 @@ Summarized from `jus_files/analysis/findings/critic.round1.json` — a dedicated
 | ID | Subsystem | Priority | One-line goal |
 |----|-----------|----------|----------------|
 | **B10** | cross-cutting object-identity | 1 | Build a forward call-graph provenance map so ONE future GDB session (see cross-cutting §1) settles the `sl`-vs-character-struct identity for damage-pipeline, physics-writers, hitstun-timers, and weight-hunt at once. |
-| **B11** | damage-pipeline / hitbox-priority | 1 | Trace forward from the CONFIRMED MoveInfo allocator to find the writer of scratch `+0xE8`/`+0x130` — the actual damage-formula site, unfound across 3 rounds. |
+| **B11** | damage-pipeline / hitbox-priority | 1 | Trace forward from the MoveInfo allocator to find the writer of scratch `+0xE8`/`+0x130` — the actual damage-formula site, unfound across 3 rounds. |
 | **B12** | guard/block, SP gauge | 1 | **DONE (Phase-0).** All 8 trampoline sites + 1 previously-invisible sibling drain trampoline traced; no second fixed offset found; the `+0x558` Meter-node list is the leading candidate. See § guard-sp-gauges. |
 | **B13** | throws/grabs | 2 | Once B11 locates the runtime field offsets, manually read disasm around `hasSpecialFlag`/`hitProperties` bit tests (search-imm cannot find data-processing immediates — a confirmed tooling gap, partially closed this phase by `search-op-imm`) for a branch that skips normal knockback in favor of a scripted throw outcome. |
 | **B14** | weight-hunt (completion) / chr_b catalog | 2 | **DONE (Phase-0).** All 97 xref hits to `0x0214BD80` classified; complete 60-byte record map built; singleton reframed as a "battle resource manager" owning ~15 tables. See § chrb-catalog. |
@@ -3714,7 +3714,7 @@ P202 called `0x022100D4` "ObjMan-internal." Against the true size it sits at `Co
 
 The scratch containments do survive: player `+0x1E5C`, opponent `+0x1FE4`, term source `+0x2088`, all under `0x219C`.
 
-### CONFIRMED, and convergent: base `+0x454`, stride `0x188`
+### Base `+0x454`, stride `0x188` — convergent, claim [`jus-s5q`]
 
 ```
 0x0207C77C: add r0, r4, #0x54
@@ -4070,7 +4070,7 @@ The prologue read was right: `r5` comes from `ldrsb [elem+0x10 + 4]`, which is w
 
 `r4 = 0x0220FC3C`, the player's. So `+0x184`/`+0x186` are **attacker-side** scales, both exactly `1.0` here — not the reduction. I was right to refuse to guess which side it was.
 
-### CONFIRMED: nature multiplier tables
+### Nature multiplier tables — claim [`jus-nature-is-read-in-damage-path-hbt`]
 
 The tail resolves the third factor. `0x020824B8`/`0x020824D0` read a byte at `r7+0xD1` — since `r7 = scratch+0xA4`, that's **`scratch+0x175`**, one of the bytes the collision loop writes (P201). Two-bit fields are extracted by `lsl`/`lsr #0x1E` triples, choosing bits 0–1, 2–3, or 4–5 by flags. Then:
 

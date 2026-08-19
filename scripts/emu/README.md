@@ -242,6 +242,19 @@ Practical rules:
 - **One GDB session per emulator launch.** Plan the whole debugging session
   before attaching; you don't get a second attempt.
 - Attach *after* loading a savestate, not before.
+- **A savestate load WITH GDB attached works.** This was listed below as an
+  expected-but-unproven rule ("disconnect GDB before any savestate load"); it
+  has now been tested and the load is fine. That matters, because it lets one
+  GDB session cover several battles, which is the only way to get an in-run
+  positive control: catch a case you know hits, then load the case you expect
+  to miss, with the same breakpoints proven live. A "0 hits" result from a
+  separate launch is not evidence.
+- **`handle SIGILL ... pass` fails on this stub** ("Can't send signals to this
+  remote system") and aborts the whole batch script. Use `nopass`.
+- **A no-hit result is worthless unless the log shows the session stayed
+  healthy.** Two of three attempts at one negative were invalid -- one where GDB
+  detached on SIGILL, one where the script errored -- and both printed exactly
+  the same "0 hits" as the valid run.
 - Because the halt freezes `_Update()`, the bridge cannot drive input while the
   core is stopped. Breakpoint commands must end in `continue` so the core keeps
   running and the bridge stays alive; a blocking prompt deadlocks the pair.

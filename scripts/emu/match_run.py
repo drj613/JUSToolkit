@@ -70,6 +70,7 @@ OUT = "/tmp/jus_match"
 # Verified in mode 3 where the root moves: the derivation tracked the relocation
 # and returned values matching the on-screen bars while the constants did not.
 ANCHOR = 0x02172960          # ov6 BSS: pointer to the battle root, 0 outside battle
+POPULATE_TRIES, POPULATE_STEP = 12, 60   # ~720 frames; population lands by ~300
 ROOT_SIZE = 0x170            # CONFIRMED_STATIC from a single allocation site
 SIDE_A_PTR, SIDE_B_PTR = 0x118, 0x11C
 HP_IN_SIDE = 0x70            # HP slot array inside a side object
@@ -152,30 +153,65 @@ def resolve_addresses():
     """
     global DUMP_START, DUMP_END, HP_PLAYER, HP_OPP, TIMER, SPECIAL
 
-    root = peek(ANCHOR, 4)
+    # WAIT FOR THE ANCHOR, THEN WAIT AGAIN FOR THE OBJECT. These are two
+    # different states and conflating them produces a wrong diagnosis.
+    #
+    # The anchor goes non-zero the moment the object is ALLOCATED, which is
+    # before setup fills it in -- for a known-good battle the whole 0x170 reads
+    # zero at that point and only populates ~200-300 frames later. An earlier
+    # version of this function read the side pointers immediately, got 0, and
+    # reported "the anchor is wrong", which would send someone hunting a
+    # retraction that isn't owed. The failure was mine, not the anchor's.
+    #
+    # Note what is NOT used as the populated signal. root+0x08 is 0 for rule
+    # mode 0, and root+0xC8 is 0 for any mode that never installs a per-mode
+    # handler, so both read "empty" in perfectly good battles. The only sound
+    # signal is the thing actually needed: side pointers that look like side
+    # pointers.
+    root = None
+    for _ in range(POPULATE_TRIES):
+        root = peek(ANCHOR, 4)
+        if root:
+            break
+        nav.advance(POPULATE_STEP)
     if not root:
         raise SystemExit(
-            "[0x%08X] reads 0: there is no battle object, so this is not a live "
-            "battle. Load an in-battle savestate or boot into one. NOT falling "
-            "back to hardcoded addresses -- they would return believable garbage."
-            % ANCHOR)
+            "[0x%08X] stayed 0 across %d frames: there is no battle object, so "
+            "this is not a live battle. Load an in-battle savestate or boot into "
+            "one. NOT falling back to hardcoded addresses -- they would return "
+            "believable garbage."
+            % (ANCHOR, POPULATE_TRIES * POPULATE_STEP))
     if not (0x02000000 <= root < 0x02400000) or root & 3:
         raise SystemExit(
             "[0x%08X] = 0x%08X, which is not a word-aligned main-RAM pointer. The "
             "anchor is wrong or the read raced a state load (advance >=10 frames "
             "after loading before peeking)." % (ANCHOR, root))
 
-    cli("dump", hex(root), hex(root + ROOT_SIZE), "/tmp/jus_match_root.bin")
-    with open("/tmp/jus_match_root.bin", "rb") as f:
-        r = f.read()
-    side_a, side_b = (struct.unpack_from("<I", r, o)[0]
-                      for o in (SIDE_A_PTR, SIDE_B_PTR))
+    def sides():
+        cli("dump", hex(root), hex(root + ROOT_SIZE), "/tmp/jus_match_root.bin")
+        with open("/tmp/jus_match_root.bin", "rb") as f:
+            r = f.read()
+        return tuple(struct.unpack_from("<I", r, o)[0]
+                     for o in (SIDE_A_PTR, SIDE_B_PTR))
 
-    for name, p in (("+0x%X" % SIDE_A_PTR, side_a), ("+0x%X" % SIDE_B_PTR, side_b)):
-        if not (0x02000000 <= p < 0x02400000):
-            raise SystemExit(
-                "root%s = 0x%08X is not a main-RAM pointer. The root at 0x%08X is "
-                "not the object this derivation assumes." % (name, p, root))
+    def mapped(p):
+        return 0x02000000 <= p < 0x02400000
+
+    side_a, side_b = sides()
+    for _ in range(POPULATE_TRIES):
+        if mapped(side_a) and mapped(side_b):
+            break
+        nav.advance(POPULATE_STEP)
+        side_a, side_b = sides()
+
+    if not (mapped(side_a) and mapped(side_b)):
+        raise SystemExit(
+            "the battle object at 0x%08X exists but never populated: root+0x%X and "
+            "root+0x%X still read 0x%08X and 0x%08X after %d frames. This is NOT "
+            "the same as 'not a battle' -- the anchor resolved. Either the object "
+            "was sampled during a transition, or this mode lays it out differently."
+            % (root, SIDE_A_PTR, SIDE_B_PTR, side_a, side_b,
+               POPULATE_TRIES * POPULATE_STEP))
     if side_b - side_a != SIDE_DELTA:
         raise SystemExit(
             "the two side objects are 0x%X apart, expected 0x%X (a 0x%08X, b 0x%08X). "

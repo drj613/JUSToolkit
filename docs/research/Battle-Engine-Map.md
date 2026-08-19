@@ -943,3 +943,38 @@ collected later in that run.** The installer `0x0214F91C` fires at battle start,
 alive at phase zero and said nothing about phase eight. A control has to *recur*, or liveness has to be
 sampled alongside the measurement. This surfaced when an attribution sweep returned eight zero phases and the
 battle had already ended on the 4463-frame limit partway through.
+
+### `V = 0` generalises past the gauge family, and id 21 is positive evidence for Route B
+
+Runtime captured four valid `(id, base, duration)` triples with derefs inside the breakpoint command:
+id 21 → `480/480`, id 10 → `480/480` (twice, reproducible), id 7 → `800/800`. `r4 = handlerTable + id×8` on
+every row. So **`duration == base` on three distinct ids**, and one of them is in the **status** family
+(18–34), not the gauge family. `V = 0` is not confined to gauge effects.
+
+**id 21 firing supports P159's Route B rather than undermining "nearly unreachable".** P159's claim was
+narrower than it reads: *"of ids `0x12`–`0x22`, only `0x18` and `0x21` appear in the operand map"*, with
+`PLAUSIBLE`: statuses are inflicted through **Route B** — the staged `+0x172`/`+0x173` bytes flushed on hit at
+`0x02158B20` — while script opcodes drive gauge effects. id 21 is `0x15`, which is **not** in the operand map.
+So a status that scripts can't reach fired in ordinary play, which is exactly what Route B predicts.
+Strengthened, not confirmed: no runtime evidence yet links the staging bytes to that apply.
+
+**Route attribution is one breakpoint, not a button sweep.** The dispatcher `0x02158ED0` has 3 callers, and
+two of them are the Route B flush sites:
+
+| `LR` at the dispatcher entry | route |
+|---|---|
+| `0x02158B50` | Route B via `X+0x173` (stored **negated**) |
+| `0x02158B68` | Route B via `X+0x172` (used as-is) |
+| anything else | Route A (script opcode) or the third caller |
+
+`X = [[battleObj+0x1A8]+0x10]`. So breaking at the dispatcher entry and capturing `LR` attributes **every**
+effect that fires, for all 42 ids at once, instead of guessing inputs.
+
+**The garbage row is probably overlay aliasing, and the filter should say why rather than clip a range.**
+Runtime saw one hit at `0x02158F88` with `id = 12287` and `r4 = 0x023DE2D0`. That `r4` cannot come from
+`0x02171168 + id×8` for any id (id 12287 would give `0x02189160`). `0x02158F88` sits in the **shared overlay
+window** `0x0214CD20`+, which ov0–ov9 all alias, so when a non-ov6 overlay is resident those bytes are
+unrelated code and the register meanings don't hold. Better filter than an id range: **capture `[0x02172960]`
+at each hit and reject hits where it reads `0` — no battle means the code at that address isn't the
+dispatcher.** That drops aliased hits for a stated reason instead of silently clipping a genuine
+out-of-range id, which was the runtime loop's own objection to range filtering.

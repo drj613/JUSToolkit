@@ -23,6 +23,23 @@
 >
 > The rest of this document has not been re-audited against the current record. Treat
 > any bare "CONFIRMED" in it as unverified until it carries a bead id.
+> ### Two different multipliers, and they are easy to cross-apply
+>
+> **`arm9 0x0209FEF4` / `0x0209FF14`** — two 4×4 tables of 8.8 values holding `0x0100` (1.0) and
+> `0x0180` (1.5), read by the damage formula and indexed by the two fighters' nature slots. This is
+> the site behind "nature is read in the damage path"
+> [`jus-nature-is-read-in-damage-path-hbt`]. Whether a 1.5 cell is ever selected in play is
+> separately unobserved [`jus-nature-1p5-never-observed-uh8`].
+>
+> **`ov6 0x02158DC4`** — a completely different **×1.20**, computed as `mul` by 120 then divide by
+> 100 rather than an 8.8 table lookup, sitting beside a one-shot flag at `[sl+0xf8]`. Its
+> *arithmetic* was upheld by all three verification lenses; its *label* as a "nature ×1.5 advantage
+> multiplier" was refuted by two of three. See `Battle-Engine-Map.md` row 9.
+>
+> So "the nature multiplier was refuted" and "nature is read in the damage path" are both true —
+> **of different sites**. Different address, different value, different arithmetic. Check which one a
+> claim means before applying it.
+
 
 
 Documentation of Jump Ultimate Stars combat mechanics as implemented in the

@@ -2698,3 +2698,60 @@ and the rule I derived needs restating: **check that an artifact exists**, not "
 half-attaches, and killing gdb leaves the CPU halted — state "paused", framecount frozen, every bridge call failing
 "a command is pending", and reattaching to detach fails with `vMustReplyEmpty: timeout`. The only exit is a relaunch,
 which is safe per the above. With a healthy stub, killing gdb resumes cleanly.
+
+### `+0x134` is the earlier carrier, and the bracket narrows to two calls (P182 close)
+
+Runtime took the bracket. `CONFIRMED_RUNTIME`, same conditions as before:
+
+- At the **prologue** of `0x0215A978`: `scratch+0x134 = 384` — **already the reduced value on entry** — and
+  `+0xE8 = 0`. So the reduction is applied **before `0x0215A978` is entered at all.** Combined with both halve
+  predicates being false, that function is bounded as a **consumer, not the modifier.**
+- At `0x0215AC08`: `+0x134 = 384`, `+0xE8 = 0`, `+0x40 = 0x39` with **no `0x800` flush bit set.**
+- The scratch derivation `[[battleObj+0x1A8]+0x10]` gave `0x0220FDC4` at **both** sites, so it is confirmed against
+  two call points rather than assumed.
+
+**This redirects B11.** P180 read the `512`/`384` difference in `+0xE8` at the flush, which is true *there* — but
+`+0x134` **carries the value first** and `+0xE8` is populated later. So the hunt targets the **`+0x134` writer**; the
+`+0xE8` one is a copy. My three-offsets-no-writer result still stands, but the ordering says which offset matters.
+
+**And `+0x134` is an excellent watch target**, which strengthens `jus-fun` concretely: it is **zero except on a damage
+frame**. The prologue fired 7991 times and a `+0x134 != 0` filter passed **once**. A per-event field, cleared between
+hits — so a watchpoint on it would not drown in noise.
+
+### The real call sites, and arg1 is a literal
+
+`RETRACTED` (theirs, and I had recorded it): `0x02156EB4` is **not** the caller — it is the **return address**, the
+instruction after the `bl`. Their 23 "CALLER" rows are garbage and are withdrawn.
+
+`CONFIRMED_STATIC`: two ARM `BL` sites target `0x0215A978`, both inside `0x02156DDC` — the per-character update
+`Battle_CharaCreate` installs (P174):
+
+```
+0x02156E94: bl  0x02158B20     ; the flush + effect tick driver (P174)
+0x02156E98: mov r0, r4
+0x02156E9C: bl  0x0215C278     ; 96 bytes, 3 callees, 1 caller
+0x02156EA0: mov r0, r4
+0x02156EA4: bl  0x0215C360     ; 276 bytes, 10 callees, 1 caller
+0x02156EA8: mov r0, r4
+0x02156EAC: mov r1, #0         ; arg1 = 0
+0x02156EB0: bl  0x0215A978     ; <- call site 1 (return 0x02156EB4)
+...
+0x02156F60: mov r1, #1         ; arg1 = 1
+0x02156F64: bl  0x0215A978     ; <- call site 2 (return 0x02156F68)
+```
+
+**arg1 is a literal `0` or `1` at both sites** — a mode flag, which is what `cmp r4,#0` at `0x0215A9D0` tests. So
+`r4 = 384` could never have been arg1, and the reload correction is now confirmed from the call side as well as the
+disassembly.
+
+**The bracket, three ordered addresses in a span of 28 bytes.** Capture `scratch+0x134` at each:
+
+| address | position in the sequence |
+|---|---|
+| `0x02156E98` | after the flush/tick, before `0x0215C278` |
+| `0x02156EA0` | after `0x0215C278`, before `0x0215C360` |
+| `0x02156EA8` | after `0x0215C360`, before the damage function |
+
+Whichever transition takes `+0x134` to `384` localises the writer to **one call**. If it already reads `384` at
+`0x02156E98`, the write is upstream of the whole sequence — inside `0x02158B20` or earlier — which is also a useful
+answer. Both candidates are small and single-caller, so either one is readable in a wake once named.

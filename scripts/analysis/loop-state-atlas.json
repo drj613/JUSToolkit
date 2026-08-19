@@ -1,12 +1,12 @@
 {
-  "iteration": 177,
+  "iteration": 178,
   "phase": "combat",
-  "current_task": "P177 DONE (reordered ahead of the prompt s polled-KO task because runtime asked for a breakpointable address on the respawn re-cache, already queued as P177b): the bitset WRITER is ov6 0x0215FB3C -- same addressing as the cancel gate s read, from the write side, so r0 is battleObj+0x120 and the two halves of the bitset story meet. Nothing BLs it: it is reached through a table at 0x02172210 whose preceding bytes read \"BattleCharaDataLoad.cpp\". Ability entries are 4 bytes, KIND at +0 and ID at +1, array at [obj+0x50], dispatched through table[kind]; table[0] is the setter and four slots are a bare bx lr. Resolves P176 s layout puzzle. Gave runtime three breakpoint addresses in increasing scope.",
+  "current_task": "P178 DONE: the ability list IS in chr_b -- slot count at record+0x02, up to six one-byte slots from +0x03, zero = empty. Goku (chr_b 0): [7,15,0] -> non-zero [7,15] = the live list EXACTLY. Dummy (chr_b 70): count 5, all slots zero -> effective 0, which explains the other doc s \"count = 0, verified\". Luffy (chr_b 12): [9,25,0,0,12] -> non-zero [9,25,12], but the live list is [9,25,12,14] -- 14 is ABSENT from his record and appended LAST at runtime. CORRECTS P177 s refutation: the record holds the INDICES, the table holds the {kind,id} PAIRS. My error was reading r6+0x0A against the RECORD when r6 is char_struct+0x10 -- rule 3 broken in the wake I invoked it.",
   "queue": [
-    "P178-WHAT IS r6, the ability loader s source? It holds a count at +0x0A and a list of index bytes from +0x0B, indexing the {kind,id} array at [global]+0x50. Identifying r6 and what rewrites its list on respawn answers why the bitset changes -- the bitset is ZEROED and rebuilt each time (0x0215FADC/0x0215FAE0), so the list is the only thing that can differ.",
-    "P178b-THE POLLED-KO DISCRIMINATOR (deferred three times now): any read of char_struct+0x18 branching on zero outside the apply worker.",
-    "P178c-map the rest of table 0x02172210 -- needs a character carrying a non-zero kind, and I now know the kinds live in the global array rather than in chr_b, so I can enumerate them statically once I find that global.",
-    "P178d-auto-heal; 0x020781E4; 0x0215911C.",
+    "P179-WHAT APPENDS THE EXTRA ABILITY? Find the writer of char_struct+0x1A (count) / +0x1B (list). Luffy s live list has 14 which is nowhere in his chr_b record, appended last. If it comes from the deck or a koma this is the FIRST mechanical link between the koma/deck side and battle behaviour -- the bridge the reimplementation goal needs.",
+    "P179b-ENUMERATE THE {kind,id} TABLE at [global]+0x50 (global loaded from a pool near 0x0215FB30-0x0215FB40). The list bytes are INDICES into it, so it is the actual ability dictionary.",
+    "P179c-the polled-KO discriminator (deferred three times).",
+    "P179d-auto-heal; 0x020781E4; 0x0215911C.",
     "P168b-static writer of root+0x118 / +0x11C (runtime top ask, jus-3vg) -- would turn their empirical 0x70/0x61C validation into a structural check.",
     "P168c-what sets the gate byte 0x0217296D: find its writers. That is the thing that decides whether a mode plays at all.",
     "P168d-static writer of root+0x4C (term V).",
@@ -277,7 +277,8 @@
     "P174-effect-tick-driver",
     "P175-the-ko-signal-is-discarded",
     "P176-no-flat-reduction-in-chr_b",
-    "P177-ability-bitset-loader"
+    "P177-ability-bitset-loader",
+    "P178-ability-list-is-in-chr_b"
   ],
   "stuck": {},
   "required_reading_for_koma_tasks": [

@@ -2100,3 +2100,40 @@ those offsets was wrong, and the stride-4 story is dead.
 **One observation of theirs worth flagging before anyone misreads it:** `r0` at the loop head carries the *partial
 bitset* between iterations (`0x00000004` → `0x00004004` → `0x0000C004` → `0x0000C024`), not a count. It is the
 accumulating word, visible mid-build.
+
+### The ability list is in `chr_b` after all — count at `+0x02`, slots from `+0x03` (P178)
+
+`findings/p178-ability-list-is-in-chr_b.md`.
+
+Runtime identified the loader's source: **`r6 = char_struct + 0x10`**, count at `char_struct+0x1A`, list bytes from
+`char_struct+0x1B`. Live lists: player `count=2 [7,15]` → `0x00008080`; opponent `count=4 [9,25,12,14]` →
+`0x02005200`. Both reproduce the measured bitsets exactly.
+
+| what | confidence |
+|---|---|
+| The `chr_b` record holds **a slot count at `+0x02` and up to six one-byte ability slots from `+0x03`**, zero = empty. Not stride-4 `{kind,id}` pairs | `CONFIRMED_STATIC` |
+| Goku (`chr_b` 0): count 3, slots `[7, 15, 0]` → non-zero `[7, 15]` — **exactly** the live list, count and order | **`CROSS_CONFIRMED`** |
+| Luffy (`chr_b` 12): count 5, slots `[9, 25, 0, 0, 12]` → non-zero `[9, 25, 12]` | `CONFIRMED_STATIC` |
+| The dummy (`chr_b` 70): count 5, **all five slots zero** → effective count 0. This explains `Ability-Bitset-Is-Not-Resistance.md` reporting "count = 0, verified by reading the array" — same structure, read from the other end | **`CROSS_CONFIRMED`** |
+| Across all 74 records the count at `+0x02` is **2–6**, so the slot region is `+0x03`–`+0x08` and never overruns | `CONFIRMED_STATIC` |
+| **Luffy's `14` is absent from his record entirely** — the byte `0x0E` appears nowhere in his 60 bytes — and the live list puts it **last** | `CONFIRMED_STATIC` |
+| The live list is the record's non-zero slots **plus abilities appended from elsewhere** (deck, koma, or support). Goku's exact match is consistent — he had nothing appended | `PLAUSIBLE` |
+
+**This corrects P177's refutation rather than reversing it.** The refutation stands as stated: the loader dispatches
+through a `{kind,id}` table at `[global]+0x50`, and the record does not hold those pairs. What I got wrong was the
+*conclusion* — I decided the record therefore wasn't the source at all and called `r6` "a third structure". The
+record holds the **indices**; the table holds the **pairs**. Both real, different objects.
+
+**The specific error, and it is rule 3 broken in the wake I invoked it.** I read `r6+0x0A` as `0x30` for Luffy's
+*record*, called that "not a plausible count", and ruled the record out — but `r6` is `char_struct+0x10`, so I was
+testing the record against an offset belonging to a different structure. Two structures with similar contents, and
+I resolved the conflict by discarding one instead of asking whether both were real.
+
+**Open, and now the sharpest question in the ability system:** what appends the extra ability? Find the writer of
+`char_struct+0x1A`/`+0x1B`. If it comes from the deck or a koma, it is the **first mechanical link between the
+koma/deck side and battle behaviour** — the bridge the reimplementation goal needs.
+
+**Two runtime corrections recorded:** their `arr=` field is garbage (they printed `[r2+0x50]` at `0x0215FAE4`, but the
+array loads at `0x0215FB00`, so `r2` wasn't the global yet — read it at or after `0x0215FB00`); and their before/after
+capture didn't happen because they started from `battle_rule` with an approach calibrated for `fight_base`, so the hit
+missed. Heartbeat confirms the session was live, so it is a **stimulus** failure, not an instrument one.

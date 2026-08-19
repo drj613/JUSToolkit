@@ -1,17 +1,17 @@
 # Session Ledger — JUS Reverse Engineering
 
-Last updated: 2026-08-18 ~21:15 (ledger wake 3, session `justoolkit-87`)
+Last updated: 2026-08-18 ~21:45 (ledger wake 4, session `justoolkit-87`)
 
 ## 1. Current state
 
 This file is a human catch-up summary — not the system of record. beads (`br`) is the record; protocol in `docs/orchestration/`.
 
 **Live sessions (from ListAgents):**
-- `justoolkit-fa` [cedb9e] — busy, 1h. **Runtime**. Since wake 2: ran 13 rule modes through distinct battle handlers, confirmed HP derivation in a discriminating case (mode 3 moved the heap), found nav.advance overshoot bug (jus-vkj). Closed jus-jto, jus-uvs, jus-bfw. 4 new commits.
-- `battle-engine-atlas-76` [2e8ac4] — idle, 1h. **Static**. Now at **P166**. Mapped the 31x12 per-mode handler table at ov6 `0x02170EAC`, CROSS_CONFIRMED root+0x08 and root+0xC8. 5 new commits. Queued ov1 reader census.
-- `justoolkit-d9` [699d1d] — idle 2h. Coordinator; likely dormant.
+- `justoolkit-fa` [cedb9e] — busy, 1h+. **Runtime**. Since wake 3: confirmed gate byte for jus-2cu (mode 2 installs, mode 12 doesn't reach check), refuted install-then-revert hypothesis, confirmed all 6 handler table indices match atlas's table, replaced hardcoded HP constants with anchor derivation (jus-zco). 5 new commits.
+- `battle-engine-atlas-76` [2e8ac4] — idle, 1h+. **Static**. Now at **P167**. Retracted the gate-refusal = count claim, refuted install-then-revert, mapped the installer gate at `0x0217296D`. 4 new commits since wake 3.
+- `justoolkit-d9` [699d1d] — idle 2h+. Coordinator; dormant.
 
-**Coord beads:** 17 total (4 closed, 13 open). Protocol adoption complete — both loops using structured labels consistently.
+**Coord beads:** ~19 total (6 closed, 13 open). Both loops using structured labels. Good coordination quality — atlas self-retracted cleanly in the map doc.
 
 ## 2. Open audit flags
 
@@ -41,18 +41,24 @@ The discriminating case ran (mode 3 moved root by +0x180) and the derivation pas
 ### Flag H — RESOLVED: atlas not idle
 Atlas committed 5 times between wakes 2–3 (P165 addenda + P166 + P166 addendum). Currently idle after completing a full wake. Not a violation.
 
-### Flag I — NEW: jus-baz approaching aging threshold
-"Runtime audit of atlas's published addresses" is a P1 `kind:request` / `state:proposed` now in its second wake with no status change. Runtime has been busy with higher-priority work (rule-mode sweep, HP derivation). If still untouched next wake, it trips the one-completed-wake aging rule per the protocol.
+### Flag I — ESCALATED: jus-baz aging violation — runtime nudged
+"Runtime audit of atlas's published addresses" is a P1 `kind:request` / `state:proposed` now in its **third wake** with no status change. Trips the one-completed-wake aging rule. Runtime has been busy with other atlas asks but hasn't acknowledged this one. **Doorbelled runtime at wake 4** asking for a status update on the bead.
 
-### Flag J — NEW: jus-vkj frame overshoot instrument defect
-nav.advance(N) doesn't advance exactly N frames — the emulator free-runs between IPC calls. Measured: requested 600 → observed 640/620/620; requested 2300 → observed 5310. Any duration computed by summing advances is wrong. No downstream beads depend on exact frame counts yet (jus-uvs used an honest bracket). Worth tracking because jus-6fo (full match timeline) will need frame accuracy.
+### Flag J — jus-vkj frame overshoot instrument defect (carried forward)
+nav.advance(N) doesn't advance exactly N frames. No downstream beads depend on exact frame counts yet. Worth tracking because jus-6fo (full match timeline) will need frame accuracy.
+
+### Flag K — NEW: jus-cvx and jus-fms approaching 3-wake TTL
+Both `state:proposed` P2 requests from atlas, now in their third wake. Not yet a violation (TTL is 3 wakes for claims, aging rule is 1 wake for requests). jus-cvx and jus-fms are requests, so they're at the aging threshold. Lower priority than jus-baz; not nudging yet since runtime just got doorbelled.
+
+### Flag L — NEW: atlas retractions in map doc, not in beads
+Atlas retracted "gate refusal = count confirmation" and refuted "install-then-revert" in Battle-Engine-Map.md (`ddc5d33`). Both are documented inline with RETRACTED/REFUTED labels. No coord beads track these retractions. Low severity — the claims were self-contained and the decomposition is clean — but the protocol prefers beads for traceability.
 
 ---
 
 # Per-Session Detail
 
 What each active session is doing, where things live, and what they've delivered.
-Last updated: 2026-08-18 21:15 — ledger wake 3
+Last updated: 2026-08-18 21:45 — ledger wake 4
 
 ## Ultimate goal
 

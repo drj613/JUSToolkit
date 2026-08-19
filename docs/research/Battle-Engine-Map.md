@@ -1196,3 +1196,44 @@ finding it needs a different instrument, not a wider search of the same kind.
 that offset. I knew that — it is why the campaign has an overlay-aliasing rule — and I still published seven
 hits as if a shared offset implied a shared type. The check that would have caught it took one lookup:
 *name the containing function before believing the hit.*
+
+### RETRACTION (P171): my opcode-based family boundary is refuted; the id-range boundary is restored
+
+Runtime's big sampling run:
+
+```
++0x172  ids  7, 9x2, 13, 17x2          gauge
++0x173  ids 21, 22, 32x3               status channel
+```
+
+**id 21 dispatched on `+0x173`, and id 21 is not opcode-bearing** (`+0x7 = 0xFF`). So:
+
+- `RETRACTED` — my P170 "refinement" that the real family line is the status opcode at handler `+0x7`. It
+  does not select the channel. The **id-range boundary 18–34 fits every one of the 28 observations** and the
+  opcode boundary does not. My original definition was right and the refinement was wrong.
+- `RESTORED` — ids 18–34 are the status family, by range.
+- **id 21 is un-dropped.** I had used the opcode definition to discard it as "not really a status, and no LR
+  anyway"; it has an LR now and it is a *counterexample* to the opcode reading, not a non-participant. The
+  runtime loop retracted their own "drops out cleanly" line at the same time.
+
+What survives about `+0x7`: 12 of the 42 ids carry a status opcode (`0x19`–`0x22`) and 5 ids inside 18–34 do
+not (21, 26, 27, 33, 34). That is a real property of the data. It just isn't the channel selector.
+`not claimed`: what the opcode *does* distinguish. Best open question it leaves — the five opcode-less ids in
+the status range are status-channel effects that set no status flag, so what do they do instead?
+
+**The two-channel model is stronger, not weaker: n=28 dispatches, zero crossover in either direction.**
+Nothing from the gauge range has appeared on `+0x173`, nothing from 18–34 on `+0x172`.
+
+**`V = 0` on ten ids** — 7, 9, 10, 13, 17, 19, 20, 21, 22, 32 — `duration == base` every time. And **every**
+`node+0x0` is the stub, so the one-shot result holds across ten ids rather than three. That strengthens the
+reframe: if nothing ticks anywhere, `node+0xE` is a state timer serviced by something outside this subsystem.
+
+**Coordination rule (the runtime loop's, on themselves, and it is the sharpest one either of us has produced).**
+They repeated my "our two splits agree without sharing anything" back approvingly without checking my half.
+**An independent-agreement claim is only as independent as its weaker half — and the party receiving the
+agreement is the one least motivated to audit it.** My retraction cost a wake; their echo would have hardened
+the bad claim into canon.
+
+**Planning caveat for the staging-writer hunt:** melonDS watchpoint support is limited and untested by the
+runtime loop (`jus-fms`) — they have only ever used execution breakpoints successfully. Any design that
+depends on a write-watchpoint needs a support test budgeted first.

@@ -149,3 +149,29 @@ were independently identified as unselectable.
 are real characters, but no row here describes them and no deleted map named them. Ichigo's row
 is also malformed (`formType` in the `chr_b` column); his real data is in
 `Ichigo-Character-Map.md`, one of the two surviving verified maps.
+
+## Caveat on the identity fields, added the same wake they were recovered
+
+Trying to use this table as ground truth for mapping `chr_b.bin`'s fields immediately failed,
+and the failure says something about the table rather than about the file.
+
+`classId` sits at record offset `0x0E` as a little-endian u16 for **49 of the 70** rows with a
+numeric `chr_b`. For the other 21 it does not — and for **13 of those 21 the `classId` value
+does not appear at offset `0x0E` of any record in the file at all**: Allen 321, Fuusuke 435,
+Gintoki 349, Kakashi 278, Kenshin 304, Kinnikuman 422, Momotaro 428, Neuro 669 among them.
+
+A field is not 70% of a field. Either the `chr_b` numbers in those rows are wrong, or `classId`
+in this table was derived from something other than `chr_b.bin`. Four of the thirteen are rows I
+recovered above from deleted maps that carried the header **`Map status: STUB`** — so their
+identity values may have been inferred rather than read, and they arrived in this table looking
+exactly as solid as the other 59.
+
+**So: treat the `charId` / `classId` / `jpower` columns as unverified until someone pins those
+fields' offsets in `chr_b.bin` directly.** The `chr_b` index numbers themselves are better
+supported — Edajima at 67 is confirmed three independent ways — and the on-disk ability window at
+record `+0x03` is independent of this table entirely
+[`jus-ondisk-ability-list-at-chrb-0x03-kfc`].
+
+This is the third extraction artifact found in this one file today, after `File` in the `chr_b`
+column and a regex that lifted "tier-2 modifier" out of prose as a `tier` value. All three read
+as plausible data.

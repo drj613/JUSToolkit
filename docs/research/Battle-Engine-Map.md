@@ -822,3 +822,17 @@ Anything I design for them has to respect these:
 not — same instrument, different weight. That is why `root+0xC8` going `1→0` with `root+0x000` restored to
 the pre-named `0x02150F65` upgraded the rule-completion path, while "the state sequence never stalls" left
 the same-tick slot re-read at `CONFIRMED_STATIC`.
+
+### The status param array is a data file (P169)
+
+`findings/p169-state-bin-is-the-param-array.md`.
+
+| what | where | confidence |
+|---|---|---|
+| The dispatcher's `paramArray = [[0x02172984]+4]` is the data of **`bin/state.bin`** — 336 bytes = exactly 42 × 8, parsing cleanly against P158's code-derived record layout | `jus_files/ripped_jus_files/bin/state.bin`; ov6 loader pools `0x02172364` (`"bin/state.bin"`), `0x02172374` (`"bin/exadd.bin"`) | `CONFIRMED_STATIC` |
+| All **42 base durations** now known (frames). Longest: ids 7, 8 = `800`; ids 4, 5, 33 = `700`; ids 16, 19, 23, 35 = `600` | `state.bin` `+0x2` per entry | `CONFIRMED_STATIC` |
+| `flags & 1` ⇄ `base == 0` holds across all 42 entries — instant effects have no duration to scale. Bit `0x10` set exactly on ids 20–34, matching the slot selector P158 read from code | `state.bin` `+0x0` | `CONFIRMED_STATIC` |
+| `+0x4` is signed and carries positives (`10`…`60`) on instant entries, negatives (`-2`, `-4`, `-5`) on long timed ones — P158's "one field covers drain and fill", confirmed by the data | `state.bin` `+0x4` | `CONFIRMED_STATIC` |
+| `+0x6` is `0x0000` in all 42 entries | `state.bin` | `CONFIRMED_STATIC` (still `not claimed` what it would mean if non-zero) |
+| **Term `V` is readable, not timeable.** `0x02158F88` stores the formula's result at `node+0xE`, so `V = 0` predicts `node+0xE == base` exactly. One 16-bit read settles it — immune to the ~400-frame timeline resolution, needs no HP baseline, and needs no clean-rules run | ov6 `0x02158F88` | `CONFIRMED_STATIC` |
+| Which in-play action inflicts which id | — | `not claimed`. Next static task (move-script opcodes). Until then the runtime test is a survey: any `(id, duration)` pair settles `V`. |

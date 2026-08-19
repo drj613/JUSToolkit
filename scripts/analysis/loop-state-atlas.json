@@ -1,14 +1,15 @@
 {
- "iteration": 222,
+ "iteration": 223,
  "phase": "combat",
  "current_task": "P213-what sets bit 5 of [r8+0x40] (the resistance gate)",
  "queue": [
-  "P223-CHECK not hunt: does any formula stop fail to move current HP at char+0x18? If they all move it, the contact gate does not exist and P219-P222 aimed at a phantom. Runtime holds this; my part is to stop treating the out-param consumer as the top item.",
-  "P223b-Does a deck write char+0x13..0x15? The koma lead is located, not confirmed.",
-  "P223c-What are bits 7:6 of char+0x15? Preserved by the read-modify-write at 0x021571D4, no account.",
-  "P223d-chr_b -> jpower linkage. The live ability list is at char+0x1A/+0x1B; the on-disk half is the remaining unknown.",
-  "P223e-Fix Overlay-Residency-By-Mode.md: the SHAPE claim, plus a row for in-battle menu modes (menus demonstrably swap overlays and the doc is silent). No boundary address.",
-  "P223f-Where are bits 7-9 and 15-17 of +0x44 consumed?"
+  "P224-What appends ability id 0x0E (14) at runtime? On disk Luffy has 3 abilities, live he has 4. The loader compacts and appends. This is the last unexplained step in the ability chain.",
+  "P224b-Find the loader: what writes char+0x1A (count) and char+0x1B.. (ids) from chr_b+0x03? That pins the compaction and probably the append site too.",
+  "P224c-chr_b -> jpower linkage proper: which jpower entries does a character record select? Note the record contradiction (block 0 called Goku but Goku B resolved to 146/195/218 outside it). Runtime says a named base-2 move is no longer needed, so this is for its own sake.",
+  "P224d-Does a deck write char+0x13..0x15 (the three nature slots)? Koma lead is located, not confirmed.",
+  "P224e-What are bits 7:6 of char+0x15? Preserved by the read-modify-write at 0x021571D4, no account.",
+  "P224f-Why does no character carry id 11 (blunt weakness) when it is wired to bit 12 of the gate word?",
+  "P224g-Fix Overlay-Residency-By-Mode.md: SHAPE claim plus a row for in-battle menu modes. No boundary address."
  ],
  "done": [
   "K1-koma-data-survey",
@@ -269,7 +270,7 @@
   "Is HP computed as size*k at runtime, or tabulated per panel? Naruto 4-koma=144=4*36; if size*k then size5=180, size6=216, size7=252, size8=288. One reading settles it."
  ],
  "notes": "Iteration 146 done (delegated + verified). THREE closures: (a) 0x800's polarity is category ROUTING, not a contradiction -- 0x020801D4 is loop-continue, 0x0207F7C8 is the next category check; (b) record+0x34 is NOT write-once -- a four-function flag API (0x0207D064/0x0207D0BC/0x0207CF18/0x0207CF78) mirrors changes into +0x38 and the +0x08 node list, and the destructor 0x0207CCD4 memsets 0x188; (c) P144's 0x6FF puzzle SOLVED -- ov6 ORs [record+0x150]&0xFF into +0x34, and 0x6FF covers bits 0-7, so the test reads runtime bits not the 0x100 construction seed. Top task: read record+0x150, which now drives the whole category gate. STANDING: query.py mis-bins functions in this module (4 leaves here, 8 in P125, 2 in P126) -- verify any address before trusting its size or container. The +0x5C base-confusion trap has 7 instances; on +0x34 (1092 hits) the base register is the ONLY struct identifier. CHARTER: updated in P146b on the user's direct authorization. North star = docs/PROJECT-GOAL.md (master, f47d63d); Mission 2's current focus is the entity/projectile subsystems. justoolkit-06 is the designated runtime validator -- send them struct-field hypotheses and breakpoint requests rather than leaving questions unresolved; that is the only route to dynamic evidence without breaking the static-only rule.",
- "last_wake": "2026-08-19 P222",
+ "last_wake": "2026-08-19 P223",
  "wakeup_default_seconds": 900,
  "consecutive_no_progress_wakes": 0,
  "k1c_helper_passives": {
@@ -2412,5 +2413,21 @@
   "BUT_SIX_FITS_NOT_ONE": "I enumerated the proportional lattice for raw 336: SIX integer-base fits. base 7 (nature 1.0, 0 add, 1 sub); base 7 (1 add, 2 sub); base 3 (nature 1.0, 3 add, 0 sub); base 3 (nature 1.5, 1 add, 0 sub); base 3 (nature 1.5, 2 add, 1 sub); base 3 (nature 1.5, 3 add, 2 sub). \"5.250/0.75 = 7\" assumes one subtract gate and no nature. Base 3 is one of the bases observed live in dm_battle. So: flat refuted, proportional confirmed, base and gate configuration UNIDENTIFIED.",
   "TENSION_I_RAISED": "base 7 is DOWN+B, the only base-7 move in the record, and DOWN+B is gotcha 4 -- it forces an opponent switch so the post-hit HP word belongs to a DIFFERENT character. That is what produced the bad 5.000 row that cost thirty iterations. So the interpretation that makes the arithmetic work is the one that invalidates the oracle. Three identical drops at a fixed address argues against a switch (after a switch that address holds the inactive character and drops would stop, not repeat) but x walked 405->339->293 so state was not reset. Rule out explicitly.",
   "CONTACT_GATE_MAY_BE_A_PHANTOM": "jus-formula-bp-not-a-hit-oracle-ve6 is retracted -- its whole evidence was \"eight identical stops with HP pinned at max\". HP was not pinned; they were reading max. So those eight stops may have been real landed hits, and there is no downstream rejection to find. \"What consumes the out-param at sp+0x4c and discards it\" has been my top static item since P219 and may be a question about a phenomenon that never happened. DEMOTED from a hunt to a check: with current HP at +0x18 read correctly, does ANY formula stop fail to move it?"
- }
+ },
+ "P223_ONDISK_ABILITY_LIST_FOUND": {
+  "answer": "chr_b record + 0x03, FIVE BYTES, SPARSE -- zeros are empty slots, not terminators. Luffy is chr_b record 12; record 12 +0x03..+0x07 = 09 19 00 00 0C -> ids 9, 25, 12. Runtime live list [9, 25, 12, 14].",
+  "why_the_search_failed": "on disk it is 09 19 00 00 0C -- a two-byte ZERO GAP inside the list, so a contiguous-triple search cannot match. 25 of 74 records have a zero inside their non-zero span, so a contiguous search fails on a third of the file. Confirms the standing no-terminator-convention note from a new angle.",
+  "checks": [
+   "Luffy window is exactly his known triple, in order",
+   "only 2 of 74 records contain all three of 09/19/0C anywhere; one is record 12",
+   "ability.bin is 228 bytes of 4-byte entries = 57 abilities, ids 0..56. Window: 0 of 370 non-zero bytes out of range. Control +0x08..+0x0C: 154 of 370 out of range, max 255",
+   "slot occupancy is 0, 2, 3 or 4 -- NEVER 1 and NEVER 5",
+   "DECISIVE: exactly four records have no abilities -- 70, 71, 72, 73 -- and the handoff independently identifies 70-73 as the unselectable Debug series, established from selectability not bytes. The window predicts which records are not real characters and is right on all four.",
+   "45 of 57 ids used, commonest appearing 7-10 times -- a catalogue distribution, not noise"
+  ],
+  "loader_behaviour": "on disk 3 abilities, live 4. The loader compacts non-zero slots into char+0x1B with the count at char+0x1A and APPENDS 0x0E (14) at runtime. That accounts for the id the handoff flagged as being in Luffy live list but nowhere in his record. It is a runtime addition, not a data field. WHAT appends it is still unknown.",
+  "id_11_unused": "id 11 is carried by NO character on disk. Japanese bitset names give 11 = blunt weakness, the add-side counterpart of 9 = blunt resist. So a weakness ability exists in the catalogue, is wired into the damage path as bit 12, and nobody has it. Ids 22, 33, 34, 36, 37, 49-53 also unused.",
+  "no_codex_deliberately": "the strongest check is already cross-representational -- a byte window predicting the Debug series, where Debug series came from selectability. Handing codex the same bytes would be one artifact read twice."
+ },
+ "P223_lattice_correction": "Runtime corrected my six-solution lattice to two, and they are right. Bits 12/13 are mutually exclusive (table[idx] is one value, 12 tests ==1 and 13 tests ==2), same for 4/5, so adds <= 2 and subs <= 2 and net is in [-2,+2]. Re-enumerated: ONLY base 7 nature x1.0 net -1, and base 3 nature x1.5 net +1. My six allowed add=3, which my own class-table finding forbids. I built the space from the arithmetic instead of from the mechanism -- distinct from the earlier count error (not querying my own data); this was not applying my own finding. Worse because a longer candidate list reads as MORE thorough, so being wrong in the direction of caution made it invisible."
 }

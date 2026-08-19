@@ -50,6 +50,7 @@ import emu_health as EH     # noqa: E402
 import boot_verified as BV  # noqa: E402
 
 OUT = "/tmp/jus_match"
+ALLOW_CONTAMINATED = False   # only ever set by an explicit CLI flag
 
 # THESE ARE NO LONGER CONSTANTS. resolve_addresses() overwrites every one of them
 # from the battle root before a match is sampled; the values here are only the
@@ -142,6 +143,54 @@ def cli(*args):
 
 def peek(addr, length):
     return json.loads(cli("peek", hex(addr), str(length)))["result"]["value"]
+
+
+RULE_MODE, RULE_TIME = 0x020AFEA0, 0x020AFEAC
+RULE_ITEMS, RULE_GIMMICK, RULE_TEAM = 0x020AFEBB, 0x020AFEBC, 0x020AFEBD
+
+
+def conditions():
+    """Read the full conditions block from RAM. Never from the harness's report."""
+    return {"rule_mode": peek(RULE_MODE, 1),
+            "time_limit_frames": peek(RULE_TIME, 4),
+            "items": peek(RULE_ITEMS, 1),
+            "gimmick": peek(RULE_GIMMICK, 1),
+            "team": peek(RULE_TEAM, 1)}
+
+
+def require_clean_rules(allow_contaminated=False):
+    """REFUSE TO RUN with items or gimmicks on. This is a gate, not a report.
+
+    THE BUG THIS EXISTS FOR IS NOT A MISSING CHECK. A previous run read
+    items=1 gimmick=1, printed both values correctly, and started anyway --
+    the check ran, its output was right, and nothing was gated on it. A
+    conditions block that only gets printed is a conditions block that gets
+    read past, and no amount of discipline in a note fixes that. So the
+    machine refuses.
+
+    The Battle path is why this matters: it defaults items AND gimmicks ON,
+    and unlike the training flow nothing in it clears them. boot_verified's
+    rules_off() works there, it simply has to be called first.
+
+    --allow-contaminated exists because a deliberately contaminated run is a
+    legitimate experiment. It has to be typed, and it is stamped into the
+    timeline so the result can never be mistaken for a clean one.
+    """
+    c = conditions()
+    dirty = [n for n in ("items", "gimmick") if c[n]]
+    if dirty and not allow_contaminated:
+        raise SystemExit(
+            "REFUSING TO RUN: %s still ON (items=%d gimmick=%d, read from RAM at "
+            "0x%08X/0x%08X).\n"
+            "The Battle path defaults both ON and nothing in that flow clears them.\n"
+            "Call boot_verified.rules_off() and re-save the savestate, or pass "
+            "--allow-contaminated if the contamination is the point."
+            % (" and ".join(dirty), c["items"], c["gimmick"],
+               RULE_ITEMS, RULE_GIMMICK))
+    if dirty:
+        print("WARNING: running CONTAMINATED on purpose -- %s ON. Stamped into the "
+              "timeline." % ", ".join(dirty))
+    return c
 
 
 def rule_running():
@@ -421,6 +470,7 @@ def wait_until_live(max_waits=12):
 def play(rounds):
     """Seek until an attack connects, then hold the range and keep attacking."""
     os.makedirs(OUT, exist_ok=True)
+    cond_block = require_clean_rules(ALLOW_CONTAMINATED)
     resolve_addresses()
     buf = wait_until_live()
     if not plausible(buf):
@@ -510,7 +560,8 @@ def play(rounds):
         prev = s
 
     with open(os.path.join(OUT, "timeline.json"), "w") as f:
-        json.dump({"end_reason": end_reason, "samples": timeline}, f, indent=1)
+        json.dump({"conditions": cond_block, "contaminated_run": ALLOW_CONTAMINATED,
+                   "end_reason": end_reason, "samples": timeline}, f, indent=1)
     print("\n%d samples written to %s/timeline.json (end: %s)"
           % (len(timeline), OUT, end_reason))
     return timeline
@@ -518,6 +569,7 @@ def play(rounds):
 
 def main():
     sys.stdout.reconfigure(line_buffering=True)
+    global ALLOW_CONTAMINATED
     slot, boot, rounds = None, False, 150
     a = sys.argv[1:]
     for i, x in enumerate(a):
@@ -527,6 +579,8 @@ def main():
             rounds = int(a[i + 1])
         elif x == "--boot":
             boot = True
+        elif x == "--allow-contaminated":
+            ALLOW_CONTAMINATED = True
     if boot:
         # From a cold emulator, because boot_verified starts at the title screen and
         # will not find it if the ROM is already somewhere else.

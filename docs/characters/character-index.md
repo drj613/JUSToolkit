@@ -150,28 +150,50 @@ are real characters, but no row here describes them and no deleted map named the
 is also malformed (`formType` in the `chr_b` column); his real data is in
 `Ichigo-Character-Map.md`, one of the two surviving verified maps.
 
-## Caveat on the identity fields, added the same wake they were recovered
+## Caveat on the identity fields — corrected the same wake
 
-Trying to use this table as ground truth for mapping `chr_b.bin`'s fields immediately failed,
-and the failure says something about the table rather than about the file.
+**The field is fine. This table's column is not.**
 
-`classId` sits at record offset `0x0E` as a little-endian u16 for **49 of the 70** rows with a
-numeric `chr_b`. For the other 21 it does not — and for **13 of those 21 the `classId` value
-does not appear at offset `0x0E` of any record in the file at all**: Allen 321, Fuusuke 435,
-Gintoki 349, Kakashi 278, Kenshin 304, Kinnikuman 422, Momotaro 428, Neuro 669 among them.
+`classId` is the little-endian u16 at `chr_b` record offset `0x0E`, and it reproduces
+`jus_files/exported_combat/chr_b.json` exactly for **all 74 records**. So the field is
+well-defined and the project's exporter is byte-faithful.
 
-A field is not 70% of a field. Either the `chr_b` numbers in those rows are wrong, or `classId`
-in this table was derived from something other than `chr_b.bin`. Four of the thirteen are rows I
-recovered above from deleted maps that carried the header **`Map status: STUB`** — so their
-identity values may have been inferred rather than read, and they arrived in this table looking
-exactly as solid as the other 59.
+The `classId` column in the table above agrees with the binary for **49 of 70** rows and
+disagrees for 21, from mixed causes — Bobobo and DonPatch are off by one (582 written, 581 in the
+file), while Allen (321 vs 576), Eve (310 vs 562), Gintoki (349 vs 596) and Kagura (443 vs 341)
+are unrelated. Thirteen of the written values appear nowhere in the file because they were never
+in it.
 
-**So: treat the `charId` / `classId` / `jpower` columns as unverified until someone pins those
-fields' offsets in `chr_b.bin` directly.** The `chr_b` index numbers themselves are better
-supported — Edajima at 67 is confirmed three independent ways — and the on-disk ability window at
-record `+0x03` is independent of this table entirely
-[`jus-ondisk-ability-list-at-chrb-0x03-kfc`].
+I first read that as "the field is unreliable for a fifth of the roster". Wrong: **the field is
+100% of a field; the column is 70% of a transcription.**
 
-This is the third extraction artifact found in this one file today, after `File` in the `chr_b`
-column and a regex that lifted "tier-2 modifier" out of prose as a `tier` value. All three read
-as plausible data.
+**So read identity from `chr_b.json` or from the binary, never from the markdown here.** Nothing
+in this impugns the `chr_b` index numbers — the disagreements are two claimed `classId` values at
+an agreed index, and the bytes settle which is right. Four of the recovered rows above came from
+maps headed `Map status: STUB`, so their values may have been inferred rather than read; that
+caveat stands on its own.
+
+This file has produced four extraction artifacts in one day — `File` in the `chr_b` column of
+eleven blank rows, `formType` in a twelfth, a regex that lifted "tier-2 modifier" out of prose as
+a `tier` value, and a `classId` column right 70% of the time. All four read as plausible data.
+Treat this as a convenience index and the binary as the source for anything load-bearing.
+
+## Three of the four unmapped records are now placed by series
+
+Not named — placed. From `chr_b.json` and the on-disk ability window
+[`jus-ondisk-ability-list-at-chrb-0x03-kfc`]:
+
+| record | classId | charId | tier | abilities | placement |
+|---|---|---|---|---|---|
+| 1 | 256 | 7 | 2 | 7, 43 | **Dragon Ball.** Shares Goku's `classId` 256, `charId` 7, tier and `formType` 0; sits immediately after him. Differs in one ability (43 vs Goku's 15) and in stat/pointer fields. |
+| 39 | 564 | 3 | 2 | 3, 38 | `classId` 564 is carried by 39 and 40 alone. Neighbours are Eve (562) and Rukia (565), so the 560s span more than one series. |
+| 40 | 564 | 3 | 1 | 3, 38, 48 | Same `classId`, tier 1 rather than 2, and a superset ability list — two tiers of one fighter. |
+| 50 | 582 | 14 | 2 | 14, 48, 21 | **Bobobo-bo Bo-bobo.** Shares Shinsetsu's `classId` 582, `charId` 14, tier, `formType` 2 and its exact ability list. |
+
+`charId` is not a series key: `charId` 3 spans Bleach and D.Gray-man, and `charId` 7 spans eight
+Dragon Ball fighters.
+
+**A correction worth carrying:** records 12 and 18 are *not* byte-identical, and neither are 48
+and 50. They share an **ability window** — `09 19 00 00 0C` for the first pair — while differing
+in 16 and 17 bytes respectively. "Identical ability list" is the claim; "byte-identical record"
+was mine and is wrong.

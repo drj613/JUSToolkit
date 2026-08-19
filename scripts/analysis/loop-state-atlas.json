@@ -1,14 +1,14 @@
 {
- "iteration": 217,
+ "iteration": 218,
  "phase": "combat",
  "current_task": "P213-what sets bit 5 of [r8+0x40] (the resistance gate)",
  "queue": [
-  "P218-TTL WATCH ON MY OWN BEAD: jus-nature-is-read-in-damage-path-hbt is state:static-confirmed with no runtime number, while five documents now assert 1.5 prominently. If it is still unmeasured after three wakes, downgrade it to SPECULATIVE myself rather than wait to be told. Wake 1 of 3 was P216.",
-  "P218a-Fix the SHAPE claim in Overlay-Residency-By-Mode.md: \"roughly 40% is writable data\" reads as scatter; it is one contiguous split with the overwritten part at the bottom including the entry point. Runtime has retired the stale caveat and replaced the noise explanation; do this edit after theirs so the doc changes once. Do NOT add the boundary address -- the method cannot justify its precision.",
-  "P218b-Contact gate, REFRAMED: the formula runs constantly on a static element and everything is rejected downstream. Find what consumes the out-param at sp+0x4c in caller 0x02080F14 and what discards it. Do NOT look for a per-swing contact predicate near the formula -- that framing is refuted by nine ambient evaluations.",
-  "P218c-Where is the on-disk ability list? chr_b.json has no ability field and the 60-byte records lack Luffy 09 19 0C. Unblocks the id-10 lookup and jus-zko.",
-  "P218d-What writes r4+0x175, the packed three-nature byte, and what sets bits 6-7 of [arg1+0x18] that selects among them? This is the koma-to-damage route if it exists.",
-  "P218e-Where are bits 7-9 and 15-17 of +0x44 consumed?"
+  "P219-Contact gate, target unchanged but premise repaired: find what CONSUMES the out-param at sp+0x4c in caller 0x02080F14 and what DISCARDS it. Justification is no longer \"the formula runs continuously\" (withdrawn) but \"nine instances created by a known touch stimulus were all rejected downstream\". Do not cite continuity.",
+  "P219b-Is the base-2 descriptor at 0x021BA4B0 the touch/support-summon element? Static angle: find what writes an element with base 2 and class 0, and whether the support-summon path allocates from a fixed descriptor.",
+  "P219c-Fix the SHAPE claim in Overlay-Residency-By-Mode.md (\"roughly 40% is writable\" reads as scatter; it is one contiguous split from the bottom including the entry point). Do NOT add the boundary address -- a monotone bisection cannot justify its precision.",
+  "P219d-Where is the on-disk ability list? chr_b.json has no ability field; the 60-byte records lack Luffy 09 19 0C.",
+  "P219e-What writes r4+0x175 (three packed 2-bit natures) and what sets bits 6-7 of [arg1+0x18] that selects among them? The koma-to-damage route if it exists.",
+  "P219f-Where are bits 7-9 and 15-17 of +0x44 consumed?"
  ],
  "done": [
   "K1-koma-data-survey",
@@ -269,7 +269,7 @@
   "Is HP computed as size*k at runtime, or tabulated per panel? Naruto 4-koma=144=4*36; if size*k then size5=180, size6=216, size7=252, size8=288. One reading settles it."
  ],
  "notes": "Iteration 146 done (delegated + verified). THREE closures: (a) 0x800's polarity is category ROUTING, not a contradiction -- 0x020801D4 is loop-continue, 0x0207F7C8 is the next category check; (b) record+0x34 is NOT write-once -- a four-function flag API (0x0207D064/0x0207D0BC/0x0207CF18/0x0207CF78) mirrors changes into +0x38 and the +0x08 node list, and the destructor 0x0207CCD4 memsets 0x188; (c) P144's 0x6FF puzzle SOLVED -- ov6 ORs [record+0x150]&0xFF into +0x34, and 0x6FF covers bits 0-7, so the test reads runtime bits not the 0x100 construction seed. Top task: read record+0x150, which now drives the whole category gate. STANDING: query.py mis-bins functions in this module (4 leaves here, 8 in P125, 2 in P126) -- verify any address before trusting its size or container. The +0x5C base-confusion trap has 7 instances; on +0x34 (1092 hits) the base register is the ONLY struct identifier. CHARTER: updated in P146b on the user's direct authorization. North star = docs/PROJECT-GOAL.md (master, f47d63d); Mission 2's current focus is the entity/projectile subsystems. justoolkit-06 is the designated runtime validator -- send them struct-field hypotheses and breakpoint requests rather than leaving questions unresolved; that is the only route to dynamic evidence without breaking the static-only rule.",
- "last_wake": "2026-08-19 P217",
+ "last_wake": "2026-08-19 P218 (message-driven: the shared-emulator confound)",
  "wakeup_default_seconds": 900,
  "consecutive_no_progress_wakes": 0,
  "k1c_helper_passives": {
@@ -2305,7 +2305,8 @@
    "jus-zko (repriced, the load-time chr_b hop)"
   ],
   "labelling_rule": "the loop that produced a claim never applies the confirming label. jus-bit5-is-ability-10-rxl is mine; runtime labels it. jus-gate-word-is-r8-0x44-fnz is theirs; I labelled it.",
-  "runtime_prereg": "runtime pre-registered: my decode predicts bit 4 SET and bit 5 CLEAR on the 6.000 capture. Bit 5 set instead is a refutation, not a reinterpretation."
+  "runtime_prereg": "runtime pre-registered: my decode predicts bit 4 SET and bit 5 CLEAR on the 6.000 capture. Bit 5 set instead is a refutation, not a reinterpretation.",
+  "roster_warning": "Do NOT hard-code partner names. Confirmed dead this session: justoolkit-fa, justoolkit-dc (predecessors), justoolkit-e2 (runtime), justoolkit-e8 (ledger). Live at P218: justoolkit-8f (touch investigation, non-loop), justoolkit-3e (unknown, asked), justoolkit-09 (asked which role). Resolve via ListAgents EVERY wake and put durable content in beads addressed to the ROLE, because a message to a named session can fail silently after the session dies."
  },
  "P214_RESULT": {
   "fast_lane": "Shot at the runtime capture plan BEFORE the run. Their breakpoint 0x0208257C reads r1 as the class index, but r1 there is r5*(nature-0x100). With nature 1.0 -- true in every measurement ever -- r1 = 0, which is INSIDE their predicted {0,1}. It would have PASSED for the wrong reason and confirmed \"category 1, bit 4 fired\" without reading the index at all. Fix: break at 0x02082584 instead; a GDB breakpoint halts before the instruction, so r1 (loaded 0x02082580) and r4 (destroyed by 0x02082584) are both live. Pushed to runtime and onto jus-peek-plus-0x44-and-flag-writer-uvp.",
@@ -2364,5 +2365,15 @@
   "OV12_SCOPE_CORRECTION": "Runtime correctly pointed out a monotone bisection cannot detect a moving boundary (never re-probes a point used to set lo/hi), so 0x021C13B0 precision is withdrawn and my twice-bisect card inherited the flaw. BUT the reconciliation survives -- it only needs the intact FRACTION, which their 32-sample fixed probe set gives independently (48.7%). Replacement test is theirs: ~40 fixed offsets, framecount recorded, advance, re-read the same 40; flips are direct evidence, flip count is the distance. NOTE their fresh-launch arm tests harness determinism only -- a savestate restores RAM wholesale so the boundary is IN the state and must reload identically; it says nothing about drift.",
   "CONSTRAINT_ON_MY_HUNT": "Nothing below ~0x021C13B0 holds ov12 code in battle. Any contact-gate hypothesis resting on an address in ov12 low region is dead without further argument. Above the boundary ov12 code IS reachable.",
   "PATTERN_3x_stale_above_correction": "Third instance this week of one shape: a stale claim sitting ABOVE its own correction in the same document. (1) Battle-Engine-Map.md 1-HP floor at 1272/1291/1409, corrected at 1836. (2) HANDOFF-2026-08-19-runtime-shutdown.md:62 gives the wrong +0x40 value WITH \"re-derive before trusting\" printed beside it. (3) Overlay-Residency-By-Mode.md says the window is unresolved, resolves it 30 lines below. Worse than an uncorrected error: the nearby fix signals maintenance so the stale claim reads as vetted, and both halves are well-formed so nothing automated sees it. Practical form: when correcting a doc, grep the WHOLE file for the old claim first -- the fix goes at every instance, not once at the bottom. Recorded as a standing lesson."
+ },
+ "P218_CONFOUND": {
+  "what": "The emulator is a SHARED, UNBROKERED resource. justoolkit-8f -- a session outside the role table, tasked with investigating why in-battle touch does not work -- drove melonDS concurrently with the runtime loop damage measurements, sending live in-battle touch at DS (140,90) via input.NDSTapDown held frames 0-5 with a 30-frame tail. They confirmed it within minutes of being asked and released the emulator. Bead jus-emulator-access-not-exclusive-tum.",
+  "my_corroboration": "ListAgents showed two justoolkit sessions started 31m ago that were nowhere in the role table, one busy -- independent of their screenshot (session roster vs captured pane). It also showed the ledger justoolkit-e8 already gone.",
+  "WITHDRAWN_MINE": "My P217 reframe of the contact gate rested on \"nine formula evaluations with NO INPUT\". That premise is now \"no input from the measuring session\". The claim that the formula runs CONTINUOUSLY is withdrawn and unestablished.",
+  "BUT_THE_TARGET_IMPROVED": "The nine evaluations now have a KNOWN STIMULUS -- another session tapping. So they are evidence, not noise: a touch reaches the collision pipeline, spawns nine instances from one descriptor (r3 = 0x021BA4B0, base 2, class 0, sl walking a 0x2C stride), the formula computes a value for each, and something DOWNSTREAM discards all of it. So touch is not an input-handling failure; it is a rejection between the out-param at sp+0x4c in 0x02080F14 and the HP write. The out-param consumer is a better target than before, because the rejection is attributable rather than inferred.",
+  "base_2_identity_LEAD": "base 2 is neither Goku B (8) nor DOWN+B (7). A dedicated low-damage descriptor fits a support summon or dream-attack contact. Not established.",
+  "ROSTER_CHURN": "Within the hour: justoolkit-e2 (runtime) and justoolkit-e8 (ledger) both vanished mid-thread; justoolkit-09 appeared. I am the only loop seat left that I can confirm. My message to the runtime loop was undeliverable, so its content went into a bead comment addressed to the ROLE not the name. The protocol keys off roles but has nothing that notices when a role goes VACANT -- a request parked on a dead session looks exactly like one being worked.",
+  "what_I_did_to_shared_canon": "Added justoolkit-8f to the COORDINATION-PROTOCOL.md role table as an active non-loop session, and wrote the exclusive-access gap up in place (commit f84f644). Did NOT add the proposed mandatory conditions-block line (was exclusive access held, and how established) -- that changes the provenance schema and no ledger session is visible to arbitrate. Escalated allocation to DJ as jus-owner-emulator-allocation-q1j.",
+  "pushback_recorded": "The outgoing runtime loop concluded its three wakes of self-criticism were \"confidently wrong about the cause\". Too harsh: each correctly found that a readout could not distinguish its hypotheses (stop counter, r10, degenerate 10.000), and every one of those defects is real and would have bitten under exclusive access. The confound explains the nulls; it does not repair the designs. Introspection found the design flaws and COULD NOT have found the environmental one, because nothing in the readouts pointed outside the process. Argument for an external check, not against introspection."
  }
 }

@@ -3,7 +3,7 @@
   "phase": "combat",
   "current_task": "P168 DONE: the mode-12 gate is resolved to arm9. State 1 (0x0214DAA4) advances only if 0x0214DADC returns non-zero; that gates on the veneer 0x0207382C, which DISCARDS the caller r0 and binds 0x0207387C to the singleton 0x0214BD50. That function returns 1 once [0x0214BD58] is set, and sets it when ((counter+4) >> shift) & 0xFFFF >= 0x10, with counter at 0x0214BD52 and shift at 0x0214BD51. PLAUSIBLE: a fade/transition progress object, making mode 12 a stuck transition -- which is also why its framebuffer was black. Codex wrong on one operand (cmp r0 vs cmp r1); bits + query.py settled it.",
   "queue": [
-    "P169-what is 0x0214BD50 and who RESETS its counter (0x0214BD52) / sets its shift (0x0214BD51). Names the transition and says why mode 12 never finishes. Note the neighbourhood: 0x0214BD80 is the battle resource manager, so 0x0214BD50/60/70 are sibling globals in that table.",
+    "P169-READ THE REST OF 0x0214DADC, from 0x0214DAEA to its return. The veneer check is only an EARLY return; the value state 1 tests is produced downstream (bl 0x0214D9C8, then blx 0x021683B8 / 0x02153108 / 0x0215FAA8). THAT is the mode-12 discriminator. Also enumerate the callback-slot states FROM THE CODE: runtime found a 4th state 0x0214DB61 between the poll and 0x0214DBCD and warns four is a lower bound.",
     "P169b-root+0x08 writer (arm9 + register-offset stores; ov6 immediate pattern exhausted).",
     "P169c-static writer of root+0x118 / +0x11C (runtime top ask, jus-3vg).",
     "P169d-static writer of root+0x4C (term V, still SPECULATIVE).",
@@ -2133,11 +2133,17 @@
       "2026-08-18 P166: \"the gate refusing indices 31 and 40 confirms the 31-record count\" -- RETRACTED same wake. Runtime cannot distinguish in-range-never-installs (mode 12) from out-of-range-rejected (31/40); all three rest at default+flag0. Record count decomposed instead: lower bound >=31 is CROSS_CONFIRMED (index 30 installs its exact table entry), upper bound =31 is CONFIRMED_STATIC (pointer run ends at 0x02171020, next words are packed data). Dependents: the map row and the P166 finding; both corrected. Nothing else built on it.",
       "2026-08-18 P166: \"mode 12 installs then reverts\" -- REFUTED by runtime the same wake it was proposed; removed from the active task.",
       "2026-08-18 P167: \"0x0217296D is the gate / the mode-12 discriminator\" -- NOT the discriminator. Runtime (jus-2cu) showed the check never runs for mode 12, so the byte reading 0 is a consequence. It IS confirmed as gating that path, and it IS a poll (114 hits, flips 0->1 then installs). Dependents: the map row (corrected in place) and the P167 finding. Nothing else built on it.",
-      "2026-08-18 P167 addendum: \"r4 = r0 = 0x023DDE58 at the arm9 callback dispatch\" -- RETRACTED, my decode error. I read mov r0,r4 at 0x02028614 and skipped that bl 0x0201B45C at 0x0202861C clobbers r0 before the blx. Runtime: r4=0x023DAC68 (registration object), r0=0x023DDE58 (=root+0x144, the callback argument). Dependents: the map row (corrected in place) and the jus-rpl card, which named the wrong object. Root cause: I inferred from a quick listing read WITHOUT a Codex check -- exactly the case the charter says to hand over before concluding."
+      "2026-08-18 P167 addendum: \"r4 = r0 = 0x023DDE58 at the arm9 callback dispatch\" -- RETRACTED, my decode error. I read mov r0,r4 at 0x02028614 and skipped that bl 0x0201B45C at 0x0202861C clobbers r0 before the blx. Runtime: r4=0x023DAC68 (registration object), r0=0x023DDE58 (=root+0x144, the callback argument). Dependents: the map row (corrected in place) and the jus-rpl card, which named the wrong object. Root cause: I inferred from a quick listing read WITHOUT a Codex check -- exactly the case the charter says to hand over before concluding.",
+      "2026-08-18 P168: \"state 1 and 0x0214DADC gate on the same value (0x0207382C s return)\" -- RETRACTED. That return only causes an EARLY return; the real return comes from the rest of 0x0214DADC. Runtime: the done flag is 1 in mode 12 too, so the veneer returns 1 there and mode 12 STILL does not advance.",
+      "2026-08-18 P168: \"0x0214BD50 is a fade/screen-transition progress object\" and its corollary \"mode 12 s black screen IS the stuck transition\" -- RETRACTED (were PLAUSIBLE). Bytes byte-identical across four unrelated game states. Dependents: the P168 finding (banner added) and two map rows (corrected in place)."
     ],
     "tooling_note": "xrefs.json cannot be trusted for Thumb callers (~89% literal-load blindness, P160). Hand-rolled exhaustive Thumb BL/BLX scan over ov06.bin is the reliable method and found the single caller immediately. Worth promoting into query.py.",
     "codex_disagreements": [
       "P168: Codex read cmp r0,#16 where the encoding E3510010 says cmp r1,#0x10. Resolved by bits + query.py + a coherence check (its reading made the store unconditional). Second Codex operand error after P158s mla swap."
+    ],
+    "runtime_corrections_accepted": [
+      "The callback-slot sequence is at least FOUR states (0x0214DB61 sits between the poll and 0x0214DBCD, holding ~30 frames, invisible at 40-frame sampling). Four is a LOWER BOUND -- enumerate from the code, not from sampling.",
+      "The static counter at 0x0214BD52 is NOT independent evidence for the retraction: my own decode early-returns once the flag is set, so a set flag PREDICTS a static counter. Only the flag carries the argument."
     ]
   }
 }

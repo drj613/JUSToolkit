@@ -1,5 +1,16 @@
 # P168 — Mode 12 stuck in state 1: a counter never finishes
 
+
+> **RETRACTED IN PART, same day, on runtime evidence (`jus-zko`).** Two claims in this finding are dead:
+> (1) "both levels gate on the same value" — the veneer's return only triggers an *early* return, and
+> `0x0214DADC`'s real return comes from the rest of the function; (2) the `PLAUSIBLE` reading of
+> `0x0214BD50` as a fade/transition object, and with it the story that mode 12's black screen *is* that
+> stuck transition. The done flag `[0x0214BD58]` reads `1` before START in **both** mode 2 and mode 12, and
+> the 16 bytes are byte-identical across four unrelated game states. The decode below is unaffected and
+> still `CONFIRMED_STATIC`; what it *means* was wrong. The mode-12 discriminator is downstream, inside
+> `0x0214DADC` past `0x0214DAEA`. See `Battle-Engine-Map.md` for the corrected rows.
+
+
 **Iteration 168. Static, following the runtime loop's three-state observation.** The callback slot `[0x023DAC68+0x40]` walks `0x0214DAA5` → `0x0214DB21` → `0x0214DBCD`, and mode 12 never leaves state 1. Task: read state 1, find what blocks the advance.
 
 Found. The chain bottoms out at an arm9 counter with a done-flag that never latches.

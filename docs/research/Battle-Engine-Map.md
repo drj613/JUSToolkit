@@ -773,11 +773,17 @@ and wrong.
 | what | where | confidence |
 |---|---|---|
 | State 1 (`0x0214DAA4`) rewrites the slot to the poll **only** if `0x0214DADC` returns non-zero; otherwise it returns having changed nothing | ov6 `0x0214DAA4` | `CONFIRMED_STATIC` |
-| `0x0214DADC` gates on the same value — it `blx`es `0x0207382C`, then `cmp r0,#0` / `beq` to its own return | ov6 | `CONFIRMED_STATIC` |
+| `0x0214DADC` `blx`es `0x0207382C`, then `cmp r0,#0` / `beq` to its own return | ov6 | `CONFIRMED_STATIC` |
+| ~~Both levels gate on the same value, i.e. on what `0x0207382C` returns~~ — **RETRACTED.** That return only triggers an *early* return; `0x0214DADC`'s actual return value is produced by the rest of the function (`bl 0x0214D9C8` at `0x0214DAEA`, then three more calls). Runtime: the done flag is `1` in mode 12 too, so the veneer returns `1` there as well, yet mode 12 still never advances — so the discriminator is **downstream** | ov6 / runtime `jus-zko` | `RETRACTED` |
 | `0x0207382C` is a **bound-method veneer**: `ldr ip,[pc,#4]` → `0x0207387C`, `ldr r0,[pc,#4]` → `0x0214BD50`, `bx ip`. **The caller's `r0` is discarded**, so the check is not a function of the battle object | arm9 | `CONFIRMED_STATIC` |
 | Four identical veneers in a row bind `0x0207387C` to `0x0214BD50` / `0x0214BD70` / `0x0214BD70` / `0x0214BD60` — same method, four instances, in the same globals table as the `0x0214BD80` resource manager | arm9 `0x0207382C`–`0x02073868` | `CONFIRMED_STATIC` |
 | The condition: returns 1 once `[0x0214BD58]` is set, and sets it when `((counter + 4) >> shift) & 0xFFFF >= 0x10`. Fields: `0x0214BD51` shift (byte), `0x0214BD52` counter (halfword, `+=4` per call), `0x0214BD58` done flag (byte) | arm9 `0x0207387C` | `CONFIRMED_STATIC` |
-| `0x0214BD50` is a fade / screen-transition progress object, and mode 12's black screen *is* the stuck transition rather than a separate symptom | arm9 | `PLAUSIBLE` |
+| ~~`0x0214BD50` is a fade / screen-transition progress object, and mode 12's black screen *is* the stuck transition~~ — **RETRACTED** (was `PLAUSIBLE`). The 16 bytes read byte-identical in four unrelated states (deck editor, arena menu, rule select, training battle): `02 01 20 00 3f 00 00 00 01 00 00 00`. Something that doesn't change when the game changes isn't tracking a transition | runtime `jus-zko` | `RETRACTED` |
+| The done flag `[0x0214BD58]` is already `1` before START in **both** mode 2 and mode 12, and the counter never moves. Per my own decode a static counter is *predicted* by a set flag, so only the flag carries the argument | runtime `jus-zko` | **`CONFIRMED_RUNTIME`** |
+| `0x0214BD50` is **arm9-owned static memory, not overlay space** — it sits below every overlay base (`0x0214CD20` for ov0–ov9, `0x02172A60` for ov10/11, `0x021AC1C0` for ov12/13), so there is no aliasing hazard and the runtime read is of the object I decoded. It is also past `arm9.bin`'s image end (`0x020A9158`), so it is BSS or autoload: zero at load, written once at init | arm9 | `CONFIRMED_STATIC` (clears the runtime loop's caveat) |
+| `0x0214BD50` has **7 pool references, all inside one arm9 module** (`0x02073798`–`0x02073FF4`), alongside `0x0214BD60` (2) and `0x0214BD70` (5) — a family of sibling objects managed by one subsystem | arm9 | `CONFIRMED_STATIC` |
+| The callback-slot sequence is **at least four states**, not three: `0x0214DAA5` → `0x0214DB21` → `0x0214DB61` → `0x0214DBCD`. `0x0214DB61` holds only ~30 frames and was invisible at 40-frame sampling. Four is a **lower bound** — treat the sequence as unenumerated until it comes from the code side | runtime `jus-zko` | **`CONFIRMED_RUNTIME`** |
+
 
 **Codex was wrong on one operand and the bits settled it.** It matched every byte width, base offset, the
 early-return, and the `lsl`/`lsr` masking (noting on its own that `ldrh` zero-extension makes the `asr`

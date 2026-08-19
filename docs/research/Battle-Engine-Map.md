@@ -2755,3 +2755,56 @@ disassembly.
 Whichever transition takes `+0x134` to `384` localises the writer to **one call**. If it already reads `384` at
 `0x02156E98`, the write is upstream of the whole sequence — inside `0x02158B20` or earlier — which is also a useful
 answer. Both candidates are small and single-caller, so either one is readable in a wake once named.
+
+### Regen is fine-grained, `+0x134` is invisible to polling, and the 800 is probably a different move (P183)
+
+Runtime's heal-ON capture, from a new durable savestate with rules `0/0/0` verified from RAM and heal verified
+behaviourally. 22 damage events, opponent `152.000 → 138.656` net.
+
+**`CONFIRMED_RUNTIME`: regen is fine-grained, so `2.0`/frame is refuted.** HP settled on **8874 raw = 138.656
+displayed**, a *non-integer*. Damage arrives in whole units, so only regen can leave HP on a fraction. It is neither a
+`2.0`/frame tick nor the snap-to-max their poke suggested — it is a continuous fine-grained restore. That was the half
+they pre-registered and it holds.
+
+**`CONFIRMED_RUNTIME`: a heal-ON reading is regen-dominated, not offset by a constant.** 22 events at a nominal 800
+raw is 17600 gross against a net loss of 854 — **regen absorbed ~95%**. So "true minus a fixed 2.0" is the wrong
+*shape* for a heal-ON measurement, independent of the magnitude.
+
+**`CONFIRMED_RUNTIME`, and it upgrades `jus-fun` from convenient to necessary: `scratch+0x134` is invisible to peek
+polling.** They polled HP and `+0x134` every frame across four presses and caught it **zero** times — including on two
+heal-OFF hits that visibly moved HP by `−6.000`. Its lifetime is shorter than a frame. **Only a breakpoint sees it.**
+So the field is not reachable by any polling method, and a watchpoint is the only instrument that can catch the write.
+
+**A positive control is the only reason they know that.** Their poll-based witness failed on a *known* hit — without
+the control they would have reported "heal ON, no hit landed" from a detector that cannot detect hits at all.
+
+**Their self-correction, caught before publishing:** they first read "`oppHP_raw = 9728` at every damage event" as
+proof the hit was erased. But `0x0215AC08` fires **before** the drain — `+0xE8` is still `0` there, as we established
+— so HP at that breakpoint is the **pre-hit value by construction** and can never show the effect. The evidence
+damage applies is the net `152.000 → 138.656`. They nearly sent "heal ON erases hits entirely", a strong claim built
+on a structural misreading of our own bracket.
+
+**The unexplained 800, and the arithmetic favours "different move".** `+0x134` read **800** on all 22 heal-ON events
+against **384** on the heal-OFF hits, same target and same move — but with different press parameters (tail 30 vs
+tail 0/40).
+
+| candidate relation to 384 | value | matches 800? |
+|---|---|---|
+| ×2 | 768 | no |
+| ×2.5 | 960 | no |
+| ×1.5 | 576 | no |
+| +128 (one 2.0 unit) | 512 | no |
+| ratio as measured | 2.0833 | not a clean multiplier |
+| difference | 416 raw = 6.5 displayed | not a known unit |
+
+**Neither a clean multiplier nor a clean offset from `384` or `512`.** So "same move, modified" fits badly, while
+`12.5` displayed is a plausible *distinct* move value — the known B and DOWN+B figures are `8.000`/`6.000` and
+`7.000`/`5.000`, all whole units, and a longer hold producing a different attack would explain a different base
+cleanly. `PLAUSIBLE`, and the discriminator is cheap: **capture a move or attack id alongside `+0x134` at the same
+breakpoint.** If it differs between the 384 and 800 cases, the mystery dissolves and no scaling mechanism is needed.
+`not claimed` until then — and not to be built on, per their flag.
+
+**Net on the doc, theirs and I agree:** the `+2.0` as a literal `2.0`/frame tick is refuted. Its *single-hit
+minimum-of-the-dip* figure is **not** refuted — that is a different regime, one hit from a fresh load — and stays open
+pending a parameter-matched capture. The flat conclusion still rests on the shift-invariant difference and their
+heal-OFF `6.000`.

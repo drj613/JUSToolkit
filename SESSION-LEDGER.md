@@ -1,34 +1,28 @@
 # Session Ledger — JUS Reverse Engineering
 
-Last updated: 2026-08-18 ~23:45 (ledger wake 8, session `justoolkit-87`)
+Last updated: 2026-08-19 ~00:15 (ledger wake 9, session `justoolkit-87`)
 
 ## 1. Current state
 
 This file is a human catch-up summary — not the system of record. beads (`br`) is the record; protocol in `docs/orchestration/`.
 
 **Live sessions (from ListAgents):**
-- `justoolkit-fa` [cedb9e] — busy, 3h+. **Runtime**. Since wake 7: status-system breakpoints working (jus-5qy), captured gauge ids via Route B, n=1→n=4 status hits all on +0x173. Filed jus-law (owner questions) and jus-z4q (gauge watch). 4 new commits.
-- `battle-engine-atlas-76` [2e8ac4] — idle, 3h+. **Static**. Now at **P170**. Retracted P159 route division, confirmed channel split is the two staging bytes, n=17 hits. 4 new commits.
-- `justoolkit-ba` [009c74] — new, idle, 3 min. Unknown role.
-- `trainer-5b` [73e646] — new, busy, 4 min. Unknown role.
+- `justoolkit-fa` [cedb9e] — busy, 4h. **Runtime**. Since wake 8: owner ground truth applied (most of jus-law answered), live handler table confirms atlas's drain fns, B=6.000 vindicated with gimmicks off, id 21 on +0x173 cuts against atlas's opcode refinement. 5 new commits.
+- `battle-engine-atlas-76` [2e8ac4] — idle, 4h. **Static**. Retracted opcode family boundary, corrected stub conflation (7 ids not 10), recorded owner ground truth (DoT exists with 1-HP floor, story-mode missions close the 22-vs-31 gap). 5 new commits.
+- `justoolkit-ba` [009c74] — idle, 35 min. Atlas told it to stand down (avoiding duplicate filing).
+- `trainer-5b` [73e646] — busy, 36 min. Unknown role.
 
-**Coord beads:** ~26 total (10+ closed, 14 open). No active protocol violations.
+**Coord beads:** ~28 total, 15 open. Owner ground truth was the big event this wake — most of jus-law is now answered.
 
-## 1.5. OWNER ACTION REQUESTED — jus-law questions (surface on next check-in)
+## 1.5. OWNER ACTION — status update
 
-Runtime filed a standing bead (jus-law) for questions only the owner can answer cheaply. **9 open questions**, each saves runtime roughly a wake. Most useful first:
+**jus-law:** Most questions answered by owner ground truth (2026-08-18 evening). Key answers: character switching is "just taps" (runtime still can't land them — trying panel centres and longer holds next), down+B confirmed as change attack (hits opponent, changes THEIR character), items DO inflict statuses (chili=burn, purple flask=poison), DoT exists with a 1-HP floor, exotic missions are story-mode only.
 
-- **Q1** — Goku up+X produced ids 19 AND 32. Which is the freeze? Is the other a second effect or coincidence?
-- **Q2** — How do you switch characters mid-battle? Touch-screen koma taps do nothing.
-- **Q3** — Is Rukia reachable as the active character, or support-only? Needed for status+damage test.
-- **Q4** — How do you perform the character-change attack (down+B)? Needs a gauge/state/landing?
-- **Q5** — Do items inflict statuses? Which items?
-- **Q6** — Any move with a known long-duration visible effect? (Calibrates frame count = 60fps.)
-- **Q7** — Slow passive HP regen (~1.2 over 720 frames) on Battle path — expected or a residual?
-- **Q8** — Mode 12 shows treasure chest on black, modes 18/20 show instant WINNER. Reachable in play?
-- **Q9** — What characters are chr_b 35, 20, 41 in the "Koma R, G, Y" deck?
+**Remaining open on jus-law:** Q1 (which of ids 19/32 is the freeze), Q6 (calibration move), Q7 (HP drift), Q8 (rephrased: what are the treasure-chest and instant-WINNER screens).
 
-Full detail: `br show jus-law`
+**jus-fun:** Fable + Codex recommendations recorded. Fable: patch melonDS DataWrite (~15 lines, half day). Codex: savestate bisection + instruction step (no source changes). Both say disable JIT first. Awaiting owner decision on direction.
+
+**Atlas flagged a protocol gap:** role resolution has no mechanism — names drift across restarts and the roles table in COORDINATION-PROTOCOL.md isn't updated. Atlas had to double-deliver a message because it couldn't resolve the ledger. Suggested: sessions announce their role on startup into a bead, or the roles table gets updated on each restart.
 
 ## 2. Open audit flags
 
@@ -70,8 +64,8 @@ Both have real status now after wake 6 nudge.
 ### Flag L — Atlas retractions in map doc, not in beads (carried forward, low severity)
 Six retractions now (+ P159 route division, `e131e68`). All in commits/map doc. Pattern for the owner.
 
-### Flag N — NEW: jus-zko at 3-wake TTL
-`state:plausible`, created wake 5, now wake 8 (3 wakes). It's an anchor/ask rather than a claim, so the 3-wake TTL for claims doesn't strictly apply, but it's been sitting untouched. Runtime has been busy with status-system work. Not nudging — lower priority than the active status captures.
+### Flag N — jus-zko at 4th wake (past TTL)
+`state:plausible`, created wake 5, now wake 9. The gate-chain question may be partly answered by jus-2cu and jus-usf work. Not nudging — runtime is actively working the status system and the gate question's urgency has decreased as the mode-12 investigation progressed through other means.
 
 ### Flag M — RESOLVED: jus-5kf
 HP recovery was respawn animation, not auto-heal. Closed. New bug: jus-kdf (match_run --boot calls undefined autoheal_off()).
@@ -87,7 +81,7 @@ Three nudges over 7 wakes surfaced a recurring pattern. Runtime's feedback, cons
 # Per-Session Detail
 
 What each active session is doing, where things live, and what they've delivered.
-Last updated: 2026-08-18 23:45 — ledger wake 8
+Last updated: 2026-08-19 00:15 — ledger wake 9
 
 ## Ultimate goal
 

@@ -2507,3 +2507,37 @@ capture distinguishes flat-tick regen from deficit-scaled regen.
 **Operational note for the record, theirs:** enable heal **first**, then walk in, then take the ladder.
 `autoheal_set(True)` restores HP to full and resets positions, so flipping it mid-sequence destroys both the range and
 the HP ladder — which is why their heal-ON arm returned three "never connected" reps.
+
+### The ladder can manufacture its own confirmation — and the window needs dense early samples (P181 close 4)
+
+**A silent failure mode, theirs, and it is the sharpest design catch in this thread.** With heal ON, HP regenerates
+*between* reps, and re-approaching costs 20–60 steps at 12 frames each. If HP is back at max before the next hit
+lands, **there is no ladder** — every rep is effectively a from-max hit and the cross-rep contrast is empty. And the
+failure reads as **identical drops**, which is *also* the signature of the answer "regen is uniform". So a broken
+setup can hand back a manufactured confirmation of the doc's assumption. Same shape as the auto-guard control that
+passed today because the attack never connected.
+
+Their fix is right and I would not improve on it: **demote the ladder, promote the window.** A single hit's 80-frame
+trace shows the drop *and* the climb, and the climb alone separates the shapes — equal increments for a flat tick,
+shrinking increments for deficit-scaled, one large jump for snap-to-max (which would kill the `+2.0` outright). No
+ladder survival required, no prediction table. Plus their guardrail: **HP immediately before every hit goes in the
+record**, and if it reads max on every rep the ladder is reported **DESTROYED**, not uniform. A null that cannot be
+distinguished from a broken setup is not a result.
+
+**What I can add: the `+2.0` story makes a rate prediction, and that rate breaks their sampling.** If "one frame of
+regen landing with the hit" is literal, regen is `2.0` displayed **per frame**:
+
+| candidate rate | source | frames to refill an 18.0 deficit | samples landing on the climb at 15/80 frames |
+|---|---|---|---|
+| 2.0 / frame | the doc's own `+2.0` story, taken literally | **9** | ~1.7 |
+| 12.0 / frame | their poke observation (24.0 in ~2 frames) | **1.5** | ~0.3 |
+
+**Both candidate rates put the entire climb inside the first ~10 frames**, while uniform sampling across 80 frames
+places a point only every ~5.3. So the current spacing reads one or two points on the thing being measured, and
+neither rate would be distinguishable from the other. **The shape needs dense early sampling — every frame for the
+first ~15, then coarse.**
+
+That also turns the rate itself into a test of the doc's story rather than only the shape: if the climb completes in
+~1–2 frames, "one frame of regen" cannot account for a `2.0` deficit and the `+2.0` explanation fails even if regen
+*is* uniform. Their poke pointed at exactly that, and they were right to hold it as confounded rather than banking it
+— but a real-hit window trace at frame resolution settles what the poke only suggested.

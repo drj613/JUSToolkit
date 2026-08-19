@@ -54,17 +54,28 @@ leaving a handoff. Read the one for your role first:
 - static → `docs/orchestration/HANDOFF-Atlas-Shutdown-2026-08-19.md`
 - ledger → `HANDOFF-LEDGER-2026-08-19.md`
 
-**The damage chain is solved end to end.** Reduction is a **×0.75 multiplier, 25% of base
-per gate** — not a flat −2.0 [`jus-reduction-is-quarter-multiplier-xk1`]. Two gates read
-the class table at `0x02092E68`; the formula routine is `0x020823E4`.
+**The damage arithmetic is measured; the gate structure is not.** A landed hit loses 25% of
+its base per gate — not a flat −2.0 [`jus-reduction-is-quarter-multiplier-xk1`]. The formula
+routine is `0x020823E4` and each adjustment is the same quarter-step, `(base<<6)>>8`.
 
-**The scope caveat matters more than the result.** In every measurement ever taken the flag
-word read `0x00000008` with bit 5 clear, so only the class-1 path has been exercised.
-"Total reduction is 0%, 25% or 50%" is a three-point model with **one point sampled**. It
-is not characterised.
+**The gate word is `[r8+0x44]`, not `[r8+0x40]`** [`jus-gate-word-is-r8-0x44-fnz`], with
+`r8 = *(arg0+0x0C)`. Six gates hang off it — bits 4, 5 and 6 subtract a quarter, bits 12, 13
+and 14 add one — and **none of them is unconditional**. Bits 4, 5, 12 and 13 also require a
+category from the sixteen-byte table at `0x02092E68`, whose entries are three distinct values
+(`0`, `1`, `2`), not two.
 
-**The exact next action** is to find what sets bit 5 of `[r8+0x40]`. It is the last unknown
-in the chain, and it is where abilities are expected to feed in at load time.
+**The scope caveat matters more than the result, and it got worse.** The earlier note that "the
+flag word read `0x00000008` with bit 5 clear, so only the class-1 path has been exercised" was
+a read of the wrong word — `0x08` is bit 3 of `[r8+0x40]`, which gates none of the six
+adjustments. The gate word has therefore never been read at all, and which gate produced the
+measured −25% is open: bit 4, bit 5, and the class-free bit 6 are all candidates. "Total
+reduction is 0%, 25% or 50%" is not the shape of the code either — the code sums up to three
+quarter-steps in either direction.
+
+**The next action** is a breakpoint at `0x0208257C` on a landed hit, reading `r2`, `r8`, `r4`,
+`r1`, `r5` and `r0` in one capture. That gives the enabled gates, both object addresses, the
+category index and the pre-adjustment base together. It replaces the older plan of watching
+`[r8+0x40]` for a bit-5 write, which was aimed one word low.
 
 **Nature does not affect damage** [`jus-nature-does-not-affect-damage-0c6`]. The 1.5×
 advantage multiplier in `Combat-Mechanics.md` and `Combat-Mechanics-Reference.md` is wrong;

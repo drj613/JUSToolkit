@@ -41,6 +41,14 @@ The formula is `0x020823E4` (arm9, 680 bytes), called at `0x02081280` from pipel
 
 ## 2. THE EXACT NEXT ACTION
 
+> **Correction, 2026-08-19, by the next runtime session** — this whole section is aimed one word
+> low. The six ±25% gates read `[r8+0x44]`, not `[r8+0x40]`, and none of them is unconditional
+> [`jus-gate-word-is-r8-0x44-fnz`]. The `flag40 = 0x00000008` reading below is therefore a read of
+> a word that gates none of them, so the "only the class-1 path has been measured" conclusion does
+> not follow — no gate has been sampled at all. The replacement action is a breakpoint at
+> `0x0208257C`, not a watch. The rest of the section (the two instruction addresses, the table, the
+> load-time reasoning) survives; the offset and the "unconditionally" do not.
+
 **Find what sets bit 5 of the flag word `[r8+0x40]`.** It is the last unknown in the chain.
 
 atlas found two gates, both reading the byte table at `0x02092E68` = `[1,1,2,2,2,2,2,2]`:

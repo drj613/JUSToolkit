@@ -1027,3 +1027,52 @@ instrument and absent stimulus: **an instrument whose cost suppresses the phenom
   `0x02156A38`, `BattleChara.cpp`) allocates the `0x1F0`-byte battle character and writes `+0x1E0` **once,
   from `arg0`, at construction**. A character change therefore cannot work by mutating it — it must swap
   which character object is active. So `+0x1E0` is a per-object identity, not a live "who is out" field.
+
+### The real division of labour is between the two staging bytes (P170, runtime + static)
+
+Runtime caught a status arriving on the other flush site:
+
+| flush site | staging byte | ids observed | family |
+|---|---|---|---|
+| `0x02158B68` | `X+0x172`, used as-is | 1, 9, 10, 13 (n=6) | gauge |
+| `0x02158B50` | `X+0x173`, **negated** | 20 (n=1) | status |
+
+So **both families inflict through Route B, and the channel split is between the two staging bytes** — which
+also explains why the code flips the sign on exactly one of them. That replaces the script-vs-Route-B
+division P159 proposed and P170 retracted.
+
+`n=1 on the status side`, in the label rather than a footnote: one status id, one LR, one matchup. The gauge
+side is n=6 across four ids. **If a status ever lands on `+0x172`, the model collapses.**
+
+**Independent static support, found the same wake.** Every writer of both bytes lives in **ov12**, not ov6 —
+so staging and flushing are in different overlays. Two of them are dedicated two-instruction leaf setters,
+one per channel:
+
+```
+0x021BC194: strb r1, [r0, #0x172]   ; bx lr      <- the +0x172 setter
+0x021BC19C: strb r1, [r0, #0x173]   ; bx lr      <- the +0x173 setter
+```
+
+Separate public setters per byte is the two-channel structure by construction, arrived at from the writer
+side with no knowledge of the runtime LRs. Full writer list: `+0x172` at `0x021BC194`, `0x021C7A10`,
+`0x021C9770`, `0x021C9C24`; `+0x173` at `0x021BC19C`, `0x021C7A14`, `0x021C9AD8`.
+
+**One caution for the gauge side.** `0x021C7A0C`–`0x021C7A1C` is an initialiser: `mov r0,#1` /
+`strb r0,[r4,#0x172]` / `strb r1,[r4,#0x173]` / `strb r1,[r4,#0x174]` with `r1 = 0`. So `+0x172` is set to
+**1** and `+0x173` to `0` at init. `PLAUSIBLE`: id 1 arriving via `+0x172` is a *default* staging rather than
+an inflicted effect — consistent with runtime seeing id 1 dispatch with no store (`flags & 1`, base 0).
+`not claimed` whether the other `+0x172` ids are defaults or inflicted.
+
+**`V = 0` now on six ids across both families** — 7, 9, 10, 13, 20, 21. `duration == base` every time.
+
+**Fourth instrument rule (runtime's, caught on themselves).** A *filtered* breakpoint that stays silent
+cannot certify itself — silence is indistinguishable from "never installed". They recorded "0 dispatches
+across 27 trials" with no evidence the conditional breakpoint was live, and it was only cleared by a lucky
+late hit in the free-running gap. The fix is a third breakpoint on something that fires regularly, not
+waiting for luck.
+
+**And the effects are mostly the COM's doing.** Driving attacks produced nothing; *landing* attacks produced
+nothing either, with contact confirmed through opponent HP (54.1 and 97.0 damage, a KO and a respawn). What
+produced dispatches was letting the match play under light pressure — six dispatches in ~10 minutes of battle
+time. So the parked stimulus hunts matter less for this question than expected: the game inflicts these on its
+own and the task is to let it run and catch what it does.

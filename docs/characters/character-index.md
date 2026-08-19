@@ -63,11 +63,11 @@ git show <commit>^:docs/characters/Zoro-Character-Map.md
 | Caramelman | Dr. Slump | 58 | 45 | 361 | 3 | 105 | ds_b_03.bin | — |
 | Dio | JoJo's Bizarre Adventure | 29 | 54 | 282 | — | 26 | jj_b_02.bin | — |
 | DonPatch | Bobobo-bo Bo-bobo | 49 | 14 | 582 | 2 | 70 | bb_b_03.bin | — |
-| Edajima | — | File | — | — | — | — | — | — |
+| Edajima | Sakigake!! Otokojuku (Charge!! Men's Private School) | 67 | 9 | 420 | — | 164 | oj_b_02.bin | — |
 | Eve | Black Cat | 38 | 16 | 310 | — | 54 | bc_b_02.bin | — |
 | Franky | One Piece | 19 | 16 | 524 | 2 (assumed) | 12 | op_b_08.bin | — |
 | Frieza | Dragon Ball | 10 | 54 | 262 | — | 6 | db_b_11.bin | — |
-| Fuusuke | — | File | — | — | — | — | — | — |
+| Fuusuke | Ninku | 69 | 2 | 435 | — | 179 | nk_b_01.bin | — |
 | Gear2-Luffy | One Piece | 13 | 14 | 522 | 2 (assumed) | 10 | op_b_02.bin | — |
 | Gintoki | Gintama | 52 | 5 | 349 | — | 93 | gt_b_01.bin | — |
 | Gohan-SSJ | Dragon Ball | 5 | 7 | 258 | 2 (assumed) | 2 | db_b_06.bin | — |
@@ -88,21 +88,21 @@ git show <commit>^:docs/characters/Zoro-Character-Map.md
 | Kenshin | Rurouni Kenshin | 36 | 1 | 304 | — | 48 | rk_b_01.bin | — |
 | Kenshiro | Hokuto no Ken | 61 | 13 | 658 | 2 (assumed) | 146 | hk_b_01.bin | — |
 | Killua | Hunter x Hunter | 31 | 23 | 290 | — | 34 | hh_b_02.bin | — |
-| Kinnikuman | — | File | — | — | — | — | — | — |
-| KomamanGreen | — | File | — | — | — | — | — | — |
-| KomamanRed | — | File | — | — | — | — | — | — |
-| KomamanYellow | — | File | — | — | — | — | — | — |
+| Kinnikuman | Kinnikuman (Muscle Man) | 65 | 14 | 422 | — | 166 | kn_b_01.bin | — |
+| KomamanGreen | — (Debug series, unselectable) | 72 | 0 | 448 | — | 192 | dt_b_03.bin | — |
+| KomamanRed | — (Debug series, unselectable) | 70 | 0 | 446 | — | 190 | dt_b_01.bin | — |
+| KomamanYellow | — (Debug series, unselectable) | 71 | 0 | 447 | — | 191 | dt_b_02.bin | — |
 | Kurama | Yu Yu Hakusho | 33 | 28 | 295 | — | 39 | yh_b_02.bin | — |
 | Kyuubi-Naruto | Naruto | 21 | 13 | 274 | — | 18 | na_b_02.bin | — |
 | Lenalee | D.Gray-man | 46 | 3 | 577 | 1 | 65 | dg_b_02.bin | — |
 | Luffy | One Piece | 12 | 9 | 521 | 2 (assumed) | 9 | op_b_01.bin | — |
 | Majin-Buu | Dragon Ball | 11 | 7 | 256 | 2 | 0 | db_b_12.bin | — |
 | Mashirito | Dr. Slump | 57 | 45 | 360 | 2 | 104 | ds_b_02.bin | — |
-| Momotaro | — | File | — | — | — | — | — | — |
-| Muhyo | — | File | — | — | — | — | — | — |
+| Momotaro | Sakigake!! Otokojuku (Charge!! Men's Private School) | 66 | 5 | 428 | — | 172 | oj_b_01.bin | — |
+| Muhyo | Muhyo to Rouji no Mahouritsu Soudan Jimusho | 59 | 47 | 652 | — | 140 | mr_b_01.bin | — |
 | Nami | One Piece | 15 | 16 | 524 | 2 (assumed) | 12 | op_b_04.bin | — |
 | Naruto | Naruto | 20 | 2 | 529 | 2 (no damage modifier) | 17 | na_b_01.bin | — |
-| Neuro | — | File | — | — | — | — | — | — |
+| Neuro | Majin Tantei Nougami Neuro (Demon Detective Neuro) | 60 | 31 | 669 | — | 157 | nn_b_01.bin | — |
 | PCT-Nami | One Piece | 16 | 4 | 525 | 2 (assumed) | 13 | op_b_05.bin | — |
 | Piccolo | Dragon Ball | 9 | 41 | 261 | — | 5 | db_b_10.bin | — |
 | Raoh | Hokuto no Ken | 62 | 13 | 403 | 2 (assumed) | 147 | hk_b_02.bin | — |
@@ -115,8 +115,8 @@ git show <commit>^:docs/characters/Zoro-Character-Map.md
 | Sasuke | Naruto | 22 | 8 | 275 | — | 19 | na_b_03.bin | — |
 | Seiya | Saint Seiya | 63 | 13 | 662 | 2 (assumed) | 150 | ss_b_01.bin | — |
 | Shinsetsu | Bobobo-bo Bo-bobo | 48 | 14 | 327 | 2 (assumed) | 71 | bb_b_02.bin | — |
-| Taikoubou | — | File | — | — | — | — | — | — |
-| Taizo | — | File | — | — | — | — | — | — |
+| Taikoubou | Houshin Engi (Soul Hunter) | 68 | 47 | 684 | — | 172 | hs_b_01.bin | — |
+| Taizo | — (Debug series, unselectable) | 73 | 0 | 446 | — | 190 | dt_b_04.bin | — |
 | Train | Black Cat | 37 | 3 | 564 | — | 52 | bc_b_01.bin | — |
 | Tsuna | Reborn! | 54 | 4 | 354 | — | 98 | tr_b_01.bin | — |
 | Vegeta | Dragon Ball | 3 | 7 | 257 | 2 (assumed) | 1 | db_b_04.bin | — |
@@ -127,3 +127,25 @@ git show <commit>^:docs/characters/Zoro-Character-Map.md
 | Yugi | Yu-Gi-Oh! | 35 | 47 | 303 | — | 47 | yo_b_01.bin | — |
 | Yusuke | Yu Yu Hakusho | 32 | 45 | 549 | — | 37 | yh_b_01.bin | — |
 | Zoro | One Piece | 14 | 18 | 523 | 2 (assumed) | 11 | op_b_03.bin | — |
+
+## Eleven placeholder rows filled from git, 2026-08-19
+
+Eleven rows in the table above were empty stubs — literally `| Edajima | — | File | — | — | — |
+— | — | — |`, with the word `File` sitting in the `chr_b` column as extraction junk. The rows
+existed, so a row count matched the prose's 71; but they carried **no data**, and any tool
+reading the `chr_b` column numerically skipped them silently. Two of us independently
+mis-diagnosed that as "eleven records are missing from the index" before checking the raw rows.
+
+The data was recoverable in full from the deleted map files in git (`3330204^`) and is now in
+place. `tier` is left `—` rather than guessed: those maps discuss a "tier-2 modifier" in prose
+and I could not tell a real field from that phrase.
+
+**The Debug series now has names.** `chr_b` 70–73 are KomamanRed, KomamanYellow, KomamanGreen
+and Taizo, collision files `dt_b_01.bin` … `dt_b_04.bin`. These are exactly the four records with
+an empty on-disk ability window [`jus-ondisk-ability-list-at-chrb-0x03-kfc`], which is how they
+were independently identified as unselectable.
+
+**Four records are still unidentified: `chr_b` 1, 39, 40 and 50.** They carry abilities, so they
+are real characters, but no row here describes them and no deleted map named them. Ichigo's row
+is also malformed (`formType` in the `chr_b` column); his real data is in
+`Ichigo-Character-Map.md`, one of the two surviving verified maps.

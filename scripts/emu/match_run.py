@@ -26,11 +26,16 @@ Dumping 0x021DEA00-0x021DFA00 once per round and unpacking locally is a single
 call for the same data, and it also guarantees every field in a sample comes from
 the SAME frame -- ten separate peeks do not.
 
-ADDRESSES ARE SESSION-LOCAL. The handoff is emphatic about this and it is right:
-the character array moved between 0x021DF1B4, 0x021DF1D4 and 0x021DF204 across
-battles in one session. So the fixed addresses below are CHECKED for plausibility
-before use rather than trusted, and `find_blocks()` rescans if they fail. Do not
-copy them into anything long-lived.
+ADDRESSES ARE DERIVED, NOT HARDCODED. They used to be constants with a
+plausibility check, and that check passed on garbage: in rule mode 3 the battle
+root moves and the old addresses read 23.1 and 990.4 against an HP cap near 200,
+while plausible() returned True. They are now derived every run from the ov6
+anchor at 0x02172960 -- see resolve_addresses() -- which tracked that relocation
+correctly. There is no fallback to constants; if the derivation fails the run
+stops, because a believable wrong number is worse than no number.
+
+(An earlier version of this docstring claimed a `find_blocks()` rescan. No such
+function existed. The claim is removed rather than corrected.)
 """
 import json
 import os
@@ -46,15 +51,45 @@ import boot_verified as BV  # noqa: E402
 
 OUT = "/tmp/jus_match"
 
-# The window the dump covers: battle globals through both sides' HP blocks.
-DUMP_START, DUMP_END = 0x021DEA00, 0x021DFA00
+# THESE ARE NO LONGER CONSTANTS. resolve_addresses() overwrites every one of them
+# from the battle root before a match is sampled; the values here are only the
+# defaults observed in an ordinary point battle, kept so the shapes are readable.
+#
+# WHY THE CONSTANTS HAD TO GO. They are not merely session-local, they are
+# MODE-local, and they fail SILENTLY. Poking rule mode 3 moves the battle root
+# from 0x021DEA60 to 0x021DEBE0, and in that battle the old HP_PLAYER read 23.1
+# and the old HP_OPP read 990.4 -- against an HP cap around 200. A number like
+# 990.4 is obvious, but 23.1 is not, and plausible() below passed both. A wrong
+# address that returns a believable number is the failure mode this project keeps
+# paying for, so the addresses are now derived and the derivation is checked.
+#
+# THE DERIVATION (runtime-confirmed, jus-3vg; anchor is atlas's, jus-45k):
+#     root      = [0x02172960]              ov6 BSS word, null outside a battle
+#     HP_PLAYER = [root + 0x118] + 0x70
+#     HP_OPP    = [root + 0x11C] + 0x70     the two side objects are 0x61C apart
+# Verified in mode 3 where the root moves: the derivation tracked the relocation
+# and returned values matching the on-screen bars while the constants did not.
+ANCHOR = 0x02172960          # ov6 BSS: pointer to the battle root, 0 outside battle
+ROOT_SIZE = 0x170            # CONFIRMED_STATIC from a single allocation site
+SIDE_A_PTR, SIDE_B_PTR = 0x118, 0x11C
+HP_IN_SIDE = 0x70            # HP slot array inside a side object
+SIDE_DELTA = 0x61C           # invariant between the two side objects
 
-# Session-local, verified at startup. Both sides hold four 0x50-byte slots: the
-# active character then three deck reserves.
+DUMP_START, DUMP_END = 0x021DEA00, 0x021DFA00
 HP_PLAYER = 0x021DF1D4
-HP_OPP = 0x021DF7F0          # +0x61C from the player's
+HP_OPP = 0x021DF7F0
 SLOT_STRIDE, SLOTS = 0x50, 4
 CHR_B_IN_SLOT = 0x29         # chr_b index inside an HP slot
+
+# UNVERIFIED, carried over as relative offsets rather than absolutes. Both were
+# hardcoded addresses that happened to be correct in the default layout; neither
+# has been confirmed to mean what its name says. TIMER especially: sampled across
+# 1800 frames it went 16 -> 13 -> 11 -> 8, which is not the じかん counter (that
+# starts at 30). Expressing them relative to structures that are confirmed at
+# least makes them move with the battle instead of pointing at whatever now
+# occupies a stale address.
+TIMER_IN_ROOT = 0x11         # 0x021DEA71 - 0x021DEA60 in the default layout
+SPECIAL_FROM_OPP = -0xBF     # 0x021DF731 - 0x021DF7F0 in the default layout
 TIMER = 0x021DEA71
 SPECIAL = 0x021DF731
 
@@ -101,6 +136,67 @@ def cli(*args):
     if r.returncode != 0:
         raise RuntimeError("jusemu %s failed: %s%s" % (args[0], r.stdout, r.stderr))
     return r.stdout
+
+
+def peek(addr, length):
+    return json.loads(cli("peek", hex(addr), str(length)))["result"]["value"]
+
+
+def resolve_addresses():
+    """Derive the battle addresses from the anchor. Raises rather than guessing.
+
+    Every failure here is fatal on purpose. The whole point of this function is
+    that the thing it replaced returned believable numbers from stale addresses,
+    so falling back to those constants on any doubt would reinstate exactly the
+    bug it exists to remove. If the derivation cannot be trusted, the run stops.
+    """
+    global DUMP_START, DUMP_END, HP_PLAYER, HP_OPP, TIMER, SPECIAL
+
+    root = peek(ANCHOR, 4)
+    if not root:
+        raise SystemExit(
+            "[0x%08X] reads 0: there is no battle object, so this is not a live "
+            "battle. Load an in-battle savestate or boot into one. NOT falling "
+            "back to hardcoded addresses -- they would return believable garbage."
+            % ANCHOR)
+    if not (0x02000000 <= root < 0x02400000) or root & 3:
+        raise SystemExit(
+            "[0x%08X] = 0x%08X, which is not a word-aligned main-RAM pointer. The "
+            "anchor is wrong or the read raced a state load (advance >=10 frames "
+            "after loading before peeking)." % (ANCHOR, root))
+
+    cli("dump", hex(root), hex(root + ROOT_SIZE), "/tmp/jus_match_root.bin")
+    with open("/tmp/jus_match_root.bin", "rb") as f:
+        r = f.read()
+    side_a, side_b = (struct.unpack_from("<I", r, o)[0]
+                      for o in (SIDE_A_PTR, SIDE_B_PTR))
+
+    for name, p in (("+0x%X" % SIDE_A_PTR, side_a), ("+0x%X" % SIDE_B_PTR, side_b)):
+        if not (0x02000000 <= p < 0x02400000):
+            raise SystemExit(
+                "root%s = 0x%08X is not a main-RAM pointer. The root at 0x%08X is "
+                "not the object this derivation assumes." % (name, p, root))
+    if side_b - side_a != SIDE_DELTA:
+        raise SystemExit(
+            "the two side objects are 0x%X apart, expected 0x%X (a 0x%08X, b 0x%08X). "
+            "This invariant has held in every battle measured across two boots and "
+            "two heap layouts, so a change means the structure is not what we think."
+            % (side_b - side_a, SIDE_DELTA, side_a, side_b))
+
+    HP_PLAYER = side_a + HP_IN_SIDE
+    HP_OPP = side_b + HP_IN_SIDE
+    TIMER = root + TIMER_IN_ROOT
+    SPECIAL = HP_OPP + SPECIAL_FROM_OPP
+
+    lo = min(root, HP_PLAYER, TIMER, SPECIAL)
+    hi = max(root + ROOT_SIZE, HP_OPP + SLOTS * SLOT_STRIDE)
+    DUMP_START = (lo - 0x40) & ~0xF
+    DUMP_END = (hi + 0x40 + 0xF) & ~0xF
+    print("derived from [0x%08X] = 0x%08X: HP_PLAYER 0x%08X, HP_OPP 0x%08X, "
+          "dump 0x%08X-0x%08X (%d bytes)"
+          % (ANCHOR, root, HP_PLAYER, HP_OPP, DUMP_START, DUMP_END,
+             DUMP_END - DUMP_START))
+    return root
 
 
 def region(path="/tmp/jus_match_ram.bin"):
@@ -156,18 +252,38 @@ def sample(buf):
 
 
 def plausible(buf):
-    """Do the fixed addresses still look like HP blocks?
+    """Do the derived addresses actually look like HP blocks?
 
-    Cheap and worth doing every run: an HP slot holds a value under 12800 (200.0
-    displayed at the 1/64 scale) and a chr_b index under 128. The active slot on
-    both sides must be alive at the start of a match.
+    This check used to pass on garbage. In rule mode 3 the stale constants read
+    23.1 and 990.4 and it returned True for both, because its only bound was
+    "under 12800" and 23.1 clears that easily. The bounds below are the ones that
+    would have caught it:
+
+      - HP is a multiple of 1/64. A real HP word is an exact multiple of 64 in
+        raw units at rest; 23.1 was not, and that alone is a strong signal.
+      - The displayed cap is around 200.0, so 990.4 is impossible, not merely
+        large. 12800 was three times too generous.
+      - A slot is either dead (0) or holds a sane amount, never a trickle.
+
+    Still cheap: it is arithmetic over a buffer that has already been dumped.
     """
+    CAP_RAW = 210 * 64          # a little above the observed ~200.0 cap
     for base in (HP_PLAYER, HP_OPP):
         for i in range(SLOTS):
             a = base + i * SLOT_STRIDE
-            if u16(buf, a) > 12800 or u8(buf, a + CHR_B_IN_SLOT) > 127:
+            hp = u16(buf, a)
+            if hp > CAP_RAW:
                 return False
-    return u16(buf, HP_PLAYER) > 0 and u16(buf, HP_OPP) > 0
+            if u8(buf, a + CHR_B_IN_SLOT) > 127:
+                return False
+    for base in (HP_PLAYER, HP_OPP):
+        active = u16(buf, base)
+        if active == 0 or active % 64 != 0:
+            # The active fighter must be alive and on a clean 1/64 boundary. Mid
+            # animation HP counts up from zero and is NOT clean, which is why
+            # wait_until_live() runs before this.
+            return False
+    return True
 
 
 def alive(s):
@@ -225,12 +341,15 @@ def wait_until_live(max_waits=12):
 def play(rounds):
     """Seek until an attack connects, then hold the range and keep attacking."""
     os.makedirs(OUT, exist_ok=True)
+    resolve_addresses()
     buf = wait_until_live()
     if not plausible(buf):
         raise SystemExit(
-            "the fixed HP addresses do not look like HP blocks in this battle. They "
-            "are session-local and move between battles; rederive them with "
-            "find_battle_structs.py before running this.")
+            "the DERIVED HP addresses do not look like HP blocks. The anchor chain "
+            "resolved, so the structure was found, but the contents fail the sanity "
+            "bounds -- most likely sampled mid-animation, or this mode lays the "
+            "slots out differently. Raw: me 0x%08X = %d, opp 0x%08X = %d."
+            % (HP_PLAYER, u16(buf, HP_PLAYER), HP_OPP, u16(buf, HP_OPP)))
     start = sample(buf)
     print("round      x   me hp  chr_b     opp hp  chr_b   dmg  mode")
     shot("00_start")

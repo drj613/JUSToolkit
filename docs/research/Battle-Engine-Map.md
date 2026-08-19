@@ -978,3 +978,52 @@ unrelated code and the register meanings don't hold. Better filter than an id ra
 at each hit and reject hits where it reads `0` — no battle means the code at that address isn't the
 dispatcher.** That drops aliased hits for a stated reason instead of silently clipping a genuine
 out-of-range id, which was the runtime loop's own objection to range filtering.
+
+### Route B drives the gauge family too — P159's division of labour is RETRACTED (P170)
+
+Runtime ran the LR card (`jus-5qy`) with `break *0x02158ED0 if $r1 != 0`. Every non-zero dispatch:
+
+| dispatch | `LR` | route | store |
+|---|---|---|---|
+| id 9 | `0x02158B68` | Route B via `X+0x172` | `120/120` |
+| id 1 | `0x02158B68` | Route B via `X+0x172` | none — correct, `flags & 1`, base 0 |
+| id 13 | `0x02158B68` | Route B via `X+0x172` | `300/300` |
+| id 9 | `0x02158B68` | Route B via `X+0x172` | `120/120` |
+
+`RETRACTED` — P159's `PLAUSIBLE` **"script opcodes drive gauge effects"**, and with it the clean
+gauge/status division of labour. Ids 1, 9 and 13 are all gauge-family and all three arrived by **Route B**.
+This is the exact refutation condition I wrote into the card, so the label comes off. Route A never appeared
+and neither did the third caller.
+
+What survives, and what doesn't:
+
+- **Survives:** Route B is real and is the observed inflict path for gauge ids. `CONFIRMED_RUNTIME`.
+- **Survives, and is now observed rather than inferred:** Route B is a **per-frame flush that usually has
+  nothing staged.** An unconditional breakpoint caught **15,732** dispatcher calls, *all* with id 0, hitting
+  both `0x02158B50` and `0x02158B68`. That is exactly what the staged-`+0x172`/`+0x173`-bytes model predicts.
+- **Still untested:** "statuses arrive via Route B." No status-family id fired with an LR captured. The id 21
+  from the earlier run has no LR and contributes nothing. So the finding is *"gauge ids use Route B"*, **not**
+  *"both families use Route B"*. Bounded at n=4, one session, one matchup, items ON.
+- **Bounded:** Route A's absence is an absence in this matchup, not a demonstration that Route A is dead.
+
+**`V = 0` now on five ids** — 7, 9, 10, 13, 21 — with base read live from `r5+2` on the later ones.
+`duration == base` every time.
+
+**Instrument note worth keeping (runtime's).** The dispatcher is far too hot to breakpoint unconditionally:
+15,732 stop/print/resume round trips throttled the emulator so hard that almost no real fight happened, and
+those zeros were *the instrument's own cost, not the game*. A conditional breakpoint gave 4 useful captures
+instead of 15,732 useless ones. This is a third distinct way to manufacture a worthless null, alongside dead
+instrument and absent stimulus: **an instrument whose cost suppresses the phenomenon it measures.**
+
+### Two corrections for the character-change hunt (P170)
+
+- **The change attack targets the OPPONENT.** My own P165 table row abridged rulemess entry 9 to "make
+  everyone the same character", which is ambiguous about whose character changes. The Japanese is explicit:
+  `キャラチェンジ攻撃（↓＋Ｂ）を当てて、相手を全員同じキャラクターにするのだ！` — *land* ↓+B to make **`相手`
+  (the opponents)** all the same character. So watching the player's own `chr_b` after pressing ↓+B is
+  watching the wrong entity, and the attack must **land**, not merely be pressed.
+- **`char+0x1E0` cannot be the switch indicator.** Already `CONFIRMED_STATIC` on record since iteration 73
+  (`findings/allocations-are-tagged-and-the-battle-character-is-0x1F0.md`): `Battle_CharaCreate` (ov6
+  `0x02156A38`, `BattleChara.cpp`) allocates the `0x1F0`-byte battle character and writes `+0x1E0` **once,
+  from `arg0`, at construction**. A character change therefore cannot work by mutating it — it must swap
+  which character object is active. So `+0x1E0` is a per-object identity, not a live "who is out" field.

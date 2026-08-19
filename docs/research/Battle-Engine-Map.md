@@ -700,9 +700,24 @@ string. Any hand-parse of these files from the old description produces garbage 
 | `root+0x08` is **not** a copy of `0x020AFEA0`: the training path runs table entry 8 with the settings byte at 0 | runtime `jus-wbo` | **`CROSS_CONFIRMED`** |
 | `root+0x08` read directly across 5 paths: battle path is **identity** (`0→0`, `1→1`, `2→2`, `12→12`); only training substitutes (`0→8`) | runtime `jus-j1k` | **`CROSS_CONFIRMED`** |
 | `root+0xC8` observed `0` at mode 12 with `root+0x000` = `0x02150F65`, the default handler named statically beforehand | runtime `jus-j1k` | **`CROSS_CONFIRMED`** |
-| The installer `0x0214F91C` is **gated** — mode 12 reaches `root+0x08` = 12 and still gets the default. The gate is what stands between a poked settings byte and rule 12 actually playing | ov6 | `not claimed` |
+| **31 records** — the pointer run is 93 words (31 × 3) *and* the installer's gate refuses indices 31 and 40 (both store the index, both get the default, no crash) | ov6 `0x02170EAC` / runtime `jus-gpx` | **`CROSS_CONFIRMED`** |
+| Handler sharing visible in live RAM: 22 = 9 (`0x02150469`), 25 = 28 (`0x0215057D`), 30 = 16 (`0x021508F1`) | runtime `jus-gpx` | **`CROSS_CONFIRMED`** |
+| `root+0x08` identity across ten poked modes (0,1,2,12,22,25,28,30,31,40); only the training path substitutes (`0→8`) | runtime `jus-j1k` / `jus-gpx` | **`CROSS_CONFIRMED`** |
+| The installer `0x0214F91C` is gated, and **the gate is not a bound check alone**: 31/40 are rejected for range, but mode 12 is *in* range and still gets the default, while 22/25/28/30 install fine | ov6 | `not claimed` |
+| Mode 12's install may have happened and then been **reverted** — the sibling `0x0214F93C` stores the default and clears `+0xC8`, so mode 12's column-0 function `0x02150685` may fall back when its stage preconditions are missing | ov6 | `PLAUSIBLE` |
 
 `REFUTED` (mine, same wake it was filed): rulemess text-duplicate entries do **not** share handler code.
 `not claimed`: whether they behave identically in play, and whether the ov1 rulemess index and this ov6
 index share one space for modes ≥ 3. 31 handler slots vs 22 described modes; modes 18 and 20 build no
 battle object at all.
+
+**Instrument rule adopted from the runtime loop (`jus-acq`).** "The anchor is non-zero" does not mean
+"the object is populated" — a freshly `memset` battle root reads all-zero and fills in by roughly +300
+frames, confirmed by running a known-good index through the same early-break protocol. Early all-zero
+reads must never be interpreted.
+
+Checked against the one finding it could have dissolved: `root+0x4C..+0x6C` reading all-zero is **not**
+an early-read artifact, because sibling fields in the same dumps were populated (`+0x10C` and `+0x110`
+held main-RAM pointers, `+0x158` held the correct character count, `+0x000` held a live per-mode
+handler). A freshly-`memset` object cannot show those. The zeros are real, so term `V` stays
+`SPECULATIVE` for the reason already recorded and not for this new one.

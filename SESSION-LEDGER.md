@@ -1,17 +1,17 @@
 # Session Ledger — JUS Reverse Engineering
 
-Last updated: 2026-08-19 ~05:00 (ledger wake 24, session `justoolkit-87`)
+Last updated: 2026-08-19 ~05:30 (ledger wake 26, session `justoolkit-87`)
 
 ## 1. Current state
 
 This file is a human catch-up summary — not the system of record. beads (`br`) is the record; protocol in `docs/orchestration/`.
 
 **Live sessions (from ListAgents):**
-- `justoolkit-fa` [cedb9e] — busy, 9h. **Runtime**. Overnight highlights: closed jus-ovv + jus-kdf, confirmed jus-eml (status immunity is an ability, opcode == ability ID), synthetic drain kills, retracted/un-retracted ability bitset, reserves rotate on KO, Goku B = exactly 6.000 heal-off, frame-resolution regen sampling for jus-f0v, fast-lane confirmed ov6 0x0215A978. 20+ commits this session.
-- `battle-engine-atlas-76` [2e8ac4] — idle, 9h. **Static**. Now at **P182**. Overnight highlights: flat -2.0 found in B11 writer (P180), built regoff_store_scan.py (P181), found damage-modification function 0x0215A978 (P182), retracted pos_base/two-lineage/verified-absence claims. 15+ commits this session.
+- `justoolkit-fa` [cedb9e] — **idle**, 10h. **Runtime**. Session complete. Overnight: closed jus-ovv + jus-kdf + jus-eml, confirmed ability bitset, synthetic drain kills, Goku B = 6.000 heal-off, four-point bracket on +0x134 writer. 25+ commits. Now blocked on jus-fun (watchpoint tooling).
+- `battle-engine-atlas-76` [2e8ac4] — **idle**, 10h. **Static**. Now at **P185**. Session complete. Overnight: P165→P185 (20 iterations). Found flat -2.0 in B11 writer, built regoff scanner, found damage function, closed all three static routes to +0x134 writer. 20+ commits. Also blocked on jus-fun.
 - Others: `justoolkit-ba` stood down, `trainer-5b` busy (unknown role).
 
-**Coord beads:** ~38 total, ~14 open. Overnight session very productive — both loops ran 9h+, atlas P165→P182 (17 iterations), runtime closed multiple original bugs and advanced the damage model significantly. No protocol violations since wake 10. The flat -2.0 is now located (B11 writer) and the damage-modification function is found (0x0215A978).
+**Coord beads:** ~40 total, ~14 open. Both loops reached a natural pause — blocked on jus-fun (write-watchpoint tooling decision). The overnight session was exceptionally productive: atlas P165→P185 (20 iterations), runtime closed multiple original bugs, the damage model advanced significantly. Both loops converged on +0x134 as the key field and exhausted all routes to its writer except a write-watchpoint. **Owner action on jus-fun is the single gating item.**
 
 ## 1.5. OWNER ACTION — status update
 
@@ -86,7 +86,7 @@ Three nudges over 7 wakes surfaced a recurring pattern. Runtime's feedback, cons
 # Per-Session Detail
 
 What each active session is doing, where things live, and what they've delivered.
-Last updated: 2026-08-19 05:00 — ledger wake 24
+Last updated: 2026-08-19 05:30 — ledger wake 26
 
 ## Ultimate goal
 

@@ -2047,3 +2047,56 @@ on-disk record and that doc's live-array reading holds **provided the runtime ha
 but nobody knew that at the time. Their three measured bits (4, 8, 29) are unaffected — each was poked and observed
 inside one uninterrupted window. What needs a timestamp is any *observation of which bits a character carries*:
 **a character's ability set is not a constant of the character.**
+
+### The loader's source is a count + index list, and the bitset is REBUILT not accumulated (P177 close)
+
+Runtime confirmed my base claim exactly — `r0` at the writer is `0x02244140`, and `r0 − 0x120` = `0x02244020` =
+the live opponent `battleObj` from `root+0xE0`. So the write half uses the same base the gate receives.
+**`CROSS_CONFIRMED`**, and the P172/P174 chain needs no re-reading — that was the failure I most wanted tested.
+
+Their full re-cache from one KO: four dispatches, all kind 0, ids `2, 14, 15, 5`, producing `0x0000C024` — which
+matches the post-KO bitset they read independently. Write path and resting value agree.
+
+**Reading the loop head settles the rest.** ov6 `0x0215FAD8`–`0x0215FB04`:
+
+```
+0x0215FAD8: mov   r5, #0
+0x0215FADC: str   r5, [r7, #0xc]     ; clear bitset word 1
+0x0215FAE0: str   r5, [r7, #8]       ; clear bitset word 0   <-- ZEROED FIRST
+0x0215FAE4: ldrsb r4, [r6, #0xa]     ; count, a signed byte at r6+0x0A
+0x0215FAE8: ldr   sb, [pc, #0x44]    ; sb = 0x02172210, the kind table
+0x0215FAEC: ldr   r8, [pc, #0x44]    ; a global
+0x0215FAF4: add   r0, r6, r5
+0x0215FAFC: ldrsb r1, [r0, #0xb]     ; the INDEX — a signed byte at r6 + i + 0x0B
+0x0215FB00: ldr   r3, [r2, #0x50]    ; the {kind,id} array
+```
+
+`CONFIRMED_STATIC`:
+
+- **The bitset is zeroed before the walk** (`[r7+8]` and `[r7+0xc]`), so a re-cache is a **full rebuild**, not an
+  accumulation. That is the mechanism answer to "why does the set change on respawn": it doesn't drift, it is
+  reconstructed from whatever list is present at that moment.
+- **The source is a count plus a byte list:** count at `r6+0x0A`, then `count` consecutive signed bytes from
+  `r6+0x0B`. Each byte is an **index** into the 4-byte `{kind, id}` array at `[global]+0x50`.
+- So the runtime loop's "sparse" pointers were not a walk order at all. Their four values decode as array indices
+  **0, 3, 12, 13** — which are simply *the bytes in the list*. Nothing is sparse; I mis-framed their observation as
+  a stride problem.
+
+**`REFUTED` — my P177 `PLAUSIBLE` that the `chr_b` record's bytes are the array the loader walks.** Two strikes,
+one of them from my own tooling:
+
+1. I scanned all 74 records for `{kind, id}` pairs and got obvious nonsense — "kinds" up to `0xC0`, one per record,
+   rising monotonically with the record index. That is the **`classId` low byte at `+0x0E`**, which my own P176 dump
+   already showed (`0x0209` = 521 for Luffy). The scan was reading fields I had already identified as something else.
+2. The loader's source isn't the record either: `r6+0x0A` would be `0x30` = 48 for Luffy, not a plausible count. So
+   `r6` is a **third structure**, and the `{kind, id}` pairs live in a global table, not in `chr_b`.
+
+So Luffy's `0x09` at record `+0x03` and `0x0C` at `+0x07` are **not** kind/id pairs. The three-way agreement from
+P176 survives — those bytes *are* his two ability IDs and the dummy's are zero — but my reading of *why* they sit at
+those offsets was wrong, and the stride-4 story is dead.
+
+`not claimed`: what `r6` is, and what changes its list on respawn. That is now a sharp, single question.
+
+**One observation of theirs worth flagging before anyone misreads it:** `r0` at the loop head carries the *partial
+bitset* between iterations (`0x00000004` → `0x00004004` → `0x0000C004` → `0x0000C024`), not a count. It is the
+accumulating word, visible mid-build.

@@ -30,14 +30,15 @@ The four failures this protocol is built to prevent:
 
 ## Roles (key off roles, not names — names drift across restarts)
 
-| Role | Job | Current instance (2026-08-18) |
+| Role | Job | Current instance (2026-08-19) |
 |---|---|---|
-| **runtime** | Drives the melonDS harness, boots battles, measures damage/status, scans RAM. Produces magnitudes. | `justoolkit-ed` |
-| **static** | Works the disassembly, maps structs/formulas, produces addresses. Labels claims. | `battle-engine-atlas-5e` |
+| **runtime** | Drives the melonDS harness, boots battles, measures damage/status, scans RAM. Produces magnitudes. | `justoolkit-fa` |
+| **static** | Works the disassembly, maps structs/formulas, produces addresses. Labels claims. | `battle-engine-atlas-76` |
 | **ledger** | Reads the beads ledger + git, keeps the human catch-up summary, flags inconsistencies, nudges idle loops. Does **not** write findings. | `justoolkit-87` |
 
-The old atlas charter still names the runtime loop `justoolkit-06`; that's stale. Always
-resolve the role via `ListAgents`, not a hard-coded name.
+**On every restart, update this table.** Names drift across restarts; this table is the
+authoritative mapping. Always resolve the role via `ListAgents` as a backup, but keep this
+table current so cold-start readers and cross-session messages can resolve roles without guessing.
 
 ## The wake bracket (the core mechanism)
 

@@ -1119,3 +1119,34 @@ opponent's HP at `152.0` before and after, unchanged, in every rep — yet id 19
 applies to a **gauge** rather than HP (consistent with C6b's result that no melee damage reaches this
 subsystem); the effect was applied to the **player** rather than the opponent; or the tick handler never ran.
 `not claimed` which. Watching a gauge through an id-19 window separates the first from the others.
+
+### Every observed effect is one-shot — including the status (P170)
+
+The `node+0x0` readout works and is now part of the runtime loop's standard capture. Three stores:
+
+| id | dur/base | `node+0x0` | amount | channel |
+|---|---|---|---|---|
+| 8 | 800/800 | `0x02159258` (stub) | 0 | `+0x172` gauge |
+| 32 | 60/60 | `0x02159258` (stub) | 0 | `+0x173` **status** |
+| 10 | 480/480 | `0x02159258` (stub) | 0 | `+0x172` gauge |
+
+`CONFIRMED_RUNTIME`: all three were **stubbed out on apply** — the handler returned 0, so `table[id].fn` was
+replaced by the no-op `0x02159258` (P158's mechanism) and **no tick handler runs for any of them**, status
+included.
+
+`PLAUSIBLE`, and it reframes what "duration" is: if the node's own tick handler is a stub, the `node+0xE`
+duration cannot be driven by the node. It must be a **state timer read by other systems** — most likely gated
+by the status opcode at handler `+0x7` — rather than a countdown the effect subsystem services itself. That
+fits the whole subsystem being flat: no scaling, no per-tick work, just a staged id, a duration and an opcode
+for someone else to honour.
+
+`not claimed`: the id-19 `−4` tension is **still open**. Their amount read returned 0 for all three above,
+which matches the table for each, so the read is sound — it just hasn't caught id 19 yet.
+
+**A coincidence the runtime loop refused to bank, correctly.** Across five reps of Goku up+X the opponent's HP
+never moved while *their own* HP dropped twice (152.0→149.0, 152.0→103.0). That superficially supports the
+"self-cost" reading of id 19's `−4`. They declined to count it, on the simpler reading that the COM
+counter-attacked and up+X never connected — which also explains the thin yield, one status store in five reps
+against three in four previously. Recorded as **not** support for reading two.
+
+Tally: `+0x173` — 4 dispatches across 3 opcode-bearing ids. `+0x172` — 13 across 5. No crossover.

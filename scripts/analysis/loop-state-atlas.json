@@ -1,12 +1,11 @@
 {
-  "iteration": 170,
+  "iteration": 171,
   "phase": "combat",
-  "current_task": "P170: NO NEW FINDING, and that is the honest outcome. The static hunt for the character-change gate re-derived Battle_CharaCreate (ov6 0x02156A38, BattleChara.cpp), the 0x1F0 battle-character size, and +0x1E0 = arg0 written once at construction -- ALL already CONFIRMED_STATIC on record since iteration 73 in findings/allocations-are-tagged-and-the-battle-character-is-0x1F0.md. The check-the-record rule caught it before I drafted it as new (third time it has paid; my predecessor fell into this twice). What the wake DID produce: a retraction of P159s division-of-labour label forced by runtime data, and two corrections to the character-change hunt (the change attack targets the OPPONENT and must LAND; +0x1E0 cannot be the switch indicator).",
+  "current_task": "P171 RETRACTION WAKE. The seven ov12 \"+0x172/+0x173 writers\" I published last wake are CommonWindow.cpp and ALTextDS.cpp (text-widget fields) -- an offset collision, not the battle entity. Retracted: the \"independent static support\" for the two-channel model, the \"two dedicated per-byte setters\" reading, and the id-1-as-default-staging hypothesis (which rested on an ALTextDS CreateIntf initialiser). Runtime two-channel model UNAFFECTED -- it stands on their own LR evidence at n=17. Real negative established: the writers of X+0x172/+0x173 appear in NO immediate-offset store ROM-wide, same blind spot as the iteration-76 +0xE8 hunt.",
   "queue": [
-    "P171-READ THE ov12 STAGING SITES (unchanged, now higher value): +0x172 writers 0x021BC194 (setter), 0x021C7A10, 0x021C9770, 0x021C9C24; +0x173 writers 0x021BC19C (setter), 0x021C7A14, 0x021C9AD8. Test the channel split from the writer side: do +0x173 writers only stage OPCODE-BEARING ids (18,19,20,22,23,24,25,28,29,30,31,32) and +0x172 only the rest? Runtime is at n=17 with no crossover, so a writer-side confirmation makes it CONFIRMED_STATIC + CROSS_CONFIRMED.",
-    "P171b-what IS ov12? Naming that overlay names the staging subsystem (candidate: the move-script interpreter). Note ov12/ov13 share the 0x021AC1C0 window, so five-way disambiguation applies.",
-    "P171c-identify the dispatchers third caller (Route A) to bound the claim that Route A is dead in retail.",
-    "P171d-active-character swap field + item-pickup counter -- DEPRIORITISED: runtime found the COM inflicts these effects on its own, so triggering matters less than letting the match run.",
+    "P172-find the X+0x172/+0x173 writers with a DIFFERENT instrument: register-offset stores (add rX,#0x172 then strb), split-offset stores, and Thumb. The immediate-offset search is exhausted and produced only UI structs. Consider asking runtime for a GDB write-watchpoint on X+0x172 -- that is what settled 0x020AFEB8 (jus-fms).",
+    "P172b-name the dispatcher third caller (Route A) to bound the claim that Route A is dead in retail.",
+    "P172c-what reads node+0xE, given every observed effect is stubbed on apply. If nothing reads it, the duration field is vestigial in retail.",
     "P168b-static writer of root+0x118 / +0x11C (runtime top ask, jus-3vg) -- would turn their empirical 0x70/0x61C validation into a structural check.",
     "P168c-what sets the gate byte 0x0217296D: find its writers. That is the thing that decides whether a mode plays at all.",
     "P168d-static writer of root+0x4C (term V).",
@@ -270,7 +269,8 @@
     "P166-per-mode-handler-table",
     "P167-installer-caller-and-the-bss-gate",
     "P168-why-mode-12-never-installs",
-    "P169-state-bin-is-the-param-array"
+    "P169-state-bin-is-the-param-array",
+    "P171-retraction-ov12-offset-collision"
   ],
   "stuck": {},
   "required_reading_for_koma_tasks": [
@@ -2145,7 +2145,8 @@
       "2026-08-18 P168: \"0x0214BD50 is a fade/screen-transition progress object\" and its corollary \"mode 12 s black screen IS the stuck transition\" -- RETRACTED (were PLAUSIBLE). Bytes byte-identical across four unrelated game states. Dependents: the P168 finding (banner added) and two map rows (corrected in place).",
       "2026-08-18 P170: P159s PLAUSIBLE \"script opcodes drive gauge effects\" (the clean gauge/status division of labour) -- RETRACTED. Runtime captured ids 1, 9, 13 (all gauge family) arriving via Route B, LR 0x02158B68. This was the exact refutation condition I wrote into jus-5qy. What survives: Route B is the observed inflict path for gauge ids, and it is a per-frame flush usually with nothing staged (15,732 calls all id=0). Still UNTESTED: whether statuses use Route B. Dependents: the map (corrected in place) and P159s finding.",
       "2026-08-18 P170: \"ids 18-34 are the status family\" (by id range) -- SUPERSEDED by a better definition: the status family is the 12 ids whose handler entry +0x7 carries an opcode (18,19,20,22,23,24,25,28,29,30,31,32). Ids 21,26,27,33,34 sit in that range with +0x7 = 0xFF. Consequence: my earlier \"id 21 is a status crossing the family boundary\" claim rested on the bad definition and id 21 has no LR capture, so it is dropped from the argument entirely.",
-      "2026-08-18 P170: narrowed at runtimes request -- \"landed attacks produce no effects\" is only \"landed BASIC attacks\", because opponent-HP contact says nothing about whether a status move was thrown."
+      "2026-08-18 P170: narrowed at runtimes request -- \"landed attacks produce no effects\" is only \"landed BASIC attacks\", because opponent-HP contact says nothing about whether a status move was thrown.",
+      "2026-08-18 P171: \"every writer of X+0x172/+0x173 is in ov12, including two dedicated per-byte setters -- independent static support for the two-channel model\" -- RETRACTED. All seven sites are CommonWindow.cpp / ALTextDS.cpp text-widget fields; ov12 is a UI+wifi overlay. Offset collision. Also retracts the id-1-as-default-staging hypothesis, which rested on an ALTextDS initialiser. Dependents named: the map section (struck in place), the message claiming the two splits agreed independently, and the P171 queue item. Runtime model unaffected. Root cause: I published seven immediate-offset hits without naming the containing function -- one lookup would have caught it."
     ],
     "tooling_note": "xrefs.json cannot be trusted for Thumb callers (~89% literal-load blindness, P160). Hand-rolled exhaustive Thumb BL/BLX scan over ov06.bin is the reliable method and found the single caller immediately. Worth promoting into query.py.",
     "codex_disagreements": [
@@ -2160,6 +2161,9 @@
     "my_design_errors": [
       "P169 jus-e66: the value-side fingerprint scan CANNOT work -- node+0xE counts down after apply, so it no longer equals base by the time a 4MB scan finishes. Runtime caught it. The 0x01 0x01 discriminator I included DID work (rejected all 6 coincidental (id,base) hits), but the fingerprint alone is not specific in 4MB of small integers. Right instrument: breakpoint the store."
     ],
-    "owner_questions_parked": "Runtime opened bead jus-law for owner questions the ledger surfaces each morning, phrased as confirm/deny rather than open questions. Mine sent 2026-08-18: (1) does down+B change the OPPONENT character, not your own? (2) is there any damage-over-time status in JUS at all? (3) do statuses tick visibly or are they instantaneous state flags? (4) are the exotic rulemess missions (destroy every wall, protect the target, capture the target) real playable rules?"
+    "owner_questions_parked": "Runtime opened bead jus-law for owner questions the ledger surfaces each morning, phrased as confirm/deny rather than open questions. Mine sent 2026-08-18: (1) does down+B change the OPPONENT character, not your own? (2) is there any damage-over-time status in JUS at all? (3) do statuses tick visibly or are they instantaneous state flags? (4) are the exotic rulemess missions (destroy every wall, protect the target, capture the target) real playable rules?",
+    "process_rules": [
+      "NAME THE CONTAINING FUNCTION BEFORE BELIEVING AN OFFSET HIT. Searching by immediate offset finds every struct in the ROM with a field at that offset."
+    ]
   }
 }

@@ -1044,7 +1044,8 @@ division P159 proposed and P170 retracted.
 `n=1 on the status side`, in the label rather than a footnote: one status id, one LR, one matchup. The gauge
 side is n=6 across four ids. **If a status ever lands on `+0x172`, the model collapses.**
 
-**Independent static support, found the same wake.** Every writer of both bytes lives in **ov12**, not ov6 —
+**RETRACTED (P171) — the ov12 "writers" are an offset collision, not support.** What follows was wrong and
+is struck; see the P171 block at the end of this file. Every writer of both bytes lives in **ov12**, not ov6 —
 so staging and flushing are in different overlays. Two of them are dedicated two-instruction leaf setters,
 one per channel:
 
@@ -1150,3 +1151,48 @@ counter-attacked and up+X never connected — which also explains the thin yield
 against three in four previously. Recorded as **not** support for reading two.
 
 Tally: `+0x173` — 4 dispatches across 3 opcode-bearing ids. `+0x172` — 13 across 5. No crossover.
+
+### RETRACTION (P171): the ov12 staging-byte "writers" are a different struct entirely
+
+`RETRACTED`, mine, one wake after I published it. I searched for immediate-offset stores to `+0x172`/`+0x173`,
+found seven, all in ov12, and reported them to the runtime loop as **independent static support** for their
+two-channel model — including "two dedicated two-instruction leaf setters, one per channel."
+
+They are not writers of the battle entity. Named from `modules.json`:
+
+| site | containing function | file |
+|---|---|---|
+| `0x021BC194`, `0x021BC19C` | `CommonWindow_Create` region | `CommonWindow.cpp` |
+| `0x021C7A10`, `0x021C7A14` | `CreateIntf` | `ALTextDS.cpp` |
+| `0x021C9770`, `0x021C9AD8`, `0x021C9C24` | `SetFontPaletteIndex` | `ALTextDS.cpp` |
+
+ov12's string table is `ALWidget` / `ALText` / `ALFont` / `ALCollision` / `CommonWindow` / `WiFiVoiceChat` /
+`JArenaParam` — a **UI and wifi overlay**. These sites write `+0x172`/`+0x173` of a *text widget*, and one of
+them (`0x021C9C24`) writes a **boolean** computed from a `moveq`/`movne` pair, which is not an effect id at
+all. Pure offset collision.
+
+**Dependents, named and struck:**
+
+- The "independent static support" claim, and the "two dedicated per-byte setters" reading. Both dead. My
+  message to the runtime loop said their LR split and my writer-side split "agree without sharing anything" —
+  that was wrong, because my side wasn't looking at their struct.
+- **The `id 1 = default staging` hypothesis is `RETRACTED`.** It rested entirely on the ov12 initialiser
+  writing `1` to `+0x172` — which is `CreateIntf` in `ALTextDS.cpp` initialising a text widget. The runtime
+  loop said it "looks good from here"; it has no static basis and they should stop counting it.
+- The P171 queue item, which was going to test the channel split from those sites.
+
+**Unaffected:** the runtime loop's two-channel model itself, which stands on their own LR evidence at n=17
+with no crossover. Only my static corroboration is withdrawn. `CONFIRMED_RUNTIME` stays; the
+`CONFIRMED_STATIC` I was reaching for never existed.
+
+**What the negative actually establishes, and it echoes a documented pattern.** The real writers of
+`X+0x172`/`X+0x173` — where `X = [[char+0x1A8]+0x10]`, the ColPrm owner object — **do not appear in any
+immediate-offset store anywhere in the ROM.** That is the same blind spot as the `+0xE8` hunt at iteration 76,
+which found 27 immediate-offset stores, none in ov6, and zero split-offset (`add`+`str`) stores. So the
+staging writer is a register-offset store, a split-offset store, or Thumb code the xref DB can't see — and
+finding it needs a different instrument, not a wider search of the same kind.
+
+**Process note.** Searching by immediate offset finds every struct in the ROM that happens to have a field at
+that offset. I knew that — it is why the campaign has an overlay-aliasing rule — and I still published seven
+hits as if a shared offset implied a shared type. The check that would have caught it took one lookup:
+*name the containing function before believing the hit.*

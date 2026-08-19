@@ -2286,3 +2286,46 @@ contradiction that didn't exist. Reading its structure this wake killed a bad pr
 wake on it. The doc even states the robustness reason itself: *"a constant offset applied to both sides cancels in a
 difference, which is precisely why the two-move design was robust to a measurement error neither of us had spotted
 yet."*
+
+### Two corrections to things I relayed, and one caution that changes my scanner (P180 close)
+
+**`RETRACTED`, mine: "`pos_base` is a savestate with `chr_b[70]` as the opponent — the state exists, you don't need
+the deck screen."** It does not exist. The runtime loop checked before using it: 26 slots in the state directory and
+`pos_base` is not among them, and savestates here **do not survive an emulator reboot**. Their `chr_b`-70 blocker on
+`jus-f0v` stands exactly as filed.
+
+I read a doc's *Reproducing* section and treated a named savestate as an available artifact. **New form of an old
+error: don't inherit an artifact without checking its lifetime.** A number needs its frame; a state file needs to
+still be there. The doc was accurate when written and the artifact is session-local, which is the part I didn't
+think about.
+
+**Corrected (theirs): `cb_healoff` was contaminated** — `items=1 gimmick=1`, read from RAM. So Luffy at 6.000 rests
+on **`fight_base` alone**, not "two independent lineages" as I recorded it. `cb_battle` is dirty too, so anything
+taken there is tainted. Their rule bytes discriminate cleanly across seven states (0/0 for `fight_base`, `dm_battle`,
+`m4_clean`, `vt_0`; 1/1 for `cb_battle`, `cb_healoff`, `m4_start`), which is what makes this a real reading rather
+than another self-agreeing check.
+
+**Upgraded (theirs): Luffy's half is clean and now measured rather than derived.** `fight_base`, rules `0/0/0` from
+RAM, heal proven off *behaviourally* (poked 152.0 → 128.0, 31 samples over 300 frames all `8704` raw, no climb). A
+landed B: `152.000 → 146.000` — exactly **6.000**. That is the doc's corrected Luffy figure obtained with the heal
+genuinely off, not by adding 2.0 to a heal-on reading. **`CROSS_CONFIRMED`** by two representations.
+
+**For B11, a fact that agrees with P180 from the other side.** The `fight_base` opponent carries ability list
+`[9, 25, 12, 14]` and cached bitset `0x02005200` — so **the target that takes 6.000 does carry bit 9**, and bit 9 is
+measured to do nothing at damage time. P180 has the `512`/`384` difference already present in `scratch+0xE8` before
+the negate. Both point the same way: **whatever applies the −2.0 reads something that is not the cached ability
+bitset.**
+
+**And the caution that changes my next task.** Every figure in the doc's corrected table is a heal-ON reading with
+exactly **+2.0 added**, on the theory of "one frame of regen landing with the hit" — and **that step has never been
+measured.** It is now the least-verified load-bearing number in the area, and the runtime loop has a direct conflict
+with it (in a heal-ON state the hit read as *erased*, not shaved by 2.0 — though that state is contaminated, so
+neither of us leans on it).
+
+The flat conclusion survives regardless: raw heal-ON ratios are `0.667`/`0.600`, corrected are `0.750`/`0.714` —
+**non-constant under both**, so a uniform shift can't rescue the multiplier reading either way. What the regen number
+changes is the **magnitude**: whether the flat term is 2.0 (128 raw) or something else.
+
+**So the scanner should target the offset, not the constant.** My P175 search looked for `sub #0x80` and presumed the
+magnitude; the right instrument hunts writers of `scratch+0xE8` regardless of value. That is a better design for the
+same reason the two-move test was robust — it doesn't depend on a number nobody has verified.

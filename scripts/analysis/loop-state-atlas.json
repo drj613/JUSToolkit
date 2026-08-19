@@ -3,10 +3,10 @@
   "phase": "combat",
   "current_task": "P168 DONE: the mode-12 gate is resolved to arm9. State 1 (0x0214DAA4) advances only if 0x0214DADC returns non-zero; that gates on the veneer 0x0207382C, which DISCARDS the caller r0 and binds 0x0207387C to the singleton 0x0214BD50. That function returns 1 once [0x0214BD58] is set, and sets it when ((counter+4) >> shift) & 0xFFFF >= 0x10, with counter at 0x0214BD52 and shift at 0x0214BD51. PLAUSIBLE: a fade/transition progress object, making mode 12 a stuck transition -- which is also why its framebuffer was black. Codex wrong on one operand (cmp r0 vs cmp r1); bits + query.py settled it.",
   "queue": [
-    "P169-READ THE REST OF 0x0214DADC, from 0x0214DAEA to its return. The veneer check is only an EARLY return; the value state 1 tests is produced downstream (bl 0x0214D9C8, then blx 0x021683B8 / 0x02153108 / 0x0215FAA8). THAT is the mode-12 discriminator. Also enumerate the callback-slot states FROM THE CODE: runtime found a 4th state 0x0214DB61 between the poll and 0x0214DBCD and warns four is a lower bound.",
-    "P169b-root+0x08 writer (arm9 + register-offset stores; ov6 immediate pattern exhausted).",
-    "P169c-static writer of root+0x118 / +0x11C (runtime top ask, jus-3vg).",
-    "P169d-static writer of root+0x4C (term V, still SPECULATIVE).",
+    "P169-EXTRACT THE BASE DURATIONS from the 42-entry effect table so the status-duration formula can finally be runtime-tested. UNBLOCKED THIS WAKE: runtime retracted jus-vkj (advance(N) is accurate; the emulator just free-runs between plans), so duration measurement is available for the first time. Formula (P158, ov6 0x02158F78): duration = base + (base/10)*(V*2). With V=0 (the array reads zero in 4 states / 2 boots) the prediction is duration == base EXACTLY. Deliverable: pick 2-3 statuses with distinct, large base values, give runtime the exact base frame counts, and let a measured duration != base prove V != 0 without needing the sentinel poke at all. THIS IS THE CHARTER STANDING PRIORITY.",
+    "P169b-read the rest of 0x0214DADC from 0x0214DAEA (the real mode-12 discriminator).",
+    "P169c-enumerate the callback-slot states FROM THE CODE (runtime says at least four, lower bound).",
+    "P169d-what is 0x0214BD50 / the arm9 module 0x02073798-0x02073FF4 that owns it and its siblings.",
     "P168b-static writer of root+0x118 / +0x11C (runtime top ask, jus-3vg) -- would turn their empirical 0x70/0x61C validation into a structural check.",
     "P168c-what sets the gate byte 0x0217296D: find its writers. That is the thing that decides whether a mode plays at all.",
     "P168d-static writer of root+0x4C (term V).",
@@ -2143,7 +2143,8 @@
     ],
     "runtime_corrections_accepted": [
       "The callback-slot sequence is at least FOUR states (0x0214DB61 sits between the poll and 0x0214DBCD, holding ~30 frames, invisible at 40-frame sampling). Four is a LOWER BOUND -- enumerate from the code, not from sampling.",
-      "The static counter at 0x0214BD52 is NOT independent evidence for the retraction: my own decode early-returns once the flag is set, so a set flag PREDICTS a static counter. Only the flag carries the argument."
+      "The static counter at 0x0214BD52 is NOT independent evidence for the retraction: my own decode early-returns once the flag is set, so a set flag PREDICTS a static counter. Only the flag carries the argument.",
+      "jus-vkj RETRACTED by runtime: advance(N) is accurate (2300 -> observed 2301). The emulator free-runs at ~60fps whenever no plan executes, so a framecount delta spanning the callers own work overcounts. UNBLOCKS duration measurement, which unblocks the V test. Their bridge now reports fc_start/fc_end/observed_frames and returns None on an old bridge rather than echoing the request."
     ]
   }
 }

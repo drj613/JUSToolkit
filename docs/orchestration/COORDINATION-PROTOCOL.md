@@ -36,6 +36,23 @@ The four failures this protocol is built to prevent:
 | **static** | Works the disassembly, maps structs/formulas, produces addresses. Labels claims. | `justoolkit-73` [fbc915] — started 2026-08-19 |
 | **ledger** | Reads the beads ledger + git, keeps the human catch-up summary, flags inconsistencies, nudges idle loops. Does **not** write findings. | `justoolkit-e8` — started 2026-08-19 |
 
+**Other sessions active in this project (not loops, no assigned role):**
+
+| session | what it is doing | emulator |
+|---|---|---|
+| `justoolkit-8f` | investigating why in-battle touch (dream-attack / support-call taps) does not work; came in cold via a user request | **drove it 2026-08-19**, sent live in-battle touch at DS (140,90); released and stopped melonDS |
+
+**Exclusive access to the emulator is not covered by anything below, and that is the biggest
+gap in this protocol.** On 2026-08-19 a session outside the role table drove melonDS
+concurrently with the runtime loop's damage measurements, sending live in-battle touch. Three
+sessions of results came into question and several nulls had been charged to design error.
+Reads and screenshots are harmless; **input during a live battle contaminates**. Until this is
+settled properly: say so before you drive it, say so when you stop, and record both on `br`
+bead `jus-emulator-access-not-exclusive-tum`. The measurement provenance schema below needs a
+mandatory line — *was exclusive access held, and how was that established* — because without
+it a conditions block reads clean while being contaminated. That is the gimmick lesson with
+another agent as the contaminant.
+
 **On every restart, update this table.** Names drift across restarts; this table is the
 authoritative mapping. Always resolve the role via `ListAgents` as a backup, but keep this
 table current so cold-start readers and cross-session messages can resolve roles without guessing.

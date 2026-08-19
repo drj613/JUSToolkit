@@ -809,4 +809,16 @@ Anything I design for them has to respect these:
   duration experiment must use **base values well above ~500 frames**, or the per-round IPC has to be cut
   down first.
 - **The Battle path defaults items and gimmicks ON** and nothing in that flow clears them; `rules_off()`
-  works there but must be called explicitly.
+  works there but must be called explicitly. **Now gated (`jus-9ne`):** `match_run.py` raises *before*
+  deriving addresses if items or gimmicks are on, so a contaminated run cannot reach the measurement.
+  `--allow-contaminated` must be typed and stamps `contaminated_run: true` into the timeline. Every
+  timeline carries its conditions block and `end_reason` at top level, so the harness can no longer emit a
+  bare number. **What the gate does NOT cover:** `jus-5kf` (HP recovery) isn't gated, because the RAM value
+  expressing it isn't known yet — so a Battle-path run still starts with a moving HP baseline and says
+  nothing about it. When I design anything HP-based, that's mine to route to the training path.
+
+**Evidentiary-weight rule (runtime's distinction, worth keeping).** Watching a transition land on a
+*specific value named in advance* earns a cross-confirmation. Observing an *absence of contradiction* does
+not — same instrument, different weight. That is why `root+0xC8` going `1→0` with `root+0x000` restored to
+the pre-named `0x02150F65` upgraded the rule-completion path, while "the state sequence never stalls" left
+the same-tick slot re-read at `CONFIRMED_STATIC`.

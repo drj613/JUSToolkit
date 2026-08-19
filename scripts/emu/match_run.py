@@ -193,6 +193,62 @@ def require_clean_rules(allow_contaminated=False):
     return c
 
 
+def autoheal_is_on_by_behaviour(addr, drop=0x600, wait=360):
+    """Does HP at `addr` climb back on its own? Poke it down and watch.
+
+    THIS FUNCTION DID NOT EXIST. HANDOFF-2026-08-18-runtime-2.md section 7
+    advertises it by name as one of "two oracles worth reusing" and describes its
+    method in detail, but `git log -S` finds it in no commit -- only in the prose.
+    Its sibling canvas_is_down() is real. So the handoff documented an oracle that
+    was never written, and match_run's own --boot path calls an undefined
+    autoheal_off(). Both are recorded on jus-5kf.
+
+    WHY POKE RATHER THAN WATCH. Simply observing HP rise cannot separate regen
+    from the count-up animation that follows a respawn -- and on the Battle path
+    the player is knocked down constantly, so respawns are everywhere. Poking HP
+    DOWN mid-life causes no KO and no respawn, so any climb afterwards has only
+    one explanation left.
+
+    The poke is its own positive control: the read-back must show the write
+    landed. If HP did not move when I moved it, the instrument is dead and the
+    result is discarded rather than reported as "no regen".
+
+    Restores the original halfword either way, including on the failure path.
+    """
+    orig = peek(addr, 2)
+    if orig is None or orig <= drop:
+        raise RuntimeError(
+            "HP at 0x%08X reads %s -- too low or unreadable to poke down safely; "
+            "a poke that reaches 0 would trigger a KO and a respawn, which is the "
+            "very thing this test exists to exclude." % (addr, orig))
+    target = orig - drop
+    try:
+        cli("poke", hex(addr), "%02X%02X" % (target & 0xFF, target >> 8))
+        # Read back with NO frames advanced first. This separates two outcomes a
+        # single delayed read conflates: a write that never landed, and a write
+        # that landed and was reverted by the game within a few frames. The
+        # second IS regen, and a delayed read reports it as instrument failure --
+        # which is what the first version of this function did.
+        immediate = peek(addr, 2)
+        if immediate != target:
+            raise RuntimeError(
+                "POSITIVE CONTROL FAILED: wrote %d to 0x%08X, read back %d with no "
+                "frames advanced. The write itself did not land, so nothing after "
+                "this means anything." % (target, addr, immediate))
+        nav.advance(10)
+        early = peek(addr, 2)
+        nav.advance(wait)
+        after = peek(addr, 2)
+    finally:
+        cli("poke", hex(addr), "%02X%02X" % (orig & 0xFF, orig >> 8))
+    climbed = after - target
+    return {"orig": orig / 64.0, "poked_to": target / 64.0,
+            "early": early / 64.0, "after": after / 64.0,
+            "climbed": climbed / 64.0,
+            "snapped_back": early >= orig,   # restored within ~10 frames
+            "regen": climbed > 0}
+
+
 def rule_running():
     """Is the rule still live? Read from RAM, never from the screen.
 

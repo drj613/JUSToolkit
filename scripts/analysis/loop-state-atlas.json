@@ -1,11 +1,11 @@
 {
-  "iteration": 174,
+  "iteration": 175,
   "phase": "combat",
-  "current_task": "P174 DONE: the tick driver is the SECOND HALF of 0x02158B20 (the function P159 called the on-hit flush) -- it is the per-character effect update. node+0xE is decremented 1/tick at 0x02158C88; the tick call is 0x02158CF0 blx with (battleObj, node); on expiry it installs the stub and calls 0x0215911C(battleObj, slot); exactly 2 slots stride 0x18 from the loop bound. CLOSED a P169 not-claimed: state.bin flags bit 0x20 = duration can drain faster than 1/tick, gated on ABILITY BIT 8. The ability bitset now has THREE unrelated consumers (cancel gate by opcode, bit 8 faster decay, bit 14 vs +0xBC/+0xBE) -- it is a behaviour switchboard. Also explains runtime s 15,732 empty dispatches structurally: flush and tick are the same function. NOT FOUND: the 1-HP floor -- the whole DoT path is now mapped and nothing clamps to 1.",
+  "current_task": "P175 DONE: the HP apply COMPUTES a KO signal (return = \"still non-zero\") and ALL EIGHT ov6 callers of 0x020783CC discard it -- each branches away or overwrites r0 on the next instruction, including both drain handlers. So the apply is NOT the KO trigger. That explains the owner s \"DoT never kills\" WITHOUT needing a floor -- but only if KO detection is signal-driven; if it polls char_struct+0x18 elsewhere, the floor is real and unfound. Also: displayed HP is raw/64, so the owner s \"1 HP\" is probably RAW 64 -- every floor search so far looked for a clamp to 1, and the constant to hunt is 0x40. Taking a display reading as a raw value was my assumption.",
   "queue": [
-    "P175-THE KO PATH, for the owner s 1-HP floor (unchanged top task). Whole DoT path mapped, nothing clamps to 1. Cross-branch first: HP-Struct-From-Disassembly.md (origin/master) names fn_health_calc 0x020784FC, adjacent to the apply worker 0x02078488.",
-    "P175b-read 0x0215911C, the expiry handler -- last unread function on the effect lifecycle.",
-    "P175c-what 0x021613C4(battleObj+0x1C, 0xF, 2) is -- the SECOND route to a faster decay, now worth more since bit 8 is confirmed and this is the other branch of the same test.",
+    "P176-SEARCH FOR 0x40 (= 1.0 displayed HP) as a clamp/comparison on the drain and tick paths. Every previous floor search looked for the constant 1; if the floor is one DISPLAYED unit the constant is 0x40.",
+    "P176b-FIND ANY READ OF char_struct+0x18 THAT BRANCHES ON ZERO outside the apply. That decides signal-driven vs polled KO detection, and settles whether a floor needs to exist at all.",
+    "P176c-read 0x0215911C, the expiry handler -- last unread function on the effect lifecycle.",
     "P168b-static writer of root+0x118 / +0x11C (runtime top ask, jus-3vg) -- would turn their empirical 0x70/0x61C validation into a structural check.",
     "P168c-what sets the gate byte 0x0217296D: find its writers. That is the thing that decides whether a mode plays at all.",
     "P168d-static writer of root+0x4C (term V).",
@@ -273,7 +273,8 @@
     "P171-retraction-ov12-offset-collision",
     "P172-effect-cancel-gate-and-the-drain-paths",
     "P173-char-0x56c-is-the-character-struct",
-    "P174-effect-tick-driver"
+    "P174-effect-tick-driver",
+    "P175-the-ko-signal-is-discarded"
   ],
   "stuck": {},
   "required_reading_for_koma_tasks": [

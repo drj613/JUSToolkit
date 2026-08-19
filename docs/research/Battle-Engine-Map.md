@@ -1799,3 +1799,16 @@ never separable from its premises can't be said to have been tested.
 **What made it a two-minute job:** no GDB at all. Cancellation reads directly as `fn == stub && dur == 0`, so a
 poke and two peeks settle it. The same question two wakes ago was un-runnable and produced an underpowered null
 against a real up+X. One field in a fabricated node — `node+0x04` — is the whole difference.
+
+### The HP apply computes a KO signal and every caller throws it away (P175)
+
+`findings/p175-the-ko-signal-is-discarded.md`.
+
+| what | where | confidence |
+|---|---|---|
+| The apply worker's return value is exactly a **"still non-zero" flag** — `cmp r0,#0` / `movne r0,#1` / `moveq r0,#0` after storing the new HP. The natural KO signal | arm9 `0x020784A4`–`0x020784B0` | `CONFIRMED_STATIC` |
+| **All eight ov6 callers of the trampoline `0x020783CC` discard it** — each either branches away or overwrites `r0` on the very next instruction, including both drain handlers (`0x0215952C`, `0x02159668`). `0x02078488`'s only direct caller does the same | ov6 + arm9 | `CONFIRMED_STATIC` |
+| **So the HP apply is not the KO trigger.** The signal is computed and dropped at every site that could consume it | — | `CONFIRMED_STATIC` |
+| Whether HP reaching zero by drain is *survivable* | — | `not claimed`. If KO detection is signal-driven this is the whole answer; if it polls `char_struct+0x18` somewhere else, the floor is real and unfound. Both live. |
+| **A reading correction on "1 HP":** displayed HP is **raw / 64** (max `0x4000` = 256.0 displayed), so a player's "1 HP" is most likely **raw 64**. Every floor search so far looked for a clamp to `1`; the constant to look for is **`0x40`** | — | `PLAUSIBLE` — and taking the owner's *display* reading as a raw value was my assumption, not their claim |
+| Found on the way: the **chr_b record accessor family** at `0x02078514`+ reaches `record = [manager+0x40] + [char_struct+0x41]*0x3C`, then a halfword at `record+0x24 + arg*2`. Manager `0x0214BD80`, offset `+0x40`, stride `0x3C` — exactly the chrb-catalog map, reached from a fresh angle through the `chr_b` index field the HP doc names | arm9 | `CONFIRMED_STATIC` |

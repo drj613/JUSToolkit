@@ -1,3 +1,23 @@
+> ## ⚠️ RETRACTED THE SAME DAY — the first byte is `charId`
+>
+> This entry reads `chr_b` record `+0x03..+0x07` as a five-slot ability array. It is
+> **`charId` at `+0x03` plus a four-byte `flags` field at `+0x04`** — both verified against
+> `jus_files/exported_combat/chr_b.json` for 74 of 74 records.
+>
+> So "ability id 9" does not exist in this data. The id-9 carriers named below are exactly the
+> records whose `charId` is 9, and **no record carries 9 in the flags field**. The claim that
+> Edajima uniquely arms both class gates is withdrawn, as is "id 11 is the only orphan".
+> Claim: [`jus-ondisk-ability-list-at-chrb-0x03-kfc`], now `state:retracted`.
+>
+> What survives: the Debug-series prediction (70–73 are still the only four all-zero records),
+> the zero-gap explanation for the earlier failed search, and the runtime `0x0E` append as a
+> non-record source. And one thing gets stronger — the measured gate word needs ability 9,
+> which no record carries, so **at least one live ability comes from outside the ability
+> field**, and `charId` is the leading candidate.
+>
+> Kept rather than deleted: the reasoning below is sound except at slot zero, and the six
+> checks are worth reading for which ones survived a wrong premise and which didn't.
+
 # Loop-Atlas 223 — the on-disk ability list is five sparse bytes at chr_b + 0x03
 
 Claim in beads: [`jus-ondisk-ability-list-at-chrb-0x03-kfc`]. Related:

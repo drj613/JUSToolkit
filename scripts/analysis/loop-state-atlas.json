@@ -2105,7 +2105,7 @@
       "jus-hsc (P165 anchor card, CROSS_CONFIRMED)"
     ],
     "note": "jus-wic/jus-vrz/jus-qsh/jus-q4b from the P164 handoff never existed in the shared db; runtime recreated them as jus-45k/jus-baz/jus-fms/jus-cvx. Do not cite the old ids. My jus-hsc one-line test was malformed and produced a false failure; the replacement (poke the byte, START the match, read root+0x000) passed. Root cause: the menu explanation box follows FOCUS, and re-entering rule_select rewrites the byte.",
-    "live_taint": "root+0x4C term V is SPECULATIVE (zero in 4 states, 2 boots). jus-zco: runtime match_run.py HP constants are wrong outside the default heap layout -- mode 3 moves root by +0x180. Checked: no static claim of mine reads HP; the flat-damage synthesis used training-mode (default layout) numbers, so no new taint there beyond the known gimmick contamination. Future non-default-mode damage batches are the exposure. | jus-5kf: the player HP RECOVERS on the Battle path (cause unsettled). Any Battle-path HP-baseline measurement is uninterpretable. No retroactive taint on my record -- the flat-damage synthesis used training-path numbers only.",
+    "live_taint": "root+0x4C term V RESOLVED: V = 0 in ordinary play (CROSS_CONFIRMED) (zero in 4 states, 2 boots). jus-zco: runtime match_run.py HP constants are wrong outside the default heap layout -- mode 3 moves root by +0x180. Checked: no static claim of mine reads HP; the flat-damage synthesis used training-mode (default layout) numbers, so no new taint there beyond the known gimmick contamination. Future non-default-mode damage batches are the exposure. | jus-5kf: the player HP RECOVERS on the Battle path (cause unsettled). Any Battle-path HP-baseline measurement is uninterpretable. No retroactive taint on my record -- the flat-damage synthesis used training-path numbers only.",
     "cross_confirmed_this_wake": [
       "0x020AFEA0 indexes the rulemess table AT BATTLE TIME (6 distinct handlers for 6 byte values; poked 1 == hand-built death match)",
       "rulemess mode ORDER (mode 2 = Jシンボル matched the static prediction before runtime knew the table)",
@@ -2120,7 +2120,8 @@
       "r0 at the installer is [0x02172960] (static pool + live lr/r0)",
       "live return site 0x0214DA5C == statically scanned call site + 4",
       "the rule-completion path 0x0214DD32-0x0214DD3E: runtime watched +0xC8 go 1->0 with root+0x000 restored to the default 0x02150F65 at completion",
-      "0x020AFEAC = 4463 end to end: 8503 - 4040 = 4463 measured across a whole match using root+0xC8 as the oracle"
+      "0x020AFEAC = 4463 end to end: 8503 - 4040 = 4463 measured across a whole match using root+0xC8 as the oracle",
+      "TERM V = 0 IN ORDINARY PLAY (charter standing priority, CLOSED). Runtime breakpointed 0x02158F88: effect id 10, stored duration 480; state.bin base(10)=480; base/10=48 so V=0. duration == base, and the only non-constant formula in the engine never varies."
     ],
     "my_refutations": [
       "jus-wbo: rulemess text-duplicate entries do NOT share handler code. Refuted statically the same wake it was filed; runtime independently refuted it by measurement. No dependents tainted -- nothing was built on it."
@@ -2147,7 +2148,11 @@
     "runtime_corrections_accepted": [
       "The callback-slot sequence is at least FOUR states (0x0214DB61 sits between the poll and 0x0214DBCD, holding ~30 frames, invisible at 40-frame sampling). Four is a LOWER BOUND -- enumerate from the code, not from sampling.",
       "The static counter at 0x0214BD52 is NOT independent evidence for the retraction: my own decode early-returns once the flag is set, so a set flag PREDICTS a static counter. Only the flag carries the argument.",
-      "jus-vkj RETRACTED by runtime: advance(N) is accurate (2300 -> observed 2301). The emulator free-runs at ~60fps whenever no plan executes, so a framecount delta spanning the callers own work overcounts. UNBLOCKS duration measurement, which unblocks the V test. Their bridge now reports fc_start/fc_end/observed_frames and returns None on an old bridge rather than echoing the request."
+      "jus-vkj RETRACTED by runtime: advance(N) is accurate (2300 -> observed 2301). The emulator free-runs at ~60fps whenever no plan executes, so a framecount delta spanning the callers own work overcounts. UNBLOCKS duration measurement, which unblocks the V test. Their bridge now reports fc_start/fc_end/observed_frames and returns None on an old bridge rather than echoing the request.",
+      "jus-5kf CLOSED: no auto-heal on the Battle path -- the HP recovery was respawn, verified against two controls (cb_battle restores instantly, fight_base does not move, Battle path flat). Battle-path damage work is UNBLOCKED. A small unexplained +1.2 HP per ~720 frames drift remains on the bead."
+    ],
+    "my_design_errors": [
+      "P169 jus-e66: the value-side fingerprint scan CANNOT work -- node+0xE counts down after apply, so it no longer equals base by the time a 4MB scan finishes. Runtime caught it. The 0x01 0x01 discriminator I included DID work (rejected all 6 coincidental (id,base) hits), but the fingerprint alone is not specific in 4MB of small integers. Right instrument: breakpoint the store."
     ]
   }
 }

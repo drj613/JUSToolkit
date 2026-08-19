@@ -1,5 +1,17 @@
 # P169 — The param array is `bin/state.bin`, and `V` can be read instead of timed
 
+
+> **CLOSED, same day, by runtime capture (`jus-e66`).** Effect id `10`, stored duration `480`; `state.bin`
+> entry 10 has `base = 480`; `base/10 = 48`, so `V = 0`. **The formula's second term is zero in ordinary
+> play** — `duration == base`, and the campaign's only non-constant formula does not vary. `CROSS_CONFIRMED`
+> on a data file and a live breakpoint agreeing exactly.
+>
+> Two corrections. My value-side scan design **cannot work**: `node+0xE` counts down after apply, so it no
+> longer equals the base by the time a 4 MB scan completes. Breakpoint the store at `0x02158F88` instead.
+> And the runtime loop's apparent `state.bin` conflict is not one — their `r4` is `&handlerTable[id]`
+> (`0x02171168 + id*8`), not `&paramArray[id]`, which the dispatcher builds separately into `r5`.
+
+
 **Iteration 169. Static.** The status-duration formula (P158) is `duration = base + (base/10) * (V*2)`, with `base = paramArray[id]+0x2` and `V = [[0x02172960] + charIdx*4 + 0x4C]`. `V` has been unidentified for a dozen wakes, with the runtime loop's dumps showing it reading zero across four states and two boots.
 
 Two results this wake: the param array is a shipped data file, so all 42 base durations are known. And the experiment to settle `V` needs no timing — the formula's result is *stored*, so it can be read directly.

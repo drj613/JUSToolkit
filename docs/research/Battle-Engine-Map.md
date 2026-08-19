@@ -836,3 +836,42 @@ the same-tick slot re-read at `CONFIRMED_STATIC`.
 | `+0x6` is `0x0000` in all 42 entries | `state.bin` | `CONFIRMED_STATIC` (still `not claimed` what it would mean if non-zero) |
 | **Term `V` is readable, not timeable.** `0x02158F88` stores the formula's result at `node+0xE`, so `V = 0` predicts `node+0xE == base` exactly. One 16-bit read settles it — immune to the ~400-frame timeline resolution, needs no HP baseline, and needs no clean-rules run | ov6 `0x02158F88` | `CONFIRMED_STATIC` |
 | Which in-play action inflicts which id | — | `not claimed`. Next static task (move-script opcodes). Until then the runtime test is a survey: any `(id, duration)` pair settles `V`. |
+
+### Term `V` is ZERO in ordinary play — the campaign's only non-constant formula doesn't vary (P169, closed)
+
+The runtime loop breakpointed the store at ov6 `0x02158F88` and captured a live pair: **effect id `10`,
+stored duration `480`**. `bin/state.bin` entry 10 has `base = 480`. Since `base/10 = 48 ≠ 0`, the formula
+`duration = base + (base/10)*(V*2)` gives `(480 − 480)/(2×48) = 0`, so **`V = 0`**.
+
+| claim | confidence |
+|---|---|
+| `V = 0` in ordinary play, so `duration == base` and the only non-constant formula in the engine never actually varies | **`CROSS_CONFIRMED`** — a shipped data file's `+0x2` field and a live breakpoint capture agreeing exactly, through representations that share nothing |
+| `bin/state.bin` **is** the param array — the dispatcher's `paramArray = [[0x02172984]+4]` reading, unchanged | `CONFIRMED_STATIC` |
+| `node+0xE` holds the formula's result at apply time and then **counts down** | **`CONFIRMED_RUNTIME`** |
+| `[root+0x4C]` (the `V` slot) reads zero in-battle, now on 5 states / 2 boots plus this derivation | **`CROSS_CONFIRMED`** |
+
+**The runtime loop's apparent conflict dissolves — their `r4` is the wrong table.** They captured `r4 =
+0x021711B8` and read an 8-byte record there (`2c 93 15 02 0d 04 05 ff`), noting it sits in ov6's image
+rather than at `[[0x02172984]+4]` = `0x023DD5C0` (heap). The dispatcher builds **two** pointers at the same
+stride from the same id:
+
+```
+0x02158EE4: ldr r3, [pc, #0x1fc]      ; r3 = 0x02171168  = HANDLER table (ov6 image)
+0x02158EF0: ldr r1, [r0, #4]          ; r1 = [[0x02172984]+4] = PARAM array (heap, from state.bin)
+0x02158EF4: add r4, r3, r8, lsl #3    ; r4 = &handlerTable[id]
+0x02158EFC: add r5, r1, r8, lsl #3    ; r5 = &paramArray[id]
+0x02158F44: ldrh r2, [r5, #2]         ; base duration comes from r5
+```
+
+`0x02171168 + 10*8 = 0x021711B8`, exactly their `r4`. And their record decodes perfectly as a *handler*
+entry under P158's layout: `fn = 0x0215932C`, sound `0x0D`, enum `0x04`, `+0x6 = 0x05`, `+0x7 = 0xFF` — no
+status opcode, which is right for id 10 being a gauge effect. So the record they read is the handler table
+entry; the base duration comes from `r5`, which they didn't capture. Nothing about `state.bin` needs
+revisiting.
+
+**My scan design was wrong and they caught why.** `node+0xE` counts down after apply, while a 4 MB dump plus
+scan costs hundreds of free-running frames, so the field no longer equals the base by the time the scan
+runs. A differential scan across a fight found zero new hits. What *did* work was the `0x01 0x01`
+discriminator I put in the card: of 6 baseline hits on the `(id, base)` halfword pattern, **none** carried
+it, so it correctly rejected all six as coincidence. The fingerprint alone isn't specific in 4 MB of small
+integers; breakpointing the store dodges the window entirely.

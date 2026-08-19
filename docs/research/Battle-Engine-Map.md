@@ -2642,3 +2642,59 @@ chance the writer uses it, while this is a named function demonstrably in the da
 no-side-effect attack — `B` is a punch and `DOWN+B` forces a character switch. The doc states this and notes `UP+B`
 is unsuitable as a third (multi-hit, small per-hit values). So "constant −2.0 across two moves" rests on two moves
 that both have side effects.
+
+### `0x0215A978` confirmed live, my ×0.5 refuted, and `r4` is not what it looks like (P182)
+
+Runtime breakpointed the function within the wake. `CONFIRMED_RUNTIME`:
+
+| point | hits | note |
+|---|---|---|
+| `0x0215A978` entry | **7991** | every frame, per fighter |
+| `0x0215AC1C` (2nd predicate) | **1** | `r4 = 384` (`0x180`) |
+| `0x0215AC28` (the halve) | **0** | branch not taken |
+
+- **It is in the damage path, convergently:** `r4 = 384` mid-computation is exactly the damage measured at the HP block for the same hit. A register and an HP word agreeing.
+- **The reduction is already applied before `0x0215AC1C`** — the target is the resisted one and `r4` reads `384`, not `512`. Independent of P180 and lands in the same place, so the reduction is bounded from two directions.
+- `REFUTED`, mine: the ×0.5 at `0x0215AC28` is not our mechanism. Predicate false on the hit, and `0.5` is the wrong magnitude anyway against a measured ratio of `0.750`. It stays a real special case.
+- **Their warning, which matters more than the result:** `0x0215A978` is a **per-frame per-fighter routine with an early exit**, not a damage-only function. 7991 entries produced **one** arrival at `0x0215AC1C`. "Called during damage" is true and nearly useless — the 1-in-8000 path is the damage path.
+
+**And a correction to how their own capture reads.** `r4` is arg1 at the prologue (`0x0215A984: mov r4, r1`) but it is **reloaded twice** — at `0x0215AB14` (`mov r4, r0`) and decisively at `0x0215AC08`:
+
+```
+0x0215AC00: ldr r1, [r5, #0x1a8]   ; the entity
+0x0215AC04: ldr r1, [r1, #0x10]    ; the ColPrm scratch — the +0xE8 object
+0x0215AC08: ldr r4, [r1, #0x134]   ; r4 = scratch+0x134
+```
+
+So `r4 = 384` at `0x0215AC1C` is a fact about **`scratch+0x134`**, not about the function's argument. The damage lives at `+0x134` as well as `+0xE8`, and `+0x130` is the pending second-gauge amount the flush reads — a three-field cluster on the same object.
+
+**Two predicates reach the halve, not one.** `0x0215AC0C: bl 0x02159A10` / `cmp r0,#0` / `bne 0x0215AC28` — non-zero **halves**; then `0x0215AC1C: bl 0x021598D0` / `cmp r0,#0` / `beq 0x0215AC2C` — non-zero **also halves**. Both were false on the measured hit.
+
+### The `+0x134` store in ov6 is a different object — rule 1 again
+
+`search-imm 0x134` returns `0x02161C2C (ov6) str [r0, #0x134]`. Named before believed: the containing function is
+**`0x02161BAC`** (188 bytes, ARM, 2 callers, 0 callees), and it is a **bulk initialiser** — a run of
+`ldr rX,[pc,#imm]` / `str rX,[r0,#off]` pairs filling `+0x11C`, `+0x120`, `+0x124`, `+0x128`, `+0x134`, `+0x138`.
+Every pool literal is an **arm9 code address** (`0x0207E280`, `0x0207E2B0`, … `0x0207E5FC` for `+0x134`). So it
+installs **function pointers** into a callback-bearing object — **not** the ColPrm scratch, whose `+0x134` held `384`.
+Same offset, different struct: exactly the ov12 `+0x172` trap from P171, caught this time before publishing.
+
+`CONFIRMED_STATIC`: **the scratch's damage fields have no findable writer in ov6 by any static shape I can detect —
+and that is now true for three offsets, not one** (`+0xE8` at P181, plus `+0x130` and `+0x134` here, across both
+`search-imm` and the split/register-offset scanner). Three offsets on the same object behaving identically makes this
+a systematic property rather than a quirk: the writer uses a computed address, writes through a pointer, or lives in
+code I do not scan.
+
+### Two hazard corrections from the runtime side
+
+**`RETRACTED` — the reason I gave for my `pos_base` retraction.** I accepted "savestates do not survive an emulator
+reboot" and built a rule on it. **They do survive:** after a full stop/launch cycle `fight_base` loaded with the
+anchor at `0x021DEA60`, conditions `0/0/0`, HP `160.000/152.000`, heal still off. The handoff's claim is wrong. So
+`pos_base`'s absence is a **real absence** — never created, or deleted — not an expiry, and **a relaunch is cheap
+recovery rather than a loss of the working set.** My retraction of the `pos_base` claim stands; the *reason* was wrong,
+and the rule I derived needs restating: **check that an artifact exists**, not "assume artifacts expire".
+
+**A dead GDB stub pauses the emulator with no way back.** The stub allows one connection per launch; a second attempt
+half-attaches, and killing gdb leaves the CPU halted — state "paused", framecount frozen, every bridge call failing
+"a command is pending", and reattaching to detach fails with `vMustReplyEmpty: timeout`. The only exit is a relaunch,
+which is safe per the above. With a healthy stub, killing gdb resumes cleanly.

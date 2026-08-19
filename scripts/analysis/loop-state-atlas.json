@@ -1,11 +1,11 @@
 {
-  "iteration": 181,
+  "iteration": 182,
   "phase": "combat",
-  "current_task": "P181 DONE: built scripts/analysis/regoff_store_scan.py (committed tool). It needed a MODE FILTER -- the first run reported arm9 0x020509C8 as a Thumb add #0xE8 and it is ARM ldr r3,[pc,#0xe8]; rule 1 caught it. Positive control: +0x40 yields 3 ov6 hits, so the instrument reaches ov6. Target: +0xE8 gives 30 candidates and ZERO in ov6; +0x130 (the sibling read at the same flush) gives zero anywhere. So the static space for the B11 writer is exhausted across immediate-offset (iteration 76) and split-offset (here). jus-fun s watchpoint is the only route left, now backed by a demonstrated negative with a control.",
+  "current_task": "P182: 0x0215A978 CONFIRMED in the damage path (r4 = 384 mid-computation = the measured damage) but it is a PER-FRAME PER-FIGHTER routine -- 7991 entries, one arrival at the damage path. My x0.5 lead REFUTED as the mechanism (predicate false; 0.5 is the wrong magnitude vs the measured 0.750). KEY CORRECTION to their capture: r4 at 0x0215AC1C is NOT arg1 -- it is reloaded at 0x0215AC08 from [[char+0x1A8]+0x10]+0x134, so \"r4 = 384\" is a fact about scratch+0x134. TWO predicates reach the halve (0x02159A10 bne, 0x021598D0 beq), both false. The ov6 +0x134 store at 0x02161C2C is a DIFFERENT object -- a bulk initialiser installing arm9 function pointers (rule 1 caught it). So three scratch damage fields (+0xE8, +0x130, +0x134) have NO findable writer by any static shape -- systematic, not a quirk.",
   "queue": [
-    "P182-READ ov6 0x0215A978 (1296 bytes, ARM, 2 callers) -- THE DAMAGE-MODIFICATION FUNCTION. Found in the doc section I had skipped: it holds a damage value in r4, CONDITIONALLY HALVES it at 0x0215AC28 on the predicate 0x021598D0, reads the ColPrm scratch flags via [[char+0x1A8]+0x10]+0x40, and calls BOTH apply trampolines (0x020781E4 at 0x0215AC64, 0x020783B8 at 0x0215AC70). It already contains one conditional modifier and has the +0xE8 object in hand, so it is the strongest candidate for where a flat reduction is applied. OUTRANKS the shifted-register scanner extension: that hunts a store shape on spec, this is a named function demonstrably in the damage path.",
-    "P182b-shifted-register scanner extension (demoted, still the last static store shape).",
-    "P182c-the polled-KO discriminator; the {kind,id} table; the extra-ability writer; auto-heal.",
+    "P183-BRACKET WHERE 512 BECOMES 384. The damage is already 384 at scratch+0x134 when 0x0215AC08 loads it. Ask runtime to capture [scratch+0x134], [scratch+0xE8] and [scratch+0x130] at: the caller 0x02156EB4 entry, the 0x0215A978 prologue, and 0x0215AB14 (the other r4 reload). That brackets the reduction to a code range without needing the writer. Cheap now that they know a relaunch is safe.",
+    "P183b-identify the TWO halve predicates 0x02159A10 and 0x021598D0 -- both were false on the measured hit, but a conditional halving gated on a per-character test is still the shape a modifier takes.",
+    "P183c-shifted-register scanner extension; the polled-KO discriminator; the {kind,id} table; auto-heal.",
     "P168b-static writer of root+0x118 / +0x11C (runtime top ask, jus-3vg) -- would turn their empirical 0x70/0x61C validation into a structural check.",
     "P168c-what sets the gate byte 0x0217296D: find its writers. That is the thing that decides whether a mode plays at all.",
     "P168d-static writer of root+0x4C (term V).",
@@ -280,7 +280,8 @@
     "P178-ability-list-is-in-chr_b",
     "P179-four-character-comparison-uninformative",
     "P180-the-reduction-lives-in-the-b11-writer",
-    "P181-regoff-store-scanner"
+    "P181-regoff-store-scanner",
+    "P182-damage-function-confirmed-and-r4-reloaded"
   ],
   "stuck": {},
   "required_reading_for_koma_tasks": [
@@ -2186,7 +2187,8 @@
       "2026-08-19 P179/P180: I recorded Luffy 6.000 as resting on \"two independent lineages, fight_base and cb_healoff\". cb_healoff is CONTAMINATED (items=1 gimmick=1 from RAM). It rests on fight_base ALONE. Corrected.",
       "2026-08-19 P181: my prediction-table cell claiming the max-HP-gated reading predicts 6.000 for a heal-ON hit on a full-HP target -- RETRACTED. The target is below max the INSTANT it is struck, so regen can act in the recovery window on a first hit exactly as on a later one. Getting 6.000 there needs an unevidenced regen phase/cooldown assumption. I treated \"at max when the hit lands\" as the condition when the condition is the HP state DURING the window regen acts in -- which the hit itself changes. A max-HP gate does not survive its own hit.",
       "2026-08-19 P181: I described runtime s window sampling as \"uniform, one point every ~5.3 frames\" -- WRONG, it was already front-loaded (0,2,4,6,8,10,12 then coarse; 7 of 15 points in the first 12 frames). I computed 80/15 and treated a COUNT as a SCHEDULE rather than asking. The conclusion survived (a 1.5-frame climb is invisible at 2-frame spacing too) but the premise was mine and it was wrong.",
-      "2026-08-19 P181: I reported as VERIFIED that the doc s read protocol \"isn t recorded\". It is -- the Reproducing section says \"read damage as the MINIMUM OF THE DIP, not before/after\". I read the METHOD section (where a read delay would naturally live), found nothing, and reported a verified absence from one third of the document. NEW RULE: CONFIRMING AN ABSENCE FROM ONE PLAUSIBLE LOCATION IS NOT VERIFICATION -- an absence requires reading everywhere it could be. What is actually missing is the sampling RESOLUTION, not the delay."
+      "2026-08-19 P181: I reported as VERIFIED that the doc s read protocol \"isn t recorded\". It is -- the Reproducing section says \"read damage as the MINIMUM OF THE DIP, not before/after\". I read the METHOD section (where a read delay would naturally live), found nothing, and reported a verified absence from one third of the document. NEW RULE: CONFIRMING AN ABSENCE FROM ONE PLAUSIBLE LOCATION IS NOT VERIFICATION -- an absence requires reading everywhere it could be. What is actually missing is the sampling RESOLUTION, not the delay.",
+      "2026-08-19 P182: the REASON for my pos_base retraction -- I accepted \"savestates do not survive an emulator reboot\" and built a rule on it. Runtime demonstrated they DO survive a full stop/launch cycle. The retraction stands (pos_base really is absent -- never created or deleted) but the rule needs restating: CHECK THAT AN ARTIFACT EXISTS, not \"assume artifacts expire\". A relaunch is cheap recovery, not a loss of the working set."
     ],
     "tooling_note": "xrefs.json cannot be trusted for Thumb callers (~89% literal-load blindness, P160). Hand-rolled exhaustive Thumb BL/BLX scan over ov06.bin is the reliable method and found the single caller immediately. Worth promoting into query.py.",
     "codex_disagreements": [
@@ -2220,7 +2222,8 @@
       "A CAVEAT RECORDED IN PROSE DOES NOT CONSTRAIN CODE WRITTEN LATER (runtime, on their own oracle): they documented \"there is no immediate read through this bridge\" in a docstring, then built a positive control that required an immediate read-back.",
       "WHEN A DOC HAS BEEN REVISED, A GREP RETURNS WHICHEVER VERSION MATCHES FIRST. Read the structure (headings, update markers), not just the matching lines. Third variant this session of \"the information was already written down\".",
       "DO NOT INHERIT AN ARTIFACT WITHOUT CHECKING ITS LIFETIME. Savestates are session-local and do not survive an emulator reboot, so a doc s Reproducing section names states that may be gone. Same family as not inheriting a number without its frame.",
-      "CONFIRMING AN ABSENCE FROM ONE PLAUSIBLE LOCATION IS NOT VERIFICATION. To verify that something is not recorded, read the whole document, not the section where it would most naturally belong (P181)."
+      "CONFIRMING AN ABSENCE FROM ONE PLAUSIBLE LOCATION IS NOT VERIFICATION. To verify that something is not recorded, read the whole document, not the section where it would most naturally belong (P181).",
+      "CHECK THAT AN ARTIFACT EXISTS (not: assume artifacts expire). Savestates DO survive an emulator relaunch, so a relaunch is cheap recovery. A dead GDB stub, however, pauses the emulator with no way back except relaunch."
     ],
     "planning_caveats": [
       "melonDS watchpoint support is limited and UNTESTED by runtime (jus-fms) -- they have only used execution breakpoints successfully. Budget a support test before designing around a write-watchpoint.",

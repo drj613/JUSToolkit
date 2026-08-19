@@ -1,17 +1,17 @@
 # Session Ledger — JUS Reverse Engineering
 
-Last updated: 2026-08-19 ~05:30 (ledger wake 26, session `justoolkit-87`)
+Last updated: 2026-08-19 ~07:30 (ledger wake 29, session `justoolkit-87`)
 
 ## 1. Current state
 
 This file is a human catch-up summary — not the system of record. beads (`br`) is the record; protocol in `docs/orchestration/`.
 
 **Live sessions (from ListAgents):**
-- `justoolkit-fa` [cedb9e] — **idle**, 10h. **Runtime**. Session complete. Overnight: closed jus-ovv + jus-kdf + jus-eml, confirmed ability bitset, synthetic drain kills, Goku B = 6.000 heal-off, four-point bracket on +0x134 writer. 25+ commits. Now blocked on jus-fun (watchpoint tooling).
-- `battle-engine-atlas-76` [2e8ac4] — **idle**, 10h. **Static**. Now at **P185**. Session complete. Overnight: P165→P185 (20 iterations). Found flat -2.0 in B11 writer, built regoff scanner, found damage function, closed all three static routes to +0x134 writer. 20+ commits. Also blocked on jus-fun.
+- `justoolkit-fa` [cedb9e] — busy, 11h. **Runtime**. **MILESTONE: found the scratch+0x134 writer at arm9 `0x020821F8` — it ACCUMULATES.** Pulled back own exhaustion claim, found a call-shaped write that reopened the route. Also: no interior pointers in the scratch, two scratches are doubly linked. 30+ commits this session.
+- `battle-engine-atlas-76` [2e8ac4] — idle, 11h. **Static**. Now at **P198**. Built poolload_scan.py and split_sum_scan.py, found ONE computed-offset candidate (an accumulator writing obj+0x134 from an array at +0xA4). **Convergent: both loops found the same writer independently.** 30+ commits this session.
 - Others: `justoolkit-ba` stood down, `trainer-5b` busy (unknown role).
 
-**Coord beads:** ~40 total, ~14 open. Both loops reached a natural pause — blocked on jus-fun (write-watchpoint tooling decision). The overnight session was exceptionally productive: atlas P165→P185 (20 iterations), runtime closed multiple original bugs, the damage model advanced significantly. Both loops converged on +0x134 as the key field and exhausted all routes to its writer except a write-watchpoint. **Owner action on jus-fun is the single gating item.**
+**Coord beads:** ~42 total, ~14 open. **MILESTONE: the +0x134 writer is FOUND** — arm9 `0x020821F8`, an accumulator. Both loops found it independently (runtime via execution breakpoint, atlas via computed-offset scan). This is convergent verification on the oldest open question in the battle-engine work. jus-fun (write-watchpoint) is no longer the sole gating item — the writer was found through static+runtime convergence without needing the watchpoint.
 
 ## 1.5. OWNER ACTION — status update
 
@@ -86,7 +86,7 @@ Three nudges over 7 wakes surfaced a recurring pattern. Runtime's feedback, cons
 # Per-Session Detail
 
 What each active session is doing, where things live, and what they've delivered.
-Last updated: 2026-08-19 05:30 — ledger wake 26
+Last updated: 2026-08-19 07:30 — ledger wake 29
 
 ## Ultimate goal
 

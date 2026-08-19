@@ -1,11 +1,11 @@
 {
-  "iteration": 182,
+  "iteration": 183,
   "phase": "combat",
-  "current_task": "P182: 0x0215A978 CONFIRMED in the damage path (r4 = 384 mid-computation = the measured damage) but it is a PER-FRAME PER-FIGHTER routine -- 7991 entries, one arrival at the damage path. My x0.5 lead REFUTED as the mechanism (predicate false; 0.5 is the wrong magnitude vs the measured 0.750). KEY CORRECTION to their capture: r4 at 0x0215AC1C is NOT arg1 -- it is reloaded at 0x0215AC08 from [[char+0x1A8]+0x10]+0x134, so \"r4 = 384\" is a fact about scratch+0x134. TWO predicates reach the halve (0x02159A10 bne, 0x021598D0 beq), both false. The ov6 +0x134 store at 0x02161C2C is a DIFFERENT object -- a bulk initialiser installing arm9 function pointers (rule 1 caught it). So three scratch damage fields (+0xE8, +0x130, +0x134) have NO findable writer by any static shape -- systematic, not a quirk.",
+  "current_task": "P183 DONE: read both calls in the 28-byte span. NEITHER writes scratch+0x134. 0x0215C278 is a state check + animation trigger; 0x0215C360 is scratch CLEANUP -- its three scratch-taking arm9 callees are 0x0207CE7C (flag propagation, ORs into +0x3C and walks +0x8), 0x0207D180 (clears bits 6 in +0x40), 0x0207D418 (list teardown on +0x28), all in the BattleColPrm.cpp region. PRE-REGISTERED PREDICTION sent before their run: all three bracket points will read +0x134 = 384, i.e. the write is upstream of the whole 0x02156DDC sequence, and there is no point adding an inner breakpoint to either candidate. Also accepted: my move-id discriminator was NOT EXECUTABLE (no offset, no base) and their parameter-matched control is strictly better.",
   "queue": [
-    "P183-READ 0x0215C278 (96 bytes, 3 callees, 1 caller) and 0x0215C360 (276 bytes, 10 callees, 1 caller) -- the two calls between the flush and the damage function, i.e. the span where scratch+0x134 becomes 384. Runtime is bracketing it at 0x02156E98 / 0x02156EA0 / 0x02156EA8 in parallel; read both regardless since either could be the modifier and both are small.",
-    "P183b-identify the two halve predicates 0x02159A10 and 0x021598D0.",
-    "P183c-shifted-register scanner extension; polled-KO discriminator; the {kind,id} table; auto-heal.",
+    "P184-IF THE PREDICTION HOLDS (all three bracket points read 384), the +0x134 write is upstream of 0x02156DDC. Find what runs before it in the frame: identify 0x02156DDC s own caller chain and the collision/hit-detection that precedes the damage sequence. That is where 512 becomes 384.",
+    "P184b-IF THE PREDICTION FAILS and +0x134 changes across one of the two calls, read that call s remaining seven callees (the ones that do not receive the scratch as an argument but could derive it).",
+    "P184c-identify the two halve predicates 0x02159A10 and 0x021598D0; the shifted-register scanner extension; the polled-KO discriminator.",
     "P168b-static writer of root+0x118 / +0x11C (runtime top ask, jus-3vg) -- would turn their empirical 0x70/0x61C validation into a structural check.",
     "P168c-what sets the gate byte 0x0217296D: find its writers. That is the thing that decides whether a mode plays at all.",
     "P168d-static writer of root+0x4C (term V).",
@@ -281,7 +281,8 @@
     "P179-four-character-comparison-uninformative",
     "P180-the-reduction-lives-in-the-b11-writer",
     "P181-regoff-store-scanner",
-    "P182-damage-function-confirmed-and-r4-reloaded"
+    "P182-damage-function-confirmed-and-r4-reloaded",
+    "P183-neither-candidate-writes-0x134"
   ],
   "stuck": {},
   "required_reading_for_koma_tasks": [

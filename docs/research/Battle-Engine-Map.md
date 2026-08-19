@@ -2808,3 +2808,46 @@ breakpoint.** If it differs between the 384 and 800 cases, the mystery dissolves
 minimum-of-the-dip* figure is **not** refuted — that is a different regime, one hit from a fresh load — and stays open
 pending a parameter-matched capture. The flat conclusion still rests on the shift-invariant difference and their
 heal-OFF `6.000`.
+
+### Neither candidate writes `+0x134` — a pre-registered prediction before the bracket runs (P183)
+
+Read both calls in the 28-byte span. **Neither stores to `scratch+0x134`**, and neither is the right *kind* of
+function:
+
+**`0x0215C278`** (96 bytes) — a state check and animation trigger. Reads the state byte `[char+0x18]`, compares it
+against `0x15`, `8`, `0x17`, `0x18`, and if none match calls `0x02157494` with `r1 = 0x15`. No damage handling at all.
+
+**`0x0215C360`** (276 bytes) — **scratch cleanup and flag work.** It passes the scratch `[[char+0x1A8]+0x10]` to three
+arm9 functions, all in the `BattleColPrm.cpp` region (nearest named entry below each is `Battle_ColPrmManCreate` at
+`0x0207C4C0`), and all three are read:
+
+| call | what it does |
+|---|---|
+| `0x0207CE7C` | **flag propagation** — ORs `r1` into `[scratch+0x3C]`, then walks the list at `[scratch+8]` ORing it into each element's `+0x1C` where bit `0x20000000` is set |
+| `0x0207D180` (40 bytes) | **flag clear** — if `[scratch+0x64]` is non-zero calls `0x0207C070`, then clears bits `6` in `[scratch+0x40]` |
+| `0x0207D418` (40 bytes) | **list teardown** — walks `[scratch+0x28]` calling `0x0207C070` on each element |
+
+Only stores inside `0x0215C360` itself are `strbeq r0,[r2,#0x2e]` and a stack store. So no damage write in either
+function, and the three functions that *do* receive the scratch are flag and teardown operations.
+
+**Pre-registered prediction, before their bracket runs:** all three bracket points (`0x02156E98`, `0x02156EA0`,
+`0x02156EA8`) will read `+0x134 = 384`. The write is **upstream of the whole `0x02156DDC` damage sequence** — earlier
+than the flush at `0x02156E94`. If that holds, the next place to look is earlier in the frame, in collision/hit
+detection, and **there is no point adding an inner breakpoint to either candidate.**
+
+**Limit stated:** I checked every `str` in both functions and read the three callees that receive the scratch.
+`0x0215C360` has 10 callees; the other seven do not receive the scratch as an argument, but one could derive it
+itself. So "neither writes `+0x134`" is solid for the functions and their scratch-taking callees, not for the entire
+call tree beneath them.
+
+**And their gap in my discriminator, accepted: it wasn't executable.** "Capture a move or attack id alongside
+`+0x134`" names no offset and no base, so it isn't a runnable instruction — and reading these two functions didn't
+surface a move-id field either. **Their cheaper control is strictly better and needs nothing from me:** re-run both
+arms with **identical press parameters**. The `384` readings used tail 0/40 and the `800` readings used tail 30, so
+two variables moved at once. If matched presses still give `384` vs `800`, the difference is heal-related; if both
+give the same value, the tail length was selecting a different attack and the mystery dissolves. Their own framing is
+the honest one: that comparison was contaminated by their harness parameters, self-inflicted rather than in the game.
+
+**Their pairing of the two blind spots is worth keeping as one rule:** the polling failure and the
+too-early-breakpoint failure are opposite ends of the same problem — *one instrument could not see the event because it
+looked too late in the frame; the other could not see the effect because it looked too early in the code.*

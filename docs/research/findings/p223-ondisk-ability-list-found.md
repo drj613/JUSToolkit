@@ -1,22 +1,21 @@
-> ## ⚠️ RETRACTED THE SAME DAY — the first byte is `charId`
+> ## ⚠️ RETRACTED, THEN UN-RETRACTED THE SAME DAY — read this first
 >
-> This entry reads `chr_b` record `+0x03..+0x07` as a five-slot ability array. It is
-> **`charId` at `+0x03` plus a four-byte `flags` field at `+0x04`** — both verified against
-> `jus_files/exported_combat/chr_b.json` for 74 of 74 records.
+> I retracted this entry on finding that the exporter labels record `+0x03` as `charId` and the
+> u32 at `+0x04` as `flags` (both true, 74/74). That was an over-correction and it is withdrawn.
+> **The loader settles it: `arm9 0x02077768` walks five slots from record `+0x03` — `cmp sb, #5`
+> at `0x02077818` — and dispatches all five identically.** Slot 0 is an ability slot whatever the
+> exporter calls it. Claim: [`jus-ondisk-ability-list-at-chrb-0x03-kfc`].
 >
-> So "ability id 9" does not exist in this data. The id-9 carriers named below are exactly the
-> records whose `charId` is 9, and **no record carries 9 in the flags field**. The claim that
-> Edajima uniquely arms both class gates is withdrawn, as is "id 11 is the only orphan".
-> Claim: [`jus-ondisk-ability-list-at-chrb-0x03-kfc`], now `state:retracted`.
+> Everything below stands, and five of its claims are now confirmed from **instructions** rather
+> than from data patterns: five slots, zeros as empty slots (the append primitive at `0x02077A74`
+> returns early on `0`), `+0x1A` as the count, `+0x1B..` as the ids, and a capacity of 15.
 >
-> What survives: the Debug-series prediction (70–73 are still the only four all-zero records),
-> the zero-gap explanation for the earlier failed search, and the runtime `0x0E` append as a
-> non-record source. And one thing gets stronger — the measured gate word needs ability 9,
-> which no record carries, so **at least one live ability comes from outside the ability
-> field**, and `charId` is the leading candidate.
+> One claim below is incomplete rather than wrong: "the loader compacts non-zero slots". Some
+> slots are **kind 2**, dispatched through a different table, and never become abilities at all.
 >
-> Kept rather than deleted: the reasoning below is sound except at slot zero, and the six
-> checks are worth reading for which ones survived a wrong premise and which didn't.
+> The mistake worth carrying: reclassifying a field's *name* and reclassifying its *function* are
+> different moves. I established the first and asserted the second, with live ability lists
+> sitting there to check the second against.
 
 # Loop-Atlas 223 — the on-disk ability list is five sparse bytes at chr_b + 0x03
 

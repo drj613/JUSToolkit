@@ -2111,11 +2111,12 @@ Runtime identified the loader's source: **`r6 = char_struct + 0x10`**, count at 
 
 | what | confidence |
 |---|---|
-| The `chr_b` record holds **a slot count at `+0x02` and up to six one-byte ability slots from `+0x03`**, zero = empty. Not stride-4 `{kind,id}` pairs | `CONFIRMED_STATIC` |
+| The `chr_b` record holds **five one-byte ability slots at `+0x03`–`+0x07`**, zero = empty. Not stride-4 `{kind,id}` pairs | `CONFIRMED_STATIC` |
+| ~~a slot count at `+0x02`~~ and ~~up to six slots~~ — **BOTH RETRACTED, mine, one wake old.** `+0x02` equals the number of non-zero slots in only **11 of 74** records; the distributions don't even overlap (`+0x02` is 2–6, non-zero slots are 0–4). And the region is **five** bytes: `+0x08` ranges 2–255 with only 8 values ≤ 31, so it is a different field — reading it as a sixth slot gives Goku a phantom ability 173 | `RETRACTED` |
 | Goku (`chr_b` 0): count 3, slots `[7, 15, 0]` → non-zero `[7, 15]` — **exactly** the live list, count and order | **`CROSS_CONFIRMED`** |
 | Luffy (`chr_b` 12): count 5, slots `[9, 25, 0, 0, 12]` → non-zero `[9, 25, 12]` | `CONFIRMED_STATIC` |
 | The dummy (`chr_b` 70): count 5, **all five slots zero** → effective count 0. This explains `Ability-Bitset-Is-Not-Resistance.md` reporting "count = 0, verified by reading the array" — same structure, read from the other end | **`CROSS_CONFIRMED`** |
-| Across all 74 records the count at `+0x02` is **2–6**, so the slot region is `+0x03`–`+0x08` and never overruns | `CONFIRMED_STATIC` |
+| The runtime count lives at `char_struct+0x1A` and is the **effective** count after loading — not a record field. That is where my `+0x02` reading came from and it was the wrong structure | `CONFIRMED_STATIC` |
 | **Luffy's `14` is absent from his record entirely** — the byte `0x0E` appears nowhere in his 60 bytes — and the live list puts it **last** | `CONFIRMED_STATIC` |
 | The live list is the record's non-zero slots **plus abilities appended from elsewhere** (deck, koma, or support). Goku's exact match is consistent — he had nothing appended | `PLAUSIBLE` |
 
@@ -2137,3 +2138,38 @@ koma/deck side and battle behaviour** — the bridge the reimplementation goal n
 array loads at `0x0215FB00`, so `r2` wasn't the global yet — read it at or after `0x0215FB00`); and their before/after
 capture didn't happen because they started from `battle_rule` with an approach calibrated for `fight_base`, so the hit
 missed. Heartbeat confirms the session was live, so it is a **stimulus** failure, not an instrument one.
+
+### Reserves DO rotate on a KO — and my `+0x02` count was over-fitted (P178 close)
+
+**`RETRACTED` (runtime's, and it reopens a shortcut they'd closed):** their claim that KOing the opponent "respawns
+the same character rather than rotating a reserve". The post-KO live list `[2, 5, 14, 15]` matches **`chr_b` 20**,
+whose non-zero slots are `[2, 14, 15]` — and `chr_b` 20 is one of that opponent's reserves (their deck slots read
+12, 20, 0, 14). No other record matches. **Reserves rotate.**
+
+Why it misled: they read the active character from slot 0's `+0x29`, which stayed `12` across the KO. That field is
+**not** the live active-character indicator. Their own summary is the rule worth keeping — **a field you already
+have a name for is not thereby the field you need.** Three have now misled them this session: `+0x1E0` is
+per-object and write-once, `chr_b` at slot`+0x29` is stale across a rotation, and only the ability list tracked the
+change. The list at `char_struct+0x1B` is a usable active-character oracle until something better turns up.
+
+**This reopens the `jus-f0v` shortcut with no deck build.** If a KO rotates, Goku's B can be measured against
+`chr_b` 12, 20, 0 and 14 in **one clean session** — which is exactly the test that decides whether any
+per-character reduction exists.
+
+**`RETRACTED`, mine, one wake old: "a slot count at record `+0x02`".** It holds for 11 of 74 records. I validated
+the *range* of `+0x02` (2–6, plausible for a count) and never validated the *relationship* to the slots — then
+explained away the two mismatches I did see (Goku 3 vs 2, Luffy 5 vs 3) as "+1" and "zeros skipped". That is the
+same shape as a sweep with one sample per cell: I checked that the number looked right rather than that the claim
+held. The runtime count is at `char_struct+0x1A`, a different structure, which is where the idea came from.
+
+**The append is two instances and they disagree about position**, so I am not naming a rule:
+
+```
+chr_b 12 (Luffy)  slots [9, 25, 0, 0, 12] -> non-zero [9, 25, 12] -> live [9, 25, 12, 14]   extra LAST
+chr_b 20          slots [2, 14, 15, 0, 0] -> non-zero [2, 14, 15] -> live [2,  5, 14, 15]   extra at index 1
+```
+
+Exactly one extra id in both cases, and it differs per character so it is not a constant. But `[2,5,14,15]` is
+ascending while `[9,25,12,14]` is not, so it isn't a sort either. `not claimed`: how the list is assembled. Two
+instances with inconsistent positioning is not a pattern, and forcing one is the error the runtime loop taught me to
+stop making.

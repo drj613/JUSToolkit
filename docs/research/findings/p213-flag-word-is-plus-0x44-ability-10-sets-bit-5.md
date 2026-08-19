@@ -164,3 +164,19 @@ side a register pointed at it changed the meaning of the nature factors entirely
 `0x0208257C` capture settles it at no extra cost: `r4 == 0x0220FC3C` (the scratch from
 the earlier measurement) with `r8 != it` names both sides in one read, and `r8 == it`
 refutes this section.
+
+## How much the agreement is worth
+
+Three readers landed on `+0x44`: the runtime loop, me, and codex. That is less than it
+looks, and the runtime loop said so first. All three read the same disassembly listing.
+Independence of *reader* is not independence of *representation*, and this doc argues two
+sections above that cross-representation agreement is the strong signal — so the same
+standard applies here.
+
+What is genuinely two-representation in this entry is narrower: the six `tst` masks in the
+code versus the two mask tables in ROM data at `0x02092E78`/`0x02092E90`, whose first three
+entries are those masks in index order; and the `0..15` bound in the code versus the
+sixteen-byte shape of the table at `0x02092E68`. Those two hold up. The offset itself rests
+on one representation until the live capture lands, and `state:static-confirmed` on
+[`jus-gate-word-is-r8-0x44-fnz`] should be read as "the disassembly says this clearly",
+not as "measured".

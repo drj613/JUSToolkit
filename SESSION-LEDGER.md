@@ -1,17 +1,17 @@
 # Session Ledger — JUS Reverse Engineering
 
-Last updated: 2026-08-19 ~02:45 (ledger wake 16, session `justoolkit-87`)
+Last updated: 2026-08-19 ~05:00 (ledger wake 24, session `justoolkit-87`)
 
 ## 1. Current state
 
 This file is a human catch-up summary — not the system of record. beads (`br`) is the record; protocol in `docs/orchestration/`.
 
 **Live sessions (from ListAgents):**
-- `justoolkit-fa` [cedb9e] — busy, 7h. **Runtime**. Since wake 12: closed jus-ovv (third rule flag verified, not cleared — no tap target in 1v1), closed jus-kdf (autoheal_off implemented, auto-heal ERASES the hit). Confirmed jus-eml (opcode == ability ID). Synthetic drain kills at zero HP. New owner question Q16 (team battle in 1v1?). 9+ new commits.
-- `battle-engine-atlas-76` [2e8ac4] — idle, 7h. **Static**. Now at **P176**. Auto-heal refuted as the -2.0 explanation. No constant -2.0 in code — real reduction must be table-driven. Luffy's abilities visible at record +0x03/+0x07. 6+ new commits.
+- `justoolkit-fa` [cedb9e] — busy, 9h. **Runtime**. Overnight highlights: closed jus-ovv + jus-kdf, confirmed jus-eml (status immunity is an ability, opcode == ability ID), synthetic drain kills, retracted/un-retracted ability bitset, reserves rotate on KO, Goku B = exactly 6.000 heal-off, frame-resolution regen sampling for jus-f0v, fast-lane confirmed ov6 0x0215A978. 20+ commits this session.
+- `battle-engine-atlas-76` [2e8ac4] — idle, 9h. **Static**. Now at **P182**. Overnight highlights: flat -2.0 found in B11 writer (P180), built regoff_store_scan.py (P181), found damage-modification function 0x0215A978 (P182), retracted pos_base/two-lineage/verified-absence claims. 15+ commits this session.
 - Others: `justoolkit-ba` stood down, `trainer-5b` busy (unknown role).
 
-**Coord beads:** ~34 total, 16 open. Two original-session bugs closed this wake (jus-ovv, jus-kdf). No `state:proposed` beads remain — everything has advanced past proposed. Auto-heal refuted as the -2.0 source; reduction must be table-driven.
+**Coord beads:** ~38 total, ~14 open. Overnight session very productive — both loops ran 9h+, atlas P165→P182 (17 iterations), runtime closed multiple original bugs and advanced the damage model significantly. No protocol violations since wake 10. The flat -2.0 is now located (B11 writer) and the damage-modification function is found (0x0215A978).
 
 ## 1.5. OWNER ACTION — status update
 
@@ -86,7 +86,7 @@ Three nudges over 7 wakes surfaced a recurring pattern. Runtime's feedback, cons
 # Per-Session Detail
 
 What each active session is doing, where things live, and what they've delivered.
-Last updated: 2026-08-19 02:45 — ledger wake 16
+Last updated: 2026-08-19 05:00 — ledger wake 24
 
 ## Ultimate goal
 

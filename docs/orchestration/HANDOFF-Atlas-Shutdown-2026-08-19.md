@@ -152,3 +152,45 @@ and `ledger/session-tracker`: `Damage-Reduction-Is-Flat.md`, `Ability-Bitset-Is-
 `Damage-Path-Codex-Findings.md`, `Move-Damage-Table-Goku.md`, `HP-And-Damage-Runtime-Findings.md`. My
 check-the-record habit grepped one worktree — a fraction of the record — for the whole campaign. The
 consolidation onto one branch fixes this, which is the single biggest process win available here.
+
+## Addendum — items received from the runtime loop after this doc was written
+
+The runtime loop shut down shortly after I did. Its handoff is
+`docs/HANDOFF-2026-08-19-runtime-shutdown.md` on branch `re/ability-bitset-not-resistance`, final sha
+`ad02a407c7114423ef9301f85edb4f1131bcde38`. Read it alongside this one — between them they cover both
+halves of the damage work.
+
+Three things it records that are **not** above, all `UNCONFIRMED`:
+
+- **Whether the base byte varies per target.** Untested. `base = ldrsb [elem+0x10 + 4]` was measured as `8`
+  for B and `7` for DOWN+B — i.e. it varies per **move** — but nobody has checked whether the same move
+  against a different target yields a different byte. **This is what the owner's three decks are still
+  genuinely good for**, and it is a cleaner use of them than the baseline question they were requested for.
+- **`0x02390A60`** — an element pointer (`elem+0x08`) that lies outside every memory range we have named.
+  Unidentified.
+- **`attacker_scratch+0x184`/`+0x186`** — confirmed as the attacker's factors, both measured `1.0`, with
+  **nothing known about what writes them**. (Also listed above, repeated here because the runtime loop
+  flagged it independently.)
+
+And one scoping note worth keeping in front of whoever resumes: in **every** measurement taken,
+`[r8+0x40] = 0x00000008` with **bit 5 clear**. So only the class-1 path has ever been exercised. The
+"0%, 25% or 50%" reduction range is a three-point model of which **one point has been sampled** — do not
+present it as characterised.
+
+## The part of this run worth keeping, in the runtime loop's framing
+
+Four derivations in the final thread reproduced the observed values from wrong premises: two of mine, one I
+drafted and binned unpublished, and one of the runtime loop's. Theirs was the worst of the four and they
+said so themselves — they computed `1792 − 512` by assuming flatness, the very thing in question, then
+offered agreement with the doc as independent confirmation.
+
+Two habits made all four visible instead of canonical, and both are worth carrying through the
+consolidation:
+
+1. **Pre-register predictions before the measurement.** Every one of those four was caught because someone
+   had written down what would falsify it first. A clean arithmetic fit is a reason for *more* suspicion,
+   not less.
+2. **Refuse to guess an object's identity.** Twice I declined to name which side a register pointed at
+   (`r4` in the formula, and the base's source). Both mattered: `r4` turned out to be the **attacker**,
+   which changed what the nature factors meant entirely. The same discipline is now owed to `r1`, the
+   class-table index, whose width and owning side are both unread.

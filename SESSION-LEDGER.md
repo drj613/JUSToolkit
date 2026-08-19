@@ -1,18 +1,18 @@
 # Session Ledger — JUS Reverse Engineering
 
-Last updated: 2026-08-19 ~00:15 (ledger wake 9, session `justoolkit-87`)
+Last updated: 2026-08-19 ~00:45 (ledger wake 10, session `justoolkit-87`)
 
 ## 1. Current state
 
 This file is a human catch-up summary — not the system of record. beads (`br`) is the record; protocol in `docs/orchestration/`.
 
 **Live sessions (from ListAgents):**
-- `justoolkit-fa` [cedb9e] — busy, 4h. **Runtime**. Since wake 8: owner ground truth applied (most of jus-law answered), live handler table confirms atlas's drain fns, B=6.000 vindicated with gimmicks off, id 21 on +0x173 cuts against atlas's opcode refinement. 5 new commits.
-- `battle-engine-atlas-76` [2e8ac4] — idle, 4h. **Static**. Retracted opcode family boundary, corrected stub conflation (7 ids not 10), recorded owner ground truth (DoT exists with 1-HP floor, story-mode missions close the 22-vs-31 gap). 5 new commits.
-- `justoolkit-ba` [009c74] — idle, 35 min. Atlas told it to stand down (avoiding duplicate filing).
-- `trainer-5b` [73e646] — busy, 36 min. Unknown role.
+- `justoolkit-fa` [cedb9e] — busy, 4h+. **Runtime**. Since wake 9: retracted ability-bitset identification (jus-y3w — three "+0x128" offsets, no identity established), character switching still blocked (jus-3aw — no touch stimulus check in battle), added 3 new owner questions. 3 new commits.
+- `battle-engine-atlas-76` [2e8ac4] — idle, 4h+. **Static**. Now at **P172**. Found the cancel gate reads a cached ability bitset keyed by status opcode — status immunity IS an ability. Applied runtime's retraction. 3 new commits.
+- `justoolkit-ba` [009c74] — idle, stood down.
+- `trainer-5b` [73e646] — busy, 1h. Unknown role.
 
-**Coord beads:** ~28 total, 15 open. Owner ground truth was the big event this wake — most of jus-law is now answered.
+**Coord beads:** ~30 total, 18 open. jus-y3w retraction propagated cleanly (runtime retracted → atlas applied same session).
 
 ## 1.5. OWNER ACTION — status update
 
@@ -64,8 +64,14 @@ Both have real status now after wake 6 nudge.
 ### Flag L — Atlas retractions in map doc, not in beads (carried forward, low severity)
 Six retractions now (+ P159 route division, `e131e68`). All in commits/map doc. Pattern for the owner.
 
-### Flag N — jus-zko at 4th wake (past TTL)
-`state:plausible`, created wake 5, now wake 9. The gate-chain question may be partly answered by jus-2cu and jus-usf work. Not nudging — runtime is actively working the status system and the gate question's urgency has decreased as the mode-12 investigation progressed through other means.
+### Flag N — jus-zko at 5th wake (past TTL, deprioritized)
+`state:plausible`, 5th wake. Gate-chain question partly superseded by mode-12 work through other means. Not nudging.
+
+### Flag O — NEW: jus-3aw character-switching blocker
+Runtime can't switch characters in battle — 14 touch attempts failed, and there's no stimulus check to verify touch is received. Blocks reaching Rukia (status+damage test) and the change attack. Owner said "just taps" and suggested longer holds or the L/R sticker fallback. This is the biggest runtime blocker right now.
+
+### Flag P — NEW: jus-y3w retraction — three "+0x128" offsets with no identity
+Runtime matched an offset without verifying the base object — the same class of error atlas retracted for one message earlier. Three distinct char+0x128 values exist (gate bitset, pointer pair, documented entity bitset) with no established identity. Retraction propagated cleanly. Runtime's retraction bead (jus-y3w) has the full detail on the three distinct values.
 
 ### Flag M — RESOLVED: jus-5kf
 HP recovery was respawn animation, not auto-heal. Closed. New bug: jus-kdf (match_run --boot calls undefined autoheal_off()).
@@ -81,7 +87,7 @@ Three nudges over 7 wakes surfaced a recurring pattern. Runtime's feedback, cons
 # Per-Session Detail
 
 What each active session is doing, where things live, and what they've delivered.
-Last updated: 2026-08-19 00:15 — ledger wake 9
+Last updated: 2026-08-19 00:45 — ledger wake 10
 
 ## Ultimate goal
 

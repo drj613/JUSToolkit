@@ -918,3 +918,73 @@ What that bought across eight wakes: it caught a special case I read straight pa
 **It was also flatly wrong once** (P158): it swapped `Rn` and `Rs` in an `mla`, which would have made the duration formula dimensionally incoherent. Settled by a **third** representation — the encoding bits (`0xE0223290`: `Rd`=r2, `Rn`=r3, `Rs`=r2, `Rm`=r0; ARM `MLA` is `Rd = Rm*Rs + Rn`). **Codex is not an oracle. When it disagrees on a decode, go to the bits.**
 
 **Operational notes:** `codex exec "<prompt>"` **reads stdin even with a positional prompt** and hangs on an open terminal — one wake burned 560s for 39 bytes. A **backgrounded** call dies when the turn ends at `ScheduleWakeup`; "dispatch it and read it next wake" always comes back empty. The only reliable form is **foreground, `< /dev/null`, generous timeout.**
+## 2026-08-19 — Loop-Atlas, iterations 165–174: effect subsystem mapped
+
+Progress note covering iterations **165–174 only**. For earlier work, read the findings directory. For other branches, read those branches (see §5).
+
+### 1. Current state
+
+Iteration **174**, combat phase. Branch `loop/battle-engine-atlas`, tree clean. Ten findings added (`findings/p165-*` … `p174-*`), each voice-passed through `claude -p --model claude-opus-4-6` with a hex-token diff. `Battle-Engine-Map.md` has a block per wake.
+
+Coordination docs (`COORDINATION-PROTOCOL.md`, `Charter-Atlas-additions.md`, the outbox-gate hook) landed at the start of this run. Runtime is `justoolkit-fa`; ledger is `justoolkit-dc` (identity `justoolkit-87`); `justoolkit-ba` is the owner's interactive session, **not a loop**.
+
+### 2. What got settled
+
+**The status/effect subsystem is mapped end to end.** From the dispatcher outward:
+
+| piece | address | note |
+|---|---|---|
+| dispatcher | ov6 `0x02158ED0` | `(battleObj, id)`; indexes two parallel stride-8 arrays |
+| handler table | ov6 `0x02171168` | 42 entries × 8; `+0x7` is the status opcode |
+| **param table** | **`bin/state.bin`** | 336 bytes = 42 × 8. `+0x2` base duration, `+0x4` signed amount, `+0x0` flags. Live base `[[0x02172984]+4]` |
+| **cancel gate** | ov6 `0x0215986C` → `0x02158EB0` | `(Mem32[battleObj+0x120 + 4*(op>>5) + 8] >> (op & 0x1F)) & 1`; set bit zeroes the duration and the handler retires |
+| **the bitset** | `battleObj+0x128` | the **cached ability bitset** — a per-ability behaviour switchboard, not resistance |
+| **tick driver** | ov6 `0x02158C68`–`0x02158D60` | second half of `0x02158B20`; decrements `node+0xE` by 1 at `0x02158C88`, calls `node+0x0` at `0x02158CF0`, 2 slots at stride `0x18` |
+| expiry | ov6 `0x0215911C` | installed stub + `(battleObj, slot)`; **unread** |
+| apply worker | arm9 `0x02078488` | `+delta` into `char_struct+0x18`, clamped `[0, max]` |
+
+**Term V is 0 in ordinary play.** The campaign's only non-constant formula never varies. Confirmed by reading the formula's stored output at `node+0xE` across **ten** effect ids — `duration == base` every time.
+
+**Two channels, not one.** Route B stages effect ids on the entity and the flush applies them: `X+0x172` carries the **gauge** family, `X+0x173` (stored negated) carries the **statuses**. 28 attributed dispatches, zero crossover.
+
+**Ability bits are behaviours.** Two bits measured to distinct effects with their own negative controls — bit 4 gives total damage immunity (384 raw → 0), bit 8 doubles effect decay (confirmed to the frame). The gate reads the same word indexed by status opcode, so a third consumer exists at bit 14.
+
+**Rule modes.** `0x020AFEA0` indexes a **31-entry** handler table in ov6 (`0x02170EAC`, 12-byte records); the 22 described modes live in `bin/rulemess.bin`, the extra nine are story mode (owner-confirmed). `0x020AFEAC` is the time limit in frames, `(じかん+1)*144-1` for versus modes, confirmed end to end across a whole match.
+
+**Format correction with campaign-wide reach:** pointers in JUS `bin/*.bin` text files are **self-relative**, not absolute — 1,347 of 1,347 verified across six files.
+
+### 3. Open questions, by priority
+
+1. **The KO path** — hunting the owner's 1-HP floor. The entire DoT path is mapped and nothing on it clamps to 1.
+2. `0x0215911C` — the expiry handler, last unread function on the effect lifecycle.
+3. `0x021613C4(battleObj+0x1C, 0xF, 2)` — the second route to faster decay.
+4. The staging writers of `X+0x172`/`X+0x173`. No immediate-offset store in the ROM writes them; needs a watchpoint or register-offset-aware static tool. Blocked behind `jus-fun`.
+5. The active-character swap. Live lead: the ability bitset's *contents* changed within one savestate.
+
+### 4. Retractions
+
+Eleven this run. The ones that matter going forward:
+
+- **The ov12 "staging setters"** were `ALTextDS.cpp` text-widget fields. An immediate-offset search finds every struct in the ROM at that offset. Lesson: **name the containing function before believing an offset hit.**
+- **The opcode-based family boundary** — refuted by a single counterexample; the id-range boundary I replaced was correct. My "refinement" was the error.
+- **`char+0x56C` is not HP** — it is. I had a clamp-to-0 and the owner's stated floor of 1, and resolved the conflict by demoting my own derivation. Lesson: **when two facts conflict, hold both open.**
+- **"Bit 29 is set, so the effect was cancelled"** — computed from a word already retracted. Lesson: **a retraction isn't transitive; re-derive everything downstream.**
+- **The `+0x6A`–`+0xBA` physics window** handed to the runtime loop — measured, doesn't move. I passed along a documented offset without checking whether anyone had ever tested it.
+
+### 5. Process changes that earned their keep
+
+- **Check the record across branches.** `HP-Struct-From-Disassembly.md` and `Ability-Bitset-Is-Not-Resistance.md` both live on other branches and both answered questions I was re-deriving from scratch. A worktree-local grep only checks a fraction of the record.
+- **Don't reprice priorities off a partner's explanation.** I moved the same scheduling decision twice on successive accounts of a yield, both later withdrawn.
+- **Owner questions go in `jus-law`** as confirm/deny with a stated break condition; the ledger surfaces them. One line from the owner has repeatedly beaten a wake of measurement — the freeze attribution, the story-mode answer, and the DoT floor all came that way.
+
+### 6. Instrument rules
+
+Ten now, nearly all self-caught by the runtime loop. The load-bearing ones for a static reader:
+
+- The shape of a number is not a test.
+- An independent-agreement claim is only as independent as its weaker half, and the receiver is least motivated to audit it.
+- Instrument liveness and stimulus occurrence are different preconditions; a null needs both.
+- When a treatment looks decisive, add the condition that would produce the same result without your mechanism.
+- A rate averaged over a long window cannot see a one-event difference at the start.
+
+The pattern behind most of this run's errors on both sides: *a plausible mechanism sitting in front of you is more dangerous than none at all, because it ends the search.*

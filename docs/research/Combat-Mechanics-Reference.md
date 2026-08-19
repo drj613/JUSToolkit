@@ -39,6 +39,14 @@
 > So "the nature multiplier was refuted" and "nature is read in the damage path" are both true —
 > **of different sites**. Different address, different value, different arithmetic. Check which one a
 > claim means before applying it.
+>
+> **A third discriminator: the two sites use different numeric conventions.** `ov6 0x02158DC4`
+> multiplies by 120 and divides by 100 through the division routine at `0x0200D12C` — decimal
+> percentage arithmetic. The nature tables are 8.8 fixed point: multiply, then `asr #8`, and the
+> damage routine `0x020823E4` calls **no** division at all (its only two callees are `0x02031070`
+> and `0x0207342C`). Two numeric conventions means separate code doing separate things, not one
+> mechanism reached two ways. So the distinction holds on address, on value, and on convention —
+> three ways, which is much harder to re-conflate than address alone.
 
 
 

@@ -1047,3 +1047,87 @@ Runtime then corrected their own report: stepping advances **0.0031 frames/sec**
 15. A correction is a claim. Check a narrowing against the artifact; name which tool established the original and re-run it with a control. **Write the scope the code actually has into the commit message** — that's where this one went wrong.
 
 Both loops' failures this run were on material we authored: I didn't open my own tool, runtime didn't run their own rule on their own null.
+
+## 2026-08-19 — iterations 190–200: damage carrier is a pass-through; three correction chains
+
+Covers P190–P200. Previous section covered 175–189.
+
+### B11 status
+
+The flat `-2.0` reduction is **still unlocated**, but the target is the narrowest it's been.
+
+`scratch+0x134` is written by an **accumulation loop** at arm9 `0x020821F8` (inside `0x020821C4`), stage 5 of an eight-stage pipeline. It sums a 17-word array at `scratch+0xA4`. Runtime measured it: **only slot 0 is ever non-zero, already holding `384`.** So `+0x134` is a sum in form but a **pass-through in fact** — the reduction happens before `scratch+0xA4` is written.
+
+**New target: whoever writes `scratch+0xA4`.**
+
+### RETRACTED: the negative-term hypothesis
+
+I proposed (`SPECULATIVE`, P198) that the `-2.0` might be one negative term in the sum — explaining why fourteen iterations hunting a `512 → 384` computation found nothing. **Refuted.** Runtime printed raw hex to catch exactly this: a `-2.0` would be `-128` raw (`0xFFFFFF80`), but the array reads `384 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0`. One term, already reduced, `prev=0` and `sum=384` — final sum, not an intercepted intermediate.
+
+Nothing depended on it. The accumulator's identity is unaffected and now `CROSS_CONFIRMED`.
+
+### The collision pipeline
+
+arm9 `0x02080C28` (72 bytes) calls eight functions in sequence, all sharing `r4`:
+`0x02080F14`, `0x02081B20`, `0x02081D68`, `0x02081DDC` (collision), `0x020821C4` (accumulator), `0x020826A0`, `0x02082780`, `0x02082984`. Caller `0x0207F480` at site `0x0207FA9C`. **Six of the eight are unread.**
+
+`0x02081DDC` is the leading candidate for the `+0xA4` writer: it does `add r8, r2, #0xa4` at `0x02081EC8` — same interior pointer on its scratch-like object — and it's the stage right before the accumulator, sharing its argument.
+
+### The scratch struct
+
+| Offset | Contents |
+|---|---|
+| `+0x00` / `+0x04` | `next` / `prev` — doubly linked; player `0x0220FC3C` is head, opponent `0x0220FDC4` |
+| `+0x3C` | flag word; OR/CLEAR pair arm9 `0x0207CE7C` / `0x0207CEC8` |
+| `+0x40` | flag word — bit 11 damage pending (flush reads at `0x02158B9C`/`0x02158BA0`), bit 9 cleared at `0x0207CB2C`, bit 25 by `0x02159210`, bit 30 by `0x021591F4`, `0x0207D180` BICs |
+| `+0x50` | handler pointer; idle value `0x0207D9A0`, a `bx lr` no-op installed at `0x0207CB38` |
+| `+0xA4`–`+0xE4` | the 17-word contribution array; only slot 0 non-zero |
+| `+0xE8` | pending HP delta |
+| `+0x130` | pending gauge amount |
+| `+0x134` | the damage carrier — sum of the `+0xA4` array |
+| `+0x188` | `0x022100D4`, unidentified |
+
+No live word points into the object's own range. Constructor/reset arm9 `0x0207C988` (`r4` = scratch), from pooled-entity constructor `0x020834D4`. `+0x50` was `CROSS_CONFIRMED` by live read matching static store.
+
+### Correction chain one: correcting myself wrongly
+
+P187 → P188 → P189. I found an arm9 hit with `search-imm`, concluded my earlier sweeps were ov6-scoped, and pushed that to two sessions unprompted. **Wrong** — `regoff_store_scan.py` builds its region list arm9-first and always had. The cause wasn't a memory lapse: **my own P181 commit message says "no scratch+0xE8 writer in ov6" while the code it commits scans arm9 first.** The artifact disagreed with its own label at authorship, and a wake later I consulted the label. Both sessions accepted the retraction within a minute — a correction offered against your own interest reads as conscientious.
+
+### Correction chain two: shape versus encoding
+
+P195 → P198. Every scanner I built varied the **encoding** while assuming the **shape** — a constant near a store. Runtime asked the shape question twice and both times opened a class every encoding scan was blind to: a value passed as an **argument** sits near a *call*; an **interior pointer** means the offset never appears at all. The second found the accumulator, where `0xA4 + 0x90 = 0x134`.
+
+Along the way: all 35 `mov #0x134` sites turned out to be **allocation sizes** for the tagged allocator `0x0201A21C`, not offsets. `308` is a believable struct size *and* a believable field offset, so only argument *position* could decide it.
+
+### Correction chain three: the dismissal that hid 21 real stores
+
+At P181 I retired 30 `+0xE8` candidates with "ov12 is the UI overlay … almost certainly an unrelated widget field. Not chasing them." **21 were genuine Thumb stores.** The overlay that had already burned me became my stated reason to skip it. Runtime's byte-level residency check cleared 16; the 5 live ones are ov12 object-lifecycle code — two constructors, an assignment, a text formatter, an initialiser — in a struct with a vtable at `+0x0`, so `PLAUSIBLY` a different `+0xE8` sharing the offset.
+
+### Runtime instrument findings
+
+The melonDS GDB stub **acks `$Z2` and never fires it** — the handler exists, so what's missing is an address check in the write path — a far smaller fix than adding watchpoint support. Runtime then corrected their own report: stepping advances **0.0031 frames/sec**, so the apparent freeze was arithmetic, and their software-watchpoint null had **no stimulus**.
+
+### Rules earned, 11–26
+
+11. A tool that quit early looks exactly like a tool that found nothing — and `2>/dev/null` eats the usage error.
+12. A null needs a POSITIVE control proving reach; a NEGATIVE control needs the stimulus to have landed; sometimes a negative control belongs on a POSITIVE result (`128/128` is also what a zero-filled region gives).
+13. Suspect UNIFORMITY, not error — and when a scan returns uniform zeros, check what it cannot **express**.
+14. State the DEPTH and SCOPE examined; say `UNCHECKED, NOT CLEAR` when you skipped something.
+15. A correction is a claim. Put the scope the code **has** in the commit message.
+16. A prior is not a check. Evidence a region is *unreliable* is not evidence it is *irrelevant*. Count, do not characterise.
+17. Check a binary failure signature's property is binary; specify the PROGRAM POINT of any test you hand over.
+18. Two numbers agreeing is not two objects agreeing.
+19. A control sited DOWNSTREAM cannot separate "never happened" from "happened and was undone".
+20. Name the struct before an offset means anything. Four collisions this run.
+21. Every scanner looks for a constant near a store; a value passed as an argument sits near a call. Enumerate CODE SHAPES, not instructions.
+22. A false positive is a PRECISION failure and cannot cause a miss. Do not weaken a sound null over one.
+23. When a constant has a plausible second role, check ARGUMENT POSITION first.
+24. Over-hedging wastes your own wake; over-claiming LEAVES THE SESSION. Prefer the local error.
+25. When every encoding search fails, question whether the value is **assigned at all**. Searching harder for a writer cannot find a sum.
+26. A breakpoint on an INTERIOR instruction cannot distinguish "function not called" from "function called, branch or loop body not entered". Site an ENTRY breakpoint first, then narrow.
+
+Rule 26 rescued a null of theirs and one of mine: their `0x02081ED0` result stands as measured, but "never fired" meant **the loop body never ran** — the list at `[sl+0x48]` was empty on the sampled frames. `0x02081DDC` was never excluded.
+
+### The pattern across all three chains
+
+Every chain turned on **material we authored ourselves**: my commit message, my dismissal, my scanner, my card's missing program point. The controls kept catching instruments; the corrections kept catching descriptions. Knowing a rule didn't prevent misapplying it — runtime wrote "a counter cap plus a busy loop is a truncation that looks like a finding" into their list, then one wake later built a filter on the wrong axis and got 60 zero-reads that would have passed as a result.

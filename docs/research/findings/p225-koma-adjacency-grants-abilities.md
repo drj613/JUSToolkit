@@ -189,3 +189,58 @@ A spare row-sized gap right after a 4-row grid, in a game with a 4-row deck, is 
 against the possibility that the array is declared with five rows and the gate excludes one. If the
 declaration excludes row 0 and the gate's bounds do not, the off-by-one is the game's, not ours.
 
+## Base corrected — and the two sections above it are withdrawn
+
+The scan that produced `arg0` left **two** candidates, and the `0x61C` side-delta check used to
+break the tie is satisfied by both. The tie was never resolved.
+
+```
+(A) ply 0x021DF150 / opp 0x021DF76C   adjacency 3/3
+(B) ply 0x021DF164 / opp 0x021DF780   adjacency 3/3
+```
+
+**Base (B) is correct.** Under it all eleven nodes' `[+0x0E]` name their **own** cell, and the grid
+is a perfect 20-cell polyomino tiling of 5×4 — no gaps, no overlaps.
+
+Confirmed from a fourth direction, and it is the anomaly flagged above as a curiosity:
+
+```
+base B grid  0x021DF16C .. 0x021DF1BC   first object 0x021DF1BC   gap = 0
+base A grid  0x021DF158 .. 0x021DF1A8   first object 0x021DF1BC   gap = 0x14
+```
+
+The "spare row-sized gap right after a 4-row grid" was not a hint at a five-row declaration. It
+**was** the one-row base error. The object array is clean under (B) too: offsets `0x58, 0xA8, 0xF8,
+0x148, 0x198, 0x1E8`, stride `0x50`, and `0x021DF34C` is the sixth at the predicted offset — the
+single-cell type-2 koma at (2,3).
+
+**Why adjacency couldn't discriminate the bases:** the player node targets (1,3) in B-coords and
+`0x021DF2AC` occupies *both* (1,2) and (1,3). A vertically-extended koma makes a one-row shift land
+inside the same panel either way. The test was insensitive by luck of this layout rather than by
+construction — so it *would* discriminate on a different deck, which is worse than a test that
+never could.
+
+### Withdrawn from the two sections above
+
+1. **The retraction of "anchor."** `[+0x0E]` **is** the node's own cell, 11 of 11. "Anchor" was
+   right and retracting it was wrong.
+2. **"Row 0 holds a cross-side link."** `0x00007882` and those pointers sit *outside* the array
+   under (B). There is no junk row and no in-grid cross-link.
+3. **The row-0 `AddAbility` corruption path**, and the bounds question called "the next real one".
+   If `y' = 0` is an ordinary in-grid row of koma pointers, there is nothing anomalous to explain.
+
+Also withdrawn: the claim that my own-cell constraint would have killed a correct model. It is
+**11 of 11 under (B) and 0 of 11 under (A)** — precisely the discriminator between the bases. I
+proposed it, was argued out of it, and wrote it into this file as a lesson about my own error. So:
+credit for proposing it, none for understanding it, since the reason it discriminates is only
+visible with both bases on the table.
+
+**The lesson, one level up from the rule we'd both been applying:** a tie resolved by a check that
+both branches satisfy is not resolved — the same shape as a prediction whose value two mechanisms
+can produce. And base (A) was internally consistent at five for five on a *different* regularity,
+(column, top row − 1), which is what made it arguable. **A wrong frame doesn't produce noise; it
+produces a clean pattern off by a constant.**
+
+What survives is stronger than what came before it: adjacency 3/3, own-cell 11/11, a perfect
+20-cell tiling, and a layout with no unexplained bytes.
+

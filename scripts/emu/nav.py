@@ -42,8 +42,24 @@ SHOT_DIR = "/tmp/jus_nav"
 
 
 def advance(frames, buttons=None):
-    # A plan must carry at least one segment, so a pure wait is a segment with
-    # no buttons rather than an empty list.
+    """Run a wait/input plan and return the OBSERVED emulated frame delta.
+
+    THE PLAN ITSELF IS ACCURATE. Measured against the emulator's own framecount:
+    60 -> 61, 300 -> 302, 600 -> 601, 2300 -> 2301. Do not distrust it.
+
+    WHAT IS NOT ACCURATE is any framecount delta that spans time OUTSIDE a plan.
+    The emulator free-runs at ~60fps whenever no plan is executing -- 3 seconds
+    of caller sleep costs 180 emulated frames -- so a delta measured across your
+    own dumps, screenshots, image conversions or thinking includes all of that.
+    An earlier version of this docstring blamed the plan machine for an
+    apparent 2300 -> 5310 overshoot. That was wrong: the 3010 extra frames were
+    ~50 seconds of caller work between two reads, not plan error.
+
+    So: to attribute frames TO A PLAN, use this return value. To measure how long
+    something took IN THE GAME, difference two emulator-reported framecounts and
+    accept that it counts free-run frames too -- which is usually what you want,
+    since the game does not care where its frames came from.
+    """
     plan = {"name": "nav_adv",
             "segments": [{"from": 0, "to": 0, "buttons": buttons or []}],
             "tail_frames": frames}
@@ -54,6 +70,16 @@ def advance(frames, buttons=None):
                         path], capture_output=True, text=True, cwd=HERE)
     if r.returncode != 0:
         raise RuntimeError("advance failed: %s%s" % (r.stdout, r.stderr))
+    try:
+        # jusemu prints the JSON object and then a trailing "log: ..." line, so
+        # the whole stdout is not valid JSON. Take just the object.
+        text = r.stdout[r.stdout.index("{"):r.stdout.rindex("}") + 1]
+        return json.loads(text)["result"]["observed_frames"]
+    except (ValueError, KeyError):
+        # An older bridge that predates observed_frames. Return None rather than
+        # the requested count: a caller that gets a number back has no way to
+        # tell a real measurement from an assumption, which is the bug.
+        return None
 
 
 # --- touchscreen ------------------------------------------------------------

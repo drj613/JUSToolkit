@@ -20,6 +20,7 @@ local session = tostring(os.time()) .. "-" .. tostring(math.random(1000000))
 local state = "idle"  -- idle|plan_running|loading_state|saving_state|flushing
 local tick = 0
 local last_fc = nil              -- framecount at the previous callback
+local plan_fc_start = nil        -- emu.framecount() when the current plan began
 local pm, run_dir, cmd_id, log_buf = nil, nil, nil, {}
 local settle, pending_plan = nil, nil
 local saving = nil                -- {slot, path, last_size, stable, id}
@@ -122,10 +123,16 @@ end
 local function finish_plan()
     force_neutral()
     flush_log()
+    local fc_end = emu.framecount()
+    local observed = fc_end - (plan_fc_start or fc_end)
     write_atomic(run_dir .. "/done-" .. cmd_id .. ".json",
                  core.jenc(core.obj({ frames = pm.frame, ok = true,
+                                      fc_start = plan_fc_start, fc_end = fc_end,
+                                      observed_frames = observed,
                                       epoch = session })))
     ack(cmd_id, true, core.obj({ frames = pm.frame,
+                                 fc_start = plan_fc_start, fc_end = fc_end,
+                                 observed_frames = observed,
                                  log = run_dir .. "/log.jsonl" }))
     release_override()
     pm, run_dir, cmd_id, state = nil, nil, nil, "idle"
@@ -135,6 +142,14 @@ local function start_plan(p)
     pm = core.new_plan_machine(p, p.watches or default_watches,
                                INPUT_APPLY_OFFSET)
     log_buf = {}
+    -- The plan's own frame counter is NOT the emulated frame count. Lua runs on
+    -- the GUI thread, so one callback can span many emulated frames, and
+    -- plan_step only catches up MAX_CATCHUP of them per callback. When the host
+    -- is busy the plan falls behind real time and a tail_frames=N plan burns far
+    -- more than N emulated frames -- measured at 2300 requested vs 5310 actual.
+    -- Callers that need a duration must use the emulator's own delta, so record
+    -- the start here and report both ends on the ack.
+    plan_fc_start = emu.framecount()
     state = "plan_running"
 end
 

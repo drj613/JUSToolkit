@@ -255,6 +255,22 @@ Practical rules:
   healthy.** Two of three attempts at one negative were invalid -- one where GDB
   detached on SIGILL, one where the script errored -- and both printed exactly
   the same "0 hits" as the valid run.
+
+## Frame counting: the emulator free-runs
+
+`nav.advance(N)` is accurate -- 2300 requested measured 2301 observed against the
+emulator's own framecount, and it now RETURNS that observed delta.
+
+The thing to watch is that **the emulator keeps running at ~60fps whenever no plan
+is executing.** Three seconds of caller sleep costs 180 emulated frames. So any
+framecount delta measured across your own dumps, screenshots or conversions
+includes that free-run time. A reported 2300 -> 5310 "overshoot" was this: ~50
+seconds of caller work between two reads, not plan error.
+
+Use `nav.advance()`'s return value to attribute frames to a plan. Use a difference
+of two emulator-reported framecounts to measure in-game duration -- that counts
+free-run frames too, which is correct, since the game does not care where its
+frames came from.
 - Because the halt freezes `_Update()`, the bridge cannot drive input while the
   core is stopped. Breakpoint commands must end in `continue` so the core keeps
   running and the bridge stays alive; a blocking prompt deadlocks the pair.

@@ -1854,3 +1854,53 @@ fields a synthetic node has never had set correctly.
 **Unexplained and not hidden** (theirs): the control sat at exactly 300 for seven samples then read 0 at the
 eighth, with nothing draining it. Possibly the opponent closed, possibly the match ended. Doesn't affect the
 contrast, which is decided in the first sample.
+
+### chr_b 12 IS Luffy — and that may void the flat −2.0 reduction (P175 addendum)
+
+The runtime loop asked whether `fight_base`'s opponent is Luffy, since its bitset carries abilities `0x09` and
+`0x0C` and its `chr_b` reads 12. **Yes** — and the lookup has a trap my own record already warns about.
+
+`CONFIRMED_STATIC`: `chr_b-Complete-Mapping.md` row 12 = `op_b_01` = **Luffy**, One Piece, charId 9, classId 521,
+jpower block 9. Row 13 is Gear 2 Luffy, so 12 is the base character the doc means.
+
+**The trap:** `Character-Mapping.md` row 12 is `ss_b_01` = **Seiya**, because that table is **deck-builder order**,
+not ARM9/file order. The doc carries an explicit CAUTION saying so — *"the old chr_b-Mapping.md called this column
+'chr_b Index', but it is DECK-BUILDER order… same column name, different data - do not mix them up."* A naive grep
+returns Seiya first. Two index spaces, one column name.
+
+**So the same character takes 6.000 here and 4.000 in the doc, same attacker, same move.**
+`Damage-Reduction-Is-Flat.md` measured Goku (`chr_b[0]`), move B, same deck, same buttons: unresisted target
+**6.000**, Luffy **4.000**, a flat **−2.0**. The runtime loop just measured Goku's B against `chr_b` 12 at **384
+raw = 6.000**, gimmick verified off.
+
+**And the doc's own caveats explain how that can be, which is why I am not calling this a contradiction.** Reading
+it rather than citing it:
+
+1. *"All four figures were measured with 自動回復 ON, so each is `true − 2.0` (one auto-heal tick)."* The doc's own
+   note. The reduction it reports is **exactly −2.0**, the same magnitude as the auto-heal tick it says is present
+   in every figure.
+2. *"Cross-session caveat: the 4.000 and 3.000 figures come from an earlier battle… same moves, but not the same
+   session, and savestate reproducibility is only established within a session."* So the 6.000 and the 4.000 were
+   **never measured in the same session.**
+3. Measured **2026-08-14** — inside `jus-f30`'s taint window, which covers *every* runtime damage measurement from
+   the two sessions before 2026-08-18 session 2, all of which ran with the stage gimmick on.
+
+`PLAUSIBLE`, and it needs saying plainly: **the flat −2.0 reduction may not exist.** It is a difference between two
+cross-session figures, both inside the gimmick taint window, taken with auto-heal on — and the difference equals
+the auto-heal tick the doc itself documents. If the two sessions differed by one tick's exposure, the "reduction"
+is that artifact.
+
+`not claimed`: whether it exists. Three readings survive — a real reduction that `fight_base` lacks for another
+reason; an auto-heal timing artifact; a gimmick artifact. **The discriminator is `jus-f0v`**, already open: both
+moves, both targets, one session, gimmick verified off, auto-heal accounted for. Its priority should go up — it is
+not confirming a known result, it is deciding whether the result exists.
+
+This also strengthens the runtime loop's bit-9 finding rather than weakening it. They showed a bit-9 holder takes
+full damage; if the −2.0 was never real, then there was nothing for ability `0x09` to be the cause of, and the
+"blunt resistance isn't in the bitset" conclusion stands with its premise now in question too.
+
+**Thirteenth instrument rule, theirs, from catching their own null:** *an A/B comparison cannot tell you that A was
+already in the "off" state.* Clearing bit 9 on a character who wasn't resisting removes nothing, so B says nothing
+about removing real resistance. What caught it was comparing their baseline against **the doc's external
+unresisted figure** rather than only against their own treatment. **A baseline needs an external anchor for what
+"on" looks like.**

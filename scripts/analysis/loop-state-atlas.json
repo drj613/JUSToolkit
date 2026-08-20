@@ -1,14 +1,14 @@
 {
- "iteration": 228,
+ "iteration": 229,
  "phase": "combat",
  "current_task": "P213-what sets bit 5 of [r8+0x40] (the resistance gate)",
  "queue": [
-  "P229-What is 0x02076D00 and what object holds the shape word at +0x14? Naming it would connect the koma shape data to a file, which is the koma sprint deliverable.",
-  "P229b-Where does deck+0x568 get built, and is the occupancy mask the same data the battle grid at arg0+8 is derived from? That is the deck-to-battle hop.",
-  "P229c-Read the special-case path at 0x020778E0 -- kind-2 handler indices 3, 5, 6 from the node walk only. Settles whether a node or a character receives the modifier.",
-  "P229d-The two unidentified words at arg0+0x000 and the 0xC0 before the next side.",
-  "P229e-What sets bit 8 of [r1+0x14] at 0x02080988, selecting +0x44 bits 20 vs 21?",
-  "P229f-Overlay-Residency-By-Mode.md: the SHAPE claim plus a row for in-battle menu modes. No boundary address."
+  "P230-Pin the kshape.bin record base by checking the eight-cell class: the header claims 4 octominoes and base 0x3C only shows 3. Also read the five other u32s per record.",
+  "P230b-What is 0x02076D00 and what object holds the shape word at +0x14? Now more tractable: it likely returns a pointer into the RAM catalogue loaded from kshape.bin.",
+  "P230c-Where does deck+0x568 get built, and is the occupancy mask the same data the battle grid at arg0+8 derives from? The deck-to-battle hop; it would name arg0.",
+  "P230d-Read 0x020778E0 -- the special-case path for kind-2 handler indices 3, 5, 6, taken only from the node walk. Settles whether a node or a character receives the modifier.",
+  "P230e-The two unidentified words at arg0+0x000 and the 0xC0 before the next side.",
+  "P230f-Overlay-Residency-By-Mode.md: the SHAPE claim plus a row for in-battle menu modes. No boundary address."
  ],
  "done": [
   "K1-koma-data-survey",
@@ -269,7 +269,7 @@
   "Is HP computed as size*k at runtime, or tabulated per panel? Naruto 4-koma=144=4*36; if size*k then size5=180, size6=216, size7=252, size8=288. One reading settles it."
  ],
  "notes": "Iteration 146 done (delegated + verified). THREE closures: (a) 0x800's polarity is category ROUTING, not a contradiction -- 0x020801D4 is loop-continue, 0x0207F7C8 is the next category check; (b) record+0x34 is NOT write-once -- a four-function flag API (0x0207D064/0x0207D0BC/0x0207CF18/0x0207CF78) mirrors changes into +0x38 and the +0x08 node list, and the destructor 0x0207CCD4 memsets 0x188; (c) P144's 0x6FF puzzle SOLVED -- ov6 ORs [record+0x150]&0xFF into +0x34, and 0x6FF covers bits 0-7, so the test reads runtime bits not the 0x100 construction seed. Top task: read record+0x150, which now drives the whole category gate. STANDING: query.py mis-bins functions in this module (4 leaves here, 8 in P125, 2 in P126) -- verify any address before trusting its size or container. The +0x5C base-confusion trap has 7 instances; on +0x34 (1092 hits) the base register is the ONLY struct identifier. CHARTER: updated in P146b on the user's direct authorization. North star = docs/PROJECT-GOAL.md (master, f47d63d); Mission 2's current focus is the entity/projectile subsystems. justoolkit-06 is the designated runtime validator -- send them struct-field hypotheses and breakpoint requests rather than leaving questions unresolved; that is the only route to dynamic evidence without breaking the static-only rule.",
- "last_wake": "2026-08-19 P228",
+ "last_wake": "2026-08-19 P229",
  "wakeup_default_seconds": 900,
  "consecutive_no_progress_wakes": 0,
  "k1c_helper_passives": {
@@ -2508,5 +2508,14 @@
   "explains": "the multi-cell footprints in the live battle grid -- the pointer repeats across every set bit of the shifted shape mask.",
   "NOT_established": "what 0x02076D00 returns, so \"shapeObject\" is a placeholder and the object is unnamed. And deck+0x568 vs the battle object arg0+0x558 is nothing more than adjacent-looking offsets in different structures."
  },
- "P228_selector_test_is_blocked_structurally": "runtime answered my nine-stop question from the log they already had: ONE defender (0x0220FC3C) and ONE element (0x021BDE90) across all nine, so neither the defender nor the move varied. The nature term varied because [r8+0x175] is REWRITTEN each time the assembler re-runs -- they measured the attacker byte going 0x20 to 0x15 over 500 frames -- and the stops cluster contiguously (77-79, 102-104, 113-115), which is a value changing between respawn cycles. So dm_battle CANNOT host the selector test: the row varies on its own, so a difference in terms can never be attributed to the selector. It needs a quiescent battle, and fight_base is quiescent but has no class-2 attacker. The two requirements pull toward different savestates. A structural constraint, not a wait."
+ "P228_selector_test_is_blocked_structurally": "runtime answered my nine-stop question from the log they already had: ONE defender (0x0220FC3C) and ONE element (0x021BDE90) across all nine, so neither the defender nor the move varied. The nature term varied because [r8+0x175] is REWRITTEN each time the assembler re-runs -- they measured the attacker byte going 0x20 to 0x15 over 500 frames -- and the stops cluster contiguously (77-79, 102-104, 113-115), which is a value changing between respawn cycles. So dm_battle CANNOT host the selector test: the row varies on its own, so a difference in terms can never be attributed to the selector. It needs a quiescent battle, and fight_base is quiescent but has no class-2 attacker. The two requirements pull toward different savestates. A structural constraint, not a wait.",
+ "P229_KSHAPE_BIN": {
+  "answer": "the koma shapes come from kshape.bin, NOT koma.bin. jus_files/ripped_jus_files/bin/kshape.bin, 1648 bytes, the only file in bin/ holding all nine observed masks, each exactly once, at stride 0x18 and in the same order as the RAM array.",
+  "offsets": "0x00421->0x0B4, 0x00043->0x0CC, 0x00062->0x0E4, 0x00061->0x0FC, 0x00023->0x114, 0x00063->0x12C, 0x00027->0x144, 0x08421->0x15C, 0x00047->0x18C",
+  "ram_mapping": "runtime RAM index 0 -> file 0x0B4, index 7 -> 0x15C, index 9 -> 0x18C. So the array at 0x021AF1B4 is file offset 0x0B4, putting file offset 0 at RAM 0x021AF100.",
+  "INDEXED_BY_CELL_COUNT": "header holds cumulative starts 0,1,3,9,21,35,49,62 and per-class counts 1,2,6,12,14,14,13,4 (sum 66) -- one monomino, two dominoes, six trominoes, twelve tetrominoes, fourteen pentominoes, fourteen hexominoes, thirteen heptominoes, four octominoes. Every cumulative step checks. Walking stride 0x18 from base 0x3C gives 66 records with histogram {1:2,2:2,3:6,4:12,5:14,6:14,7:13,8:3} -- exact for 2..7 cells, off by one at each end.",
+  "CURATED_SUBSET": "fixed polyominoes run 1,2,6,19,63 for sizes 1-5; this file has 1,2,6,12,14. Sizes 1-3 complete, 4 upward CHOSEN. A design fact, and the kind of thing the koma brief needs rather than another address.",
+  "NOT_pinned": "the exact record base. Must be == 0x0C mod 0x18 since 0x0B4 is a known record; 0x0C, 0x24 and 0x3C all give plausible runs. 0x3C is the only one giving exactly 66 with 4 trailing bytes, but the off-by-one at both histogram ends says the base is probably one record either side, or the header is 16 words and the stride is interrupted. Check the eight-cell class -- the design brief says an 8-panel koma is real and the header claims four. The five other u32s per record are also unread.",
+  "METHOD_NOTE": "only the WIDE masks discriminate. 0x00062/61/63/23/47 are one- and two-byte values that collide by chance -- they hit komatxt.bin, jpower.bin, chr_b.bin and rulemess.bin in my scan too. Only 0x00421 and 0x08421 are wide enough to mean anything, and kshape.bin is the sole file carrying those. Reporting the small hits as a partial result would have looked like corroboration and been noise."
+ }
 }

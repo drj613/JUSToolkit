@@ -1,5 +1,5 @@
 {
- "iteration": 225,
+ "iteration": 226,
  "phase": "combat",
  "current_task": "P213-what sets bit 5 of [r8+0x40] (the resistance gate)",
  "queue": [
@@ -269,7 +269,7 @@
   "Is HP computed as size*k at runtime, or tabulated per panel? Naruto 4-koma=144=4*36; if size*k then size5=180, size6=216, size7=252, size8=288. One reading settles it."
  ],
  "notes": "Iteration 146 done (delegated + verified). THREE closures: (a) 0x800's polarity is category ROUTING, not a contradiction -- 0x020801D4 is loop-continue, 0x0207F7C8 is the next category check; (b) record+0x34 is NOT write-once -- a four-function flag API (0x0207D064/0x0207D0BC/0x0207CF18/0x0207CF78) mirrors changes into +0x38 and the +0x08 node list, and the destructor 0x0207CCD4 memsets 0x188; (c) P144's 0x6FF puzzle SOLVED -- ov6 ORs [record+0x150]&0xFF into +0x34, and 0x6FF covers bits 0-7, so the test reads runtime bits not the 0x100 construction seed. Top task: read record+0x150, which now drives the whole category gate. STANDING: query.py mis-bins functions in this module (4 leaves here, 8 in P125, 2 in P126) -- verify any address before trusting its size or container. The +0x5C base-confusion trap has 7 instances; on +0x34 (1092 hits) the base register is the ONLY struct identifier. CHARTER: updated in P146b on the user's direct authorization. North star = docs/PROJECT-GOAL.md (master, f47d63d); Mission 2's current focus is the entity/projectile subsystems. justoolkit-06 is the designated runtime validator -- send them struct-field hypotheses and breakpoint requests rather than leaving questions unresolved; that is the only route to dynamic evidence without breaking the static-only rule.",
- "last_wake": "2026-08-19 P225",
+ "last_wake": "2026-08-19 P226",
  "wakeup_default_seconds": 900,
  "consecutive_no_progress_wakes": 0,
  "k1c_helper_passives": {
@@ -2474,5 +2474,13 @@
   "OPEN_HAZARD_row_0": "all three hits are in rows 1-3 and the opponent grid (0,0) holds 0x00007882, not a pointer. But y'=0 IS reachable under the gate's bounds -- high nibble 0 with k=2 or k=4, or high nibble 1 with k=3, and the only lower check is >= 0. So a node targeting row 0 gets a non-null non-pointer and AddAbility does ldrsb [0x00007882+0x1A]. Either no live node targets row 0 or arg0+8 is not the indexing base -- and it cannot be an off-by-one row, since the three hits land with that base and stride 0x14. PIN BEFORE INDEXING.",
   "possible_slip_flagged": "the report says 0x021DF2AC own cell is (1,1), but in its own quoted grid (1,1) holds 0x021DF1BC and 2AC footprint is (1,2),(1,3),(2,3). Either a typo for (1,2), or an anchor can name a cell another koma occupies -- which would change what anchor means. Flagged, not asserted.",
   "arg0_still_unnamed": "known address, unnamed object. 0x021DF150 / 0x021DF76C, 0x61C apart, char_structs in the same region (0x021DF1BC = arg0_ply + 0x6C). Fourth iteration of not naming it."
+ },
+ "P226_PREASSEMBLY_WINDOW": {
+  "runtime_finding": "the gate word at +0x44 is assembled at LOAD TIME with a window before it populates. dm_battle read 0x00000000 at +2/+10/+30 frames and 0x00002010 from +80 onward; fight_base read 0x00002010 from +2. So their earlier \"dm_battle has an unreduced target\" was a TRANSIENT state, not a property. Bead jus-gate-word-assembled-after-load-68g.",
+  "MY_EXTENSION": "ov6 0x02157114 assembles BOTH the gate word and the nature byte in one pass (jus-one-routine-assembles-both-u24), so every caution transfers verbatim to +0x175. A nature byte read within ~30-80 frames of a load may be pre-assembly, and the pre-store value 0x3C is both what an unassembled byte looks like AND the \"none\" state that makes a nature walk return meaningless nulls. Any PEEKED nature value taken soon after a load is suspect.",
+  "property_not_per_field": "if one routine assembles two fields, anything true of one field timing is true of the other. Second time today this routine explained something on both sides at once.",
+  "THE_RULE": "for any load-time-assembled field, sample it where the CONSUMER reads it, not before. The runtime flat refutation survives because they read the gate word from r2 AT THE BREAKPOINT rather than peeking and assuming constancy -- they say accidentally.",
+  "goku_zero_scope_corrected": "verified Goku live list [7,15] against the twelve gate-feeding ids {9,10,11,12,13,16,17,18,19,21,23,24}: empty intersection. And every other +0x44 writer in battle code (0x0207C060, 0x0207C15C, 0x0207F834, 0x0207FABC, 0x020809A0, 0x020817A8, ov6 0x0215EAB8) touches only bits 0,1,2,3,20,21 -- never 4,5,6,12,13,14. So gate bits come ONLY from the mask tables and his zero is real. BUT the live list is post-load and includes koma appends, so an adjacent type-2 node granting 9/10/12/13/21/24 would put a gate bit on him. The unreduced baseline is a property of THIS DECK, not of the character -- \"permanent\" would make a later deck change present as a measurement anomaly.",
+  "three_arms_one_blocker": "the deck-maker test-play savestate is now wanted for THREE independent reasons: \u76f8\u624b\u306e\u5c5e\u6027 for the nature cell, \u81ea\u52d5\u56de\u5fa9 for clean cumulative damage, COM\u8a2d\u5b9a for the unreduced arm. Harness work, not owner work. Worth saying to the ledger as one blocker behind three arms."
  }
 }

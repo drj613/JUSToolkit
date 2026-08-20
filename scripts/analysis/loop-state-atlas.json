@@ -3,11 +3,11 @@
  "phase": "combat",
  "current_task": "P213-what sets bit 5 of [r8+0x40] (the resistance gate)",
  "queue": [
-  "P228-What sets bit 8 of [r1+0x14], which selects between +0x44 bits 20 and 21 at 0x02080994 / 0x0208099C? Neither bit is read by the damage routine, so what consumes them?",
-  "P228b-What writes the +0x558 node list and the grid at arg0+8? That is the deck-to-battle hop and it would name arg0.",
-  "P228c-What do the eight kind-2 handlers do? 0x0207793C (ids 49/50/51), 0x02077944, 0x02077954, 0x02077964, 0x02077974, 0x020779A4.",
-  "P228d-What writes char+0x13..0x15, the three nature slots? Koma grant abilities by adjacency; they may grant natures the same way.",
-  "P228e-The two unidentified words at arg0+0x000, and the 0xC0 between the node array end and the next side.",
+  "P228-RE-READ MY OWN RECENT OUTPUT for answers to open items before starting anything new. Three instances in one day of the answer being in already-written text. Candidates: the two words at arg0+0x000, the 0xC0 gap, what sets bit 8 of [r1+0x14].",
+  "P228b-What writes the +0x558 node list and the grid at arg0+8? The deck-to-battle hop; it would name arg0.",
+  "P228c-What writes char+0x13..0x15, the three nature slots? Koma grant abilities by adjacency and may grant natures the same way.",
+  "P228d-Are ability 7 and ability 52 the same max-HP effect reached two ways? 0x020784B8 GrowMax vs 0x02077974, same 0x4000 cap, different kinds.",
+  "P228e-What consumes char+0x4A/+0x4B/+0x4C, the signed modifier triple, and char+0x5CC?",
   "P228f-Overlay-Residency-By-Mode.md: the SHAPE claim plus a row for in-battle menu modes. No boundary address."
  ],
  "done": [
@@ -2489,5 +2489,12 @@
   "BIT_21_ACCOUNTED_FOR": "arm9 0x0208099C. Conditional pair: tst r1,#0x100 at 0x02080988, then orrne #0x100000 (bit 20) at 0x02080994 or orreq #0x200000 (bit 21) at 0x0208099C, stored at 0x020809A0. Mutually exclusive, selected by bit 8 of [r1+0x14], neither a mask-table bit. This was in MY OWN +0x44 writer sweep several wakes ago and I did not connect it.",
   "class_14_not_an_anomaly": "all four loaded collision files carry at least one damageFlags == 14 -- Goku 1/25, Luffy 3/38, Naruto 1/46, Rukia 1/20. table[14] = 0 so it engages no class gate. A value that common with a zero table entry reads as a deliberate \"no category\" marker.",
   "add_side_is_the_blocked_arm": "needs the player chr_b 20 attacking the opponent chr_b 12 -- both present, but it requires the player active to be chain node 2 while the opponent is still node 0, and steering that needs character switching, which jus-3aw records as unachieved. Runtime has inverted the deck case on jus-5bg: an Ichigo-type attacker unblocks something, Edajima now only removes a confound."
+ },
+ "P227_KIND2_HANDLERS": {
+  "closed": "the eight kind-2 abilities are STAT MODIFIERS, not list abilities. ids 49/50/51 -> 0x0207793C, a STUB (mov r0,#0; bx lr). id 52 -> 0x02077974: max HP (+0x16) += byte2*64 clamped to 0x4000 then current (+0x18) = max, byte2 = +8 so +8.000 displayed and it FULL-HEALS. id 53 -> 0x020779A4: char+0x5CC += 1 clamped to 0x10. id 54/55/56 -> 0x02077944/54/64: char+0x4A/+0x4B/+0x4C = signed byte2 = +1 / +3 / -3.",
+  "loader_clears_them": "0x0207778C-0x02077794 zero +0x4A/+0x4B/+0x4C immediately above the +0x1A count zeroing. So they are a triple of signed modifiers rebuilt with the ability set, sitting directly after +0x49 (the regen rate).",
+  "FOUR_INERT_ENTRIES": "ids 49, 50, 51 are stubs and id 11 has no carrier at all. At least four catalogue entries are wired and inert -- a pattern, not a curiosity.",
+  "tension_flagged": "Battle-Engine-Map records 0x020784B8 as GrowMax with the same 0x4000 cap, gated on a char+0x128 badge bit, candidate \"max HP on respawn passive ability 0x07\". So TWO paths raise max HP with the same cap. Whether ability 7 and ability 52 are one effect reached two ways is NOT established -- but they are reached differently: 7 is kind 0 and appends, 52 is kind 2 and never appears in the list.",
+  "WHY_IT_SAT_UNREAD": "I filed these eight addresses three wakes ago and never opened them. Third instance the same day of both loops carrying answers to each other open questions in already-written text -- their chain walk had \"appended [10]\" while they quoted a live list as a record; my own +0x44 sweep said \"other writers touch bits 0,1,2,3,20,21\" while bit 21 sat on their unexplained list. FILING AN ADDRESS FEELS LIKE HANDLING IT -- a pointer in a bead reads as progress and the follow-through is what gets dropped."
  }
 }

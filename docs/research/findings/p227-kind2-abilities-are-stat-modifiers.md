@@ -98,3 +98,23 @@ fighter — but it has neither 9 nor 10, so it does nothing for the gates.
 modifier bytes should read zero everywhere. That is consistent with only these handlers writing
 them, and it is nearly no evidence, because zero is also what an untouched byte reads.
 
+## The inert set is eleven ids, not six
+
+Recounted across the whole catalogue using the loader's five-slot window on all 74 records:
+
+```
+57 ability ids (0..56)
+carried by NO chr_b record: 11 ids — 11, 22, 33, 34, 36, 37, 49, 50, 51, 52, 53
+   kind 0 orphans: 11, 22, 33, 34, 36, 37   (six)
+   kind 2 orphans: 49, 50, 51, 52, 53        (five)
+```
+
+And 49/50/51 additionally route to the stub, so they're inert twice over. **Nearly one in five
+catalogue entries is dispatched by nobody.** "This ability id must do something" was never a safe
+assumption; at this density it's a bad bet.
+
+**Two kinds of dead, and only one looks like cut content.** The six kind-0 orphans have working
+append paths and are simply unassigned — they would work if a record carried them. The five kind-2
+orphans are unassigned *and*, for three of them, handled by a function that does nothing. Worth not
+merging them into one count.
+

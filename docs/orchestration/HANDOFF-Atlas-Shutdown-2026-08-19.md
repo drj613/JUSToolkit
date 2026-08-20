@@ -1,5 +1,9 @@
 # Handoff — static loop (atlas), clean shutdown 2026-08-19
 
+> **SUPERSEDED by `HANDOFF-Atlas-P232-2026-08-19.md`** (iteration 232). This doc is still
+> accurate on the damage formula derivation, but the branch and worktree it names no longer
+> exist and the partner session names have drifted. Read the P232 handoff first.
+
 Written at shutdown request relayed from DJ. Final state of the STATIC loop
 (`loop/battle-engine-atlas`), iteration 212. Assume the reader has **zero context**.
 

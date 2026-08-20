@@ -1,0 +1,40 @@
+# Memory Index
+
+- [Character mapping completeness](character-mapping-completeness.md) — "74 mapped" = identity only; full kits: Goku certain, Ichigo maybe, rest stubs
+- [br JSONL format](br-jsonl-format.md) — br rejects uppercase ids only on IMPORT (worktree, no db); fix via db-backed .beads, don't lowercase
+- [Koma system observed behavior](koma-system-observed-behavior.md) — natures are 4 values, per-panel; owner supplies live-play ground truth on request
+- [JUS boot navigation](jus-boot-navigation.md) — Start skips the opening intro; matters for scripted boot-to-battle
+- [Loop wakeup pacing](loop-wakeup-pacing.md) — default ScheduleWakeup to ~1800s, not 3600s
+- [Codex cross-checks](codex-cross-checks.md) — use Codex to validate load-bearing arithmetic/encoding claims; spreads subscription usage
+- [Doc voice rule](doc-voice-rule.md) — all research docs rewritten in Opus 4.6 voice via `claude -p` before committing
+- [Context hygiene](context-hygiene.md) — delegate heavy work to subagents; keep main context lean
+- [Escalation path](escalation-path.md) — blocking questions → PR in jus_files repo, @drj613, check on cron wakeup
+- [Convergent verification](convergent-verification.md) — two tools agreeing from different representations (relative vs absolute) is the strongest confirmation; seek this for load-bearing claims
+- [Dream attack and touch mechanics](dream-attack-and-touch-mechanics.md) — tap chains drive dream attacks/switching/support summons; chain length scales the finishing special
+- [Cross-session coordination](cross-session-coordination.md) — runtime/static/ledger loops; beads-backed protocol in docs/orchestration/; key off roles not names
+- [Verification must not agree with itself](verification-must-not-agree-with-itself.md) — a self-referential check passes forever; owner names proxy work
+- [Taint rules can over-apply](taint-rules-can-over-apply.md) — a taint rule applied one step too far silently retires real findings; scope it
+- [Clean evidence skips the check](clean-evidence-skips-the-check.md) — legible listings and tidy correlations suppress the verification step; pair cheap tests with ones that fail differently
+- [Owner is a ground-truth oracle](owner-is-a-ground-truth-oracle.md) — DJ knows the game and wants to be asked; park questions in beads labelled owner-question for the ledger to surface
+- [Owner question bead](owner-question-bead.md) — park player-knowledge questions in br bead jus-law as confirm/deny; the ledger surfaces them each morning
+- [Record check spans branches](record-check-spans-branches.md) — grep other branches too; loops and the owner each work on their own, so a worktree grep checks a fraction of the record
+- [Negative control needs the stimulus first](negative-control-needs-the-stimulus-first.md) — an "effect goes to zero" control passes trivially if the stimulus never landed
+- [JUS savestates survive relaunch](jus-savestates-survive-relaunch.md) — handoff's "none survive a reboot" is wrong; relaunch is cheap recovery
+- [Self-authored prompts are unreviewed](self-authored-prompts-are-unreviewed.md) — addressing detail goes in a bead, not in the wake prompt you write yourself
+- [Self-written prompts are unreviewed](self-written-prompts-are-unreviewed.md) — fix the prompt, don't out-rank it; addressing detail belongs in beads
+- [A correction is a claim](a-correction-is-a-claim.md) — volunteered retractions get less scrutiny; check the narrowing against the artifact- [A prior is not a check](a-prior-is-not-a-check.md) — a burn is a reason to look harder, not to skip; 21 real stores hid behind "almost certainly unrelated"
+- [Prediction must be single-mechanism](prediction-must-be-single-mechanism.md) — pre-registering a value that two mechanisms produce tests nothing; enumerate the lattice first
+- [Record points one representation away](record-points-one-representation-away.md) — the recurring error is confident and off by one representation: offset, byte, or units
+- [Stale claim above its own correction](stale-claim-above-its-own-correction.md) — the fix sitting below the stale claim makes the doc look maintained; no linter can see it
+- [melonDS is a shared unbrokered resource](melonds-emulator-is-a-shared-unbrokered-resource.md) — announce input windows before/after driving it; my tap contaminated another session's measurements
+- [JUS HP address: current vs max](jus-hp-address-current-vs-max.md) — opp current HP is +0x18 (0x021DF7F0), not +0x16; identical at full health, so the bug hides
+- [melonDS window focus triggers SIGSEGV loop](melonds-window-focus-triggers-sigsegv-loop.md) — never click/activate the window after a savestate load; sample before killing a beachball
+- [When the claim is a count, count it](when-the-claim-is-a-count-count-it.md) — both loops mis-summarised their own captured output; a glance is not a query
+- [Robustness is scoped to the target you chose](robustness-is-scoped-to-the-target-you-chose.md) — "cannot return a null" says nothing about whether the field is the one the mechanism writes
+- [Sound substance, wrong word](sound-substance-wrong-word.md) — right findings stated too strongly; assert only the scope you inspected, and re-derive a partner's wording
+- [Test the definition, not a consequence](test-the-definition-not-a-consequence.md) — when two readings both pass, find the instruction that defines the thing; consequences tolerate wrong premises
+- [Filing a lead discharges owing it](filing-a-lead-discharges-owing-it.md) — a pointer in a bead reads as progress; re-read your own last two beads at wake time
+- [Every arm must be able to fail](every-arm-must-be-able-to-fail.md) — a 100% arm may be a tautology; ask what would refute each arm, and prefer the semantic check
+- [Falsifiable but dead on this claim](falsifiable-but-dead-on-this-claim.md) — an arm can be refutable in general and carry zero info on the claim it's cited for
+- [Circular search constraints](circular-search-constraints.md) — constraining a search with the assumption under test excludes the answer; the output still looks methodical
+- [Re-read before you search](reread-before-you-search.md) — re-read the whole function already in the record; never filter a listing you'll reason from

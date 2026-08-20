@@ -10,10 +10,16 @@ problems. Beads is the system of record; this handoff is a snapshot.
 ids cited 14 times -- tracked by jus-dead-bead-ids-in-docs-r4y). Warnings at ~288 across
 293 markdown files. 81 distinct beads cited by docs.
 
-Both loops were actively committing through shutdown. Runtime ("ed", `loop-ed:` commits)
-was on regen measurement, owner-played match logging, and bench-regen as a switch oracle.
-Static ("atlas", `loop-atlas:` commits) handed off at iteration P232, working on kshape
-width and the 0x023DC writer.
+**Four roles now, not three.** DJ added a harness seat (maintains `scripts/emu/*` and the
+melonDS-lua fork) late in the session. It is currently **unassigned** -- handoff ready at
+`docs/orchestration/HANDOFF-2026-08-19-harness.md`. The session that wrote it
+(justoolkit-8f) investigated touch input, found the plan_step batching bug, the HP
+address error, and the melonDS window-focus hang.
+
+Runtime ("ed", `loop-ed:` commits) was actively committing through shutdown -- regen
+measurement, owner-played match logging, bench-regen as a switch oracle. Static ("atlas",
+`loop-atlas:` commits) handed off at iteration P232, working on kshape width and the
+0x023DC writer.
 
 ## 2. What the ledger accomplished this session
 
@@ -58,6 +64,8 @@ aged. Carry forward only if they go stale again.
   resource. Protocol gap documented but no lock mechanism decided.
 - **jus-reading-max-hp-not-current-2jo** -- runtime read MAX HP for four sessions; the
   -5.250 refutes the flat model on integrality grounds.
+- **jus_addresses.py still has wrong HP addresses** -- reads high byte of max HP, not
+  current HP. Top action item for the new harness seat (see harness handoff section 0).
 
 ## 5. Items parked for the owner
 
@@ -114,5 +122,12 @@ Runtime (justoolkit-09) sent a shutdown notice with three items a successor shou
 
 Runtime handoff at `docs/orchestration/HANDOFF-Ed-2026-08-19-runtime.md`. Static handoffs
 at `docs/orchestration/HANDOFF-Atlas-P232-2026-08-19.md` and
-`HANDOFF-Atlas-Shutdown-2026-08-19.md`. 139 commits ahead of origin, not pushed (DJ's
-call).
+`HANDOFF-Atlas-Shutdown-2026-08-19.md`. Harness handoff at
+`docs/orchestration/HANDOFF-2026-08-19-harness.md`. 139+ commits ahead of origin, not
+pushed (DJ's call).
+
+## 9. Extracted memories
+
+All 40 process-lesson memories from the CLI's memory system have been copied to
+`docs/memory/` with the MEMORY.md index, so they're tracked in the repo and available
+to any harness, not just Claude Code's built-in memory.

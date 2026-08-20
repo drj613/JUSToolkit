@@ -1,265 +1,77 @@
 # Session Ledger — JUS Reverse Engineering
 
-Last updated: 2026-08-19 ~09:00 (ledger wake 33, session `justoolkit-87`)
+Last updated: 2026-08-19 (ledger wake 1 after restart, session `justoolkit-e8`)
 
 ## 1. Current state
 
 This file is a human catch-up summary — not the system of record. beads (`br`) is the record; protocol in `docs/orchestration/`.
 
+**All three loops were shut down and restarted on 2026-08-19 for the branch consolidation.** The old three-branch, three-worktree setup is gone. Everyone now works on `integration/loops` in the main worktree.
+
 **Live sessions (from ListAgents):**
-- `justoolkit-fa` [cedb9e] — busy, 13h. **Runtime**. Watchpoint patch working (jus-1rm: term writer arm9 `0x020812E4` found in one stop). **KEY FINDING: jus-w66 — removing ability id 9 does NOT change damage.** Neither the ability list nor the cached bitset is read at hit time. Touch control built (jus-3aw progressing). 35+ commits.
-- `battle-engine-atlas-76` [2e8ac4] — busy, 13h. **Static**. Now at **P208**. Damage formula at arm9 `0x020823E4` reached by out-parameter. {kind,id} table confirmed. Cap audit clean. 40+ commits.
-- Others: `justoolkit-ba` stood down, `trainer-5b` busy (unknown role).
+- `justoolkit-e2` [9764b0] — **Runtime**. Just started (idle). Assigned by `justoolkit-85`.
+- `justoolkit-73` [fbc915] — **Static**. Just started (idle). Assigned by `justoolkit-85`.
+- `justoolkit-e8` — **Ledger** (this session). Just started.
+- `justoolkit-85` [2eb529] — busy. The owner's direct session, brought up the three loops.
+- `trainer-d4` [d035a5] — busy, unknown role.
+- `test-suite-guardrails-1d` [096ca1] — idle, unknown role.
 
-**Coord beads:** ~48 total, ~20 open. Write-watchpoint patch built and working (jus-fun). Term writer found (jus-1rm). **But: ability id 9 does NOT affect damage (jus-w66) — the deck experiment design may need rethinking.** The reduction mechanism is upstream of abilities.
+**Roles table updated** in `docs/orchestration/COORDINATION-PROTOCOL.md`.
 
-## 1.5. OWNER ACTION — status update
+## 2. Where things stand (inherited from the predecessor's handoff)
 
-**jus-law:** Most questions answered by owner ground truth (2026-08-18 evening). Key answers: character switching is "just taps" (runtime still can't land them — trying panel centres and longer holds next), down+B confirmed as change attack (hits opponent, changes THEIR character), items DO inflict statuses (chili=burn, purple flask=poison), DoT exists with a 1-HP floor, exotic missions are story-mode only.
+**The damage chain is solved end to end** [jus-reduction-is-quarter-multiplier-xk1]. Reduction is x0.75 per gate (25% of base), not a flat -2.0. Two gates read a class table at `0x02092E68`; the formula routine is `0x020823E4`. The retracted flat-2.0 claim is tracked at jus-ccb.
 
-**Remaining open on jus-law:** Q1 is answered (id 32 = freeze on opponent, id 19 = gauge cost on player). Q6 (calibration move), Q7 (HP drift), Q8 (treasure-chest/WINNER screens) still open.
+**CORRECTION (runtime wake 1, commit `9c55797`):** The +/-25% gates read `[r8+0x44]`, not `[r8+0x40]`. There are six gates (three add, three subtract), none unconditional. The old scope caveat — "bit 5 of `[r8+0x40]` clear, only class-1 sampled" — was reading a word that gates none of the six adjustments. Zero of six gates have been individually sampled. The x0.75 measurement itself is untouched; the mechanism attribution moved. Tracked at jus-gate-word-is-r8-0x44-fnz (`state:proposed`, awaiting static verification). Note: runtime and static independently found the same +0x40/+0x44 error within the same hour — a genuine cross-check (the correction doesn't rest on one reader), though also duplicated effort.
 
-**jus-fun: PRIORITY ESCALATED.** All three static routes to the +0x134 writer are now closed (immediate-offset, split/regoff scanner, caller chain — zero callers on 0x02156DDC). Polling can't substitute: 1 non-zero read in 7991 polled hits. The write-watchpoint is now the ONLY remaining route to the flat -2.0 damage reduction — the oldest open question in the battle-engine work. Fable recommended: patch melonDS DataWrite (~15 lines, half day). Codex recommended: savestate bisection + instruction step. Both say disable JIT first. **Owner decision needed — this now blocks the damage model.**
+**Next action (revised):** find what sets the bits of `[r8+0x44]`. This is the gate word for the entire +/-25% system.
 
-**Atlas flagged a protocol gap:** role resolution has no mechanism — names drift across restarts and the roles table in COORDINATION-PROTOCOL.md isn't updated. Atlas had to double-deliver a message because it couldn't resolve the ledger. Suggested: sessions announce their role on startup into a bead, or the roles table gets updated on each restart.
+**PROGRESS (static wake 1, commit `67bd41c`):** Static found the ability-to-flag chain [jus-bit5-is-ability-10-rxl, `state:static-confirmed`]. Bit 5 of the gate word (`[r8+0x44]`) is set by ability id 10 via a mask table at `0x02092E78`. The setter is arm9 `0x02083BE0`; it reads a cached ability bitset through ov6 `0x02157114`. Two mask variants (subtract bits 4-9, add bits 12-17) map all six gates to ability ids. This is the chain the campaign has been looking for. Awaiting runtime verification (live read of +0x44 at jus-peek-plus-0x44-and-flag-writer-uvp).
 
-## 2. Open audit flags
+jus-gate-word-is-r8-0x44-fnz promoted from `state:proposed` to `state:static-confirmed` — runtime produced it, static verified independently. Valid cross-check.
 
-### Flag A — RESOLVED: Structured labels adopted
-Both loops now write coord beads with proper labels. Two legacy beads (jus-ovv, jus-6fo) still carry only `coord` — minor, low priority.
+**CHAIN CLOSED (runtime wake 2 + static wake 3, commits `6a9c3d5` + `848c26f`):** The gate word read `0x00002010` live — predicted to the bit by static's table before runtime launched. From the ability bitset `0x02005200` (ids 9, 12, 14, 25), the table said `[r8+0x44]` = `0x00002010`: id 9 giving subtract-bit 4, id 12 giving add-bit 13, ids 14 and 25 not in the table. Runtime read exactly that. Static re-derived it independently before reading runtime's arithmetic. Object identity also closed: `[[battleObj+0x1a8]+0x10]` == r8 == `0x0220FDC4`, from two derivations. Category 1 fires bit 4 for -512 and *blocks* bit 13 — a bit that's armed and declined is the category gating itself, stronger evidence than a bit that simply fired. Three caveats: (1) no hit landed — eight stops, no contact, formula runs on misses (jus-formula-bp-not-a-hit-oracle-ve6); (2) bit 4's causality untested — control arms out of range, trivial pass caught only by unconditional stop counter; (3) ability 10 → bit 5 split into its own bead jus-bit5-ability-10-untested-mvk (`state:proposed`) — static corrected their own record, recognizing the title named the least-supported row. Bit 5 has been clear in every capture; 10 of 12 table rows unexercised. Tracked at jus-gate-word-read-live-0x2010-nbz (`state:runtime-confirmed`).
 
-### Flag B — RESOLVED: jus-1g6 closed
-Atlas picked it up, closed it, and superseded it with jus-hsc (the full rulemess.bin decode with CROSS_CONFIRMED status for 0x020AFEA0 and 0x020AFEAC).
+**Next open question:** if the formula runs on misses, where is contact decided? Static is taking it — candidate at arm9 `0x0208207C`, inside the same function as the never-reached `0x02081F5C`.
 
-### Flag C — Gimmick taint NOW PROPAGATED
-jus-f30 is the formal taint notice with proper `kind:retraction` / `state:tainted` labels. jus-f0v is linked as a dependent (re-run the flat-reduction proof). The scope is clear: all pre-2026-08-18 damage measurements. The ability-bitset negative is explicitly excluded from taint. **Remaining gap:** jus-f0v itself is still open — the re-measurement hasn't happened yet.
+**PROCESS WIN (static wake 2, commit `e0a5fd7`):** Static caught a false confirmation in runtime's capture plan *before it ran*. The planned breakpoint at `0x0208257C` would have read r1 as the class index, but at that address r1 is the nature term (r5*(nature-0x100)). Since nature has been 1.0 in every measurement, r1 = 0 — which was inside runtime's pre-registered prediction of {0,1}. The check would have passed, concluding "category 1" without ever reading the actual class index. This is the check-that-agrees-with-itself pattern, caught preemptively because runtime posted its plan as a bead comment on jus-peek-plus-0x44-and-flag-writer-uvp rather than leaving it in an unreviewed wake prompt. Fix: break at `0x02082584` instead, where both r1 and r4 are live. Also: jus-elem-0x0e-is-packed-8wz (`state:plausible`) — the class index byte at elem+0x0E is packed (low 6 bits a field, bit 7 a flag, 0x3F reset sentinel), so runtime's refutation signature for r1 outside 0..15 is too strong.
 
-### Flag D — Atlas retractions without tainted dependents (carried forward, low severity)
-- P158 "stat block" refuted in P160, P154 struct-base refuted in P155. No beads created for these retractions, no taint marks. Low severity because no downstream findings depended on them.
+**~~Nature does not affect damage~~ — RETRACTED.** jus-nature-does-not-affect-damage-0c6 is now `state:tainted`. Nature IS read in the damage path [jus-nature-is-read-in-damage-path-hbt, `state:static-confirmed`]. The factor tables at `0x0209FEF4` and `0x0209FF14` contain `0x0180` (1.5 in 8.8) in a rock-paper-scissors pattern over three natures plus "none". The arithmetic gives 8→12, matching DJ's January live-play observation and the ROM data. However, no nonzero nature term has been measured at runtime yet — the finding is ROM-and-arithmetic only (`state:static-confirmed`, not cross-confirmed). The August 3/3 null was real but overgeneralised — it established that poking the nature byte mid-battle does nothing, not that nature isn't read. Five docs carried banners calling the correct January answer wrong; all five corrected in commit `f077884`. Nature and the class gates combine additively, not multiplicatively — advantage plus one resist gate is 1.25x, not 1.5 x 0.75.
 
-### Flag E — Pending asks, status refreshed
-1. ObjShot kind-byte walk — now tracked as jus-cvx (`state:proposed`). Within first-wake window.
-2. Nature resolver in ov06 — still untracked in beads. No commit addresses it. **Aging.**
-3. Mode-ID byte and overlay residency — superseded by ov05 closure and rulemess.bin decode.
+**jus-nature-january-vs-august-9a6** carries a live question for the owner: January's data says nature IS a 1.5x multiplier, August says it's not read. Both may be right (different paths, different overlays).
 
-### Flag F — RESOLVED: jus-hsc one-line test
-Atlas owned the unsound one-liner, wrote a replacement test, runtime ran it and it passed. The comment thread on jus-hsc documents the full exchange. Atlas now queued the ov1 reader census as follow-up.
+## 3. Open audit flags (wake 1)
 
-### Flag G — RESOLVED: jus-3vg deterministic heap confound
-The discriminating case ran (mode 3 moved root by +0x180) and the derivation passed. jus-zco created to replace the hardcoded constants. Atlas queued a static-side writer analysis as independent confirmation.
+### Flag C — jus-f0v still open (gimmick taint re-measurement)
+The re-measurement never fully completed. The premise shifted: the 8.000 baseline was measured directly from a signed byte at a breakpoint (atlas P210+), so jus-f0v's original goal is partly moot. Remaining question: what applies the x0.75 reduction. Bead is labelled `state:tainted`.
 
-### Flag H — RESOLVED: atlas not idle
-Atlas committed 5 times between wakes 2–3 (P165 addenda + P166 + P166 addendum). Currently idle after completing a full wake. Not a violation.
+### Flag L — Atlas retractions in commits, not beads
+~8 retractions documented in commits/Battle-Engine-Map.md but not as coord beads. Self-contained, no downstream damage. Carried forward.
 
-### Flag I — RESOLVED: jus-baz aging
-Runtime responded to the nudge within one wake. Updated the bead, reframed as a standing capability (P3). Twelve addresses were already audited incidentally — the bead just wasn't updated. The aging rule caught a bookkeeping gap, not a stalled task. Runtime's feedback: the rule should distinguish "bead is stale" from "work is stuck." Worth noting for the owner.
+### Flag N — jus-zko kept open with reasoning (status update received)
+Static argues it's not superseded: the chr_b record gate chain (how ability ids get from chr_b into battleObj+0x128) is a load-time question distinct from the damage formula. The ability chain found this wake (jus-bit5-is-ability-10-rxl) makes it more relevant, not less. Aging rule satisfied by this status update. May need repricing rather than closure.
 
-### Flag J — RESOLVED: jus-vkj frame overshoot
-Runtime self-retracted (`state:retracted`). nav.advance IS accurate (2300→2301); the apparent overshoot was the emulator free-running between IPC calls. Atlas applied the retraction and unblocked duration tests. Textbook retraction flow.
+### Flag O — jus-3aw character switching
+Touch-swallow bug diagnosed by Fable (plan_step last-mask-wins batching). Runtime built a touch control but the oracle was unsound. Owner approved L/R sticker fallback.
 
-### Flag K — RESOLVED: jus-cvx and jus-fms aging
-Both have real status now after wake 6 nudge.
+### NEW Flag Q — Three kind:request beads aged past the consolidation shutdown
+jus-fms (write-watchpoint on `0x020AFEB8`), jus-cvx (ObjShot kind-byte walk), and jus-baz (runtime address audit) are all `kind:request`, created 2026-08-18, still open with no status change since the loops restarted. The aging rule says a request shouldn't survive one completed wake without an update. These survived a shutdown — understandable — but the runtime loop should acknowledge or reject them on its first wake.
 
-### Flag L — Atlas retractions in map doc, not in beads (carried forward, low severity)
-Six retractions now (+ P159 route division, `e131e68`). All in commits/map doc. Pattern for the owner.
+### NEW Flag R — jus-dead-bead-ids-in-docs-r4y still open
+Four bead ids (jus-wic, jus-vrz, jus-qsh, jus-q4b) cited 14 times across two docs don't resolve. The baseline has 14 entries for these. No progress since filing.
 
-### Flag N — jus-zko at 5th wake (past TTL, deprioritized)
-`state:plausible`, 5th wake. Gate-chain question partly superseded by mode-12 work through other means. Not nudging.
+### Flag S — RESOLVED: Battle-Engine-Map.md bare CONFIRMEDs cleared
+Static cleared all 8 bare CONFIRMED warnings in commit `1d02b0b`. Warnings dropped 289→285. Deadline was blown by one wake but delivered. Baseline still 14.
 
-### Flag O — NEW: jus-3aw character-switching blocker
-Runtime can't switch characters in battle — 14 touch attempts failed, and there's no stimulus check to verify touch is received. Blocks reaching Rukia (status+damage test) and the change attack. Owner said "just taps" and suggested longer holds or the L/R sticker fallback. This is the biggest runtime blocker right now.
+## 4. Items parked for the owner
 
-### Flag P — RESOLVED: jus-y3w retraction cycle complete
-Retracted → un-retracted → CONFIRMED. The arithmetic was wrong (gate reads battleObj+0x120 then +8, not +0x128 directly), but the corrected read IS the ability bitset. Settled by Auto-Guard control (bit 4 zeroes damage, bit 20 doesn't). Both battleObjs derivable at root+0x0DC and root+0x0E0. Closed.
+- **jus-nature-january-vs-august-9a6** — **OWNER ANSWERED:** January 1.5x was from live play, not derived. Nature is most likely applied at load time, not read mid-battle. August's claim needs scoping. Next action: reproduce B at 8→12 on the current harness with nature set via the training menu.
+- **jus-law** — remaining open: Q7 (HP drift), Q8 (modes 12/18/20). Low priority.
+- **jus-5bg** — deck requests (Edajima, Eve). Owner hasn't built them. No rush given the premise shift.
+- **jus-fix-beads-merge-driver-epg** — `.gitattributes` points at a `bd merge` subcommand that `br` 0.2.19 doesn't have. Hard-conflicts on every merge.
+- **jus-agent-loop-emu-timing-30s** — unassigned.
+- **jus-post-consolidation-worktrees-imu** — decide where the loops work. Resolved by the consolidation (everyone on `integration/loops`), but the bead is still open.
 
-### Flag M — RESOLVED: jus-5kf
-HP recovery was respawn animation, not auto-heal. Closed. New bug: jus-kdf (match_run --boot calls undefined autoheal_off()).
+## 5. How to use this ledger
 
-### Protocol improvement observations (for owner)
-Three nudges over 7 wakes surfaced a recurring pattern. Runtime's feedback, consolidated:
-1. **Bead staleness ≠ work staleness.** jus-baz was frozen while its work was 80% done incidentally. The aging rule caught bookkeeping, not a stalled task.
-2. **"Proposed" doesn't distinguish blocked from untouched.** jus-cvx/jus-fms were honestly queued behind an unstated blocker, but looked identical to abandoned beads. A `state:blocked` label or blocker field would give the ledger a cheaper signal.
-3. **Open-ended asks lose to targeted ones every wake.** jus-baz ("audit all addresses") competed with cheap one-off asks and lost for 3 wakes. Reframing as a standing capability with atlas sending ranked lists was the fix.
-
----
-
-# Per-Session Detail
-
-What each active session is doing, where things live, and what they've delivered.
-Last updated: 2026-08-19 09:00 — ledger wake 33
-
-## Ultimate goal
-
-Lock down JUS battle mechanics well enough to rebuild the system in a new game. Also pin down how deckbuilding and koma systems work for a head start on reimplementation. See `docs/PROJECT-GOAL.md`.
-
----
-
-## Session 1: Runtime — `justoolkit-fa` [cedb9e] (was `justoolkit-ed`)
-
-**Focus:** Runtime research via the agentic melonDS harness.
-
-**Status:** Just started (fresh instance). Branch `re/ability-bitset-not-resistance`. Items 1–3 done, item 4 (full match playthrough) not started. Latest commit on branch: `e3c3737` (orchestration hooks).
-
-**Assignments:**
-1. ~~Resistance attribution~~ — **SETTLED** (both directions null)
-2. ~~Harden menu nav~~ — **DONE** (touchscreen taps + pixel verification)
-3. ~~Deck creation~~ — **DONE** (`ae6e8c4`): builds a full deck unattended, game grades it. Measured off framebuffer.
-4. Full match playthrough — boot to finish, pulling RAM data throughout
-5. Projectiles / ObjShot kind-byte walk (queued, unblocked now that nav works)
-
-**This-session findings:**
-- **Resistance SETTLED both directions null:** Setting bit 9 on a non-resistor = no change. Clearing bit 9 on real Luffy resistor (chr_b[12], abilities [9,25,12,14]) = no change (352 raw, 12 runs). entity+0x128 bitset is NOT read for damage scaling. Per-character defence value is the leading hypothesis.
-- Entity addresses: player `0x022286E0`, opponent `0x0224E1E0` (Goku), Luffy opponent entity `0x022441E0` bitset `0x02244308`
-- Convergent verification: entity+0x128 fits atlas's static 8-byte gap between char+0x120 and char+0x130 — runtime bitset at +0x128–+0x12F collides with neither sub-object. ~~vtable 0x0215D3B4~~ corrected to inline function pointers (`4ad036d`)
-- Auto-Guard (bit 4) zeroes out damage completely — instrument is live
-- **Headless screen capture:** `screen.dump(path)` patched into melonDS-lua, writes 256x384 PPM from GPU framebuffer. `jusemu.py screendump`. Commit `be007f1`.
-- **Menu nav fixed:** Top menu is 4x2 icon grid, cursor starts on デッキメイク not Jギャラクシー. Old "one RIGHT" was walking into deck editor. Now using absolute touchscreen taps + per-screen pixel verification. Six screens learned.
-- **Caution:** DOWN+B used in Damage-Reduction-Is-Flat.md may be "Forced Change" per the guide — move labelling needs second look (flat conclusion still holds)
-- **Caution:** Rapid savestate loads intermittently hang melonDS (JIT block cache reset)
-- **MILESTONE — ov05 contradiction CLOSED** (`9f836c2`): deck-make editor = ov05 (99.5%), deck-select list = ov01 (99.6%). Old measurement was correct, label was wrong (nav bug). Reusable tool: `scripts/emu/overlay_residency.py`. Doc: `docs/research/Overlay-Residency-Deck-Screens.md`.
-- **NATURE RESOLVER HYPOTHESIS:** `0x0214E480` is ov05 code — reachable on deck-make screens, NOT during battle (where ov06 occupies that window). The twice-confirmed "nature doesn't affect battle damage" may be because the resolver is the EDITOR's, not the battle engine's. Testing: find what reads nature with ov06 resident (atlas's side).
-- **MILESTONE — Deck creation DONE** (`ae6e8c4`): builds a whole deck unattended, game grades it. Measured off framebuffer (`d7afa94`). Research doc on editor signals (`6adcad7`).
-- **Gimmick toggle fix** (`7145505`): toggle was never actually off — verification check agreed with itself (self-confirming bug).
-
-**What the previous session built (all committed on master):**
-- Emu harness M1-M3: `scripts/emu/` (agent_bridge.lua, launch/stop scripts, joypad patch, JSON plans)
-- Damage research: all 8 callers in ov06, flat reduction (-2), base 8.000, nature doesn't affect battle
-- Nature consolidation: `docs/research/Nature-System-Consolidated.md`
-- Codex cross-check of the damage path: `0683ae0`
-- Key docs: `docs/research/HP-And-Damage-Runtime-Findings.md`
-
-**Latest master commits:**
-- `0683ae0` docs(re): Codex cross-check of the damage path
-- `f47d63d` docs: add PROJECT-GOAL.md + beads gitignore cleanup
-- `2027816` docs(re): consolidate nature findings from both sessions
-
----
-
-## Session 2: Static — `battle-engine-atlas-76` [2e8ac4] (was `battle-engine-atlas-5e`)
-
-**Focus:** Structural static analysis of the battle engine.
-
-**Branch location:** `.claude/worktrees/battle-engine-atlas/`
-
-**Status:** Just started (fresh instance). Branch `loop/battle-engine-atlas`. Now at **P164**. Handoff doc written at `55651d6`. Latest research commit: `c8da30a` (P164 — mode classifier in ov1, 16-byte-per-mode descriptor table).
-
-**Assignments:**
-1. Entity and projectile subsystems (structural analysis)
-2. Support justoolkit for deck creation and match playthrough (provide addresses, struct layouts)
-
-**What the previous session mapped (all committed on branch):**
-- ColPrm manager (0xFB54 bytes, 128 inline records, phase table, 19 handlers)
-- MoveMan system (two 128-element arrays, per-frame snapshot, NoteTracks)
-- Allocator (4th arg = __LINE__, CommonEffect 3-deep class hierarchy)
-- Vtable hierarchy (4 deep, Clone/dirty-flag/facing bit)
-- Record lifecycle (+0x34 runtime flag API, 0x6FF solved, +0x150 is highest-value unknown)
-- Charter updated to reference PROJECT-GOAL.md (`8aab44d`)
-- P146c: confirmed 0x40 element stride, entity call sites are map-item/obj-ctrl, projectiles = BattleObjShot
-- P147: ObjShot manager fully mapped — `Battle_ObjShotManCreate` at `0x0216A7BC`, singleton `0x021729EC`, 72 elements of 0x6C bytes, 27-entry kind dispatch table at `0x02172864`. Doc: `docs/research/findings/objshot-manager-and-the-27-kind-dispatch-table.md` (`6e2a058`)
-- P147b: ObjShot reachability CONFIRMED via Thumb BLX (`aaf46a3`). ~~Initially published as novel blind spot~~ — retracted, this was a re-derivation of findings from iterations 95–96 (`findings/thumb-caller-audit.md`). The real revision: `find_thumb_callers.py --audit` under-reports vs `--to` due to a plausibility heuristic (line 184); the 187 ROM-wide / 16 in-battle counts are a **floor**, not a census. Use `--to` on specific addresses to clear reachability.
-- Better ObjShot anchor: battle root pointer `0x0214D928` → `[root+0x110]` = ObjShot manager, `[root+0x10C]` = ObjCtrl manager. More robust than hardcoded singleton. (`d1c8c3c`)
-
-**Latest atlas commits:**
-- `474b2b7` **P163: whole rule-select screen mapped to memory. `+0x2D` = team battle. Time limit is a frame count.**
-- `9fd7c4a` P162: `0x020AFE90` is match-settings struct. Third unnamed rule flag. Two disassemblers print opposite literal comments.
-- `d247318` P161: `0x0214D928` is a pool word, not a global — root confirmed. Repeated process mistake noted.
-- `20aee41` P160: `[0x02172960]` is 368-byte ov6 object, P158 "stat block" label refuted. xrefs.json misses 89% of Thumb literal loads.
-- `3ed2633` P159: complete 42-entry effect-id table, both selection routes. Status subsystem cleared of chain scaling.
-- `a747eca` P158: status dispatcher `0x02158ED0` mapped. `[param+0x4]` is static table data, not computed. First non-constant formula found.
-- `1b97d3b` P157 follow-up: closed a dropped Codex check honestly; noted backgrounded commands die at turn end.
-- `8da841a` P157: ov6 `0x02171168` dispatch table names every status handler. Found the missing `0x20`. Rules out a chain multiplier at the HP boundary.
-- `510f46d` P156: ov05 conflict officially closed as labelling error; aliasing hypothesis true but not load-bearing; cold Codex decode corroborates nibble layout, corrects a 'copy' claim.
-- `2f24a65`: owner ground truth on dream-attack tap chains, support summons, chain-length damage scaling; multiplier hunt queued.
-- `9fd3ed5` P154: session object at 0x021AA0D8 (0x1CB4 bytes), ov7 init/teardown. Census hypothesis dead by construction.
-- `8e1b9f0` P153: 47-caller predicate = network-session test; 0x0214CCF8 only ov7/ov10, never arm9.
-- `37e7302` P152: descriptor path traced to 47-caller null-test predicate; third index blind spot (9.4% arm9 literal loads); retracted 97.3%.
-- `fdc4448` P151: cmp/mov fix reveals three descriptor paths in chara setup loop; corrects a CONFIRMED claim; loop bound converges on P147b's battle root.
-- `5bb4ebf` P150: deck+0x30's last Thumb candidate stores zero — claim closed. Fixed thumb_disasm.py cmp/mov bug.
-- `bf5a6de` P150: vtable correction, entity+0x128 gap convergence, ov05 misidentified-screen hypothesis.
-- `f4881ae` voice pass on convergent-verification charter rule.
-- `ce2fd2c` / `1170fb8` P149b: Independent decode confirms encoding ceiling + voice pass.
-- `dbb3b45` / `3bb3c32` P149: Thumb store encoding ceiling analysis. B11 and deck+0x18EC are armoured. 3/7 vestigial claims cleared. record+0x68 false-positive confirmed. deck+0x30 narrowed to single candidate `0x0206BB44`.
-- `a1ba2e8` P148: fixed find_thumb_callers.py — narrow adjacent-call window + silent audit gate. **187→340 confirmed ROM-wide, 15→31 in ov6.**
-- `044a1bd` P147c: record+0x34 two 4-bit fields = team/side filter, not nature. record+0x3C low nibble = resistance-category lead.
-- `401073b` P147c: mode-ID global hunt queued, entity+0x10 cross-check
-- `d1c8c3c` retraction + --audit correction
-- `aaf46a3` P147b: ObjShot reachability confirmed via Thumb BLX
-- `6e2a058` P147: ObjShot manager and the 27-kind dispatch table
-- `4231eb9` P146c: runtime confirms 0x40 element stride; projectiles are BattleObjShot
-- `8aab44d` charter: add PROJECT-GOAL.md north star + entity/projectile focus
-- `141a151` P146: record+0x34 runtime flag API (solves 0x6FF); 0x800 is category routing
-
-**Pending runtime asks (relayed to justoolkit-ed):**
-1. Walk ObjShot active list at manager+0x00 during a projectile move, log each element's +0x1A kind byte (unblocked now that nav works)
-2. When mode-ID byte is found: read its value on deck-select vs deck-make vs koma browser to resolve atlas's ov05 contradiction
-3. **NEW:** Re-measure overlay residency on the pixel-verified deck-MAKE screen (and koma browser if reachable). Atlas predicts ov05 >90%, ov01 drops. Fits naturally into deck creation work.
-
-**Active coordination:** Atlas queued a static hunt for candidate mode-ID globals (overlay-load call sites, small-constant writes). Will send candidate addresses if found.
-
-### Campaign history (cumulative)
-1. **Phase 0** — Static RE: collision export, projectile verification, trampoline sweep, CHRB catalog, guard/SP gauges → Battle-Engine-Map.md, 31-card GDB queue
-2. **Phase 1** — GDB live-discovery, HTML guide + macros
-3. **Tier 2 / Koma** — koma.bin layout, kshape.bin decode, nature system, helper-passive taxonomy, HP bonuses
-4. **P118–P146c** — ColPrm manager, allocator RE, MoveMan system, element struct naming, entity/projectile identification
-5. **P147** — ObjShot manager: singleton, element layout, 27-kind dispatch table, free/active linked lists
-
----
-
-## Coordination plan
-
-**Standing arrangement:** justoolkit is the runtime arm (emu harness, breakpoints, controlled experiments). Atlas is structural analysis (static RE, struct mapping, vtable tracing). They coordinate directly via cross-session messages.
-
-### Active work: projectiles/entities
-Both sessions are pointed at the entity/projectile system. Atlas identifies structs and addresses; justoolkit validates at runtime.
-
-### Stretch goals
-- [x] **Deck creation** — DONE (`ae6e8c4`)
-- [ ] **Full match playthrough** — justoolkit automates boot-to-finish with RAM captures
-- [ ] **Koma deeper dive** — reimplementation-level detail still needed
-
----
-
-## Standing cautions
-
-- **functions.json merged-function hazard:** Multiple addresses reported as one function (e.g. `0x0207DD40` is 8 functions, `0x0207D064` container `0x0207CFE0` is 4 leaves). Always cross-check with atlas before using as breakpoint targets.
-- **Codex cross-checks wanted:** Feed raw encoding hex, not addresses. Atlas confirmed 7/7 claims successfully.
-- **Thumb caller under-reporting:** `find_thumb_callers.py --audit` was a floor, not a census. P148 fixed two bugs (narrow window + silent gate), jumping 187→340 ROM-wide, 15→31 in ov6. Still use `--to <addr>` on specific addresses for certainty.
-- **Escalation path:** If a blocking question needs the owner's judgment, open a PR in the `jus_files` repo and @drj613 in a comment. Check for responses on cron wakeups.
-
----
-
-## Experiment backlog
-
-**Source 1:** Fable brainstorm — 29 experiments (scratchpad/experiment-ideas.md)
-**Source 2:** GameFAQs guide cross-reference — 23 new experiments #30–52 (scratchpad/guide-derived-experiments.md)
-
-**Key leads from the guide (unverified — treat as testable hypotheses):**
-- **Nature is PER-MOVE, not per-character?** Guide claims each attack has its own nature flag. Atlas checked spawn filter — shape exists but semantics = team/side filter. **NEW LEAD:** the nature resolver `0x0214E480` is ov05 (deck editor), not ov06 (battle). Nature may not be consulted at all during battle. Atlas needs to check if ov06 has its own nature reader on the damage path.
-- **Three damage resistance categories:** punch/kick, special attacks, blades. May be per-character passives, not ability bits.
-- **Three universal special inputs unmapped:** down+B (Forced Change), down+Y (Guard Break), down+X (Push Attack)
-- **16+ status effects** with single-slot-per-polarity rule
-- **SP gauge is discrete bars** (base 3, expandable to 4+ via help koma)
-
-Both sessions have been notified.
-
----
-
-## Action items
-
-- [x] Beads gitignore cleanup (done Aug 17)
-- [x] Nature findings reconciliation (done, `docs/research/Nature-System-Consolidated.md`)
-- [x] Broader goal doc (`docs/PROJECT-GOAL.md`, committed `f47d63d`)
-- [x] Charter update (atlas did it: `8aab44d`)
-- [x] Session handoffs produced and delivered (Aug 17)
-- [x] Second handoff cycle (Aug 18) — both sessions wrote handoff docs before context clear
-- [x] ov05 contradiction closed — labelling error, not code conflict
-- [x] Resistance attribution settled — bitset entity+0x128 not read for damage scaling
-- [ ] Doc cleanup pass — planned for after entity/projectile work wraps
-- [ ] Merge justoolkit's `re/ability-bitset-not-resistance` branch into master (17 commits)
-- [ ] Push atlas branch (24 commits ahead, never authorised)
-
----
-
-## How to use this ledger
-
-Come back here after a break. Each section tells you what happened, where files live, and what was last delivered. Session names change on reset — check `ListAgents` for current names.
+Come back here after a break. Each section tells you what happened. Session names change on restart — check `ListAgents` for current names. beads (`br list --label coord`) is the authoritative record.

@@ -184,3 +184,49 @@ Twice now the strongest-feeling evidence here has been a test every candidate pa
 **name the rival and ask what byte it predicts differently, before running anything.** Here that was
 one line — "under the other reading, where does the last record end?"
 
+
+## The grid is 5 wide, and the ROM says so directly
+
+The width question (5 columns x 4 rows vs the transpose) does not need the file layout or a
+connectivity argument. `0x02076D30`, the placement validator, states it three times:
+
+```
+0x02076D6C  ldr r0, [r0, #0x14]      ; the bitmap, at record+0x14
+0x02076D70  lsr r3, r0, #5           ; \
+0x02076D74  lsr r2, r0, #0xa         ;  four slices, five bits apart
+0x02076D78  lsr r1, r0, #0xf         ; /
+0x02076D7C  and ip, r0, #0x1f        ; each masked to 5 bits, then OR'd
+0x02076D98  lsl r1, r1, r5           ; shift the column profile by the column
+0x02076D9C  bics r1, r1, #0x1f       ; anything past bit 4 -> reject
+0x02076DA8  add r1, r4, r4, lsl #2   ; row*5
+```
+
+It folds the 20-bit map into a per-column profile by OR-ing FOUR slices of FIVE bits. Four rows of
+five. The 5-bit overflow mask and the `row*5` index say the same thing from two other directions. A
+width-4 reading would slice by 4.
+
+Semantic cross-check, from the runtime seat: a koma piece must be one connected polyomino.
+Width 5 gives 66/66 connected; width 4 gives 30/66, with 36 shapes coming apart (record 59 among
+them). Agrees, and from a completely different representation -- but it was never the only
+discriminator available.
+
+## `[r0+0x14]` settles the base without the file size
+
+`0x02076D6C` loads the bitmap at `record+0x14`, so a record begins 0x14 before any known bitmap.
+File offset 0x0B4 is a known bitmap:
+
+```
+0x0B4 - 0x14 = 0x0A0 = 0x40 + 4*0x18      record 4 under base 0x40, exact
+```
+
+This is independent of the file-size fit (`0x40 + 66*0x18 = 0x670`, exact). Two representations,
+one answer.
+
+It also sharpens the circular-constraint error recorded above. The bad constraint was built FROM
+"0x0B4 is a known bitmap" -- and that same fact yields 0x40 in one subtraction once paired with the
+`+0x14` load, which sits in a function already read. The information needed to break the circle was
+inside the circle. What kept it shut was converting an observation into a modular constraint instead
+of asking what the code does with that address.
+
+State: bead jus-koma-shapes-come-from-kshape-bin-0j2, bead jus-kshape-lookup-identified-a1j,
+bead jus-circular-search-constraint-ei5q.

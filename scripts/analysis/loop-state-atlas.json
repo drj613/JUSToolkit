@@ -1,14 +1,14 @@
 {
- "iteration": 226,
+ "iteration": 227,
  "phase": "combat",
  "current_task": "P213-what sets bit 5 of [r8+0x40] (the resistance gate)",
  "queue": [
-  "P226-PIN THE ROW-0 HAZARD: y'=0 is reachable but row 0 holds no pointers. Either find the code that prevents a node targeting row 0, or find that the indexing base differs. Static: look for what writes arg0+8..arg0+0x1B and whether row 0 is a header.",
-  "P226b-What writes the +0x558 nodes and the grid at arg0+8? That is the deck-to-battle hop and it would name arg0.",
-  "P226c-What do the eight kind-2 handlers do? 0x0207793C (ids 49/50/51), 0x02077944, 0x02077954, 0x02077964, 0x02077974, 0x020779A4.",
-  "P226d-What writes char+0x13..0x15, the three nature slots? Now sharper: if koma grant abilities by adjacency, they may grant natures the same way.",
-  "P226e-Why does no chr_b record carry id 11? A koma could grant it, so the record census cannot settle it.",
-  "P226f-Overlay-Residency-By-Mode.md: the SHAPE claim plus a row for in-battle menu modes. No boundary address."
+  "P228-What sets bit 8 of [r1+0x14], which selects between +0x44 bits 20 and 21 at 0x02080994 / 0x0208099C? Neither bit is read by the damage routine, so what consumes them?",
+  "P228b-What writes the +0x558 node list and the grid at arg0+8? That is the deck-to-battle hop and it would name arg0.",
+  "P228c-What do the eight kind-2 handlers do? 0x0207793C (ids 49/50/51), 0x02077944, 0x02077954, 0x02077964, 0x02077974, 0x020779A4.",
+  "P228d-What writes char+0x13..0x15, the three nature slots? Koma grant abilities by adjacency; they may grant natures the same way.",
+  "P228e-The two unidentified words at arg0+0x000, and the 0xC0 between the node array end and the next side.",
+  "P228f-Overlay-Residency-By-Mode.md: the SHAPE claim plus a row for in-battle menu modes. No boundary address."
  ],
  "done": [
   "K1-koma-data-survey",
@@ -269,7 +269,7 @@
   "Is HP computed as size*k at runtime, or tabulated per panel? Naruto 4-koma=144=4*36; if size*k then size5=180, size6=216, size7=252, size8=288. One reading settles it."
  ],
  "notes": "Iteration 146 done (delegated + verified). THREE closures: (a) 0x800's polarity is category ROUTING, not a contradiction -- 0x020801D4 is loop-continue, 0x0207F7C8 is the next category check; (b) record+0x34 is NOT write-once -- a four-function flag API (0x0207D064/0x0207D0BC/0x0207CF18/0x0207CF78) mirrors changes into +0x38 and the +0x08 node list, and the destructor 0x0207CCD4 memsets 0x188; (c) P144's 0x6FF puzzle SOLVED -- ov6 ORs [record+0x150]&0xFF into +0x34, and 0x6FF covers bits 0-7, so the test reads runtime bits not the 0x100 construction seed. Top task: read record+0x150, which now drives the whole category gate. STANDING: query.py mis-bins functions in this module (4 leaves here, 8 in P125, 2 in P126) -- verify any address before trusting its size or container. The +0x5C base-confusion trap has 7 instances; on +0x34 (1092 hits) the base register is the ONLY struct identifier. CHARTER: updated in P146b on the user's direct authorization. North star = docs/PROJECT-GOAL.md (master, f47d63d); Mission 2's current focus is the entity/projectile subsystems. justoolkit-06 is the designated runtime validator -- send them struct-field hypotheses and breakpoint requests rather than leaving questions unresolved; that is the only route to dynamic evidence without breaking the static-only rule.",
- "last_wake": "2026-08-19 P226",
+ "last_wake": "2026-08-19 P227",
  "wakeup_default_seconds": 900,
  "consecutive_no_progress_wakes": 0,
  "k1c_helper_passives": {
@@ -2482,5 +2482,12 @@
   "THE_RULE": "for any load-time-assembled field, sample it where the CONSUMER reads it, not before. The runtime flat refutation survives because they read the gate word from r2 AT THE BREAKPOINT rather than peeking and assuming constancy -- they say accidentally.",
   "goku_zero_scope_corrected": "verified Goku live list [7,15] against the twelve gate-feeding ids {9,10,11,12,13,16,17,18,19,21,23,24}: empty intersection. And every other +0x44 writer in battle code (0x0207C060, 0x0207C15C, 0x0207F834, 0x0207FABC, 0x020809A0, 0x020817A8, ov6 0x0215EAB8) touches only bits 0,1,2,3,20,21 -- never 4,5,6,12,13,14. So gate bits come ONLY from the mask tables and his zero is real. BUT the live list is post-load and includes koma appends, so an adjacent type-2 node granting 9/10/12/13/21/24 would put a gate bit on him. The unreduced baseline is a property of THIS DECK, not of the character -- \"permanent\" would make a later deck change present as a measurement anomaly.",
   "three_arms_one_blocker": "the deck-maker test-play savestate is now wanted for THREE independent reasons: \u76f8\u624b\u306e\u5c5e\u6027 for the nature cell, \u81ea\u52d5\u56de\u5fa9 for clean cumulative damage, COM\u8a2d\u5b9a for the unreduced arm. Harness work, not owner work. Worth saying to the ledger as one blocker behind three arms."
+ },
+ "P227": {
+  "BIT_5_IS_ARMED_AND_KOMA_GRANTED": "runtime found the player gate word reaching 0x00008020 in dm_battle when the active advanced to chain node 3 = chr_b 41. Decomposes as bit 5 (sub idx 1, ability 10) + bit 15 (add idx 3, ability 24); bit 15 is not read by the damage routine. AND ABILITY 10 IS NOT IN HER RECORD -- chr_b 41 on-disk window is [3,26,46,24] and her live list is [3,26,46,24,10], so the ability arming bit 5 is the KOMA APPEND. The gate that has never fired in this campaign is armed by a koma, not a character, which is why nobody ever saw it: you need the right fighter AND the right adjacent panel.",
+  "consequence": "when the bit-5 measurement lands it tests TWO things at once -- the category-2 subtract row and the koma-adjacency grant end to end. 3.000 against the 4.000 baseline for base 4 confirms both; 4.000 refutes one and the reading alone cannot separate them.",
+  "BIT_21_ACCOUNTED_FOR": "arm9 0x0208099C. Conditional pair: tst r1,#0x100 at 0x02080988, then orrne #0x100000 (bit 20) at 0x02080994 or orreq #0x200000 (bit 21) at 0x0208099C, stored at 0x020809A0. Mutually exclusive, selected by bit 8 of [r1+0x14], neither a mask-table bit. This was in MY OWN +0x44 writer sweep several wakes ago and I did not connect it.",
+  "class_14_not_an_anomaly": "all four loaded collision files carry at least one damageFlags == 14 -- Goku 1/25, Luffy 3/38, Naruto 1/46, Rukia 1/20. table[14] = 0 so it engages no class gate. A value that common with a zero table entry reads as a deliberate \"no category\" marker.",
+  "add_side_is_the_blocked_arm": "needs the player chr_b 20 attacking the opponent chr_b 12 -- both present, but it requires the player active to be chain node 2 while the opponent is still node 0, and steering that needs character switching, which jus-3aw records as unachieved. Runtime has inverted the deck case on jus-5bg: an Ichigo-type attacker unblocks something, Edajima now only removes a confound."
  }
 }

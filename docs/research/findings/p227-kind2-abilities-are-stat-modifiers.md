@@ -118,3 +118,41 @@ append paths and are simply unassigned — they would work if a record carried t
 orphans are unassigned *and*, for three of them, handled by a function that does nothing. Worth not
 merging them into one count.
 
+## Three slots, one stub — and why that isn't evidence of removal
+
+The handler table at `0x0209F544` has all **eight** slots populated, and slots 0, 1 and 2 all hold
+`0x0207793C`. Three distinct entries pointing at the same do-nothing function.
+
+**What weakens the "removed" reading.** `mov r0,#0 ; bx lr` occurs **187 times** in arm9,
+word-aligned — it's what the compiler emits for `return 0`, not a purpose-built stub. And
+`0x0207793C` has **zero xrefs**: no branch, no literal load, no caller, so only that data table
+reaches it. A body that common says nothing about intent. More importantly, "repointed at a shared
+stub" reads history out of a snapshot: three slots pointing at a return-0 function is visible,
+whether they ever pointed elsewhere is not. *Never implemented, defaulted to return-0* fits the
+bytes exactly as well as *implemented then unplugged*.
+
+**What supports a narrower version.** The function sits **inside the handler cluster** — right after
+the loader's literal pool at `0x02077934`/`0x02077938`, with `0x02077944`, `0x02077954`,
+`0x02077964`, `0x02077974`, `0x020779A4` and the gate at `0x020779CC` following in a run. So it was
+authored as one of this family rather than borrowed. And the table is sized for eight and fully
+populated; five slots would have done if ids 49–51 were never intended.
+
+**Supportable claim:** eight effects were planned, three are inert, and the inert three were given a
+member of their own handler family rather than left as null pointers. Whether that's disablement or
+unfinished work is not decidable from a snapshot.
+
+### Three grades of dead
+
+The split doesn't depend on the history:
+
+- **six kind-0 orphans** — working append path, never assigned
+- **ids 52, 53** — working handlers doing real work, never assigned
+- **ids 49, 50, 51** — never assigned *and* handled by an inert function
+
+### The consequence to carry forward
+
+At 19% orphaned, **presence in `ability.bin` with a kind and a handler is not evidence that anything
+reaches an id.** The demonstrated-live set is only what has been seen in a live ability list or a
+gate word — roughly 7, 9, 10, 12, 14, 15, 24, 25, 26, 46 plus a couple from the other chains. A
+dozen of fifty-seven, and that's the only list to treat as real.
+

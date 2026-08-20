@@ -102,3 +102,43 @@ tidy-pattern failures in this campaign.
 is certainly ov12's code. Either a transcription slip, a patched word, or a read that started one
 word later than recorded.
 
+## `0x02076D00` identified — and it reconciles every reading above
+
+Closed definitionally, from the function rather than from offsets
+[`jus-kshape-lookup-identified-a1j`]:
+
+```
+0x02076D00  ldr   r1, [pc, #0x24]       -> 0x0214BD80, the chr_b table root global
+0x02076D04  ldrsb r2, [r0, #8]          class selector
+0x02076D0C  ldrsb r3, [r0, #9]          index within class
+0x02076D10  ldr   ip, [r1, #0x38]       the kshape base
+0x02076D18  ldr   r1, [ip, r2, lsl #2]  startTable[class] — the cumulative table
+0x02076D20  add   r1, r3, r1            flat index = start + sub
+0x02076D24  mla   r0, r1, #0x18, ip+0x40
+```
+
+A `(class, sub-index)` pair resolves through the cumulative table to a flat record index, records at
+stride `0x18` from `ip+0x40`. So the table found by pattern above — `0, 1, 3, 9, 21, 35, 49, 62` — is
+literally what `ldr r1,[ip, r2, lsl #2]` indexes.
+
+**And it reconciles what looked like a contradiction.** The function returns a pointer `0x14` *short*
+of a record, so the caller's `+0x14` lands on `record+0x00`:
+
+```
+index  0 -> returns 0x040, +0x14 = 0x054, mask 0x00001   the monomino
+index  4 -> returns 0x0A0, +0x14 = 0x0B4, mask 0x00421
+index 13 -> returns 0x178, +0x14 = 0x18C, mask 0x00047   Goku's T
+```
+
+So the record base **is** `0x54` (`= 0x40 + 0x14`), the bitmap **is** at `record+0x00`, and
+`[fn+0x14]` **is** the bitmap. The header is `0x40` — eight cumulative words then eight count words —
+followed by a `0x14` gap reading `1, 0, 0, 0, 0`.
+
+**Why declining to name the object was right.** From the offsets alone I'd have placed the bitmap at
+`+0x14` of a kshape record, among the trailing words. It's `+0x14` of a pointer *deliberately short*
+of the record. Naming from offsets would have produced a confident, wrong field map.
+
+**And a tidy idea of mine failed a cheap test:** I hypothesised `koma.bin` was the `0x18`-stride table
+with bitmaps at `+0x14`. Checked all six word offsets of a `0x18` stride across its 445 records —
+**zero** catalogue masks at any offset. koma.bin holds something else.
+

@@ -1,15 +1,14 @@
 {
- "iteration": 230,
+ "iteration": 231,
  "phase": "combat",
  "current_task": "P213-what sets bit 5 of [r8+0x40] (the resistance gate)",
  "queue": [
-  "P231-Why is Goku shot file (0x80 bytes) not in the heap when na/bl/yo shot files are? Find the load call and its condition. That determines whether the heap is a complete manifest or a touched-so-far manifest, which bears on every residency claim.",
-  "P231-Byte-compare the ten small heap blocks against the per-character chrbin files for the six loaded fighters. Size cannot separate them; a compare can, and it would give a complete residency map.",
-  "P231b-What are the two runtime-built blocks, 0x85C0 (34208) and 0x2280 (8800)? Neither matches any file. One is probably the collision/element array at 0x021BDB20.",
-  "P231c-koma.bin structure: is the stride 12 with a u16 index at +0, and does any field index kshape.bin 0..65? Would connect per-koma metadata to the shape catalogue.",
-  "P231d-The five trailing u32s per kshape record, unidentified in both file and RAM.",
-  "P231e-Read 0x020778E0 -- the special-case path for kind-2 handler indices 3, 5, 6 from the node walk only.",
-  "P231f-Overlay-Residency-By-Mode.md: rewrite the ov12 row entirely. The 59.6% figure is a heap occupying 50.8% of the window, not measurement noise and not a contiguous overwrite. No boundary address without the heap framing."
+  "P232-Find the writer of the 0x023DC compact descriptor entries. If it takes a SIDE argument my withdrawn rule gets a mechanism; if it takes a ROLE or slot-kind argument the fighter-versus-support reading returns. Runtime cannot do this without me and it does not need the emulator.",
+  "P232b-Why is Goku shot file (0x80 bytes) not in the heap when na/bl/yo are? Battle_PrmDataInit at ov6 0x021702BC is already recorded as loading +0x00 chr/col, +0x04 chr/shot, +0x08 chr/effect -- read its condition. Determines whether the heap is a complete manifest or a touched-so-far one.",
+  "P232c-Where does deck+0x568 get built, and is it the same data the battle grid at arg0+8 derives from?",
+  "P232d-Read 0x020778E0, the kind-2 special-case path for handler indices 3, 5, 6 from the node walk only.",
+  "P232e-The five trailing u32s of a kshape record, and the 0x14 gap words 1,0,0,0,0.",
+  "P232f-Overlay-Residency-By-Mode.md: rewrite the ov12 row as a tagged heap occupying 50.8% of the window, 19 blocks, 15 named. Not measurement noise and not a contiguous overwrite."
  ],
  "done": [
   "K1-koma-data-survey",
@@ -270,7 +269,7 @@
   "Is HP computed as size*k at runtime, or tabulated per panel? Naruto 4-koma=144=4*36; if size*k then size5=180, size6=216, size7=252, size8=288. One reading settles it."
  ],
  "notes": "Iteration 146 done (delegated + verified). THREE closures: (a) 0x800's polarity is category ROUTING, not a contradiction -- 0x020801D4 is loop-continue, 0x0207F7C8 is the next category check; (b) record+0x34 is NOT write-once -- a four-function flag API (0x0207D064/0x0207D0BC/0x0207CF18/0x0207CF78) mirrors changes into +0x38 and the +0x08 node list, and the destructor 0x0207CCD4 memsets 0x188; (c) P144's 0x6FF puzzle SOLVED -- ov6 ORs [record+0x150]&0xFF into +0x34, and 0x6FF covers bits 0-7, so the test reads runtime bits not the 0x100 construction seed. Top task: read record+0x150, which now drives the whole category gate. STANDING: query.py mis-bins functions in this module (4 leaves here, 8 in P125, 2 in P126) -- verify any address before trusting its size or container. The +0x5C base-confusion trap has 7 instances; on +0x34 (1092 hits) the base register is the ONLY struct identifier. CHARTER: updated in P146b on the user's direct authorization. North star = docs/PROJECT-GOAL.md (master, f47d63d); Mission 2's current focus is the entity/projectile subsystems. justoolkit-06 is the designated runtime validator -- send them struct-field hypotheses and breakpoint requests rather than leaving questions unresolved; that is the only route to dynamic evidence without breaking the static-only rule.",
- "last_wake": "2026-08-19 P230",
+ "last_wake": "2026-08-19 P231",
  "wakeup_default_seconds": 900,
  "consecutive_no_progress_wakes": 0,
  "k1c_helper_passives": {
@@ -2535,5 +2534,8 @@
   "PER_SIDE_LOADING": "block ordering groups by side. Group 1 below 0x021BDB00: item.bin, db_b_01 col, yo_b_01 col+shot, na_b_01 col+shot, bl_b_03 col+shot -> Goku, Yugi (yo_b_01 = chr_b 35), Naruto, Rukia = 4. Group 2 at/above: op_b_01 col, na_b_01 col+shot -> Luffy, Naruto = 2. 4+2 = 6 loaded fighters, matching the chain lengths, with Naruto in both because he is the only character in both chains. SO: block address below 0x021BDB00 = player side, at/above = opponent. Free side attribution for every element read. Also rules out fighter-load-vs-support-load, which would not produce groups matching the chain lengths.",
   "SHOT_LOADING_IS_CONDITIONAL": "db_b_01 has an 0x80-byte shot file on disk and NO shot block in the heap; op_b_01 has no shot file at all; na_b_01, bl_b_03 and yo_b_01 shot files are all loaded. So it is not load-col-and-shot-for-every-member. The heap is a manifest of what has been TOUCHED, not of what a battle needs. Either on-demand loading at first projectile spawn, a threshold, or Goku file is a stub the loader skips.",
   "entry_44": "no contamination -- grepped docs/ and the state file, I never carried it. I used na_b_01 entry 4 from the file own 0x14 stride, and the block boundary confirms it: col data starts at 0x021BDE40 so the live element at 0x021BDE90 is entry 4."
- }
+ },
+ "P231_KSHAPE_LOOKUP": "0x02076D00 IS the kshape lookup. f(r0): class = ldrsb [r0+8], sub = ldrsb [r0+9], base = [[0x0214BD80]+0x38], returns (base + 0x40) + (startTable[class] + sub)*0x18. Returns a pointer 0x14 SHORT of the record, so the caller +0x14 lands on record+0x00, the bitmap. Verified at indices 0/1/4/9/13 against kshape.bin. So the record base IS 0x54 = 0x40 + 0x14, the bitmap IS at record+0x00, and all three earlier readings were right -- the function reconciles them. Header is 0x40 (8 cumulative + 8 counts) plus a 0x14 gap reading 1,0,0,0,0. Bead jus-kshape-lookup-identified-a1j. FOUND BY THE RE-READ STEP for the second time -- my state file already had \"+0x38 = second table base (0x18-byte stride, used by 0x02076D00 which indexes it with two signed bytes from its argument +0x8/+0x9)\".",
+ "P231_MY_TIDY_IDEA_REFUTED": "I hypothesised koma.bin was the 0x18-stride table with bitmaps at +0x14. Tested all six word offsets of a 0x18 stride across 445 records: ZERO catalogue masks at any offset. koma.bin holds something else. Cheap test of a tidy idea, failed, right order of operations.",
+ "P231_SIDE_RULE_WITHDRAWN": "My \"block address below 0x021BDB00 = player side\" is WITHDRAWN. Runtime searched every 4-byte-aligned pointer to all eleven col/shot data addresses: each block has exactly two referents and NONE falls inside either side struct (player 0x021DF164, opponent 0x021DF780). So the rule has no mechanism -- it was a count argument. Worse, their referent structure singles out Naruto-B specifically: the compact 0x023DC table holds the five distinct characters plus item.bin, and Naruto-B is NOT in it, sitting alone 0x3AD00 away. That reopens the fighter-versus-support reading I had reported as killed, because my argument (a fighter/support split would not match the chain lengths) was an aggregate fact about groups while theirs is a structural fact about one entry. When a count and a structure disagree, the count is weaker. Bead jus-jrb. SETTLING IT IS MINE: find the writer of the 0x023DC entries and read whether it takes a side argument or a role/slot-kind argument."
 }

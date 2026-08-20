@@ -199,7 +199,17 @@ debugger attaching.
 
 Two things this entry's title gets wrong in hindsight. Ability 10 → bit 5 is **untested** —
 ten of the twelve rows are, and bit 5 has been clear in every capture
-[`jus-bit5-ability-10-untested-mvk`]. And the confirming capture **witnessed no landed
+[`jus-bit5-ability-10-untested-mvk`].
+
+> **RETRACTED, and the sentences that follow are the retracted claim — left in place because the
+> reasoning is instructive.** "The formula runs on swings that miss, so a stop at `0x02082584` is
+> not a hit oracle" is withdrawn: a later run gave 4 hits → 4 stops and 7 misses → 0 stops. The
+> original evidence was "target HP pinned", which was a **max-HP read** — `0x021DF7EE` is
+> `char+0x16` (max) where current HP is `char+0x18`. At full health the two read identically, so a
+> max read looks exactly like a working measurement and the hits were invisible. State in
+> [`jus-formula-bp-not-a-hit-oracle-ve6`] and [`jus-reading-max-hp-not-current-2jo`].
+
+And the confirming capture **witnessed no landed
 hit**: eight stops, no contact, target HP pinned. The formula runs on swings that miss, so
 a stop at `0x02082584` is not a hit oracle [`jus-formula-bp-not-a-hit-oracle-ve6`].
 

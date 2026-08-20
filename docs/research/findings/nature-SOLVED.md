@@ -2,7 +2,15 @@
 
 Loop-Atlas iteration 11. Static. This closes the last unknown in the koma system.
 
-Nature isn't stored per panel. It's computed through a sentinel-and-fallback scheme — which is exactly why my table searches couldn't find it.
+Nature isn't stored in a per-panel lookup *table*. It is computed through a sentinel-and-fallback
+scheme — which is exactly why my table searches couldn't find it.
+
+> **The original wording here said "nature isn't stored per panel", and that reads as the opposite
+> of what the mechanism below does.** Nature *is* per-panel: the rule reads `(flags >> 4) & 0xF`
+> out of each panel's own `koma.bin` record, and only falls back to the character's base nature when
+> that nibble holds the sentinel `3`. The owner's live-play account — natures are per-panel, four
+> values — agrees with the mechanism, and the four values are exactly the enum below. What was
+> absent was a table, not per-panel storage. State in [`jus-yw8m`].
 
 ## The rule
 

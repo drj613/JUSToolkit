@@ -72,7 +72,12 @@ three inputs were fields already decoded for other purposes (`flags[0xB]`,
 computation. The atlas session's earlier "nature is not in `koma.bin`" conclusion
 was **wrong** — the field was there, in a nibble it had dismissed as incidental.
 
-## 3. Nature does NOT affect damage
+## 3. TAINTED — "nature does not affect damage" (scope was wrong, see banner at top)
+
+> Nature **is** read in the damage path [`jus-nature-is-read-in-damage-path-hbt`]. The
+> measurement below is sound; it read one byte, and the path reads a 2-bit field on a
+> per-ColPrm-scratch copy with a bypass at `0x020824F4`. Kept for the measurement, not the
+> conclusion.
 
 This is the load-bearing conclusion, and it rests on two independent legs.
 
@@ -118,7 +123,12 @@ Given the two static readings above (a counter and a sprite selector) and no
 observed runtime effect, "nature does not affect damage" is the best-supported
 reading — but it is a *reading*, not a closed proof.
 
-## 5. A ×1.5 multiplier that does not exist
+## 5. TAINTED — "a ×1.5 multiplier that does not exist" (it does exist)
+
+> The tables at `0x0209FEF4`/`0x0209FF14` hold `0x0180` = 1.5 in 8.8, and runtime observed the
+> 1.5 cell live. January's 1.5× reading was correct and this section's refutation of it was
+> not [`jus-nature-is-read-in-damage-path-hbt`]. Kept for the reasoning about seductive
+> agreement with an independent guess, which still holds.
 
 Recorded because the near-miss is instructive.
 

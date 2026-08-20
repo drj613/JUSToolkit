@@ -1,5 +1,9 @@
 `kshape.bin` holds the koma shape catalogue, indexed by cell count. Builds on [`jus-koma-shape-is-a-20bit-bitmap-423`]; tracked in [`jus-koma-shapes-come-from-kshape-bin-0j2`].
 
+> **Read the last three sections first.** The record base was wrong for most of this
+> document's life. Current: base `0x40`, 20-byte cell map at `+0x00`, bitmap at `+0x14`, grid
+> 5 columns x 4 rows. The superseded `0x54` reasoning is kept below for the error it illustrates.
+
 ## The file
 
 `jus_files/ripped_jus_files/bin/kshape.bin`, 1648 bytes. It's the only file in `bin/` containing all nine observed masks, each once, at stride `0x18`, in the same order as the RAM array at `0x021AF1B4`:
@@ -43,7 +47,16 @@ The five other u32s per record are also unread.
 
 Static only. `kshape.bin` read as aligned 32-bit words; header read as u32. Cross-checked against the RAM offsets and stride measured live by the runtime seat — two independent artifacts, neither derived from the other.
 
-## The record base is `0x54`, settled by the header's own class table
+## WRONG, superseded — my `0x54` reading (kept for the error, not the claim)
+
+> **The base is `0x40`, not `0x54`.** Everything in this section and the two that follow it is
+> superseded by "Corrected again" below. `0x54` overruns the file by `0x14` and yields 65.167
+> records. It is retained because the *way* it went wrong is the finding: the search space was
+> constrained by the assumption under test, so `0x40` could never have been returned. See bead
+> `jus-circular-search-constraint-ei5q`. Two words in the original heading did the damage —
+> "settled by" — for a test that could not distinguish the candidates.
+
+### The original reasoning, as written
 
 Every record's **popcount must equal its class**, because the header fixes the class of every index:
 counts `1,2,6,12,14,14,13,4` expand to classes `[1, 2,2, 3×6, 4×12, 5×14, 6×14, 7×13, 8×4]`. That
@@ -130,7 +143,7 @@ index  4 -> returns 0x0A0, +0x14 = 0x0B4, mask 0x00421
 index 13 -> returns 0x178, +0x14 = 0x18C, mask 0x00047   Goku's T
 ```
 
-So the record base **is** `0x54` (`= 0x40 + 0x14`), the bitmap **is** at `record+0x00`, and
+**[WRONG — see "Corrected again" below. Base is `0x40`; bitmap is at `record+0x14`.]** So the record base **is** `0x54` (`= 0x40 + 0x14`), the bitmap **is** at `record+0x00`, and
 `[fn+0x14]` **is** the bitmap. The header is `0x40` — eight cumulative words then eight count words —
 followed by a `0x14` gap reading `1, 0, 0, 0, 0`.
 

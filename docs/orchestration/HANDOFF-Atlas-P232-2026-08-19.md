@@ -215,6 +215,36 @@ was correctly declined by runtime because zero is reachable three ways. A prior 
 narrowing against the artifact — I withdrew a correct claim once (the `chr_b+0x03` "not an
 ability" retraction) and had to withdraw the withdrawal.
 
+## Doc-hygiene sweep done at shutdown — and one thing left open
+
+The failure mode "a stale claim sitting *above* its own correction" was found live during this
+sweep, in my own work. No linter can see it: the fix below the stale claim makes the doc look
+maintained.
+
+Fixed:
+
+- `p229-koma-shapes-come-from-kshape-bin.md` had the heading "The record base is `0x54`, settled
+  by the header's own class table" with three corrections *below* it. A reader hits the confident
+  heading first, and "settled by" was doing damage for a test that could not distinguish the
+  candidates. Retitled as superseded, marked inline, and a pointer added at the top of the file.
+- `Nature-System-Consolidated.md` had a correct taint banner at the top, but its section
+  headings still read "Nature does NOT affect damage" and "A ×1.5 multiplier that does not
+  exist". A reader arriving by grep or deep link never sees the banner. Both headings now carry
+  the taint inline.
+
+**Left open, deliberately — do not let this sit.** `docs/research/findings/nature-SOLVED.md`
+(iteration 11) asserts status in its own filename and title, which violates the standing rule
+that beads hold status and documents explain. Worse, it opens "Nature isn't stored per panel",
+and DJ's live-play ground truth says natures **are** per-panel, four values. That is a possible
+direct contradiction with the owner oracle, sitting in a file whose name says SOLVED. I did not
+touch it because resolving it is an investigation, not a cleanup, and I was closing out. Check it
+against the owner's ground truth before building on anything in it, and rename the file either
+way.
+
+Generalisable: grep the record for your *retracted* claims, not just your current ones, and check
+whether each correction sits above or below the thing it corrects. Also grep other branches —
+loops and DJ each work on their own, so a single-worktree grep checks a fraction of the record.
+
 ## Tooling gotchas
 
 - `scripts/analysis/query.py` subcommands: `func`, `callers`, `callees`, `xrefs-to`,

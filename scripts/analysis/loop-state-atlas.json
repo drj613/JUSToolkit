@@ -4,6 +4,7 @@
  "current_task": "P213-what sets bit 5 of [r8+0x40] (the resistance gate)",
  "queue": [
   "P228-RE-READ MY OWN RECENT OUTPUT for answers to open items before starting anything new. Three instances in one day of the answer being in already-written text. Candidates: the two words at arg0+0x000, the 0xC0 gap, what sets bit 8 of [r1+0x14].",
+  "P228a-Read the special-case path at 0x020778E0. It handles kind-2 handler indices 3, 5 and 6 from the node walk only, and it settles whether a node or a character receives the modifier.",
   "P228b-What writes the +0x558 node list and the grid at arg0+8? The deck-to-battle hop; it would name arg0.",
   "P228c-What writes char+0x13..0x15, the three nature slots? Koma grant abilities by adjacency and may grant natures the same way.",
   "P228d-Are ability 7 and ability 52 the same max-HP effect reached two ways? 0x020784B8 GrowMax vs 0x02077974, same 0x4000 cap, different kinds.",
@@ -2496,5 +2497,8 @@
   "FOUR_INERT_ENTRIES": "ids 49, 50, 51 are stubs and id 11 has no carrier at all. At least four catalogue entries are wired and inert -- a pattern, not a curiosity.",
   "tension_flagged": "Battle-Engine-Map records 0x020784B8 as GrowMax with the same 0x4000 cap, gated on a char+0x128 badge bit, candidate \"max HP on respawn passive ability 0x07\". So TWO paths raise max HP with the same cap. Whether ability 7 and ability 52 are one effect reached two ways is NOT established -- but they are reached differently: 7 is kind 0 and appends, 52 is kind 2 and never appears in the list.",
   "WHY_IT_SAT_UNREAD": "I filed these eight addresses three wakes ago and never opened them. Third instance the same day of both loops carrying answers to each other open questions in already-written text -- their chain walk had \"appended [10]\" while they quoted a live list as a record; my own +0x44 sweep said \"other writers touch bits 0,1,2,3,20,21\" while bit 21 sat on their unexplained list. FILING AN ADDRESS FEELS LIKE HANDLING IT -- a pointer in a bead reads as progress and the follow-through is what gets dropped."
- }
+ },
+ "P227_STUB_RESOLVED": "the return value is a CONSUMED success flag. All five working handlers return 1 (0x02077948/58/68/98, 0x020779C4); the stub returns 0. The +0x558 node walk checks it at 0x020778D0 (cmp r0,#0 / beq skip). So the stub is a deliberate \"inapplicable\" implementation in a family whose others signal success -- NEVER IMPLEMENTED, not removed. Third time today the answer was neither side opening claim. The chr_b walk IGNORES the return, so same handlers, one caller checks and one does not.",
+ "P227_TWO_DISPATCHES_DIFFER": "NEW, nobody had noted it: the node path filters on handler index before calling -- 0x020778AC cmp r0,#3 / cmpne #5 / cmpne #6 / beq 0x020778E0 -- so indices 3, 5, 6 (max HP id 52, +0x4A id 54, +0x4B id 55) take a DIFFERENT path while 0,1,2,4,7 go through the normal call. The chr_b walk has no such filter. Same kind-2 id behaves differently by dispatch source: a third instance of the check-+0x40-first property after +0x41 and +0x0E.",
+ "P227_OPEN_QUESTION": "the node path passes r1 = the NODE; the chr_b path passes r1 = the CHARACTER. Handlers write [r1+0x4A]. So from the node walk they write a node +0x4A. Either fine (type-0 nodes ARE characters, shared layout) or a real distinction about who receives a modifier. Read 0x020778E0 before assuming."
 }

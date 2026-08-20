@@ -30,17 +30,23 @@ The four failures this protocol is built to prevent:
 
 ## Roles (key off roles, not names — names drift across restarts)
 
+Four roles as of 2026-08-19 evening (harness added this day). **Runtime and static were both spun
+down by DJ at the end of the 2026-08-19 run** — see `HANDOFF-Ed-2026-08-19-runtime.md`,
+`HANDOFF-Atlas-P232-2026-08-19.md`, and `HANDOFF-Atlas-Shutdown-2026-08-19.md`. Whoever restarts a
+role, read that role's handoff first and fill this table back in with your own name.
+
 | Role | Job | Current instance |
 |---|---|---|
-| **runtime** | Drives the melonDS harness, boots battles, measures damage/status, scans RAM. Produces magnitudes. | `justoolkit-09` — started 2026-08-19, **continuous** through several name changes (was `justoolkit-e2`); confirmed directly, with commits 918ec18, d878084, 95209f4, 0941b71 |
-| **static** | Works the disassembly, maps structs/formulas, produces addresses. Labels claims. | **alive** — the static loop is continuous through iteration 218; commits `f84f644`, `d1fb4c6`, `56f2783`. Name unknown to itself (a session cannot see its own name), so identify this seat by its `loop-atlas:` commits, not by a name |
+| **runtime** | Drives the melonDS harness, boots battles, measures damage/status, scans RAM. Produces magnitudes. | **spun down 2026-08-19 EOD** by DJ. Was `justoolkit-09` (continuous through name changes, was `justoolkit-e2`). Handoff: `HANDOFF-Ed-2026-08-19-runtime.md` |
+| **static** | Works the disassembly, maps structs/formulas, produces addresses. Labels claims. | **spun down 2026-08-19 EOD** by DJ. Was `justoolkit-a4`, continuous through iteration 218. Handoff: `HANDOFF-Atlas-Shutdown-2026-08-19.md` |
 | **ledger** | Reads the beads ledger + git, keeps the human catch-up summary, flags inconsistencies, nudges idle loops. Does **not** write findings. | `justoolkit-3e` — started 2026-08-19, confirmed the seat directly; never touches the emulator |
+| **harness** | Maintains `scripts/emu/*` (and the melonDS-lua fork itself, if DJ approves a rebuild) as the runtime seat needs it. Does not drive the emulator for measurements itself. **New role, 2026-08-19.** | unassigned as of this table update. Handoff: `HANDOFF-2026-08-19-harness.md` |
 
 **Other sessions active in this project (not loops, no assigned role):**
 
 | session | what it is doing | emulator |
 |---|---|---|
-| `justoolkit-8f` | investigating why in-battle touch (dream-attack / support-call taps) does not work; came in cold via a user request | **drove it 2026-08-19**, sent live in-battle touch at DS (140,90); released and stopped melonDS |
+| `justoolkit-8f` | investigated why in-battle touch (dream-attack / support-call taps) does not work; came in cold via a user request. Wrote the harness handoff above before this session ended. | drove it repeatedly 2026-08-19 through the broker; always released and stopped melonDS |
 
 **Exclusive access to the emulator is not covered by anything below, and that is the biggest
 gap in this protocol.** On 2026-08-19 a session outside the role table drove melonDS

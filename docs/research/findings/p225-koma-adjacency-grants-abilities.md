@@ -285,3 +285,46 @@ confirmation. The failure was symmetric — I abandoned a good discriminator I c
 and they took the abandonment as evidence. **Two people agreeing on a wrong reason is the same
 failure as one parse bug reproduced twice**, which also happened today on the index rows.
 
+## The slot count is 16, and both earlier figures were wrong the same way
+
+```
+runtime seat  19.6   counted the 0x58 header as slots
+me            18     bounded by the side stride 0x61C — an assumption dressed as a bound
+actual        16     confirmed two ways
+```
+
+I produced mine *while correcting theirs*, in a paragraph telling them to count rather than divide.
+
+**Definitional:** `0x58 + 16 * 0x50 = 0x558`, exactly the offset the loader dereferences for the
+chain head. The array's end **is** the next field. **Empirical:** walking the free list terminates
+after ten entries, last at `0x021DF66C`, and `(0x021DF66C − 0x021DF1BC) / 0x50 = 15.00` — slot index
+15, so slots 0..15.
+
+That `15.00` is the tell. My `18.45` and their `19.55` were both fractional, and **a fractional slot
+count is the error message.** Neither of us read it as one.
+
+### The object closes
+
+```
++0x000 .. +0x007   two words, UNIDENTIFIED
++0x008 .. +0x057   the 5x4 koma grid, 20 cells x 4 = 0x50
++0x058 .. +0x557   16 node slots, stride 0x50
++0x558             chain head pointer — the field the loader dereferences
+```
+
+`0xC0` bytes remain before the next side's object — **unexplained**. The `0x24` remainder I reported
+dissolves; it was an artifact of bounding by the side stride.
+
+### Third time today a definition beat a derivation — and the same field each time
+
+`+0x558` settled the base (it's the head by definition, after an insensitive grid test) and `+0x558`
+settled the slot count (the array ends there, after two divisions with the wrong bound). Both times
+the definitional fact sat in an instruction each of us had already quoted. So the durable rule isn't
+"divide carefully" — it's **find the field that defines the bound**, which is the upstream-definition
+rule applied to a size instead of an address.
+
+**An observation, offered as one:** the grid is `0x50` bytes, exactly the slot stride, so from
+`+0x08` the object reads as 17 slot-sized regions with region 0 the grid. That may be a shared
+allocation unit, or `20 × 4` may simply coincide with a `0x50` node. Not building on it — it's the
+same species of tidy pattern that was arguable at five-for-five earlier today.
+

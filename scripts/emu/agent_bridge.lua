@@ -26,6 +26,11 @@ local settle, pending_plan = nil, nil
 local saving = nil                -- {slot, path, last_size, stable, id}
 local default_watches = {}
 
+-- Passive per-frame watch tailing. Deliberately never touches joypad or input:
+-- the point is to log while a HUMAN plays through the normal melonDS window, so
+-- any joypad.set() here would latch out physical input (see plan_step).
+local tail = nil   -- {specs, path, buf, frames, gaps, every, started}
+
 -- ---------- io ------------------------------------------------------------
 local function write_atomic(path, content)
     local f = assert(io.open(path .. ".tmp", "w"))
@@ -87,6 +92,33 @@ local function flush_log()
     local f = assert(io.open(run_dir .. "/log.jsonl", "a"))
     f:write(table.concat(log_buf, "\n")); f:write("\n"); f:close()
     log_buf = {}
+end
+
+local function tail_flush()
+    if tail == nil or #tail.buf == 0 then return end
+    local f = io.open(tail.path, "a")
+    if f == nil then return end
+    f:write(table.concat(tail.buf, "\n")); f:write("\n"); f:close()
+    tail.buf = {}
+end
+
+-- One record per sampled frame. `elapsed` is carried through verbatim so a
+-- reader can tell a genuinely contiguous run from one with dropped frames --
+-- without it, a gappy log is indistinguishable from per-frame coverage.
+local function tail_step(fc, elapsed)
+    if elapsed > 1 then tail.gaps = tail.gaps + 1 end
+    if tail.every > 1 and (fc % tail.every) ~= 0 then return end
+    local parts = { '{"fc":' .. fc .. ',"elapsed":' .. elapsed .. ',"v":[' }
+    local vals = {}
+    for i, w in ipairs(tail.specs) do
+        local v = read_watch(w)
+        if v == nil then vals[i] = "null"
+        elseif type(v) == "table" then vals[i] = "[" .. table.concat(v, ",") .. "]"
+        else vals[i] = tostring(v) end
+    end
+    parts[#parts+1] = table.concat(vals, ",") .. "]}"
+    tail.buf[#tail.buf+1] = table.concat(parts)
+    tail.frames = tail.frames + 1
 end
 
 -- ---------- savestate sidecars -------------------------------------------
@@ -305,6 +337,35 @@ function handlers.set_watches(args)
                       note = "applies to subsequent plans without watches" })
 end
 
+function handlers.tail_start(args)
+    if tail ~= nil then error("tail already running; tail_stop first") end
+    local specs = args.specs or default_watches
+    if specs == nil or #specs == 0 then error("no watches: pass specs or call set_watches") end
+    if #specs > 32 then error("too many watches") end
+    local total = 0
+    for _, w in ipairs(specs) do total = total + (w.len or 0) end
+    if total > 512 then error("watch byte budget exceeded") end
+    local path = args.out or (IPC_DIR .. "/runs/tail.jsonl")
+    local f = io.open(path, "w")
+    if f == nil then error("cannot open " .. path) end
+    f:close()
+    tail = { specs = specs, path = path, buf = {}, frames = 0, gaps = 0,
+             every = args.every or 1, started = emu.framecount() }
+    return core.obj({ path = path, watches = #specs, every = tail.every,
+                      framecount = tail.started,
+                      note = "state stays idle; physical input untouched" })
+end
+
+function handlers.tail_stop(args)
+    if tail == nil then error("no tail running") end
+    tail_flush()
+    local r = core.obj({ path = tail.path, frames = tail.frames,
+                         gaps = tail.gaps, started = tail.started,
+                         ended = emu.framecount() })
+    tail = nil
+    return r
+end
+
 function handlers.selftest(args)
     -- Synchronous half only. The async half is `state save _selftest`
     -- followed by `state load _selftest`, driven by the CLI (see README).
@@ -387,12 +448,14 @@ function _Update()
         local elapsed = (last_fc == nil) and 1 or (fc - last_fc)
         last_fc = fc
         -- Only advance a plan when the emulator actually advanced frames.
+        if tail ~= nil and elapsed > 0 then tail_step(fc, elapsed) end
         if state == "plan_running" and elapsed > 0 then plan_step(fc, elapsed) end
         if state == "loading_state" then settle_step() end
         if state == "saving_state" then saving_step() end
         if tick % POLL_INTERVAL == 0 then
             heartbeat()
             check_stop()
+            tail_flush()
             if state == "idle" then poll_commands() end
         end
     end)

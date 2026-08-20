@@ -43,6 +43,13 @@ def build_parser():
     d.add_argument("start"); d.add_argument("end"); d.add_argument("outfile")
     w = sub.add_parser("watch")
     w.add_argument("action", choices=["set"]); w.add_argument("spec")
+    tl = sub.add_parser("tail")
+    tl.add_argument("action", choices=["start", "stop"])
+    tl.add_argument("spec", nargs="?",
+                    help="watch spec json; omit to reuse `watch set`")
+    tl.add_argument("--out", help="log path (default IPC runs/tail.jsonl)")
+    tl.add_argument("--every", type=int, default=1,
+                    help="sample every Nth frame (default 1 = every frame)")
     sd = sub.add_parser("screendump")
     sd.add_argument("outfile")
     sc = sub.add_parser("screenshot")
@@ -259,6 +266,19 @@ def main(argv=None):
     elif args.command == "watch":
         specs = validate_watches(_read_json(args.spec))
         op, a = "set_watches", {"specs": specs}
+        timeout = 10.0
+    elif args.command == "tail":
+        if args.action == "stop":
+            op, a = "tail_stop", {}
+        else:
+            if args.every < 1:
+                die("--every must be >= 1")
+            a = {"every": args.every}
+            if args.spec:
+                a["specs"] = validate_watches(_read_json(args.spec))
+            if args.out:
+                a["out"] = os.path.abspath(args.out)
+            op = "tail_start"
         timeout = 10.0
     elif args.command == "screendump":
         op, a = "screendump", {"path": os.path.abspath(args.outfile)}

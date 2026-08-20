@@ -42,3 +42,30 @@ The five other u32s per record are also unread.
 ## Provenance
 
 Static only. `kshape.bin` read as aligned 32-bit words; header read as u32. Cross-checked against the RAM offsets and stride measured live by the runtime seat — two independent artifacts, neither derived from the other.
+
+## The record base is `0x54`, settled by the header's own class table
+
+Every record's **popcount must equal its class**, because the header fixes the class of every index:
+counts `1,2,6,12,14,14,13,4` expand to classes `[1, 2,2, 3×6, 4×12, 5×14, 6×14, 7×13, 8×4]`. That
+converts "which base" from a judgement about which run looks plausible into 65 independent tests.
+
+```
+base 0x3C : 7 MISMATCHES at indices 1, 3, 9, 21, 35, 49, 62 — every one a class boundary,
+            every one exactly one class low. Those indices ARE the cumulative table.
+base 0x54 : 65 of 65, zero mismatches.
+```
+
+**And the 66th record is truncated, not missing.** 65 full records end at `0x66C`, leaving 4 bytes
+that read `0x00001CE3` — popcount 8, decoding to `##... / ###.. / ###..`. So the file is
+`0x54 + 65*0x18 + 4 = 0x670`, exactly its size; the count really is 66; the header's class-8 count of
+4 was right; and the `{8:3}` histogram above was the truncation rather than a bad base.
+
+**Correction to the RAM mapping:** file offset 0 maps to **`0x021AF100`**. Mask `0x00421` sits at
+file `0x0B4` and RAM `0x021AF1B4`, so the delta is `0x021AF1B4 − 0x0B4`. The mapping does *not* shift
+with the record base — it's fixed by an anchor pair, not by where the records begin. With it, the
+records from file `0x54` sit at RAM `0x021AF154` onward, `0x618` bytes for a full compare.
+
+**Still open:** whether the RAM copy is the file verbatim or a transform. Four shape words and a
+stride agree, and that is all that has been compared. The five trailing u32s per record are
+unidentified in both.
+

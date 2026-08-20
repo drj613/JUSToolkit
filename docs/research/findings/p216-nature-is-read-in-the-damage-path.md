@@ -50,3 +50,27 @@ Nature and the class gates land in the **same accumulator** `r0` and are **addit
 ## Provenance
 
 Static only. `jus_files/arm9/arm9.bin`, listing `jus_files/analysis/disasm/arm9.txt`; table bytes read from the binary at `addr − 0x02000000`, independent of the listing. Codex used cold — given two tables and the listing, no offset named, no hypothesis stated; it returned the `row*8 + col*2` index arithmetic, the three candidate 2-bit column fields, the `0x40000000` bypass, 768 versus 512, and "combined additively, not multiplicatively." Owner ground truth via [`jus-nature-january-vs-august-9a6`].
+
+## The runtime number arrived — the 1.5 cell is observed live
+
+Six stops read `r0 = 512` at `r5 = 1024`, unpoked [`jus-bit5-fired-and-nature-observed-w5n`]. The
+term is `(r5 * (r3 - 0x100)) asr 8`, and **every** value in both nature tables is either `0x0100` or
+`0x0180` — there is no third value. So at base 4 the term can only be 0 or 512, and 512 uniquely
+implies a `0x180` = 1.5 cell. The bypass forces `r3 = 0x100`, which gives 0, so there's no other
+route.
+
+`jus-nature-1p5-never-observed-uh8` is retracted. And the composition lands as decoded: 4.000
+unreduced, +2.000 nature, −1.000 quarter-step = 5.000 — both terms nonzero in one accumulator for the
+first time.
+
+**Why this observation counts where the earlier one didn't.** Two wakes earlier I offered the runtime
+seat a cross-confirmation from a reading of `r0 = 0`, and they declined it. They were right: a
+predicted value of **zero** is reachable by the tables returning 1.0, by the bypass firing, or by
+nothing writing `r0`. A **nonzero** term at exactly the table value is reachable only by the tables
+being read and indexed. Same field, same register, opposite epistemic weight — and the entire
+difference is which value was predicted.
+
+**Still open, narrowly:** the specific *cell* is inferred from the term's value, not read from the
+inputs. 512 pins it to a 1.5 cell but not to which one, so whether the selector resolves as
+[`jus-nature-column-selector-8gk`] predicts is untested.
+

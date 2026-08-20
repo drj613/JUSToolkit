@@ -8,6 +8,7 @@ local core = require("bridge_core")
 local IPC_DIR = os.getenv("JUS_EMU_DIR") or "/tmp/jus_emu"
 local BUS = "ARM9 System Bus"
 local POLL_INTERVAL = 10
+local TAIL_BUF_MAX = 4096   -- records retained if the log path goes unwritable
 local SETTLE_MAX = 120            -- callbacks; S4-informed
 local SAVE_STABLE_POLLS = 3       -- save done = file size stable this long
 local FLUSH_EVERY = 600
@@ -97,7 +98,18 @@ end
 local function tail_flush()
     if tail == nil or #tail.buf == 0 then return end
     local f = io.open(tail.path, "a")
-    if f == nil then return end
+    if f == nil then
+        -- Don't let an unwritable path grow the buffer without bound. Drop the
+        -- oldest records and count them, so the log is short rather than the
+        -- emulator slowly starving.
+        if #tail.buf > TAIL_BUF_MAX then
+            tail.dropped = tail.dropped + (#tail.buf - TAIL_BUF_MAX)
+            local keep = {}
+            for i = #tail.buf - TAIL_BUF_MAX + 1, #tail.buf do keep[#keep+1] = tail.buf[i] end
+            tail.buf = keep
+        end
+        return
+    end
     f:write(table.concat(tail.buf, "\n")); f:write("\n"); f:close()
     tail.buf = {}
 end
@@ -350,7 +362,7 @@ function handlers.tail_start(args)
     if f == nil then error("cannot open " .. path) end
     f:close()
     tail = { specs = specs, path = path, buf = {}, frames = 0, gaps = 0,
-             every = args.every or 1, started = emu.framecount() }
+             dropped = 0, every = args.every or 1, started = emu.framecount() }
     return core.obj({ path = path, watches = #specs, every = tail.every,
                       framecount = tail.started,
                       note = "state stays idle; physical input untouched" })
@@ -360,8 +372,8 @@ function handlers.tail_stop(args)
     if tail == nil then error("no tail running") end
     tail_flush()
     local r = core.obj({ path = tail.path, frames = tail.frames,
-                         gaps = tail.gaps, started = tail.started,
-                         ended = emu.framecount() })
+                         gaps = tail.gaps, dropped = tail.dropped,
+                         started = tail.started, ended = emu.framecount() })
     tail = nil
     return r
 end
@@ -448,7 +460,13 @@ function _Update()
         local elapsed = (last_fc == nil) and 1 or (fc - last_fc)
         last_fc = fc
         -- Only advance a plan when the emulator actually advanced frames.
-        if tail ~= nil and elapsed > 0 then tail_step(fc, elapsed) end
+        -- Only sample in idle or while a plan runs. During loading_state and
+        -- saving_state the framecount jumps and the memory being read is not the
+        -- state the record would claim it is.
+        if tail ~= nil and elapsed > 0
+           and (state == "idle" or state == "plan_running") then
+            tail_step(fc, elapsed)
+        end
         if state == "plan_running" and elapsed > 0 then plan_step(fc, elapsed) end
         if state == "loading_state" then settle_step() end
         if state == "saving_state" then saving_step() end

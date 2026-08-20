@@ -3,6 +3,7 @@
  "phase": "combat",
  "current_task": "P213-what sets bit 5 of [r8+0x40] (the resistance gate)",
  "queue": [
+  "P231-Why is Goku shot file (0x80 bytes) not in the heap when na/bl/yo shot files are? Find the load call and its condition. That determines whether the heap is a complete manifest or a touched-so-far manifest, which bears on every residency claim.",
   "P231-Byte-compare the ten small heap blocks against the per-character chrbin files for the six loaded fighters. Size cannot separate them; a compare can, and it would give a complete residency map.",
   "P231b-What are the two runtime-built blocks, 0x85C0 (34208) and 0x2280 (8800)? Neither matches any file. One is probably the collision/element array at 0x021BDB20.",
   "P231c-koma.bin structure: is the stride 12 with a u16 index at +0, and does any field index kshape.bin 0..65? Would connect per-koma metadata to the shape catalogue.",
@@ -2527,5 +2528,12 @@
   "koma_bin_resolution": "koma.bin IS loaded -- it just is not the shape catalogue. Resolves the earlier exchange rather than contradicting it. LEAD ONLY: 10680 bytes divides by 12 into 890 records with a sequential u16 index at +0, and 890 is near one record per koma in the game. But strides 8, 10, 20, 24 also divide evenly, so the stride is NOT established.",
   "caveat": "every mapping above is a SIZE argument. Nothing here is a byte comparison.",
   "my_model_corrected": "I proposed \"code and load buffers interleaved\". Runtime sharpened it to \"one contiguous tagged heap inside the window\", which is right and more useful -- interleaved implies unpredictability, a contiguous tagged heap means residency is ENUMERABLE rather than a percentage. And the boundary was a real structural edge, so my \"the model is too coarse\" was right about the model and wrong to imply the address was soft."
+ },
+ "P230_BYTE_COMPARE_SUPERSEDES": {
+  "result": "runtime byte-compared every block against every file using MY granularity window and named 15 of 19. My three (chr_b.bin, chr_s.bin, koma.bin) are byte-identical. Four blocks match no file: 0x021B1840 (0x85C0), 0x021B9E00 (0x220), 0x021BB880 (0x2280), 0x021BE580 (0x2E20).",
+  "MY_METHOD_SCORED_3_OF_5": "size matching gave five candidate names; three survived, two were wrong (clear.bin for 0x260, title.bin for 0x3C0 -- both lost to per-character files that were in my own candidate list). So size matching is a FILTER, not an identification, and the error entered when I named the most plausible member of the filtered set. Same reason I predicted two no-file blocks where there are four.",
+  "PER_SIDE_LOADING": "block ordering groups by side. Group 1 below 0x021BDB00: item.bin, db_b_01 col, yo_b_01 col+shot, na_b_01 col+shot, bl_b_03 col+shot -> Goku, Yugi (yo_b_01 = chr_b 35), Naruto, Rukia = 4. Group 2 at/above: op_b_01 col, na_b_01 col+shot -> Luffy, Naruto = 2. 4+2 = 6 loaded fighters, matching the chain lengths, with Naruto in both because he is the only character in both chains. SO: block address below 0x021BDB00 = player side, at/above = opponent. Free side attribution for every element read. Also rules out fighter-load-vs-support-load, which would not produce groups matching the chain lengths.",
+  "SHOT_LOADING_IS_CONDITIONAL": "db_b_01 has an 0x80-byte shot file on disk and NO shot block in the heap; op_b_01 has no shot file at all; na_b_01, bl_b_03 and yo_b_01 shot files are all loaded. So it is not load-col-and-shot-for-every-member. The heap is a manifest of what has been TOUCHED, not of what a battle needs. Either on-demand loading at first projectile spawn, a threshold, or Goku file is a stub the loader skips.",
+  "entry_44": "no contamination -- grepped docs/ and the state file, I never carried it. I used na_b_01 entry 4 from the file own 0x14 stride, and the block boundary confirms it: col data starts at 0x021BDE40 so the live element at 0x021BDE90 is entry 4."
  }
 }

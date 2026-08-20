@@ -142,3 +142,45 @@ of the record. Naming from offsets would have produced a confident, wrong field 
 with bitmaps at `+0x14`. Checked all six word offsets of a `0x18` stride across its 445 records —
 **zero** catalogue masks at any offset. koma.bin holds something else.
 
+## Corrected again: the base is `0x40`, and the record is a cell map plus a bitmap
+
+`0x40 + 66*0x18 = 0x670`, exactly the file size. `0x54` overruns by `0x14` and leaves 65.167 records —
+a fractional record count is the tell. So **the bitmap is at `record+0x14`** and `0x02076D00` returns
+the record exactly, not `0x14` short of it.
+
+**Confirmed structurally, independent of the size argument.** The five leading words are a **20-byte
+per-cell ordinal map** — one byte per grid cell, 5 columns × 4 rows, holding a 1-based traversal order
+for occupied cells and 0 for empty:
+
+```
+record 59, cell map as the grid        its bitmap 0x10C63
+   1  2  0  0  0                          ##...
+   3  4  0  0  0                          ##...
+   4  6  0  0  0                          ##...
+   0  7  0  0  0                          .#...
+```
+
+Across all 66 records the cell map's occupied set equals the bitmap's set **66 of 66**, and popcount
+equals the ordinal count **66 of 66**. The bitmap is a redundant summary derivable from the cell map,
+which is why it comes last — and a 20-byte map can't start at `+0x14` of a `0x18` record, so the
+layout settles the boundary on its own.
+
+**One anomaly:** record 59's ordinals are `1,2,3,4,4,6,7` — a duplicate 4, no 5. Occupied set and
+count are still right; only the permutation breaks. One of 66, so likelier a data bug than a feature.
+
+### Two errors of mine worth keeping
+
+**A circular constraint.** I restricted candidate bases to `≡ 0x0C mod 0x18` because `0x0B4` is "a known
+record". It's a known *bitmap*. That assumed the bitmap sits at `record+0x00` — the thing in question —
+and **excluded `0x40` from the search space**, so every candidate the search returned was wrong by
+construction.
+
+**A test that could not fail.** The bitmap addresses are identical under both readings, so the 65-test
+popcount check was blind to the boundary. And I reported it as "settled by the header's own class
+table", which made it sound as though the header had adjudicated — it adjudicated the class-to-index
+mapping, which was never in dispute. An insensitive test, described as answering a harder question.
+
+Twice now the strongest-feeling evidence here has been a test every candidate passes. The guard:
+**name the rival and ask what byte it predicts differently, before running anything.** Here that was
+one line — "under the other reading, where does the last record end?"
+

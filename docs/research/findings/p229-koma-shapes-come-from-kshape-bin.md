@@ -69,3 +69,36 @@ records from file `0x54` sit at RAM `0x021AF154` onward, `0x618` bytes for a ful
 stride agree, and that is all that has been compared. The five trailing u32s per record are
 unidentified in both.
 
+## The compare closed it — and it corrected the ov12 boundary model
+
+**1644 bytes identical**: file `0x000..0x66C` against RAM `0x021AF100..0x021AF76C`, header included.
+So "the RAM array corresponds to kshape.bin" is the whole file rather than four shape words and a
+stride, and the header is loaded rather than synthesised. The five trailing u32s per record are still
+unidentified — now a question about the format, not the mapping.
+
+### What sits immediately after it corrects a bigger claim
+
+The runtime seat read 20 bytes past the end at RAM `0x021AF770` and nearly published "kshape.bin is
+truncated in the rip" before noticing the bytes decode as ARM code rather than record fields. They're
+**ov12's own code**: `arm9_ov12.bin` file offset `0x35B0` holds `E2840014 / E5902000 / E5922038 /
+E12FFF32`, and ov12 file `0x35B0` maps to `0x021AC1C0 + 0x35B0 = 0x021AF770` exactly.
+
+**So there is intact ov12 file content `0x11C40` below the `0x021C13B0` boundary.** The model on
+[`jus-ov12-boundary-probably-moves-05o`] — 84.5 KB overwritten below, 79.4 KB intact above, one
+contiguous split — can't be right as stated.
+
+Better model, and it explains the 59.6% match cleanly: **the ov12 window holds ov12's code and
+file-load buffers, interleaved.** kshape.bin loads at `0x021AF100` and ends at `0x021AF770` exactly
+where ov12's code resumes — a buffer declared inside the overlay's own range, filled at load time.
+The mismatching ~40% is loaded files, not a contiguous overwritten half.
+
+It also explains why a 32-sample scan saw a clean split: samples every ~5 KB land mostly in the large
+loaded-data regions and skip short intact code stretches. The scan wasn't wrong, it was
+**under-resolved** — and a clean-looking split from sparse sampling is the same shape as the other
+tidy-pattern failures in this campaign.
+
+**Unresolved:** their fifth word read `E3A04D48` where the file has `E3A00000`, continuing
+`E584003C / E8BD8010` — a coherent epilogue. Four words matching exactly isn't chance, so that range
+is certainly ov12's code. Either a transcription slip, a patched word, or a read that started one
+word later than recorded.
+

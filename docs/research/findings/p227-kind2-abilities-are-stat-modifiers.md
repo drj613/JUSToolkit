@@ -45,3 +45,56 @@ This is a third. **Filing an address feels like handling it** — a pointer in a
 ## Provenance
 
 Static only. `jus_files/arm9/arm9.bin`, listing `jus_files/analysis/disasm/arm9.txt`, and `jus_files/ripped_jus_files/bin/ability.bin` for handler indices and parameters — each read at `4*id + 2` as a signed byte. No codex pass: eight handlers of two to seven instructions each, read directly. Handing codex the same listing would be one artifact twice.
+
+## Two refinements from the runtime seat, and a prediction that carries its own falsification
+
+**The zeroing is one four-byte group, not three plus the count.** Four consecutive stores from the
+same register — `0x4A`, `0x4B`, `0x4C`, then `0x1A`. I framed the modifiers as sitting "immediately
+above" the count zeroing, which reads as two separate acts. It is one, and worth saying so because
+the count was already in the record and the modifiers were not.
+
+**The three single-byte handlers store, they do not add, and the value is table data rather than a
+code constant.** All three are identical in shape:
+
+```
+E1D220D2  ldrsb r2,[r2,#2]     the ability.bin byte-2 parameter, signed
+E3A00001  mov   r0,#1
+E5C1204A  strb  r2,[r1,#0x4a]  (or 4b / 4c)
+E12FFF1E  bx    lr
+```
+
+`strb`, no read-modify-write. So the `+1 / +3 / −3` in the table above are `ability.bin`'s byte-2
+values for ids 54/55/56 — **not numbers in the code.** The handler is generic: one destination
+offset, one signed parameter from the table. That matters if another id ever points at the same
+handler with a different parameter.
+
+### Census, re-counted
+
+| id | records | which |
+|---|---|---|
+| 54 | 6 | chr_b 8, 10, 24, 29, 37, 44 |
+| 55 | 2 | chr_b 53, 65 |
+| 56 | 3 | chr_b 24, 60, 67 |
+
+Ten records carry any kind-2 id: 8, 10, 24, 29, 37, 44, 53, 60, 65, 67. **Ids 49–53 appear on
+none** of them — so the stub ids and the max-HP and counter handlers are carried by nobody in
+`chr_b`, and `char+0x4A` is the modifier that actually gets written in practice.
+
+### The Edajima prediction
+
+`chr_b 67` — already REQUEST 1 on [`jus-5bg`] — has slots `[9, 10, 0, 0, 56]`. Re-derived
+independently:
+
+- live ability list reads **`[9, 10]`**, and does *not* contain 56, because 56 is kind 2
+- `char+0x4C` reads **−3** rather than 0
+- gate word `[r8+0x44]` reads **`0x00000030`** — bit 4 from ability 9, bit 5 from ability 10
+
+Three independent predictions from one read, testing the both-class-gates arm *and* the kind-2
+dispatch end to end. No other requested deck does that. If a cheaper deck were ever wanted for the
+kind-2 half alone, `chr_b 24` carries both 54 and 56 — two handlers, two destination bytes, one
+fighter — but it has neither 9 nor 10, so it does nothing for the gates.
+
+**A weak check worth naming as weak:** none of the six loaded fighters carries 49–56, so the
+modifier bytes should read zero everywhere. That is consistent with only these handlers writing
+them, and it is nearly no evidence, because zero is also what an untouched byte reads.
+

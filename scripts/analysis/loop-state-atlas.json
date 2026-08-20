@@ -2559,7 +2559,17 @@
         "jus-circular-search-constraint-ei5q",
         "jus-koma-shapes-come-from-kshape-bin-0j2",
         "jus-kshape-lookup-identified-a1j"
-      ]
+      ],
+      "practice_codified": {
+        "rule": "When a question touches a function already in the record, re-read that WHOLE function before searching for a new one. Corollary: never filter or truncate a listing you will reason from -- if it is short enough to read whole, read it whole.",
+        "where": "docs/orchestration/COORDINATION-PROTOCOL.md section 'Re-read before you search' + wake bracket step 4",
+        "why": "We re-read documents at wake time; we do not re-read disassembly, because extracting a listing once feels like having read it. Three times in one week the answer was inside something already quoted. The kshape base sat in 0x02076D30, a function quoted verbatim in the doc that posed the question.",
+        "instances": [
+          "my grep -iE with no `ldr` in the pattern, which would have hidden [r0+0x14]",
+          "runtime's `git remote -v | head -2` yielding 'only fork is configured', which is false"
+        ]
+      },
+      "no_message_lost": "Runtime confirms nothing was dropped by the transport: the 4-wide claim existed only in bead jus-tv3a and commit a70ce0d, never in a message to me. Do not chase this."
     }
   }
 }

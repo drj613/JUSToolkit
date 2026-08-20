@@ -84,7 +84,9 @@ wake**, at the boundary where flow is already broken. Every wake, in order:
 3. **TRIAGE / FAST LANE.** Any partner artifact awaiting your cheap validation jumps the
    queue — see "Fast lane" below.
 4. **WORK.** Exactly **one task** this wake. Capture evidence as terse structured notes
-   *while* working (seconds, no prose), so the flush at step 6 is cheap.
+   *while* working (seconds, no prose), so the flush at step 6 is cheap. If the task
+   touches a function already quoted in the record, **re-read that function whole before
+   searching for a new one** — see "Re-read before you search" below.
 5. **RECORD.** Write/update the coord beads for anything you produced.
 6. **FLUSH.** Publish everything outbound: retractions, results bearing on the partner's
    open questions, new artifacts — all of it, unprompted. Then `br sync --flush-only`.
@@ -94,6 +96,43 @@ wake**, at the boundary where flow is already broken. Every wake, in order:
 **One task per wake** is load-bearing: smaller wakes mean more boundaries, which means
 more comm windows — with zero mid-flow interruptions. The runtime loop especially must
 adopt this; unbounded wakes are what produced the barbell.
+
+## Re-read before you search
+
+When a question touches a function already in the record, the first move is to re-read
+**that whole function**, not to search for a new one.
+
+We re-read *documents* at wake time — it is step 2 of the bracket and it has paid
+repeatedly. We do not re-read *disassembly* we have already pulled, because having
+extracted a listing once feels like having read it. It is not the same thing. Extraction
+is bounded by the question you had at the time; the listing usually answers questions you
+had not thought to ask yet.
+
+Three times in one week the answer was inside something one seat had already quoted. The
+sharpest case: the `kshape.bin` record base had been open for a full wake, and
+`ldr r0, [r0, #0x14]` — which yields the base by subtraction from any known bitmap — was
+sitting in `0x02076D30`, a function already quoted verbatim in the finding doc that posed
+the question.
+
+**The corollary, which is where this actually goes wrong.** Do not filter or truncate a
+listing you are about to reason from. Two failures landed within an hour of each other,
+in different costumes:
+
+```
+query.py disasm 0x02076D30 --count 26 | grep -iE "0x1f|lsl|cmp|tst|and|bic|add"
+                                        # no `ldr` in the pattern -> hides the answer
+git remote -v | head -2                 # -> "the only remote is fork", which is false
+```
+
+Both narrow the output using a guess about what the answer looks like, and **neither
+prints a warning when the answer is not in the set.** This is the circular-constraint
+failure one level down: not a search space over addresses, but the pipe used to read the
+search's output. A modular constraint on candidate bases and a grep alternation on a
+listing are the same move — deciding in advance which shapes the answer may take.
+
+Rule: **if the output is short enough to read whole, read it whole.** A 34-line function
+has no business going through a filter. When you must narrow, say so in the finding, and
+treat any residue you have to explain away as a signal that the bound excluded something.
 
 ## Push, don't pull
 

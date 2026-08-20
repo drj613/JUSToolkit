@@ -1,15 +1,14 @@
 {
- "iteration": 227,
+ "iteration": 228,
  "phase": "combat",
  "current_task": "P213-what sets bit 5 of [r8+0x40] (the resistance gate)",
  "queue": [
-  "P228-RE-READ MY OWN RECENT OUTPUT for answers to open items before starting anything new. Three instances in one day of the answer being in already-written text. Candidates: the two words at arg0+0x000, the 0xC0 gap, what sets bit 8 of [r1+0x14].",
-  "P228a-Read the special-case path at 0x020778E0. It handles kind-2 handler indices 3, 5 and 6 from the node walk only, and it settles whether a node or a character receives the modifier.",
-  "P228b-What writes the +0x558 node list and the grid at arg0+8? The deck-to-battle hop; it would name arg0.",
-  "P228c-What writes char+0x13..0x15, the three nature slots? Koma grant abilities by adjacency and may grant natures the same way.",
-  "P228d-Are ability 7 and ability 52 the same max-HP effect reached two ways? 0x020784B8 GrowMax vs 0x02077974, same 0x4000 cap, different kinds.",
-  "P228e-What consumes char+0x4A/+0x4B/+0x4C, the signed modifier triple, and char+0x5CC?",
-  "P228f-Overlay-Residency-By-Mode.md: the SHAPE claim plus a row for in-battle menu modes. No boundary address."
+  "P229-What is 0x02076D00 and what object holds the shape word at +0x14? Naming it would connect the koma shape data to a file, which is the koma sprint deliverable.",
+  "P229b-Where does deck+0x568 get built, and is the occupancy mask the same data the battle grid at arg0+8 is derived from? That is the deck-to-battle hop.",
+  "P229c-Read the special-case path at 0x020778E0 -- kind-2 handler indices 3, 5, 6 from the node walk only. Settles whether a node or a character receives the modifier.",
+  "P229d-The two unidentified words at arg0+0x000 and the 0xC0 before the next side.",
+  "P229e-What sets bit 8 of [r1+0x14] at 0x02080988, selecting +0x44 bits 20 vs 21?",
+  "P229f-Overlay-Residency-By-Mode.md: the SHAPE claim plus a row for in-battle menu modes. No boundary address."
  ],
  "done": [
   "K1-koma-data-survey",
@@ -270,7 +269,7 @@
   "Is HP computed as size*k at runtime, or tabulated per panel? Naruto 4-koma=144=4*36; if size*k then size5=180, size6=216, size7=252, size8=288. One reading settles it."
  ],
  "notes": "Iteration 146 done (delegated + verified). THREE closures: (a) 0x800's polarity is category ROUTING, not a contradiction -- 0x020801D4 is loop-continue, 0x0207F7C8 is the next category check; (b) record+0x34 is NOT write-once -- a four-function flag API (0x0207D064/0x0207D0BC/0x0207CF18/0x0207CF78) mirrors changes into +0x38 and the +0x08 node list, and the destructor 0x0207CCD4 memsets 0x188; (c) P144's 0x6FF puzzle SOLVED -- ov6 ORs [record+0x150]&0xFF into +0x34, and 0x6FF covers bits 0-7, so the test reads runtime bits not the 0x100 construction seed. Top task: read record+0x150, which now drives the whole category gate. STANDING: query.py mis-bins functions in this module (4 leaves here, 8 in P125, 2 in P126) -- verify any address before trusting its size or container. The +0x5C base-confusion trap has 7 instances; on +0x34 (1092 hits) the base register is the ONLY struct identifier. CHARTER: updated in P146b on the user's direct authorization. North star = docs/PROJECT-GOAL.md (master, f47d63d); Mission 2's current focus is the entity/projectile subsystems. justoolkit-06 is the designated runtime validator -- send them struct-field hypotheses and breakpoint requests rather than leaving questions unresolved; that is the only route to dynamic evidence without breaking the static-only rule.",
- "last_wake": "2026-08-19 P227",
+ "last_wake": "2026-08-19 P228",
  "wakeup_default_seconds": 900,
  "consecutive_no_progress_wakes": 0,
  "k1c_helper_passives": {
@@ -2500,5 +2499,14 @@
  },
  "P227_STUB_RESOLVED": "the return value is a CONSUMED success flag. All five working handlers return 1 (0x02077948/58/68/98, 0x020779C4); the stub returns 0. The +0x558 node walk checks it at 0x020778D0 (cmp r0,#0 / beq skip). So the stub is a deliberate \"inapplicable\" implementation in a family whose others signal success -- NEVER IMPLEMENTED, not removed. Third time today the answer was neither side opening claim. The chr_b walk IGNORES the return, so same handlers, one caller checks and one does not.",
  "P227_TWO_DISPATCHES_DIFFER": "NEW, nobody had noted it: the node path filters on handler index before calling -- 0x020778AC cmp r0,#3 / cmpne #5 / cmpne #6 / beq 0x020778E0 -- so indices 3, 5, 6 (max HP id 52, +0x4A id 54, +0x4B id 55) take a DIFFERENT path while 0,1,2,4,7 go through the normal call. The chr_b walk has no such filter. Same kind-2 id behaves differently by dispatch source: a third instance of the check-+0x40-first property after +0x41 and +0x0E.",
- "P227_OPEN_QUESTION": "the node path passes r1 = the NODE; the chr_b path passes r1 = the CHARACTER. Handlers write [r1+0x4A]. So from the node walk they write a node +0x4A. Either fine (type-0 nodes ARE characters, shared layout) or a real distinction about who receives a modifier. Read 0x020778E0 before assuming."
+ "P227_OPEN_QUESTION": "the node path passes r1 = the NODE; the chr_b path passes r1 = the CHARACTER. Handlers write [r1+0x4A]. So from the node walk they write a node +0x4A. Either fine (type-0 nodes ARE characters, shared layout) or a real distinction about who receives a modifier. Read 0x020778E0 before assuming.",
+ "P228_KOMA_SHAPE_BITMAP": {
+  "found_by": "THE RE-READ STEP, on its first use. A note already in this state file -- \"deck_add_validator: 0x02076D30 ... fails if a >= 5, fails if b >= 4 ... reads [result+0x14], extracting FOUR 5-BIT FIELDS\" -- had been sitting unconnected while I spent three wakes establishing the same geometry from the battle side.",
+  "the_rule": "arm9 0x02076D30 f(deck,id,col,row): reject col>=5; reject row>=4; require lookup(deck,id) != 0; shapeword = [0x02076D00(...)+0x14]; OR the four 5-bit row masks into a column profile, shift by col, reject if it no longer fits 5 bits (WIDTH check); shift = col + row*5; shift the whole shapeword by it; reject if any bit >= 20 (tst against 0xFFF00000 built by mov #0x100000 / rsb); reject if it overlaps [deck+0x568]; else return the shifted mask.",
+  "SO": "[shapeObject+0x14] is a 20-BIT POLYOMINO BITMAP of the 5x4 grid -- bits 0-4 row 0, 5-9 row 1, 10-14 row 2, 15-19 row 3. deck+0x568 is the 20-bit OCCUPANCY MASK of the placed page.",
+  "THIRD_CONFIRMATION": "the 5x4 geometry now holds from three independent places: the battle-side adjacency gate (x<5, y<4, stride 0x14), the owner-observed grid in Koma-System-Design-Brief.md (4 rows x 5 columns, from live play), and this deck-editor validator (col>=5 / row>=4 reject, row*5 stride). Battle code, a human at the screen, and deck-editor code.",
+  "explains": "the multi-cell footprints in the live battle grid -- the pointer repeats across every set bit of the shifted shape mask.",
+  "NOT_established": "what 0x02076D00 returns, so \"shapeObject\" is a placeholder and the object is unnamed. And deck+0x568 vs the battle object arg0+0x558 is nothing more than adjacent-looking offsets in different structures."
+ },
+ "P228_selector_test_is_blocked_structurally": "runtime answered my nine-stop question from the log they already had: ONE defender (0x0220FC3C) and ONE element (0x021BDE90) across all nine, so neither the defender nor the move varied. The nature term varied because [r8+0x175] is REWRITTEN each time the assembler re-runs -- they measured the attacker byte going 0x20 to 0x15 over 500 frames -- and the stops cluster contiguously (77-79, 102-104, 113-115), which is a value changing between respawn cycles. So dm_battle CANNOT host the selector test: the row varies on its own, so a difference in terms can never be attributed to the selector. It needs a quiescent battle, and fight_base is quiescent but has no class-2 attacker. The two requirements pull toward different savestates. A structural constraint, not a wait."
 }

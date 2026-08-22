@@ -1,5 +1,0 @@
-{
-  "name": "press_start",
-  "segments": [{"from": 0, "to": 5, "buttons": ["START"]}],
-  "tail_frames": 90
-}

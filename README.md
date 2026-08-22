@@ -16,6 +16,8 @@
 ---
 
 
+> **Research moved:** the JUS reverse-engineering research (specs, findings, emulator harness, beads tracker, `jus_files` submodule) now lives in [drj613/jus_re](https://github.com/drj613/jus_re). This repo is the C# toolkit only.
+
 ## Features
 
 - **Containers** - Unpack and pack **ALAR** files (.aar).

@@ -10,7 +10,7 @@ An earlier residency run reported ov01 at 99.8% on what it called "the deck edit
 
 The old navigation assumed the top menu's cursor starts on Jギャラクシー and that one RIGHT press reaches Jアリーナ. The top menu is actually a 4x2 icon grid whose cursor was found sitting on デッキメイク, so that route entered the deck-make section by accident and stopped at its deck list — `DeckSelect.cpp`, i.e. ov01. The screen is even titled デッキセレクト. Nobody measured wrong; the run measured a different screen than its label claimed.
 
-See `Menu-Nav-Verified-From-Pixels.md` for the corrected route. Both screens here were confirmed from the framebuffer before sampling, and the editor was identified by its contents: the deck canvas on the top screen and a koma list on the bottom with 名前 / 数 / 形 / 種 / 属 columns.
+See `../harness/Menu-Nav-Verified-From-Pixels.md` for the corrected route. Both screens here were confirmed from the framebuffer before sampling, and the editor was identified by its contents: the deck canvas on the top screen and a koma list on the bottom with 名前 / 数 / 形 / 種 / 属 columns.
 
 ## The measurements
 

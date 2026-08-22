@@ -1,6 +1,6 @@
 """Plan/watch validation and conversion to Lua literals.
 
-Spec: docs/superpowers/specs/2026-08-14-melonds-agent-control-design.md §5.
+Spec: docs/harness/2026-08-14-melonds-agent-control-design.md §5.
 Limits: <=32 watches, <=512 watched bytes/frame, chain depth <=3.
 validate_watches() is THE watch validator; every CLI path uses it.
 """

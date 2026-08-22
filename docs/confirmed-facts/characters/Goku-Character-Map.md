@@ -1,29 +1,10 @@
 # Goku / Goku SSJ - Character Map
 
-> ## ⚠️ The nature-multiplier table below is contradicted — and may still be right
->
-> This file's "Damage Values (Tested vs Nature)" section asserts **nature advantage = 1.5×
-> multiplier, verified across all moves**, with eight ticked rows (B 8 → 12, up Y 14 → 21,
-> and so on), dated 2026-01-29.
->
-> A controlled August test found the opposite: poking only the nature byte from a
-> bit-identical savestate changed nothing, 3/3 runs
-> [`jus-nature-does-not-affect-damage-0c6`], now `state:tainted`.
->
-> **Resolved 2026-08-19, and this file's caution was right:** the January 1.5× holds. The
-> damage routine's nature tables contain exactly 1.5 and produce 8 → 12.000
-> [`jus-nature-is-read-in-damage-path-hbt`]. The August test poked a byte the damage path
-> does not read.
->
-> **Do not assume the newer result wins.** The August claim only establishes that the nature
-> byte is not read *during damage computation*, and its own caveat leaves load-time
-> application untested. If a nature-derived value is baked into the base at load time, both
-> observations hold. That is the open question in
-> [`jus-nature-january-vs-august-9a6`], which also carries a question for the owner about
-> how the January numbers were obtained.
->
-> Everything else in this file — movement, passive, helper boosts, file mapping — is
-> unaffected. This is one of only two character maps with verified in-game data; the other 69
+> **Nature note (resolved 2026-08-19):** this file's January 1.5× nature rows are
+> correct — canonical treatment in [`../nature.md`](../nature.md)
+> [`jus-nature-is-read-in-damage-path-hbt`]. Still open: whether any nature-derived
+> value is also baked in at load time [`jus-nature-january-vs-august-9a6`].
+> This is one of only two character maps with verified in-game data; the other 69
 > were deleted as placeholders. See `character-index.md`.
 
 
@@ -179,7 +160,7 @@ then 5 | ✓ | | down B | 10 | 7 × 1.5 = 10.5 → 10 | ✓ | | Y | 6+6+9 | 4 ×
 
 > **DEBUNKED (historical):** This table originally carried "÷7" and "÷5 of
 > total" columns; both formulas summed d1+d2+d3 and were wrong. The confirmed
-> formula is `floor(damage1 / 5) + (tier - 2)` (Research-Status.md). Note none
+> formula is `floor(damage1 / 5) + (tier - 2)` (../research/archive/Research-Status.md). Note none
 > of Goku's tested damages (B=8, fwd B=7, up Y=14) match Block 0 entries under
 > the confirmed formula — Goku's moves resolve to jpower entries OUTSIDE
 > Block 0 via the unknown Indirect (damageFlags=0) lookup, e.g. B=8 uses
@@ -232,7 +213,7 @@ formula `floor(d1/5) + (tier-2)`, tier=2):
 
 ### Damage Formula Analysis (RESOLVED)
 
-**Confirmed formula (Research-Status.md):**
+**Confirmed formula (../research/archive/Research-Status.md):**
 
 ```
 damage = floor(jpower.damage1 / 5) + (tier - 2)

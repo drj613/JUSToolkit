@@ -315,7 +315,7 @@ Ichigo's actual name (黒崎一護) is at chr_b_t.bin index **1014**, Bankai at
 - **88 DATA entries** act as block markers
 - **classId low byte** points to DATA entry indices
 
-### Damage Formula (CONFIRMED - see Research-Status.md)
+### Damage Formula (CONFIRMED - see ../research/archive/Research-Status.md)
 
 ```
 actual_damage = floor(jpower.damage1 / 5)

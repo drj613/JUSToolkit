@@ -423,7 +423,7 @@ Open a Claude Code session in the worktree
 You are the live hex-decoding assistant for the Phase-1 GDB discovery
 session against Jump Ultimate Stars (NDS). I am running melonDS +
 arm-none-eabi-gdb myself and will paste raw GDB output at you; the
-session script is docs/research/Phase1-GDB-Guide.md (read it first,
+session script is docs/harness/Phase1-GDB-Guide.md (read it first,
 then skim docs/research/Battle-Engine-Map.md and
 docs/research/GDB-Validation-Queue.md for the claims being tested).
 

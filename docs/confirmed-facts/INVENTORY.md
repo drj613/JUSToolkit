@@ -56,16 +56,16 @@ Verified against banners and `README.md` §"Documents currently marked refuted o
 
 | Doc | Status |
 |---|---|
-| `Damage-Reduction-Is-Flat.md` | ⛔ REFUTED banner confirmed. Reduction is ×0.75 per gate (`jus-reduction-is-quarter-multiplier-xk1`); its DOWN+B 5.000 row is wrong (5.250). |
-| `Combat-Mechanics.md` | Superseded-style: bare "CONFIRMED" prose, flat-reduction language, multiplicative composition. **Nuance:** its 1.5× nature claim is RIGHT and was restored (the 2026-08-19 refutation banner was itself the error — read the corrected banner). |
-| `Combat-Mechanics-Reference.md` | Same as above. |
-| `Menu-Nav-Oracle-Attempt-1.md` | 📕 Superseded banner confirmed; replaced by `Menu-Nav-Verified-From-Pixels.md`. Kept as failed-experiment record. |
+| `../research/archive/Damage-Reduction-Is-Flat.md` | ⛔ REFUTED banner confirmed. Reduction is ×0.75 per gate (`jus-reduction-is-quarter-multiplier-xk1`); its DOWN+B 5.000 row is wrong (5.250). |
+| `../research/archive/Combat-Mechanics.md` | Superseded-style: bare "CONFIRMED" prose, flat-reduction language, multiplicative composition. **Nuance:** its 1.5× nature claim is RIGHT and was restored (the 2026-08-19 refutation banner was itself the error — read the corrected banner). |
+| `../research/archive/Combat-Mechanics-Reference.md` | Same as above. |
+| `../research/archive/Menu-Nav-Oracle-Attempt-1.md` | 📕 Superseded banner confirmed; replaced by `../harness/Menu-Nav-Verified-From-Pixels.md`. Kept as failed-experiment record. |
 | `findings/defence-candidates-ruled-out.md` | ⛔ REFUTED banner confirmed (reduction is not ability 0x09; `jus-w66`). |
-| `Research-Status.md` | 📕 Unmaintained banner confirmed. Cites four beads that no longer exist (`jus-wic`, `jus-vrz`, `jus-qsh`, `jus-q4b`); its "nature ×1.5 refuted" line is now wrong. |
+| `../research/archive/Research-Status.md` | 📕 Unmaintained banner confirmed. Cites four beads that no longer exist (`jus-wic`, `jus-vrz`, `jus-qsh`, `jus-q4b`); its "nature ×1.5 refuted" line is now wrong. |
 | **Extensions found by this sweep:** | |
-| `Move-Damage-Table-Goku.md` | Numbers superseded by heal-off re-measurement (B = 8.000 not 6.000); button labels wrong per owner (`jus-hbmn`). |
+| `../research/archive/Move-Damage-Table-Goku.md` | Numbers superseded by heal-off re-measurement (B = 8.000 not 6.000); button labels wrong per owner (`jus-hbmn`). |
 | `HP-And-Damage-Runtime-Findings.md` §2b | Self-superseded (HP formulas dead; struct now in `HP-Struct-From-Disassembly.md`). Keep §1 (1/64 encoding) and §2d warning. |
-| `Nature-Damage-Controlled-Test.md` | Measurement valid, generalisation dead — **no banner yet; needs one** (a standalone reader gets the wrong answer). |
+| `../research/archive/Nature-Damage-Controlled-Test.md` | Measurement valid, generalisation dead — superseded banner added 2026-08-21 (without it a standalone reader got the wrong answer). |
 | `Damage-Path-Codex-Findings.md` §1 | Caller-1 ×0.5 refuted (P182). §2 (ability bitset) still stands. |
 | `Passives-Reference.md` helper section | Superseded by `Helper-Passives-Catalog.md` (42 owner categories vs ~20 GameFAQs). Battle section still canon. |
 | `findings/contact-array-is-not-a-damage-ledger.md` | Headline superseded by P208/P209 — its dismissed "sole producer" IS the damage formula. |
@@ -85,7 +85,7 @@ Verified against banners and `README.md` §"Documents currently marked refuted o
 
 | Fact | Source | Bead |
 |---|---|---|
-| Formula routine `arm9 0x020823E4`; out-param call from `0x02081280`/`0x02080F14`; sig `f(elemList, elem, ColPrmMan+0x14D bit0, &out)` | `findings/p208-damage-formula-0x020823E4.md` | `jus-formula-bp-not-a-hit-oracle-ve6` (breakpoint ≠ hit oracle) |
+| Formula routine `arm9 0x020823E4`; out-param call from `0x02081280`/`0x02080F14`; sig `f(elemList, elem, ColPrmMan+0x14D bit0, &out)` | `findings/p208-damage-formula-0x020823E4.md` | `jus-formula-bp-not-a-hit-oracle-ve6` (retracted bead, cited for its lesson: breakpoint ≠ hit oracle) |
 | Pipeline: `base = ldrsb [[elem+0x10]+4]`, ×2 8.8 factors (`scratch+0x184/0x186`), additive nature term, ±25%-of-base per gate, `>>2` to raw/64 | `findings/p211-damage-formula-end-to-end.md` §"The formula, end to end" | `jus-reduction-is-quarter-multiplier-xk1` |
 | Six gates on word `[r8+0x44]` (bits 4/5/6 subtract, 12/13/14 add), class index `ldrsb [elem+0x0E]`, class table `0x02092E68` (16 bytes) | `findings/p213-flag-word-is-plus-0x44-ability-10-sets-bit-5.md` | `jus-gate-word-is-r8-0x44-fnz`, `jus-elem-0x0e-is-packed-8wz` |
 | Gate-word writer `0x02083BE0`; mask tables `0x02092E78`/`0x02092E90`; driven by ability bitset at `battleObj+0x128` | same + `findings/p177-ability-bitset-loader.md` | `jus-bit5-is-ability-10-rxl` |

@@ -207,7 +207,7 @@ What IS confirmed
 
 | hypothesis | verdict | where |
 |---|---|---|
-| per-character shot-record index (`\|v\|`, `\|v\|-1`) | REFUTED — 2.4% in-bounds | [shot-data-and-projectileid-refuted](../research/findings/shot-data-and-projectileid-refuted.md) |
+| per-character shot-record index (`\|v\|`, `\|v\|-1`) | REFUTED — 2.4% in-bounds | [shot-data-and-projectileid-refuted](../research/archive/findings/shot-data-and-projectileid-refuted.md) |
 | biased index `-v-18` into the character's shot file | REFUTED — 28% in-bounds; only 17/184 characters even have 17+ records | [projectileid-is-a-selector-not-an-index §2](../research/findings/projectileid-is-a-selector-not-an-index.md) |
 | a global 17-entry table in `ChrBin.aar` | REFUTED — 0 files with 17 records, 4 dirs × 6 strides | same, §1 |
 | `chr/col/item.bin` as that table | REFUTED — 43 records; it *consumes* the negative band itself | same, §1 |

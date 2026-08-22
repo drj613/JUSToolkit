@@ -155,7 +155,7 @@ Sources: `ARM9-Research-Guide.md` §"Walk Speed (PARTIALLY SOLVED)",
 
 ## 5. Per-move damage table — Goku only
 
-Source: `Move-Damage-Table-Goku.md`. **Limitation: single-character coverage** —
+Source: `../research/archive/Move-Damage-Table-Goku.md`. **Limitation: single-character coverage** —
 this table exists for Goku (`chr_b[0]`) vs コマレッド (`chr_b[70]`, no
 abilities) only; no other character has a measured move table.
 
@@ -207,7 +207,7 @@ animation data or the jpower extra section `0x80–0x12F`
 | `0x020924B0` is a collision-file pointer table (and its 6-bit id = chr_b `classId`) | REFUTED — it is a `{char-ID string, packed word}` table; consumer is sprite-archive/credits; classId range 256–684 can't fit 6 bits | `Battle-Engine-Map.md` §hitbox-priority refuted list; corrections in `ARM9-Research-Guide.md` |
 | The NoteTrack `+0x84` reads are `character+0x84` (prmData) | REFUTED — different object, `NoteTrack+0x84` | `findings/commands-are-predicates.md` §3 |
 | Walk speed is not in chr_b.bin | RETRACTED — it is (statC); Edajima's passive was the confounder | `chr_b-Complete-Mapping.md` |
-| Damage authored in quarter-HP units ×16 | RETRACTED — direct-hit quantum is 64 (whole displayed HP) | `Move-Damage-Table-Goku.md` |
+| Damage authored in quarter-HP units ×16 | RETRACTED — direct-hit quantum is 64 (whole displayed HP) | `../research/archive/Move-Damage-Table-Goku.md` |
 | "A is jump, B is attack" control mapping as tabulated | Contradicted by owner — B light, Y heavy, X specials | bead `jus-hbmn` |
 | Three failed hitbox-priority search rounds prove the code is absent | REFUTED — they searched an ARM-decoded Thumb listing; absence there is not evidence | `Battle-Engine-Map.md` §hitbox-priority round-2 banner |
 

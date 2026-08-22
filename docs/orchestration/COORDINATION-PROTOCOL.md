@@ -274,8 +274,8 @@ between two loops that both demonstrably lapse.
   upstream flags the downstream.
 
 Representative commands (confirm exact flags with `br --help`; this repo is on `br`
-0.2.19 — see the `br JSONL format` note in project memory for the lowercase-id / metadata
-quirk):
+0.2.19 — quirk: `br` rejects legacy uppercase ids only on the IMPORT path; fix by routing
+through the db-backed `.beads`, never by lowercasing ids):
 
 ```
 br create --type task --title "anchor: [root+0x4C] multiplier V" \
@@ -289,3 +289,48 @@ br sync --flush-only             # at every FLUSH step
 
 The ledger session consumes this; it does not write findings into it. See
 `Charter-Ledger.md`.
+
+## Distilled lessons (folded from project memory, 2026-08-21)
+
+The full memory notes are archived at `docs/orchestration/archive/memory/` — worked
+examples live there. The rules still in force, one line each:
+
+**Experiment design**
+- A prediction only tests something if the predicted value is reachable by exactly one
+  mechanism — enumerate the alternatives before the run.
+- Every arm of a test must be able to fail; an arm that cannot lose on THIS claim carries
+  zero information, however falsifiable it is in general.
+- A negative control ("effect goes to zero") passes trivially if the stimulus never
+  landed — establish the stimulus lands before suppressing it.
+- Never constrain a search with the assumption under test; the output still looks
+  methodical while the answer is excluded.
+- Robustness is scoped to the target you chose: "cannot return a null" says nothing about
+  whether the field is the one the mechanism writes.
+- When two readings both survive, test the instruction that DEFINES the thing, not a
+  consequence — a consequence tolerates a wrong premise.
+- Evidence that a region is unreliable is a reason to look harder there, not to skip it.
+
+**Recording and retracting**
+- Assert only the scope you inspected; the project's dominant failure is a right finding
+  under a word stronger than the evidence.
+- When the claim is a count, query your own output — don't glance at it.
+- The recurring error is confident and off by one representation (offset, byte, units);
+  cross-check through a second representation before publishing.
+- A retraction is itself a claim: check a narrowing against the artifact (code, commit,
+  raw log), not against anyone's summary of it — including your own.
+- Fix a stale claim in place; a correction appended BELOW it makes the doc look
+  maintained while the stale text still reads as canon.
+- Scope taint rules precisely — applied one step too far they silently retire real
+  findings.
+- Record checks must span git branches when work is spread across them; a single-worktree
+  grep checks a fraction of the record.
+- Filing a lead is not handling it — re-read your own last two beads at wake time.
+
+**Process**
+- Addressing detail (addresses, registers, deref chains) goes in beads, never in a
+  self-authored wake prompt; when both disagree, fix the wrong one, don't rank them.
+- Owner questions: DJ is a ground-truth oracle and wants to be asked — park confirm/deny
+  questions on bead `jus-law` (label `owner-question`); the ledger surfaces them.
+- Research docs are rewritten in the house voice (`claude -p` pass) before committing —
+  substance must survive the pass; a voice edit has twice compressed a load-bearing
+  sentence, so re-read the result.

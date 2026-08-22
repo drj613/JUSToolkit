@@ -32,6 +32,6 @@ exactly the failure mode this project has been bitten by before.
 Deleted files are recoverable from git history:
 
 ```bash
-git log --diff-filter=D --name-only -- 'docs/characters/*-Character-Map.md' | head
-git show <commit>^:docs/characters/Zoro-Character-Map.md
+git log --diff-filter=D --name-only -- 'docs/confirmed-facts/characters/*-Character-Map.md' | head
+git show <commit>^:docs/confirmed-facts/characters/Zoro-Character-Map.md
 ```

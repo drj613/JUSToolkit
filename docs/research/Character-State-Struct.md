@@ -351,7 +351,7 @@ ground_state = read_byte(ptr + 0x0078)  # Read ground/air state
 
 - `Cheat-Code-Analysis.md` - Source of known offsets
 - `scripts/gdb/jus_gdb_watcher.py` - GDB tools for struct research
-- `Combat-Mechanics-Reference.md` - Game mechanics context
+- `archive/Combat-Mechanics-Reference.md` - Game mechanics context
 
 ---
 

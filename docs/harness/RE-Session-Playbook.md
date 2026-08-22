@@ -118,9 +118,10 @@ Convert player-facing descriptions into testable technical hypotheses.
 
 **Key addresses for JUS:**
 
-- `0x020784FC` - Health calculation function
-- `0x021548E2` - Health calculation instruction
-- `0x020543C0` - Code enable flag
+- Useful breakpoint/watch addresses live with their claims in
+  `docs/confirmed-facts/` — cite from there rather than trusting this list.
+  (Historical entries removed: function identities are game truths, not
+  harness facts.)
 
 ---
 
@@ -209,9 +210,8 @@ disadvantage | | Status | Normal, buffed, debuffed |
 **Known:**
 
 - JSoul = health terminology
-- Formula: `floor(jpower.damage1 / 5) + (tier - 2)` (CONFIRMED)
-- Nature advantage: 1.5x multiplier
-- jpower.bin contains raw damage values
+- Game truths (formulas, nature behavior, jpower encoding) are NOT stated here —
+  see `docs/confirmed-facts/damage.md` and `docs/confirmed-facts/nature.md`.
 
 **Unknown:**
 

@@ -38,7 +38,7 @@ Integrity), and Section 8 (Failure playbook) of
 2. projectile-entities has a `.scored.json` (3-lens verify complete) (P3).
 3. B12 + B14 traced, 3-lens verified, scored (P4+P5).
 4. Tooling upgrades landed with `gates.py` still exit 0 (P6).
-5. `Battle-Engine-Map.md`, `GDB-Validation-Queue.md`, `Research-Status.md`
+5. `Battle-Engine-Map.md`, `GDB-Validation-Queue.md`, `../research/archive/Research-Status.md`
    updated from the new verified results; tree clean; report written (P7).
 
 BLOCKED / safety stops: as per orchestration doc Section 1.

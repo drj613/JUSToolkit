@@ -2,7 +2,7 @@
 
 Status: DONE (2026-07-02). Phase 0 completed
 (`scripts/analysis/loop-report-phase0.md`) and the guide was generated:
-**`docs/research/Phase1-GDB-Guide.md`** (+ `scripts/gdb/phase1_macros.gdb`).
+**`docs/harness/Phase1-GDB-Guide.md`** (+ `scripts/gdb/phase1_macros.gdb`).
 The guide supersedes the block addresses below where Phase-0 revised them
 (notably: the `+0x558`/`+0x56c` dispute is the new top target, and all
 "watchpoint" blocks were redesigned around melonDS's missing hardware
@@ -29,7 +29,7 @@ Existing infra to build on (do NOT rebuild): `scripts/gdb/README.md`
 When `scripts/analysis/loop-report-phase0.md` exists: tell Claude
 "Phase 0 done — generate the Phase-1 guide per docs/design/Phase1-Plan.md".
 
-## Deliverable to generate then: `docs/research/Phase1-GDB-Guide.md`
+## Deliverable to generate then: `docs/harness/Phase1-GDB-Guide.md`
 
 Start-to-finish guide with these sections:
 

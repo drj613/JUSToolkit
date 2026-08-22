@@ -3,8 +3,7 @@
 Asset for the settle-or-waive decision on the damage gate bits
 (bead `jus-wayfinder-map-digi.12`). Static mining only; no emulator.
 
-Sources: [damage.md §4–5](../confirmed-facts/damage.md),
-[p213](findings/p213-flag-word-is-plus-0x44-ability-10-sets-bit-5.md),
+Sources: [p213](findings/p213-flag-word-is-plus-0x44-ability-10-sets-bit-5.md),
 [p227](findings/p227-kind2-abilities-are-stat-modifiers.md),
 [abilities-all-57-named.md](findings/abilities-all-57-named.md),
 [ability-descriptions-57.txt](findings/ability-descriptions-57.txt),

@@ -4,7 +4,7 @@
 
 **Rev 2** — incorporates Codex review round 2 (input-override isolation, async savestate lifecycle, IPC hardening, bridge-core unit tests, canonical JSON).
 
-**Goal:** Let a Claude session drive melonDS unattended (inputs, savestates, memory watches, screenshots) via a Lua bridge + Python CLI, per `docs/superpowers/specs/2026-08-14-melonds-agent-control-design.md`.
+**Goal:** Let a Claude session drive melonDS unattended (inputs, savestates, memory watches, screenshots) via a Lua bridge + Python CLI, per `docs/harness/2026-08-14-melonds-agent-control-design.md`.
 
 **Architecture:** A patched build of NPO-197's melonDS-lua fork runs `agent_bridge.lua` (thin emulator bindings) around `bridge_core.lua` (pure logic, unit-tested with the `lua5.4` CLI). A Python CLI (`jusemu.py`) talks to the bridge through rename-published files in `/tmp/jus_emu/`. The existing GDB stub stays as a second, sequential control plane.
 
@@ -334,7 +334,7 @@ Expected: ERROR, `No module named 'jus_plan'`
 # scripts/emu/jus_plan.py
 """Plan/watch validation and conversion to Lua literals.
 
-Spec: docs/superpowers/specs/2026-08-14-melonds-agent-control-design.md §5.
+Spec: docs/harness/2026-08-14-melonds-agent-control-design.md §5.
 Limits: <=32 watches, <=512 watched bytes/frame, chain depth <=3.
 validate_watches() is THE watch validator; every CLI path uses it.
 """

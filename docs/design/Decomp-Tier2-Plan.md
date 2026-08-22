@@ -1,7 +1,7 @@
 # JUS Tier-2 Decompilation Plan (Non-Matching)
 
 > **For agentic workers:** This is a long-horizon roadmap, not a one-shot implementation plan.
-> Execute one task per session using the existing loop workflow (`RE-Session-Playbook.md` session
+> Execute one task per session using the existing loop workflow (`../harness/RE-Session-Playbook.md` session
 > checklist + `bd ready`). Steps use checkbox (`- [ ]`) syntax for tracking. Update checkboxes
 > in this file as tasks complete.
 
@@ -501,7 +501,7 @@ input-sweeping is impractical — use the existing dynamic workflow instead.
   `decomp:` field pointing at the C function under test.
 - [ ] **Step 2:** Per function: derive one falsifiable prediction FROM THE C ("break at
   0x02158ED0, read r0/r1, computed duration must equal C-function output for the same
-  inputs"), run it in the standard melonDS session (Phase1-GDB-Guide.md), record evidence.
+  inputs"), run it in the standard melonDS session (../harness/Phase1-GDB-Guide.md), record evidence.
 - [ ] **Step 3:** Match ⇒ VALIDATED with a pointer to the session log in
   `jus_files/analysis/gdb/`. Mismatch ⇒ the C is wrong (or the RE claim was) — file a `bd`
   issue, downgrade to DRAFTED, fix.
@@ -590,4 +590,4 @@ early is D1.1 (record compiler/SDK evidence while you're looking anyway).
 - [NTRGhidra loader](https://github.com/pedro-javierf/NTRGhidra)
 - [Starcube Labs: Reverse Engineering a DS Game](https://www.starcubelabs.com/reverse-engineering-ds/)
 - In-repo: `docs/research/Battle-Engine-Map.md`, `Character-State-Struct.md`,
-  `RE-Session-Playbook.md`, `Phase1-GDB-Guide.md`, `docs/design/ARM9-Analysis-Pipeline.md`
+  `../harness/RE-Session-Playbook.md`, `../harness/Phase1-GDB-Guide.md`, `docs/design/ARM9-Analysis-Pipeline.md`

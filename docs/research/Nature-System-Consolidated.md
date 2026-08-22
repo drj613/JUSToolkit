@@ -154,7 +154,7 @@ when a number deserves more scrutiny, not less.
 
 ## Sources
 
-- Runtime: `Nature-Damage-Controlled-Test.md`, `HP-And-Damage-Runtime-Findings.md`
+- Runtime: `archive/Nature-Damage-Controlled-Test.md`, `HP-And-Damage-Runtime-Findings.md`
   (this session; harness in `scripts/emu/`).
 - Static: atlas session, `docs/research/findings/nature-SOLVED.md` and
   `nature-hunt-exclusions.md` on branch `loop/battle-engine-atlas`; the

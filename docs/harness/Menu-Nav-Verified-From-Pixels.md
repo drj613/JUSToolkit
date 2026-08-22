@@ -2,7 +2,7 @@
 
 **Result:** `boot_verified.py` walks ROM boot to a training battle, confirming every screen before moving on, and lands in a verified battle **3 of 3 cold boots** with items and gimmicks switched off. It replaces `boot_to_battle.py`, which fired buttons on fixed timers, desynced 4+ times in a single session, and whose only check gave false positives. Measured 2026-08-18.
 
-Attempt 1 tried to build the oracle from main RAM and failed (`Menu-Nav-Oracle-Attempt-1.md`). This one reads the screen.
+Attempt 1 tried to build the oracle from main RAM and failed (`../research/archive/Menu-Nav-Oracle-Attempt-1.md`). This one reads the screen.
 
 ## Where the pixels come from
 

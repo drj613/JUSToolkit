@@ -222,7 +222,7 @@ support (panelType 1) -> nature = chr_s[abilityId*20 + (kshapeGroup-1)*8]
 High nibble `3` means "no override — inherit the character's base nature",
 which lives at `chr_b` record offset `+0x00` (3-valued across all 74 records:
 {0: 35, 1: 22, 2: 17};
-[nature-base-plus-override.md](../research/findings/nature-base-plus-override.md)).
+[../research/archive/findings/nature-base-plus-override.md](../research/archive/findings/nature-base-plus-override.md)).
 Support panels index `chr_s` by the panel's kshape group, so one support
 character can present different natures at different panel shapes.
 
@@ -288,5 +288,5 @@ scratches), `jus-nature-does-not-affect-damage-0c6` (tainted — superseded).
 
 Docs: [Nature-System-Consolidated.md](../research/Nature-System-Consolidated.md),
 [findings/nature-SOLVED.md](../research/findings/nature-SOLVED.md),
-[findings/nature-base-plus-override.md](../research/findings/nature-base-plus-override.md),
+[findings/nature-base-plus-override.md](../research/archive/findings/nature-base-plus-override.md),
 [findings/p216-nature-is-read-in-the-damage-path.md](../research/findings/p216-nature-is-read-in-the-damage-path.md).

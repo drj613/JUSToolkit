@@ -41,9 +41,9 @@ titled "Loop-Atlas iteration N". An entry was true when written and was never re
 afterwards. **Do not cite a `findings/` file as the current answer.** See
 `findings/README.md`.
 
-`docs/characters/` now holds two verified maps (Goku, Ichigo) plus
+`docs/confirmed-facts/characters/` now holds two verified maps (Goku, Ichigo) plus
 `character-index.md`, the identity fields for all 71 characters. The other 69 map files
-were placeholders and were deleted. See `docs/characters/README.md`.
+were placeholders and were deleted. See `docs/confirmed-facts/characters/README.md`.
 
 ## Current state (2026-08-19)
 
@@ -83,7 +83,7 @@ category index and the pre-adjustment base together. It replaces the older plan 
 of 8 into 12.000, which is the owner's own live-play number. The August claim that nature is
 not consulted is `state:tainted` [`jus-nature-does-not-affect-damage-0c6`]; what it actually
 established is that poking the byte *it* poked, mid-battle, changed nothing. The refutation
-banners that were briefly added to `Combat-Mechanics.md` and `Combat-Mechanics-Reference.md`
+banners that were briefly added to `archive/Combat-Mechanics.md` and `archive/Combat-Mechanics-Reference.md`
 were themselves wrong and have been corrected.
 
 Nature and the resistance gates land in the **same accumulator** and are **additive**.
@@ -93,11 +93,11 @@ Advantage plus one resist gate is 1.25× the base, not 1.5 × 0.75.
 
 | document | why |
 |---|---|
-| `Damage-Reduction-Is-Flat.md` | central claim refuted; its DOWN+B row of 5.000 is wrong |
-| `Combat-Mechanics.md` | asserts the 1.5× nature multiplier as CONFIRMED |
-| `Combat-Mechanics-Reference.md` | same |
-| `Menu-Nav-Oracle-Attempt-1.md` | superseded by `Menu-Nav-Verified-From-Pixels.md` |
-| `findings/defence-candidates-ruled-out.md` | attributes the reduction to ability `0x09` |
+| `archive/Damage-Reduction-Is-Flat.md` | central claim refuted; its DOWN+B row of 5.000 is wrong |
+| `archive/Combat-Mechanics.md` | asserts the 1.5× nature multiplier as CONFIRMED |
+| `archive/Combat-Mechanics-Reference.md` | same |
+| `archive/Menu-Nav-Oracle-Attempt-1.md` | superseded by `../harness/Menu-Nav-Verified-From-Pixels.md` |
+| `archive/findings/defence-candidates-ruled-out.md` | attributes the reduction to ability `0x09` |
 
 Kept, not deleted — a failed experiment records why an approach doesn't work, which is
 worth having. They carry banners so a reader can't land on them unaware.
@@ -121,13 +121,13 @@ committing docs.
    contamination-capable state through an independent representation — a RAM flag, not a
    screenshot compared against its own past.
 2. **Clean evidence skipping the check.** Tidy listings and neat correlations suppress
-   verification. A long document is not a verified one; see `docs/characters/README.md`.
+   verification. A long document is not a verified one; see `docs/confirmed-facts/characters/README.md`.
 
 ## Orientation, by topic
 
 | document | use it for |
 |---|---|
-| `RE-Session-Playbook.md` | how to approach a research session |
+| `../harness/RE-Session-Playbook.md` | how to approach a research session |
 | `HP-And-Damage-Runtime-Findings.md` | HP encoding, measured damage, harness traps |
 | `Nature-System-Consolidated.md` | the nature system (current) |
 | `Character-State-Struct.md` | in-battle character RAM layout |
@@ -136,4 +136,9 @@ committing docs.
 | `Overlay-Residency-By-Mode.md` | which overlays are resident when |
 | `scripts/emu/README.md` | the melonDS agent harness (not in this directory) |
 
-`Research-Status.md` is historical progress tracking and is not maintained. Use beads.
+Harness how-to docs moved to `../harness/` in the 2026-08-21 restructure (see
+`../README.md` for the split and the trust rule). `Deck-Editor-Automated.md` stays here
+deliberately: it mixes deck-editor game findings (geometry, legality) with harness usage
+and is cited by `confirmed-facts/`, so it was not split.
+
+`archive/Research-Status.md` is historical progress tracking and is not maintained. Use beads.

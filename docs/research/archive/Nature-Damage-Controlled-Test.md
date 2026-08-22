@@ -1,5 +1,14 @@
 # Does panel nature scale damage? A controlled test
 
+> **📕 SUPERSEDED (2026-08-21).** The measurement below is valid, but its
+> generalisation is dead: nature DOES affect battle damage. The damage path
+> reads 4×4 nature tables at `0x0209FEF4`/`0x0209FF14` (1.0/1.5 in 8.8), and
+> the 1.5 factor was observed live (`jus-nature-is-read-in-damage-path-hbt`).
+> The scope claim this test fed, `jus-nature-does-not-affect-damage-0c6`, is
+> tainted — this setup simply never exercised an advantaged matchup. Current
+> canon: `docs/confirmed-facts/nature.md` and `Nature-System-Consolidated.md`.
+> Do not cite this document for the "no effect" conclusion.
+
 **Result: no measurable effect**, and the ×1.5 figure I briefly inferred was
 wrong. Measured 2026-08-14 with the melonDS agent bridge.
 

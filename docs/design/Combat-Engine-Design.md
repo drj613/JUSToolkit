@@ -231,7 +231,7 @@ final_damage = floor((base_damage + tier_modifier) * nature_multiplier)
 Where:
 
 - `damage1` = First damage component from jpower entry (NOT total!)
-- `divisor` = 5 (confirmed across 12 characters - see docs/research/Research-Status.md)
+- `divisor` = 5 (confirmed across 12 characters - see docs/research/archive/Research-Status.md)
 - `tier_modifier` = character_tier - 2 (-1, 0, or +1)
 - `nature_multiplier` = 1.0 (neutral) or 1.5 (advantage)
 

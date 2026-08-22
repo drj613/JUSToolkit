@@ -86,7 +86,7 @@ Run `bd ready` to see available work.
 | Document | Purpose | Read When |
 |----------|---------|-----------|
 | This README | Entrypoint | Start of every session |
-| RE-Session-Playbook.md | Strategies | Planning approach |
+| ../harness/RE-Session-Playbook.md | Strategies | Planning approach |
 | [Topic]-Research.md | Deep dives | Working on specific area |
 
 ## Key Formulas (CONFIRMED)

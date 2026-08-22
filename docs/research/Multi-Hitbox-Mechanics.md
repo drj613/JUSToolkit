@@ -168,10 +168,10 @@ struct CollisionEntry {  // 20 bytes
 ### Caramelman (ds_b_03) - Verified 2026-02-02
 
 Detailed collision export notes, `damageFlags` mapping attempts, and per-move
-analysis used to live in docs/characters/Caramelman-Character-Map.md, which was
+analysis used to live in docs/confirmed-facts/characters/Caramelman-Character-Map.md, which was
 **deleted on 2026-08-19** along with 68 other placeholder character maps — its
 `damageFlags` mapping was a WIP guess, not data. Identity and file-linkage fields
-for every character survive in `docs/characters/character-index.md`; recover the
+for every character survive in `docs/confirmed-facts/characters/character-index.md`; recover the
 old notes from git history if the WIP reasoning is wanted.
 
 ### Majin Buu (db_b_12) - Verified 2026-02-02
@@ -246,4 +246,4 @@ their exact values for:
 - [Combat-Formats.md](../formats/Combat-Formats.md) - Binary format specs
 - [jpower-Block-Pattern-Analysis.md](./jpower-Block-Pattern-Analysis.md) -
   jpower entry analysis
-- [Research-Status.md](./Research-Status.md) - Overall research status
+- [archive/Research-Status.md](./Research-Status.md) - Overall research status

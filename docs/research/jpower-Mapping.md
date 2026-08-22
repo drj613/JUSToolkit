@@ -109,7 +109,7 @@ Each jpower entry (304 bytes) contains:
 
 > **Note (formula correction):** The "In-Game" and "Likely Move" columns above
 > were attributed using the DEBUNKED total-based (÷7) formula. The confirmed
-> formula is `floor(damage1 / 5) + (tier - 2)` (see Research-Status.md), so
+> formula is `floor(damage1 / 5) + (tier - 2)` (see archive/Research-Status.md), so
 > the move attributions need re-verification.
 
 **Not in Block 0:**

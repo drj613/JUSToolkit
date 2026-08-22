@@ -48,8 +48,8 @@ with an in-game-verified section:
 They are in git history, not gone:
 
 ```bash
-git log --diff-filter=D --name-only -- 'docs/characters/*-Character-Map.md' | head
-git show <commit>^:docs/characters/Zoro-Character-Map.md
+git log --diff-filter=D --name-only -- 'docs/confirmed-facts/characters/*-Character-Map.md' | head
+git show <commit>^:docs/confirmed-facts/characters/Zoro-Character-Map.md
 ```
 
 ## The index

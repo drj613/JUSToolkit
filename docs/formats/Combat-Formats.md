@@ -56,7 +56,7 @@ Combat data is split across multiple files:
 - Combat stat modifiers: 0=none, 256/257=type1, 512/514=type2
 - `textIds` reference strings in chr_b_t.bin (Shift-JIS encoded)
 - **battleParams does NOT contain:** weight (location unknown) or walk speed
-  (walk speed is in `statC`, threshold-based - see docs/research/Research-Status.md)
+  (walk speed is in `statC`, threshold-based - see docs/research/archive/Research-Status.md)
 
 ---
 
@@ -173,7 +173,7 @@ Referenced by negative `projectileId` values in collision data.
 **REFUTED as stated (2026-08-14)** — negative `ProjectileId` (collision offset `0x03`, `sbyte`) does
 *not* index the owning character's shot records: 2.4% in-bounds, and the set relation fails in both
 directions. The negatives occupy a contiguous −18..−34 band. The 32-byte stride below is confirmed.
-See `../research/findings/shot-data-and-projectileid-refuted.md`.
+See `../research/archive/findings/shot-data-and-projectileid-refuted.md`.
 The follow-up "global 17-entry table" reading is **also REFUTED** — no file in any `chr/`
 subdirectory has 17 records at any of six strides. The field is a per-character **selector** (92 of
 120 users have exactly one distinct value) sitting on `CollisionType` 4/5 records (92% of negatives);

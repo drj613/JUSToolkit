@@ -4,7 +4,7 @@
 WHY PIXELS AND NOT RAM. The first attempt fingerprinted main RAM and failed for a
 measurable reason: two boots sitting on the same screen differ by up to 1.7M bytes,
 and ~974k bytes differ at the title screen before any input
-(docs/research/Menu-Nav-Oracle-Attempt-1.md). Rendered screens, by contrast, look
+(docs/research/archive/Menu-Nav-Oracle-Attempt-1.md). Rendered screens, by contrast, look
 the same every boot.
 
 Pixels also catch a failure RAM cannot. boot_to_battle.py's in_battle() reports a

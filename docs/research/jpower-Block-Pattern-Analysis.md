@@ -104,7 +104,7 @@ Comprehensive analysis of jpower block patterns, damage values, hitstun patterns
 
 ## 2. Damage Value Patterns
 
-### Damage Formula (SOLVED - see Research-Status.md)
+### Damage Formula (SOLVED - see archive/Research-Status.md)
 
 **Confirmed formula (all tested characters):**
 ```

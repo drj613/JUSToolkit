@@ -117,7 +117,7 @@ Reached from the battle object as `char = [battleObj+0x56C]`
   the address. `0x021DF7EE` is max HP — reading it looks like a working
   measurement at full health and cost four sessions
   (bead `jus-reading-max-hp-not-current-2jo`,
-  [docs/memory/jus-hp-address-current-vs-max.md](../../docs/memory/jus-hp-address-current-vs-max.md)).
+  [docs/orchestration/archive/memory/jus-hp-address-current-vs-max.md](../../docs/orchestration/archive/memory/jus-hp-address-current-vs-max.md)).
 
 ## 4. The algorithm, step by step (`0x020823E4`)
 
@@ -393,7 +393,7 @@ consumer path; consumers of gate bits 7–9/15–17; what writes `elem+0x0E`.
   tainted): the byte-poke null had scope problems; nature **is** read, as a
   2-bit field on the scratch copy
   ([Nature-System-Consolidated.md banner](../research/Nature-System-Consolidated.md)).
-- "Flat −2.0 reduction" ([Damage-Reduction-Is-Flat.md](../research/Damage-Reduction-Is-Flat.md)):
+- "Flat −2.0 reduction" ([../research/archive/Damage-Reduction-Is-Flat.md](../research/archive/Damage-Reduction-Is-Flat.md)):
   superseded by the proportional −25% gates
   (bead `jus-reduction-is-quarter-multiplier-xk1`).
 - "Gate word at `[r8+0x40]`": corrected to `+0x44`

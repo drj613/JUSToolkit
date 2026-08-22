@@ -369,7 +369,7 @@ scripts/emu/
   jusemu.py
   jus_addresses.py
   plans/                 # example + reusable plans
-docs/superpowers/specs/2026-08-14-melonds-agent-control-design.md  # this doc
+docs/harness/2026-08-14-melonds-agent-control-design.md  # this doc
 ```
 
 ## 10. Milestones

@@ -65,4 +65,4 @@ The strongest check is already cross-representational: a byte window predicting 
 
 ## Provenance
 
-Static only. `jus_files/ripped_jus_files/bin/chr_b.bin` (4440 bytes = 74 × `0x3C`) and `ability.bin` (228 bytes = 57 × 4); `docs/characters/character-index.md` for Luffy's record number; the shutdown handoff for the Debug series and for Luffy's known ids.
+Static only. `jus_files/ripped_jus_files/bin/chr_b.bin` (4440 bytes = 74 × `0x3C`) and `ability.bin` (228 bytes = 57 × 4); `docs/confirmed-facts/characters/character-index.md` for Luffy's record number; the shutdown handoff for the Debug series and for Luffy's known ids.

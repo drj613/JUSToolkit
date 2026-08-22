@@ -2,7 +2,7 @@
   {
     "character": "Allen",
     "map_status": "PARTIAL",
-    "source": "docs/characters/Allen-Character-Map.md",
+    "source": "docs/confirmed-facts/characters/Allen-Character-Map.md",
     "Character Name": "Allen Walker",
     "Series": "D.Gray-man",
     "chr_b Index": "45",
@@ -15,7 +15,7 @@
   {
     "character": "Anna",
     "map_status": "PARTIAL",
-    "source": "docs/characters/Anna-Character-Map.md",
+    "source": "docs/confirmed-facts/characters/Anna-Character-Map.md",
     "Character Name": "Anna Kyoyama",
     "Series": "Shaman King",
     "chr_b Index": "27",
@@ -28,7 +28,7 @@
   {
     "character": "Arale",
     "map_status": "PARTIAL",
-    "source": "docs/characters/Arale-Character-Map.md",
+    "source": "docs/confirmed-facts/characters/Arale-Character-Map.md",
     "Character Name": "Arale Norimaki",
     "Series": "Dr. Slump",
     "chr_b Index": "56",
@@ -41,7 +41,7 @@
   {
     "character": "Bobobo",
     "map_status": "PARTIAL",
-    "source": "docs/characters/Bobobo-Character-Map.md",
+    "source": "docs/confirmed-facts/characters/Bobobo-Character-Map.md",
     "Character Name": "Bo-bobo",
     "Series": "Bobobo-bo Bo-bobo",
     "chr_b Index": "47",
@@ -54,7 +54,7 @@
   {
     "character": "Caramelman",
     "map_status": "PARTIAL",
-    "source": "docs/characters/Caramelman-Character-Map.md",
+    "source": "docs/confirmed-facts/characters/Caramelman-Character-Map.md",
     "Character Name": "Caramelman",
     "Series": "Dr. Slump",
     "chr_b Index": "58",
@@ -67,7 +67,7 @@
   {
     "character": "Dio",
     "map_status": "PARTIAL",
-    "source": "docs/characters/Dio-Character-Map.md",
+    "source": "docs/confirmed-facts/characters/Dio-Character-Map.md",
     "Character Name": "Dio Brando",
     "Series": "JoJo's Bizarre Adventure",
     "chr_b Index": "29",
@@ -80,7 +80,7 @@
   {
     "character": "DonPatch",
     "map_status": "PARTIAL",
-    "source": "docs/characters/DonPatch-Character-Map.md",
+    "source": "docs/confirmed-facts/characters/DonPatch-Character-Map.md",
     "Series": "Bobobo-bo Bo-bobo",
     "chr_b Index": "49",
     "Collision File": "bb_b_03.bin",
@@ -92,13 +92,13 @@
   {
     "character": "Edajima",
     "map_status": "STUB",
-    "source": "docs/characters/Edajima-Character-Map.md",
+    "source": "docs/confirmed-facts/characters/Edajima-Character-Map.md",
     "chr_b Index": "File"
   },
   {
     "character": "Eve",
     "map_status": "PARTIAL",
-    "source": "docs/characters/Eve-Character-Map.md",
+    "source": "docs/confirmed-facts/characters/Eve-Character-Map.md",
     "Character Name": "Eve",
     "Series": "Black Cat",
     "chr_b Index": "38",
@@ -111,7 +111,7 @@
   {
     "character": "Franky",
     "map_status": "PARTIAL",
-    "source": "docs/characters/Franky-Character-Map.md",
+    "source": "docs/confirmed-facts/characters/Franky-Character-Map.md",
     "Character Name": "Franky",
     "Series": "One Piece",
     "chr_b Index": "19",
@@ -124,7 +124,7 @@
   {
     "character": "Frieza",
     "map_status": "PARTIAL",
-    "source": "docs/characters/Frieza-Character-Map.md",
+    "source": "docs/confirmed-facts/characters/Frieza-Character-Map.md",
     "Character Name": "Frieza",
     "Series": "Dragon Ball",
     "chr_b Index": "10",
@@ -137,13 +137,13 @@
   {
     "character": "Fuusuke",
     "map_status": "STUB",
-    "source": "docs/characters/Fuusuke-Character-Map.md",
+    "source": "docs/confirmed-facts/characters/Fuusuke-Character-Map.md",
     "chr_b Index": "File"
   },
   {
     "character": "Gear2-Luffy",
     "map_status": "PARTIAL",
-    "source": "docs/characters/Gear2-Luffy-Character-Map.md",
+    "source": "docs/confirmed-facts/characters/Gear2-Luffy-Character-Map.md",
     "Character Name": "Gear 2 Luffy",
     "Series": "One Piece",
     "chr_b Index": "13",
@@ -156,7 +156,7 @@
   {
     "character": "Gintoki",
     "map_status": "PARTIAL",
-    "source": "docs/characters/Gintoki-Character-Map.md",
+    "source": "docs/confirmed-facts/characters/Gintoki-Character-Map.md",
     "Character Name": "Gintoki Sakata",
     "Series": "Gintama",
     "chr_b Index": "52",
@@ -169,7 +169,7 @@
   {
     "character": "Gohan-SSJ",
     "map_status": "PARTIAL",
-    "source": "docs/characters/Gohan-SSJ-Character-Map.md",
+    "source": "docs/confirmed-facts/characters/Gohan-SSJ-Character-Map.md",
     "Character Name": "Gohan SSJ",
     "Series": "Dragon Ball",
     "chr_b Index": "5",
@@ -182,7 +182,7 @@
   {
     "character": "Gohan-SSJ2",
     "map_status": "PARTIAL",
-    "source": "docs/characters/Gohan-SSJ2-Character-Map.md",
+    "source": "docs/confirmed-facts/characters/Gohan-SSJ2-Character-Map.md",
     "Character Name": "Gohan (SSJ2)",
     "Series": "Dragon Ball",
     "chr_b Index": "6",
@@ -195,7 +195,7 @@
   {
     "character": "Goku",
     "map_status": "COMPLETE",
-    "source": "docs/characters/Goku-Character-Map.md",
+    "source": "docs/confirmed-facts/characters/Goku-Character-Map.md",
     "Series": "Dragon Ball",
     "chr_b Index": "0",
     "Collision File": "db_b_01.bin",
@@ -208,7 +208,7 @@
   {
     "character": "GoldSeiya",
     "map_status": "PARTIAL",
-    "source": "docs/characters/GoldSeiya-Character-Map.md",
+    "source": "docs/confirmed-facts/characters/GoldSeiya-Character-Map.md",
     "Character Name": "Gold Seiya (Sagittarius Seiya)",
     "Series": "Saint Seiya",
     "chr_b Index": "64",
@@ -221,7 +221,7 @@
   {
     "character": "Gon",
     "map_status": "PARTIAL",
-    "source": "docs/characters/Gon-Character-Map.md",
+    "source": "docs/confirmed-facts/characters/Gon-Character-Map.md",
     "Character Name": "Gon Freecss",
     "Series": "Hunter x Hunter",
     "chr_b Index": "30",
@@ -234,7 +234,7 @@
   {
     "character": "Gotenks",
     "map_status": "PARTIAL",
-    "source": "docs/characters/Gotenks-Character-Map.md",
+    "source": "docs/confirmed-facts/characters/Gotenks-Character-Map.md",
     "Character Name": "Gotenks (Base)",
     "Series": "Dragon Ball",
     "chr_b Index": "7",
@@ -247,7 +247,7 @@
   {
     "character": "Gotenks-SSJ",
     "map_status": "PARTIAL",
-    "source": "docs/characters/Gotenks-SSJ-Character-Map.md",
+    "source": "docs/confirmed-facts/characters/Gotenks-SSJ-Character-Map.md",
     "Character Name": "Gotenks (SSJ)",
     "Series": "Dragon Ball",
     "chr_b Index": "8",
@@ -260,7 +260,7 @@
   {
     "character": "Hiei",
     "map_status": "PARTIAL",
-    "source": "docs/characters/Hiei-Character-Map.md",
+    "source": "docs/confirmed-facts/characters/Hiei-Character-Map.md",
     "Character Name": "Hiei",
     "Series": "Yu Yu Hakusho",
     "chr_b Index": "34",
@@ -273,7 +273,7 @@
   {
     "character": "Hitsugaya",
     "map_status": "PARTIAL",
-    "source": "docs/characters/Hitsugaya-Character-Map.md",
+    "source": "docs/confirmed-facts/characters/Hitsugaya-Character-Map.md",
     "Character Name": "Toushiro Hitsugaya",
     "Series": "Bleach",
     "chr_b Index": "43",
@@ -286,14 +286,14 @@
   {
     "character": "Ichigo",
     "map_status": "COMPLETE",
-    "source": "docs/characters/Ichigo-Character-Map.md",
+    "source": "docs/confirmed-facts/characters/Ichigo-Character-Map.md",
     "chr_b Index": "formType",
     "tier": "Count"
   },
   {
     "character": "Jaguar",
     "map_status": "PARTIAL",
-    "source": "docs/characters/Jaguar-Character-Map.md",
+    "source": "docs/confirmed-facts/characters/Jaguar-Character-Map.md",
     "Character Name": "Jaguar Junichi",
     "Series": "Pyu to Fuku! Jaguar",
     "chr_b Index": "55",
@@ -306,7 +306,7 @@
   {
     "character": "Jotaro",
     "map_status": "PARTIAL",
-    "source": "docs/characters/Jotaro-Character-Map.md",
+    "source": "docs/confirmed-facts/characters/Jotaro-Character-Map.md",
     "Character Name": "Jotaro Kujo",
     "Series": "JoJo's Bizarre Adventure",
     "chr_b Index": "28",
@@ -319,7 +319,7 @@
   {
     "character": "Kagura",
     "map_status": "PARTIAL",
-    "source": "docs/characters/Kagura-Character-Map.md",
+    "source": "docs/confirmed-facts/characters/Kagura-Character-Map.md",
     "Character Name": "Kagura",
     "Series": "Gintama",
     "chr_b Index": "53",
@@ -332,7 +332,7 @@
   {
     "character": "Kakashi",
     "map_status": "PARTIAL",
-    "source": "docs/characters/Kakashi-Character-Map.md",
+    "source": "docs/confirmed-facts/characters/Kakashi-Character-Map.md",
     "Character Name": "Kakashi Hatake",
     "Series": "Naruto",
     "chr_b Index": "24",
@@ -345,7 +345,7 @@
   {
     "character": "Kazuki",
     "map_status": "PARTIAL",
-    "source": "docs/characters/Kazuki-Character-Map.md",
+    "source": "docs/confirmed-facts/characters/Kazuki-Character-Map.md",
     "Character Name": "Kazuki Mutou",
     "Series": "Busou Renkin",
     "chr_b Index": "44",
@@ -358,7 +358,7 @@
   {
     "character": "Kenshin",
     "map_status": "PARTIAL",
-    "source": "docs/characters/Kenshin-Character-Map.md",
+    "source": "docs/confirmed-facts/characters/Kenshin-Character-Map.md",
     "Character Name": "Himura Kenshin",
     "Series": "Rurouni Kenshin",
     "chr_b Index": "36",
@@ -371,7 +371,7 @@
   {
     "character": "Kenshiro",
     "map_status": "PARTIAL",
-    "source": "docs/characters/Kenshiro-Character-Map.md",
+    "source": "docs/confirmed-facts/characters/Kenshiro-Character-Map.md",
     "Character Name": "Kenshiro",
     "Series": "Hokuto no Ken",
     "chr_b Index": "61",
@@ -384,7 +384,7 @@
   {
     "character": "Killua",
     "map_status": "PARTIAL",
-    "source": "docs/characters/Killua-Character-Map.md",
+    "source": "docs/confirmed-facts/characters/Killua-Character-Map.md",
     "Character Name": "Killua Zoldyck",
     "Series": "Hunter x Hunter",
     "chr_b Index": "31",
@@ -397,31 +397,31 @@
   {
     "character": "Kinnikuman",
     "map_status": "STUB",
-    "source": "docs/characters/Kinnikuman-Character-Map.md",
+    "source": "docs/confirmed-facts/characters/Kinnikuman-Character-Map.md",
     "chr_b Index": "File"
   },
   {
     "character": "KomamanGreen",
     "map_status": "STUB",
-    "source": "docs/characters/KomamanGreen-Character-Map.md",
+    "source": "docs/confirmed-facts/characters/KomamanGreen-Character-Map.md",
     "chr_b Index": "File"
   },
   {
     "character": "KomamanRed",
     "map_status": "STUB",
-    "source": "docs/characters/KomamanRed-Character-Map.md",
+    "source": "docs/confirmed-facts/characters/KomamanRed-Character-Map.md",
     "chr_b Index": "File"
   },
   {
     "character": "KomamanYellow",
     "map_status": "STUB",
-    "source": "docs/characters/KomamanYellow-Character-Map.md",
+    "source": "docs/confirmed-facts/characters/KomamanYellow-Character-Map.md",
     "chr_b Index": "File"
   },
   {
     "character": "Kurama",
     "map_status": "PARTIAL",
-    "source": "docs/characters/Kurama-Character-Map.md",
+    "source": "docs/confirmed-facts/characters/Kurama-Character-Map.md",
     "Character Name": "Kurama",
     "Series": "Yu Yu Hakusho",
     "chr_b Index": "33",
@@ -434,7 +434,7 @@
   {
     "character": "Kyuubi-Naruto",
     "map_status": "PARTIAL",
-    "source": "docs/characters/Kyuubi-Naruto-Character-Map.md",
+    "source": "docs/confirmed-facts/characters/Kyuubi-Naruto-Character-Map.md",
     "Character Name": "Kyuubi Naruto",
     "Series": "Naruto",
     "chr_b Index": "21",
@@ -447,7 +447,7 @@
   {
     "character": "Lenalee",
     "map_status": "PARTIAL",
-    "source": "docs/characters/Lenalee-Character-Map.md",
+    "source": "docs/confirmed-facts/characters/Lenalee-Character-Map.md",
     "Character Name": "Lenalee Lee",
     "Series": "D.Gray-man",
     "chr_b Index": "46",
@@ -460,7 +460,7 @@
   {
     "character": "Luffy",
     "map_status": "PARTIAL",
-    "source": "docs/characters/Luffy-Character-Map.md",
+    "source": "docs/confirmed-facts/characters/Luffy-Character-Map.md",
     "Character Name": "Monkey D. Luffy",
     "Series": "One Piece",
     "chr_b Index": "12",
@@ -473,7 +473,7 @@
   {
     "character": "Majin-Buu",
     "map_status": "PARTIAL",
-    "source": "docs/characters/Majin-Buu-Character-Map.md",
+    "source": "docs/confirmed-facts/characters/Majin-Buu-Character-Map.md",
     "Character Name": "Majin Buu",
     "Series": "Dragon Ball",
     "chr_b Index": "11",
@@ -486,7 +486,7 @@
   {
     "character": "Mashirito",
     "map_status": "PARTIAL",
-    "source": "docs/characters/Mashirito-Character-Map.md",
+    "source": "docs/confirmed-facts/characters/Mashirito-Character-Map.md",
     "Character Name": "Dr. Mashirito",
     "Series": "Dr. Slump",
     "chr_b Index": "57",
@@ -499,19 +499,19 @@
   {
     "character": "Momotaro",
     "map_status": "STUB",
-    "source": "docs/characters/Momotaro-Character-Map.md",
+    "source": "docs/confirmed-facts/characters/Momotaro-Character-Map.md",
     "chr_b Index": "File"
   },
   {
     "character": "Muhyo",
     "map_status": "STUB",
-    "source": "docs/characters/Muhyo-Character-Map.md",
+    "source": "docs/confirmed-facts/characters/Muhyo-Character-Map.md",
     "chr_b Index": "File"
   },
   {
     "character": "Nami",
     "map_status": "PARTIAL",
-    "source": "docs/characters/Nami-Character-Map.md",
+    "source": "docs/confirmed-facts/characters/Nami-Character-Map.md",
     "Character Name": "Nami",
     "Series": "One Piece",
     "chr_b Index": "15",
@@ -524,13 +524,13 @@
   {
     "character": "Neuro",
     "map_status": "STUB",
-    "source": "docs/characters/Neuro-Character-Map.md",
+    "source": "docs/confirmed-facts/characters/Neuro-Character-Map.md",
     "chr_b Index": "File"
   },
   {
     "character": "PCT-Nami",
     "map_status": "PARTIAL",
-    "source": "docs/characters/PCT-Nami-Character-Map.md",
+    "source": "docs/confirmed-facts/characters/PCT-Nami-Character-Map.md",
     "Character Name": "Perfect Clima-Tact Nami",
     "Series": "One Piece",
     "chr_b Index": "16",
@@ -543,7 +543,7 @@
   {
     "character": "Piccolo",
     "map_status": "PARTIAL",
-    "source": "docs/characters/Piccolo-Character-Map.md",
+    "source": "docs/confirmed-facts/characters/Piccolo-Character-Map.md",
     "Character Name": "Piccolo",
     "Series": "Dragon Ball",
     "chr_b Index": "9",
@@ -556,7 +556,7 @@
   {
     "character": "Raoh",
     "map_status": "PARTIAL",
-    "source": "docs/characters/Raoh-Character-Map.md",
+    "source": "docs/confirmed-facts/characters/Raoh-Character-Map.md",
     "Character Name": "Raoh",
     "Series": "Hokuto no Ken",
     "chr_b Index": "62",
@@ -569,7 +569,7 @@
   {
     "character": "Renji",
     "map_status": "PARTIAL",
-    "source": "docs/characters/Renji-Character-Map.md",
+    "source": "docs/confirmed-facts/characters/Renji-Character-Map.md",
     "Character Name": "Renji Abarai",
     "Series": "Bleach",
     "chr_b Index": "42",
@@ -582,7 +582,7 @@
   {
     "character": "Robin",
     "map_status": "PARTIAL",
-    "source": "docs/characters/Robin-Character-Map.md",
+    "source": "docs/confirmed-facts/characters/Robin-Character-Map.md",
     "Character Name": "Nico Robin",
     "Series": "One Piece",
     "chr_b Index": "18",
@@ -595,7 +595,7 @@
   {
     "character": "Rukia",
     "map_status": "PARTIAL",
-    "source": "docs/characters/Rukia-Character-Map.md",
+    "source": "docs/confirmed-facts/characters/Rukia-Character-Map.md",
     "Character Name": "Rukia Kuchiki",
     "Series": "Bleach",
     "chr_b Index": "41",
@@ -608,7 +608,7 @@
   {
     "character": "Ryotsu",
     "map_status": "PARTIAL",
-    "source": "docs/characters/Ryotsu-Character-Map.md",
+    "source": "docs/confirmed-facts/characters/Ryotsu-Character-Map.md",
     "Character Name": "Ryotsu Kankichi",
     "Series": "KochiKame",
     "chr_b Index": "51",
@@ -621,7 +621,7 @@
   {
     "character": "Sakura",
     "map_status": "PARTIAL",
-    "source": "docs/characters/Sakura-Character-Map.md",
+    "source": "docs/confirmed-facts/characters/Sakura-Character-Map.md",
     "Character Name": "Sakura Haruno",
     "Series": "Naruto",
     "chr_b Index": "23",
@@ -634,7 +634,7 @@
   {
     "character": "Sanji",
     "map_status": "PARTIAL",
-    "source": "docs/characters/Sanji-Character-Map.md",
+    "source": "docs/confirmed-facts/characters/Sanji-Character-Map.md",
     "Character Name": "Sanji",
     "Series": "One Piece",
     "chr_b Index": "17",
@@ -647,7 +647,7 @@
   {
     "character": "Sasuke",
     "map_status": "PARTIAL",
-    "source": "docs/characters/Sasuke-Character-Map.md",
+    "source": "docs/confirmed-facts/characters/Sasuke-Character-Map.md",
     "Character Name": "Sasuke Uchiha",
     "Series": "Naruto",
     "chr_b Index": "22",
@@ -660,7 +660,7 @@
   {
     "character": "Seiya",
     "map_status": "PARTIAL",
-    "source": "docs/characters/Seiya-Character-Map.md",
+    "source": "docs/confirmed-facts/characters/Seiya-Character-Map.md",
     "Character Name": "Seiya (Pegasus Seiya)",
     "Series": "Saint Seiya",
     "chr_b Index": "63",
@@ -673,7 +673,7 @@
   {
     "character": "Shinsetsu",
     "map_status": "PARTIAL",
-    "source": "docs/characters/Shinsetsu-Character-Map.md",
+    "source": "docs/confirmed-facts/characters/Shinsetsu-Character-Map.md",
     "Character Name": "Shinsetsu Bo-bobo",
     "Series": "Bobobo-bo Bo-bobo",
     "chr_b Index": "48",
@@ -686,19 +686,19 @@
   {
     "character": "Taikoubou",
     "map_status": "STUB",
-    "source": "docs/characters/Taikoubou-Character-Map.md",
+    "source": "docs/confirmed-facts/characters/Taikoubou-Character-Map.md",
     "chr_b Index": "File"
   },
   {
     "character": "Taizo",
     "map_status": "STUB",
-    "source": "docs/characters/Taizo-Character-Map.md",
+    "source": "docs/confirmed-facts/characters/Taizo-Character-Map.md",
     "chr_b Index": "File"
   },
   {
     "character": "Train",
     "map_status": "PARTIAL",
-    "source": "docs/characters/Train-Character-Map.md",
+    "source": "docs/confirmed-facts/characters/Train-Character-Map.md",
     "Character Name": "Train Heartnet",
     "Series": "Black Cat",
     "chr_b Index": "37",
@@ -711,7 +711,7 @@
   {
     "character": "Tsuna",
     "map_status": "PARTIAL",
-    "source": "docs/characters/Tsuna-Character-Map.md",
+    "source": "docs/confirmed-facts/characters/Tsuna-Character-Map.md",
     "Character Name": "Tsuna Sawada",
     "Series": "Reborn!",
     "chr_b Index": "54",
@@ -724,7 +724,7 @@
   {
     "character": "Vegeta",
     "map_status": "PARTIAL",
-    "source": "docs/characters/Vegeta-Character-Map.md",
+    "source": "docs/confirmed-facts/characters/Vegeta-Character-Map.md",
     "Character Name": "Vegeta",
     "Series": "Dragon Ball",
     "chr_b Index": "3",
@@ -737,7 +737,7 @@
   {
     "character": "Vegeta-SSJ",
     "map_status": "PARTIAL",
-    "source": "docs/characters/Vegeta-SSJ-Character-Map.md",
+    "source": "docs/confirmed-facts/characters/Vegeta-SSJ-Character-Map.md",
     "Character Name": "Vegeta SSJ",
     "Series": "Dragon Ball",
     "chr_b Index": "4",
@@ -750,7 +750,7 @@
   {
     "character": "Vegetto",
     "map_status": "PARTIAL",
-    "source": "docs/characters/Vegetto-Character-Map.md",
+    "source": "docs/confirmed-facts/characters/Vegetto-Character-Map.md",
     "Character Name": "Vegetto",
     "Series": "Dragon Ball",
     "chr_b Index": "2",
@@ -763,7 +763,7 @@
   {
     "character": "Yoh",
     "map_status": "PARTIAL",
-    "source": "docs/characters/Yoh-Character-Map.md",
+    "source": "docs/confirmed-facts/characters/Yoh-Character-Map.md",
     "Character Name": "Yoh Asakura",
     "Series": "Shaman King",
     "chr_b Index": "25",
@@ -776,7 +776,7 @@
   {
     "character": "Yoh-WhiteSwan",
     "map_status": "PARTIAL",
-    "source": "docs/characters/Yoh-WhiteSwan-Character-Map.md",
+    "source": "docs/confirmed-facts/characters/Yoh-WhiteSwan-Character-Map.md",
     "Character Name": "Yoh Asakura (White Swan)",
     "Series": "Shaman King",
     "chr_b Index": "26",
@@ -789,7 +789,7 @@
   {
     "character": "Yugi",
     "map_status": "PARTIAL",
-    "source": "docs/characters/Yugi-Character-Map.md",
+    "source": "docs/confirmed-facts/characters/Yugi-Character-Map.md",
     "Character Name": "Yugi Moto",
     "Series": "Yu-Gi-Oh!",
     "chr_b Index": "35",
@@ -802,7 +802,7 @@
   {
     "character": "Yusuke",
     "map_status": "PARTIAL",
-    "source": "docs/characters/Yusuke-Character-Map.md",
+    "source": "docs/confirmed-facts/characters/Yusuke-Character-Map.md",
     "Character Name": "Yusuke Urameshi",
     "Series": "Yu Yu Hakusho",
     "chr_b Index": "32",
@@ -815,7 +815,7 @@
   {
     "character": "Zoro",
     "map_status": "PARTIAL",
-    "source": "docs/characters/Zoro-Character-Map.md",
+    "source": "docs/confirmed-facts/characters/Zoro-Character-Map.md",
     "Character Name": "Roronoa Zoro",
     "Series": "One Piece",
     "chr_b Index": "14",
@@ -828,7 +828,7 @@
   {
     "character": "Naruto",
     "map_status": "PARTIAL",
-    "source": "docs/characters/BaseNaruto/Naruto-Character-Map.md",
+    "source": "docs/confirmed-facts/characters/BaseNaruto/Naruto-Character-Map.md",
     "Character Name": "Naruto Uzumaki",
     "Series": "Naruto",
     "chr_b Index": "20",

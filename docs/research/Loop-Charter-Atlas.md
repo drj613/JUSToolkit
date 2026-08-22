@@ -144,7 +144,7 @@ Seed queue (do in order unless blocked; add new tasks as they come up):
 8. `C4-physics-writers-round2` — same for physics-writers.
 9. `C5-gdb-queue-triage` — sweep `GDB-Validation-Queue.md`; settle statically what can be
    settled, move the rest to `Human-Testing-Queue.md` with sharpened one-breakpoint cards.
-10. `C6+` — self-generated: pick the highest-value open question in Research-Status.md,
+10. `C6+` — self-generated: pick the highest-value open question in archive/Research-Status.md,
     write it into the queue with a one-line success criterion, then do it next wake.
 
 ## Pacing and budget
@@ -154,9 +154,9 @@ Seed queue (do in order unless blocked; add new tasks as they come up):
   only one task per wake.
 - If two consecutive wakes make no progress on the same task, mark it `stuck`, bring in
   codex for a second opinion once, and if still stuck, skip it and note why in
-  Research-Status.md.
+  archive/Research-Status.md.
 - Every ~8 iterations (or when flipping koma→combat), write a short progress note to
-  `docs/research/Research-Status.md` (dated section, opus edit pass applies).
+  `docs/research/archive/Research-Status.md` (dated section, opus edit pass applies).
 
 ## Stop conditions
 
@@ -167,4 +167,4 @@ Stop the loop (`ScheduleWakeup stop: true`) when ANY of:
   tasks produced nothing worth doing,
 - 4 consecutive wakes with no committed progress.
 
-On stop, write a final summary section in Research-Status.md.
+On stop, write a final summary section in archive/Research-Status.md.

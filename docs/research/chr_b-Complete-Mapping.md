@@ -127,7 +127,7 @@ Characters select specific entries from their assigned block via unknown
 mechanism (possibly collision subType, type2, linkCategory, or other selection
 logic).
 
-### Damage Formula (SOLVED - see Research-Status.md)
+### Damage Formula (SOLVED - see archive/Research-Status.md)
 
 **Confirmed for all tested characters:**
 
@@ -192,7 +192,7 @@ index.
 The earlier conclusion that walk speed was "not in chr_b" was wrong — it was
 confounded by **Edajima**, who has a normal statC value but is slowed by an
 innate character passive (he is the heaviest/slowest character). See
-Research-Status.md for the confirmed tier data; exact thresholds are tracked
+archive/Research-Status.md for the confirmed tier data; exact thresholds are tracked
 in JUS-n3p.
 
 Weight location remains unknown. Walk speed is solved (statC).

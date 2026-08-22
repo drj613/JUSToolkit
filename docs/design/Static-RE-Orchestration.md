@@ -29,7 +29,7 @@ surfaces (guard, SP gauge, throws, supports, switch mechanics).
    zero `UNSTARTED`.
 5. `docs/research/GDB-Validation-Queue.md` exists; every PLAUSIBLE and
    SPECULATIVE claim in the map has a one-breakpoint validation card.
-6. `docs/research/Research-Status.md` updated: every newly CONFIRMED_STATIC
+6. `docs/research/archive/Research-Status.md` updated: every newly CONFIRMED_STATIC
    item moved to its CONFIRMED section with a link to the map.
 7. Working tree clean; every iteration's output committed.
 
@@ -75,7 +75,7 @@ exact resume instructions. Do NOT schedule another wakeup.
 │ 2. AGENT LAYER (subagents: trace → verify → critic)    │
 ├────────────────────────────────────────────────────────┤
 │ 3. CANON LAYER (committed docs)                        │
-│    Battle-Engine-Map.md · Research-Status.md updates   │
+│    Battle-Engine-Map.md · ../research/archive/Research-Status.md updates   │
 │    GDB-Validation-Queue.md (the only human work)       │
 └────────────────────────────────────────────────────────┘
 ```
@@ -323,7 +323,7 @@ Three lenses, distinct prompts, run concurrently:
    explanation and test it against the disasm.
 3. **data-consistency** — does the claim survive the actual data? (e.g.,
    claimed priority rule vs `hitTier` values across all 74 collision files;
-   claimed formula vs verified damage table in Research-Status.md.)
+   claimed formula vs verified damage table in ../research/archive/Research-Status.md.)
 
 Each returns per-claim verdicts `{claim_idx, verdict: UPHELD|REFUTED|UNSURE,
 reason}` to `jus_files/analysis/findings/{subsystem}.round{N}.verdicts.{lens}.json`.
@@ -341,7 +341,7 @@ remain), else stays `TRACING` for another round or `EXHAUSTED` at cap.
 run, and always before DONE/wind-down): rewrite
 `docs/research/Battle-Engine-Map.md` from verified claims only (routine
 tables, data flow, formulas, per-claim confidence). Update
-`Research-Status.md` (move CONFIRMED_STATIC items). Regenerate
+`../research/archive/Research-Status.md` (move CONFIRMED_STATIC items). Regenerate
 `GDB-Validation-Queue.md` — every PLAUSIBLE/SPECULATIVE claim gets its
 one-breakpoint card, grouped to minimize emulator sessions.
 AC: map has a section per subsystem; zero references to rejected claims; all
@@ -369,7 +369,7 @@ Zero new units → `dry_rounds++`; any new units → `dry_rounds = 0`.
 1. Phase 0+1 cleanup agent's commits reviewed (or at least not conflicting —
    loop touches only `scripts/analysis/`, `jus_files/analysis/`,
    `docs/research/Battle-Engine-Map.md`, `GDB-Validation-Queue.md`,
-   `Research-Status.md`, state file).
+   `../research/archive/Research-Status.md`, state file).
 2. Permissions: session must be able to run `python3`/venv pip, `git add`
    / `git commit`, `mkdir` without prompting (acceptEdits or allowlist;
    consider running `/fewer-permission-prompts` first). Push stays blocked —

@@ -9,7 +9,7 @@
 > **Supersession warning.** The iteration-59 headline "the contact array is NOT
 > damage" is superseded and actively misleading: the producer it dismissed *is*
 > the damage formula (P208–P211). Do not cite
-> [contact-array-is-not-a-damage-ledger.md](../research/findings/contact-array-is-not-a-damage-ledger.md)
+> [../research/archive/findings/contact-array-is-not-a-damage-ledger.md](../research/archive/findings/contact-array-is-not-a-damage-ledger.md)
 > or Battle-Engine-Map §collision-data "Settled (iteration 59)" for a
 > "no collision→damage link" conclusion. Same for §hitbox-priority (the
 > most-refuted section) and the `0x020924B0` "collision table" (refuted — it keys

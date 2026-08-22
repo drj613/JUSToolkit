@@ -115,9 +115,9 @@ Located in `jus_files/exported_combat/`:
 
 | Document                                                | Purpose                           |
 | ------------------------------------------------------- | --------------------------------- |
-| `docs/research/Research-Status.md`                      | What's CONFIRMED vs UNKNOWN       |
+| `docs/confirmed-facts/` (see `INVENTORY.md`)             | What's CONFIRMED vs UNKNOWN       |
 | `docs/research/DamageFlags-Character-Classification.md` | How damage lookup works           |
-| `docs/research/Combat-Mechanics-Reference.md`           | Observed game mechanics           |
+| `docs/research/archive/Combat-Mechanics-Reference.md`           | Observed game mechanics           |
 | `docs/research/Character-Mapping.md`                    | 74-char identity map (file→name)  |
 
 ### Design Documents
@@ -129,7 +129,7 @@ Located in `jus_files/exported_combat/`:
 
 ### Per-Character Data
 
-`docs/characters/*.md` - Individual character maps with stats, moves, collision
+`docs/confirmed-facts/characters/*.md` - Individual character maps with stats, moves, collision
 data. Each file carries a `Map status` header (COMPLETE | PARTIAL | STUB).
 Only `Goku-Character-Map.md` is complete (`Ichigo-Character-Map.md` is complete
 but unverified); most others are stubs or partial.
@@ -147,9 +147,8 @@ damage = floor(jpower.damage1 / 5) + (tier - 2)
 ```
 
 - tier 1: -1 damage, tier 2: +0, tier 3: +1
-- Nature multiplier: 1.5x on advantage only
-- Verified across 12 characters - canonical table in
-  `docs/research/Research-Status.md`
+- Nature behavior: see `docs/confirmed-facts/nature.md` (canonical; the old
+  Research-Status table is archived)
 
 **DamageFlags Classification (completed 2026-02-02):**
 
@@ -160,7 +159,7 @@ damage = floor(jpower.damage1 / 5) + (tier - 2)
 **Character Mapping (identity only):** All 74 battle characters are
 identity-mapped (collision filename → character name). Full per-character kit
 maps exist only for Goku (complete) and Ichigo (unverified); the rest of
-`docs/characters/*.md` are stubs/partial — see each file's `Map status` header.
+`docs/confirmed-facts/characters/*.md` are stubs/partial — see each file's `Map status` header.
 
 ### UNKNOWN (Blocking Engine Development)
 
@@ -362,8 +361,8 @@ Success criteria:
 
 - [ ] Update:
   - `docs/research/Character-State-Struct.md` (new offsets + confidence level)
-  - `docs/research/Research-Status.md` (what moved from UNKNOWN to PARTIAL/CONFIRMED)
-  - `docs/research/RE-Session-Playbook.md` (repeatable experiment notes)
+  - `docs/confirmed-facts/` spec for the subsystem (what moved from UNKNOWN to PARTIAL/CONFIRMED)
+  - `docs/harness/RE-Session-Playbook.md` (repeatable experiment notes)
 - [ ] Link results to relevant beads tickets:
   - `JUS-9lp.2.1` (velocity fields)
   - `JUS-9lp.2.2` (hitstun timer)
@@ -396,7 +395,7 @@ See `docs/research/ARM9-Research-Guide.md` for comprehensive guide.
 
 1. Read this document
 2. Run `bd ready` to see current priorities
-3. Check `docs/research/Research-Status.md` for context
+3. Check `docs/research/archive/Research-Status.md` for context
 4. Review any in-progress tickets with `bd list --status in_progress`
 
 ### Ending a Session

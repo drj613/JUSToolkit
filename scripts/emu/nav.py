@@ -18,7 +18,7 @@ WHY PIXELS. RAM cannot do this job. Two boots on the same screen differ by up to
 input. Worse, RAM signatures can be structurally fooled: the deck-select screen
 holds deck rosters (HP plus chr_b indices in 0x50-byte slots), so
 find_battle_structs.py reports a battle character array there. A screenshot tells
-them apart at a glance. See docs/research/Menu-Nav-Oracle-Attempt-1.md.
+them apart at a glance. See docs/research/archive/Menu-Nav-Oracle-Attempt-1.md.
 
 A press that legitimately changes nothing (a DOWN at the bottom of a list) is
 indistinguishable from a swallowed press. That is not a flaw in the oracle, it is

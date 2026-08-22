@@ -16,7 +16,7 @@ start fresh with the restart prompt.
 
 > You're about to be shut down and restarted with a fresh context. Before you stop, write
 > a **handoff for your successor session** and commit it (runtime → `docs/HANDOFF-<date>.md`;
-> static → a dated section in `docs/research/Research-Status.md`; ledger → the top of
+> static → a dated `docs/orchestration/HANDOFF-<role>-<date>.md`; ledger → the top of
 > `SESSION-LEDGER.md`). Cover, tersely:
 > 1. **Current state** — what you were mid-doing, what's committed vs not, working-tree
 >    status.
@@ -203,7 +203,7 @@ start fresh with the restart prompt.
   retracted, or tainted bead citations; it warns on `CONFIRMED`-style prose with no bead
   nearby and on pointers to missing files.
 - Layers: **claims** in beads · **canon** in `docs/research/*.md` · **journal** in
-  `docs/research/findings/` (history, never current) · `docs/characters/` is two verified
+  `docs/research/findings/` (history, never current) · `docs/confirmed-facts/characters/` is two verified
   maps plus `character-index.md`; the other 69 placeholder maps were deleted 2026-08-19.
 
 ## Where the loops run (changed 2026-08-19 — read this before restarting anything)

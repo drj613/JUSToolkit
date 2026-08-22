@@ -6,13 +6,13 @@ to **zero**. But out of all 32 bits, that is the *only* one that changes blunt
 damage taken. Bit 9 (`0x09` 打撃耐性ＵＰ, blunt resistance) does exactly
 nothing.
 
-The flat −2.0 from `Damage-Reduction-Is-Flat.md` is **not** coming from
+The flat −2.0 from `archive/Damage-Reduction-Is-Flat.md` is **not** coming from
 ability `0x09` through this route. Measured 2026-08-17 via the melonDS agent
 bridge.
 
 ## Why this test was worth running
 
-`Damage-Reduction-Is-Flat.md` proved the reduction is flat, not multiplicative,
+`archive/Damage-Reduction-Is-Flat.md` proved the reduction is flat, not multiplicative,
 but couldn't say *what causes it*: the resisting target (Luffy) and the
 unresisted target (`chr_b[70]`) are different characters, so a per-character
 defence value fits the data just as well as blunt resistance does. The clean
@@ -125,7 +125,7 @@ is correct.
 damage time. Neither are blunt weakness, slash resistance, or status resistance.
 
 **Still open:** what causes the flat −2.0. The confound
-`Damage-Reduction-Is-Flat.md` flagged is now the leading hypothesis, not just a
+`archive/Damage-Reduction-Is-Flat.md` flagged is now the leading hypothesis, not just a
 caveat — a per-character defence value, or a stat derived at load from the
 ability list and stored somewhere other than this bitset. Ability `0x09` may
 still be the ultimate cause through a load-time path; what is ruled out is the

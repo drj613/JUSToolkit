@@ -19,7 +19,7 @@ Central tracking for all in-game tests that require human intervention.
 **Last Updated:** 2026-08-14 (+5 harness cards A1/F1/B1/E1/D1)
 
 > **Formula CONFIRMED:** `damage = damage1/5 + (tier-2)` - verified character
-> table in Research-Status.md (12 characters)
+> table in archive/Research-Status.md (12 characters)
 >
 > **NEW:** Naruto series substitution mechanic documented (Naruto, Sasuke,
 > Sakura, Kakashi)

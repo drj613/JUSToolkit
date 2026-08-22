@@ -13,7 +13,7 @@ For each subsystem, we need docs detailed enough that an engineer (or agent) who
 - Move system (MoveMan, element lifecycle, priority resolution)
 - Entity/projectile system (spawning, ownership, collision interaction)
 - Guard/SP gauges
-- Nature system (deck-building only — does not affect battle damage)
+- Nature system's role in damage (nature/resist gates an additive term in the damage accumulator — see `docs/research/Nature-System-Consolidated.md`, bead `jus-nature-is-read-in-damage-path-hbt`)
 
 ## Deckbuilding and koma (secondary)
 
@@ -22,14 +22,11 @@ For each subsystem, we need docs detailed enough that an engineer (or agent) who
 - Nature system's role in deck construction
 - Helper/passive ability taxonomy (42 categories mapped)
 
-## Active sessions
+## How work is organized
 
-Two sessions are currently working toward this goal:
-- **justoolkit-06** (master) — runtime experiments via the agentic melonDS harness
-- **battle-engine-atlas-c2** (loop/battle-engine-atlas) — structural static analysis
-
-They coordinate directly with each other. justoolkit-06 serves as the runtime validator for atlas's structural findings.
+Work happens in one worktree on `integration/loops`, split by role rather than by session: **runtime**, **static**, **ledger**, and **harness**. Sessions come and go; the roles persist. See `docs/orchestration/COORDINATION-PROTOCOL.md` for the roles table and the rules they share.
 
 ## Documentation
 
-Research docs live in `docs/research/`. A cleanup pass is planned to consolidate and organize these once the current entity/projectile investigation wraps up.
+- `docs/confirmed-facts/` — canonical rebuild-ready specs, one file per subsystem. Driven by the wayfinder map (bead `jus-wayfinder-map-digi`).
+- `docs/research/` — the lab notebook: raw findings, experiments, and working notes.

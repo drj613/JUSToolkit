@@ -9,12 +9,17 @@ docs/HANDOFF-2026-08-18-runtime-2.md:114 cites unknown bead jus-wic
 docs/HANDOFF-2026-08-18-runtime-2.md:115 cites unknown bead jus-q4b
 docs/HANDOFF-2026-08-18-runtime-2.md:115 cites unknown bead jus-vrz
 docs/HANDOFF-2026-08-18-runtime-2.md:207 cites unknown bead jus-wic
-docs/research/Research-Status.md:8 cites unknown bead jus-q4b
-docs/research/Research-Status.md:8 cites unknown bead jus-qsh
-docs/research/Research-Status.md:8 cites unknown bead jus-vrz
-docs/research/Research-Status.md:8 cites unknown bead jus-wic
-docs/research/Research-Status.md:895 cites unknown bead jus-wic
-docs/research/Research-Status.md:909 cites unknown bead jus-wic
-docs/research/Research-Status.md:910 cites unknown bead jus-vrz
-docs/research/Research-Status.md:911 cites unknown bead jus-qsh
-docs/research/Research-Status.md:912 cites unknown bead jus-q4b
+docs/research/archive/Research-Status.md:8 cites unknown bead jus-q4b
+docs/research/archive/Research-Status.md:8 cites unknown bead jus-qsh
+docs/research/archive/Research-Status.md:8 cites unknown bead jus-vrz
+docs/research/archive/Research-Status.md:8 cites unknown bead jus-wic
+docs/research/archive/Research-Status.md:895 cites unknown bead jus-wic
+docs/research/archive/Research-Status.md:909 cites unknown bead jus-wic
+docs/research/archive/Research-Status.md:910 cites unknown bead jus-vrz
+docs/research/archive/Research-Status.md:911 cites unknown bead jus-qsh
+docs/research/archive/Research-Status.md:912 cites unknown bead jus-q4b
+docs/HANDOFF-2026-08-19-ledger-shutdown.md:44 cites jus-f0v which is state:tainted, and the surrounding text does not say so
+docs/confirmed-facts/INVENTORY.md:64 cites unknown bead jus-q4b
+docs/confirmed-facts/INVENTORY.md:64 cites unknown bead jus-qsh
+docs/confirmed-facts/INVENTORY.md:64 cites unknown bead jus-vrz
+docs/confirmed-facts/INVENTORY.md:64 cites unknown bead jus-wic

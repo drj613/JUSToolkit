@@ -3,3 +3,13 @@
 # and these happen to end in three characters too.
 jus-auto-snapshot-on-hit
 jus-auto-snapshot-off
+jus-auto-snapshot-on-damage
+jus-char-diff
+jus-char-dump
+jus-watch-code
+# Memory-note filenames that look like bead ids.
+jus-hp-address-current-vs-max
+jus-boot-navigation
+jus-savestates-survive-relaunch
+# Shorthand for runtime finding/iteration P168, not a bead.
+jus-p168

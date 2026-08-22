@@ -28,11 +28,19 @@ LEDGER = os.path.join(REPO, ".beads", "issues.jsonl")
 BASELINE = os.path.join(REPO, "scripts", "check_docs_baseline.txt")
 NOT_BEADS = os.path.join(REPO, "scripts", "check_docs_not_beads.txt")
 
-# A real bead id is the prefix, an optional slug, then a 3-char hash:
-#   JUS-0co, jus-fun, jus-consolidate-loop-branches-m5i
-# This deliberately does NOT match gdb/script command names that share the
-# prefix (jus-watch-hp, jus-char-diff, jus-status) -- they are not citations.
-BEAD_RE = re.compile(r"\b(jus-(?:[a-z0-9]+-)*[a-z0-9]{3})\b", re.I)
+# A real bead id is the prefix, an optional slug, a 3-4 char hash, and an
+# optional dotted child suffix:
+#   JUS-0co, jus-fun, jus-consolidate-loop-branches-m5i,
+#   jus-wayfinder-map-digi.15, JUS-9lp.2.2
+# The dotted suffix must be part of the match, or a child id truncates to a
+# nonexistent parent slug (jus-wayfinder-map-digi.7 -> jus-wayfinder-map).
+# This deliberately does NOT match most gdb/script command names that share
+# the prefix (jus-watch-hp, jus-status) -- they are not citations. Command
+# names it can't distinguish go in scripts/check_docs_not_beads.txt.
+# The trailing lookahead stops a partial match: without it, jus-boot-navigation
+# would yield "jus-boot" and jus-find-timers "jus-find".
+BEAD_RE = re.compile(
+    r"\b(jus-(?:[a-z0-9]+-)*[a-z0-9]{3,4}(?:\.\d+)*)(?![\w-])(?!\.\w)", re.I)
 # Status words that mean "trust this" when written in prose.
 STATUS_RE = re.compile(
     r"(?<![`\w-])(CONFIRMED|VERIFIED|CROSS[- ]CONFIRMED|PROVEN)(?![\w-])")
